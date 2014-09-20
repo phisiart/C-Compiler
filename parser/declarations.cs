@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // declaration : declaration_specifiers [init_declarator_list]? ;
 // [ return: Declaration ]
-class _declaration : PTNode {
+public class _declaration : PTNode {
     public static int Parse(List<Token> src, int begin, out Declaration declaration) {
         declaration = null;
 
@@ -45,7 +45,7 @@ class _declaration : PTNode {
     }
 }
 
-class Declaration : ASTNode {
+public class Declaration : ASTNode {
     public DeclarationSpecifiers declaration_specifiers;
     public List<InitDeclarator> init_declarators;
 }
@@ -58,7 +58,7 @@ class Declaration : ASTNode {
 // declaration_specifiers : [storage_class_specifier | type_specifier | type_qualifier] [declaration_specifiers]?
 //
 // [ return: DeclarationSpecifiers ]
-class _declaration_specifiers : PTNode {
+public class _declaration_specifiers : PTNode {
     public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers node) {
         node = null;
         DeclarationSpecifiers.Type type;
@@ -102,7 +102,7 @@ class _declaration_specifiers : PTNode {
     }
 }
 
-class DeclarationSpecifiers : ASTNode {
+public class DeclarationSpecifiers : ASTNode {
     public DeclarationSpecifiers(Type _type, ASTNode _content, DeclarationSpecifiers _next) {
         type = _type;
         content = _content;
@@ -137,7 +137,7 @@ class DeclarationSpecifiers : ASTNode {
 //
 // [ return: List<InitDeclarator> ]
 // [ if fail, return empty List<InitDeclarator> ]
-class _init_declarator_list : PTNode {
+public class _init_declarator_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<InitDeclarator> init_declarators) {
         init_declarators = new List<InitDeclarator>();
 
@@ -173,7 +173,7 @@ class _init_declarator_list : PTNode {
 // init_declarator : declarator [= initializer]?
 // [[note: no support for = initializer now]]
 // return InitDeclarator / null
-class _init_declarator : PTNode {
+public class _init_declarator : PTNode {
     public static int Parse(List<Token> src, int begin, out InitDeclarator init_declarator) {
         init_declarator = null;
 
@@ -189,7 +189,7 @@ class _init_declarator : PTNode {
     }
 }
 
-class InitDeclarator : ASTNode {
+public class InitDeclarator : ASTNode {
     public Declarator declarator;
 }
 
@@ -197,7 +197,7 @@ class InitDeclarator : ASTNode {
 // storage_class_specifier : auto | register | static | extern | typedef
 // [ return: StorageClassSpecifier / null]
 // [ note: there can be only one storage class in one declaration ]
-class _storage_class_specifier : PTNode {
+public class _storage_class_specifier : PTNode {
     public static int Parse(List<Token> src, int begin, out StorageClassSpecifier node) {
         node = null;
 
@@ -222,7 +222,7 @@ class _storage_class_specifier : PTNode {
     }
 }
 
-class StorageClassSpecifier : ASTNode {
+public class StorageClassSpecifier : ASTNode {
     public StorageClassSpecifier(KeywordVal _content) {
         content = _content;
     }
@@ -237,7 +237,7 @@ class StorageClassSpecifier : ASTNode {
 // [[note: no support for struct, union, enum, typedef]]
 // [ note: there can be multiple type specifiers in one declaration ]
 // [ note: typedef_name is some previously typedefed symbol ]
-class _type_specifier : PTNode {
+public class _type_specifier : PTNode {
     public static int Parse(List<Token> src, int begin, out TypeSpecifier node) {
         node = null;
 
@@ -266,7 +266,7 @@ class _type_specifier : PTNode {
     }
 }
 
-class TypeSpecifier : ASTNode {
+public class TypeSpecifier : ASTNode {
     public TypeSpecifier(KeywordVal _content) {
         content = _content;
     }
@@ -277,7 +277,7 @@ class TypeSpecifier : ASTNode {
 // type_qualifier : const | volatile
 // [ return: TypeQualifier / null]
 // [ note: there can be multiple type_qualifiers in one declaration ]
-class _type_qualifier : PTNode {
+public class _type_qualifier : PTNode {
     public static int Parse(List<Token> src, int begin, out TypeQualifier node) {
         node = null;
 
@@ -299,7 +299,7 @@ class _type_qualifier : PTNode {
     }
 }
 
-class TypeQualifier : ASTNode {
+public class TypeQualifier : ASTNode {
     public TypeQualifier(KeywordVal _content) {
         content = _content;
     }
@@ -309,7 +309,7 @@ class TypeQualifier : ASTNode {
 
 // declarator : [pointer]? direct_declarator
 // [ return: Declarator / null ]
-class _declarator : PTNode {
+public class _declarator : PTNode {
     public static int Parse(List<Token> src, int begin, out Declarator node) {
         node = null;
         List<PointerInfo> pointer_infos;
@@ -328,22 +328,22 @@ class _declarator : PTNode {
     }
 }
 
-interface TypeInfo {
+public interface TypeInfo {
 }
 
-class FunctionInfo : TypeInfo {
-
-}
-
-class ArrayInfo : TypeInfo {
+public class FunctionInfo : TypeInfo {
 
 }
 
-class PointerInfo : TypeInfo {
+public class ArrayInfo : TypeInfo {
+
+}
+
+public class PointerInfo : TypeInfo {
     public List<TypeQualifier> type_qualifiers;
 }
 
-class Declarator : ASTNode {
+public class Declarator : ASTNode {
     public Declarator() {
         type_infos = new List<TypeInfo>();
     }
@@ -357,7 +357,7 @@ class Declarator : ASTNode {
 // pointer : < * [type_qualifier_list]? >+
 // [ return: List<PointerInfo> ]
 // [ if fail, return empty List<PointerInfo> ]
-class _pointer : PTNode {
+public class _pointer : PTNode {
     public static int Parse(List<Token> src, int begin, out List<PointerInfo> infos) {
         infos = new List<PointerInfo>();
         if (src[begin].type != TokenType.OPERATOR) {
@@ -388,7 +388,7 @@ class _pointer : PTNode {
 //                     | parameter_list , ...
 // [ note: my solution ]
 // parameter_type_list : parameter_list < , ... >?
-class _parameter_type_list : PTNode {
+public class _parameter_type_list : PTNode {
     public static int Parse(List<Token> src, int begin, out ParameterTypeList param_type_list) {
         param_type_list = null;
 
@@ -416,7 +416,7 @@ class _parameter_type_list : PTNode {
     }
 }
 
-class ParameterTypeList : ASTNode {
+public class ParameterTypeList : ASTNode {
     public ParameterTypeList(List<ParameterDeclaration> _param_list) {
         IsVarArgs = false;
         param_list = _param_list;
@@ -432,7 +432,7 @@ class ParameterTypeList : ASTNode {
 // [ note: my solution ]
 // parameter_list : parameter_declaration < , parameter_declaration >*
 // [ note: it's okay to have a lonely ',', just leave it alone ]
-class _parameter_list : PTNode {
+public class _parameter_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<ParameterDeclaration> param_list) {
         ParameterDeclaration decl;
         int current = _parameter_declaration.Parse(src, begin, out decl);
@@ -465,7 +465,7 @@ class _parameter_list : PTNode {
 // type_qualifier_list : [type_qualifier]+
 // [ return: List<TypeQualifier> ]
 // [ if fail, return empty List<TypeQualifier> ]
-class _type_qualifier_list : PTNode {
+public class _type_qualifier_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<TypeQualifier> type_qualifiers) {
         type_qualifiers = new List<TypeQualifier>();
 
@@ -497,7 +497,7 @@ class _type_qualifier_list : PTNode {
 // [ note: left recursion! ]
 // { note: simplified! no const_expr, param_type_list, id_list now }
 // direct_declarator : < identifier | ( declarator ) > < [ ] | ( ) >*
-class _direct_declarator : PTNode {
+public class _direct_declarator : PTNode {
     public static int Parse(List<Token> src, int begin, out Declarator node) {
         node = null;
         int current;
@@ -571,7 +571,7 @@ class _direct_declarator : PTNode {
 
 // enum_specifier : enum <identifier>? { enumerator_list }
 //                | enum identifier
-class _enum_specifier : PTNode {
+public class _enum_specifier : PTNode {
 
     // this parses { enumerator_list }
     private static int ParseEnumList(List<Token> src, int begin, out List<Enumerator> enum_list) {
@@ -625,7 +625,7 @@ class _enum_specifier : PTNode {
     }
 }
 
-class EnumSpecifier : ASTNode {
+public class EnumSpecifier : ASTNode {
     public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
         name = _name;
         enum_list = _enum_list;
@@ -639,7 +639,7 @@ class EnumSpecifier : ASTNode {
 //                 | enumerator_list, enumerator
 // [ note: my solution ]
 // enumerator_list : enumerator < , enumerator >*
-class _enumerator_list : PTNode {
+public class _enumerator_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Enumerator> enum_list) {
         Enumerator enumerator;
         enum_list = new List<Enumerator>();
@@ -671,7 +671,7 @@ class _enumerator_list : PTNode {
 //            | enumeration_constant = constant_expression
 // [ note: my solution ]
 // enumerator : enumeration_constant < = constant_expression >?
-class _enumerator : PTNode {
+public class _enumerator : PTNode {
     public static int Parse(List<Token> src, int begin, out Enumerator enumerator) {
         int current = _enumeration_constant.Parse(src, begin, out enumerator);
         if (current == -1) {
@@ -694,7 +694,7 @@ class _enumerator : PTNode {
     }
 }
 
-class Enumerator : ASTNode {
+public class Enumerator : ASTNode {
     public Enumerator(String _name, Expression _init) {
         name = _name;
         init = _init;
@@ -705,7 +705,7 @@ class Enumerator : ASTNode {
 
 
 // enumeration_constant : identifier
-class _enumeration_constant : PTNode {
+public class _enumeration_constant : PTNode {
     public static int Parse(List<Token> src, int begin, out Enumerator enumerator) {
         if (src[begin].type == TokenType.IDENTIFIER) {
             enumerator = new Enumerator(((TokenIdentifier)src[begin]).val, null);
@@ -720,7 +720,7 @@ class _enumeration_constant : PTNode {
 // struct_or_union_specifier : struct_or_union <identifier>? { struct_declaration_list }
 //                           | struct_or_union identifier
 // [ note: need some treatment ]
-class _struct_or_union_specifier : PTNode {
+public class _struct_or_union_specifier : PTNode {
     public static int ParseDeclarationList(List<Token> src, int begin, out List<StructDecleration> decl_list) {
         decl_list = null;
 
@@ -788,19 +788,19 @@ class _struct_or_union_specifier : PTNode {
     }
 }
 
-class StructOrUnionSpecifier : ASTNode {
+public class StructOrUnionSpecifier : ASTNode {
     public String name;
     public List<StructDecleration> decl_list;
 }
 
-class StructSpecifier : StructOrUnionSpecifier {
+public class StructSpecifier : StructOrUnionSpecifier {
     public StructSpecifier(String _name, List<StructDecleration> _decl_list) {
         name = _name;
         decl_list = _decl_list;
     }
 }
 
-class UnionSpecifier : StructOrUnionSpecifier {
+public class UnionSpecifier : StructOrUnionSpecifier {
     public UnionSpecifier(String _name, List<StructDecleration> _decl_list) {
         name = _name;
         decl_list = _decl_list;
@@ -809,7 +809,7 @@ class UnionSpecifier : StructOrUnionSpecifier {
 
 
 // struct_or_union : struct | union
-class _struct_or_union : PTNode {
+public class _struct_or_union : PTNode {
     public static int Parse(List<Token> src, int begin, out StructOrUnion struct_or_union) {
         struct_or_union = null;
         if (src[begin].type != TokenType.KEYWORD) {
@@ -828,7 +828,7 @@ class _struct_or_union : PTNode {
     }
 }
 
-class StructOrUnion : ASTNode {
+public class StructOrUnion : ASTNode {
     public StructOrUnion(bool _is_union) {
         is_union = _is_union;
     }
@@ -840,7 +840,7 @@ class StructOrUnion : ASTNode {
 //                         | struct_declaration_list struct_declaration
 // [ note: my solution ]
 // struct_declaration_list : <struct_declaration>+
-class _struct_declaration_list : PTNode {
+public class _struct_declaration_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<StructDecleration> decl_list) {
         decl_list = new List<StructDecleration>();
 
@@ -865,7 +865,7 @@ class _struct_declaration_list : PTNode {
 
 
 // struct_declaration : specifier_qualifier_list struct_declarator_list ;
-class _struct_declaration : PTNode {
+public class _struct_declaration : PTNode {
     public static int Parse(List<Token> src, int begin, out StructDecleration decl) {
         decl = null;
 
@@ -889,7 +889,7 @@ class _struct_declaration : PTNode {
     }
 }
 
-class StructDecleration : ASTNode {
+public class StructDecleration : ASTNode {
     public StructDecleration(DeclarationSpecifiers _specs, List<Declarator> _decl_list) {
         specs = _specs;
         decl_list = _decl_list;
@@ -902,7 +902,7 @@ class StructDecleration : ASTNode {
 //                          | type_qualifier <specifier_qualifier_list>?
 // [ note: my solution ]
 // specifier_qualifier_list : < type_specifier | type_qualifier >+
-class _specifier_qualifier_list : PTNode {
+public class _specifier_qualifier_list : PTNode {
     public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers node) {
         node = null;
         DeclarationSpecifiers.Type type;
@@ -946,7 +946,7 @@ class _specifier_qualifier_list : PTNode {
 //                        | struct_declarator_list , struct_declarator
 // [ note: my solution ]
 // struct_declarator_list : struct_declarator < , struct_declarator >*
-class _struct_declarator_list : PTNode {
+public class _struct_declarator_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Declarator> decl_list) {
         Declarator decl;
         decl_list = new List<Declarator>();
@@ -978,7 +978,7 @@ class _struct_declarator_list : PTNode {
 //                   | type_specifier <declarator>? : constant_expression
 // [ note: the second is for bit-field ]
 // [ note: i'm not supporting bit-field ]
-class _struct_declarator : PTNode {
+public class _struct_declarator : PTNode {
     public static int Parse(List<Token> src, int begin, out Declarator decl) {
         return _declarator.Parse(src, begin, out decl);
     }
@@ -986,7 +986,7 @@ class _struct_declarator : PTNode {
 
 // parameter_declaration : declaration_specifiers declarator
 //                       | declaration_specifiers <abstract_declarator>?
-class _parameter_declaration : PTNode {
+public class _parameter_declaration : PTNode {
     public static int Parse(List<Token> src, int begin, out ParameterDeclaration decl) {
         decl = null;
         DeclarationSpecifiers specs;
@@ -1017,7 +1017,7 @@ class _parameter_declaration : PTNode {
     }
 }
 
-class ParameterDeclaration : ASTNode {
+public class ParameterDeclaration : ASTNode {
     public ParameterDeclaration(DeclarationSpecifiers _specs) {
         specs = _specs;
         decl = null;
@@ -1049,7 +1049,7 @@ class ParameterDeclaration : ASTNode {
 //                     | <pointer>? direct_abstract_declarator
 // [ note: this is for anonymous declarator ]
 // [ note: there couldn't be any typename in an abstract_declarator ]
-class _abstract_declarator : PTNode {
+public class _abstract_declarator : PTNode {
     public static int Parse(List<Token> src, int begin, out AbstractDeclarator decl) {
         List<PointerInfo> infos;
         int current = _pointer.Parse(src, begin, out infos);
@@ -1071,7 +1071,7 @@ class _abstract_declarator : PTNode {
     }
 }
 
-class AbstractDeclarator : ASTNode {
+public class AbstractDeclarator : ASTNode {
     public AbstractDeclarator() {
         type_infos = new List<TypeInfo>();
     }
@@ -1086,7 +1086,7 @@ class AbstractDeclarator : ASTNode {
 //                            | < < [ <constant_expression>? ] > | < ( <parameter_type_list>? ) > >+
 // [ note: parameter_type_list and abstract_declarator are distinguishable ]
 // [ note: first let me ignore parameter_type_list and constant_expression ]
-class _direct_abstract_declarator : PTNode {
+public class _direct_abstract_declarator : PTNode {
     private static int ParseInfo(List<Token> src, int begin, out TypeInfo info) {
         info = null;
         int current;
@@ -1164,7 +1164,7 @@ class _direct_abstract_declarator : PTNode {
 // initializer : assignment_expression
 //             | { initializer_list }
 //             | { initializer_list , }
-class _initializer : PTNode {
+public class _initializer : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         if (!Parser.IsLCURL(src[begin])) {
             return _assignment_expression.Parse(src, begin, out node);
@@ -1201,7 +1201,7 @@ class _initializer : PTNode {
 // [ note: my solution ]
 // initializer_list : initializer < , initializer >*
 // [ leave single ',' alone ]
-class _initializer_list : PTNode {
+public class _initializer_list : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         node = null;
         Expression expr;
@@ -1231,7 +1231,7 @@ class _initializer_list : PTNode {
     }
 }
 
-class InitializerList : Expression {
+public class InitializerList : Expression {
     public InitializerList(List<Expression> _exprs) {
         exprs = _exprs;
     }
@@ -1240,7 +1240,7 @@ class InitializerList : Expression {
 
 
 // type_name : specifier_qualifier_list <abstract_declarator>?
-class _type_name : PTNode {
+public class _type_name : PTNode {
     public static int Parse(List<Token> src, int begin, out TypeName type_name) {
         type_name = null;
         DeclarationSpecifiers specs;
@@ -1261,7 +1261,7 @@ class _type_name : PTNode {
     }
 }
 
-class TypeName : ASTNode {
+public class TypeName : ASTNode {
     public TypeName(DeclarationSpecifiers _specs, AbstractDeclarator _decl) {
         specs = _specs;
         decl = _decl;
@@ -1273,7 +1273,7 @@ class TypeName : ASTNode {
 
 // typedef_name : identifier
 // [ note: must be something already defined, so this needs environment ]
-class _typedef_name : PTNode {
+public class _typedef_name : PTNode {
     public static int Parse(List<Token> src, int begin, out String name) {
         name = null;
         if (src[begin].type != TokenType.IDENTIFIER) {

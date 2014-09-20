@@ -43,7 +43,7 @@ public class TokenInt : Token {
     public IntType int_type;
 }
 
-class FSAInt : FSA {
+public class FSAInt : FSA {
     Int64 val;
     string raw;
     IntType int_type;

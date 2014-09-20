@@ -13,5 +13,10 @@ public class ParserTest {
     public void test_postfix_expression() {
         Assert.IsTrue(_postfix_expression.Test());
     }
+
+    [TestMethod]
+    public void test_unary_expression() {
+        Assert.IsTrue(_unary_expression.Test());
+    }
 }
 

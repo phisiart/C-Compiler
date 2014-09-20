@@ -18,7 +18,7 @@ public class TokenIdentifier : Token {
     }
 }
 
-class FSAIdentifier : FSA {
+public class FSAIdentifier : FSA {
     public enum IdState {
         START,
         END,

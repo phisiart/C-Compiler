@@ -37,7 +37,7 @@ public class TokenFloat : Token {
     }
 }
 
-class FSAFloat : FSA {
+public class FSAFloat : FSA {
     string raw;
     Int64 int_part;
     Int64 frac_part;

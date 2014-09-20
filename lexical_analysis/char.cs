@@ -18,7 +18,7 @@ public class TokenChar : Token {
     }
 }
 
-class FSAChar : FSA {
+public class FSAChar : FSA {
     public enum CharState {
         START,
         END,
@@ -211,7 +211,7 @@ class FSAChar : FSA {
 
 }
 
-class FSACharConst : FSA {
+public class FSACharConst : FSA {
     public enum CharConstState {
         START,
         END,

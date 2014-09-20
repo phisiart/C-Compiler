@@ -18,7 +18,7 @@ public class TokenString : Token {
     }
 }
 
-class FSAString : FSA {
+public class FSAString : FSA {
     public enum StringState {
         START,
         END,

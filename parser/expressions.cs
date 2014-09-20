@@ -402,7 +402,7 @@ public class _assignment_expression : PTNode {
     }
 }
 
-class Assignment : Expression {
+public class Assignment : Expression {
     public Assignment(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -411,7 +411,7 @@ class Assignment : Expression {
     public Expression rvalue;
 }
 
-class MultAssign : Expression {
+public class MultAssign : Expression {
     public MultAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -420,7 +420,7 @@ class MultAssign : Expression {
     public Expression rvalue;
 }
 
-class DivAssign : Expression {
+public class DivAssign : Expression {
     public DivAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -429,7 +429,7 @@ class DivAssign : Expression {
     public Expression rvalue;
 }
 
-class ModAssign : Expression {
+public class ModAssign : Expression {
     public ModAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -438,7 +438,7 @@ class ModAssign : Expression {
     public Expression rvalue;
 }
 
-class AddAssign : Expression {
+public class AddAssign : Expression {
     public AddAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -447,7 +447,7 @@ class AddAssign : Expression {
     public Expression rvalue;
 }
 
-class SubAssign : Expression {
+public class SubAssign : Expression {
     public SubAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -456,7 +456,7 @@ class SubAssign : Expression {
     public Expression rvalue;
 }
 
-class LeftShiftAssign : Expression {
+public class LeftShiftAssign : Expression {
     public LeftShiftAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -465,7 +465,7 @@ class LeftShiftAssign : Expression {
     public Expression rvalue;
 }
 
-class RightShiftAssign : Expression {
+public class RightShiftAssign : Expression {
     public RightShiftAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -474,7 +474,7 @@ class RightShiftAssign : Expression {
     public Expression rvalue;
 }
 
-class BitwiseAndAssign : Expression {
+public class BitwiseAndAssign : Expression {
     public BitwiseAndAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -483,7 +483,7 @@ class BitwiseAndAssign : Expression {
     public Expression rvalue;
 }
 
-class XorAssign : Expression {
+public class XorAssign : Expression {
     public XorAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -492,7 +492,7 @@ class XorAssign : Expression {
     public Expression rvalue;
 }
 
-class BitwiseOrAssign : Expression {
+public class BitwiseOrAssign : Expression {
     public BitwiseOrAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
         rvalue = _rvalue;
@@ -699,7 +699,7 @@ public class _postfix_expression : PTNode {
     }
 }
 
-class ArrayElement : Expression {
+public class ArrayElement : Expression {
     public ArrayElement(Expression _var, Expression _idx) {
         var = _var;
         idx = _idx;
@@ -708,7 +708,7 @@ class ArrayElement : Expression {
     public Expression idx;
 }
 
-class FunctionCall : Expression {
+public class FunctionCall : Expression {
     public FunctionCall(Expression _func, List<Expression> _args) {
         func = _func;
         args = _args;
@@ -717,7 +717,7 @@ class FunctionCall : Expression {
     public List<Expression> args;
 }
 
-class Attribute : Expression {
+public class Attribute : Expression {
     public Attribute(Expression _expr, Variable _attrib) {
         expr = _expr;
         attrib = _attrib;
@@ -726,7 +726,7 @@ class Attribute : Expression {
     public Variable attrib;
 }
 
-class PointerAttribute : Expression {
+public class PointerAttribute : Expression {
     public PointerAttribute(Expression _expr, Variable _attrib) {
         expr = _expr;
         attrib = _attrib;
@@ -735,14 +735,14 @@ class PointerAttribute : Expression {
     public Variable attrib;
 }
 
-class Increment : Expression {
+public class Increment : Expression {
     public Increment(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Decrement : Expression {
+public class Decrement : Expression {
     public Decrement(Expression _expr) {
         expr = _expr;
     }
@@ -751,7 +751,7 @@ class Decrement : Expression {
 
 
 // argument_expression_list: assignment_expression < , assignment_expression >*
-class _argument_expression_list : PTNode {
+public class _argument_expression_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Expression> node) {
         node = null;
         Expression expr;
@@ -781,7 +781,7 @@ class _argument_expression_list : PTNode {
     }
 }
 
-class ArgumentList : Expression {
+public class ArgumentList : Expression {
     public ArgumentList(List<Expression> _exprs) {
         exprs = _exprs;
     }
@@ -791,8 +791,8 @@ class ArgumentList : Expression {
 
 
 // unary_expression: postfix_expression                     /* Expression */
-//                 | ++ unary_expression                    /* PrefixIncrement */
-//                 | -- unary_expression                    /* PrefixDecrement */
+//                 | '++' unary_expression                  /* PrefixIncrement */
+//                 | '--' unary_expression                  /* PrefixDecrement */
 //                 | unary_operator cast_expression         /* Reference
 //                                                             Dereference
 //                                                             Positive
@@ -800,7 +800,7 @@ class ArgumentList : Expression {
 //                                                             BitwiseNot
 //                                                             Not */
 //                 | sizeof unary_expression                /* SizeofExpression */
-//                 | sizeof ( type_name )                   /* SizeofType */
+//                 | sizeof '(' type_name ')'               /* SizeofType */
 //
 // RETURN: Expression
 //
@@ -816,43 +816,153 @@ class ArgumentList : Expression {
 //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
 //           = { id const string ( ++ -- & * + - ~ ! sizeof }
 //
-class _unary_expression : PTNode {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        node = null;
+public class _unary_expression : PTNode {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("sizeof a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+        
+        src = Parser.GetTokensFromString("sizeof(int)");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("++a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("--a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("&a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("*a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("+a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("-a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("~a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("!a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("!!~++ --a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+        return true;
+    }
+    
+    // match '(' type_name ')'
+    public static int ParseTypeName(List<Token> src, int begin, out TypeName type_name) {
+        // step 1. match '('
+        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
+            type_name = null;
+            return -1;
+        }
+        begin++;
+
+        // step 2. match type_name
+        begin = _type_name.Parse(src, begin, out type_name);
+        if (begin == -1) {
+            type_name = null;
+            return -1;
+        }
+
+        // step 3. match ')'
+        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
+            type_name = null;
+            return -1;
+        }
+        begin++;
+
+        // successful match
+        return begin;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Expression expr) {
+        //expr = null;
 
         int current;
         int saved;
+        
 
-        if (Parser.IsSizeof(src[begin])) {
+        if (Parser.IsKeyword(src[begin], KeywordVal.SIZEOF)) {
+            // 1. sizeof
             current = begin + 1;
-            if (Parser.IsLPAREN(src[current])) {
-                current++;
-                TypeName type_name;
-                saved = current;
-                current = _type_name.Parse(src, current, out type_name);
-                if (current != -1) {
-                    if (Parser.IsRPAREN(src[current])) {
-                        current++;
-                        node = new SizeofType(type_name);
-                        return current;
-                    }
-                }
+            
+            // 1.1. try to match type_name
+            saved = current;
+            TypeName type_name;
+            current = ParseTypeName(src, current, out type_name);
+            if (current != -1) {
+                // 1.1. -- successful match
+                expr = new SizeofType(type_name);
+                return current;
             }
 
-            current = begin + 1;
-            current = _unary_expression.Parse(src, current, out node);
+            // 1.2. type_name match failed, try unary_expression
+            current = saved;
+            current = _unary_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new SizeofExpression(node);
-            return current;
-        }
 
-        current = _postfix_expression.Parse(src, begin, out node);
+            // 1.2. -- successful match
+            expr = new SizeofExpression(expr);
+            return current;
+
+        } // sizeof
+
+        // 2. postfix_expression
+        current = _postfix_expression.Parse(src, begin, out expr);
         if (current != -1) {
+            // successful match
             return current;
         }
 
+        // now only operators are left
         if (src[begin].type != TokenType.OPERATOR) {
             return -1;
         }
@@ -861,148 +971,183 @@ class _unary_expression : PTNode {
         OperatorVal val = ((TokenOperator)src[begin]).val;
         switch (val) {
         case OperatorVal.INC:
+            // '++'
             current++;
-            current = _unary_expression.Parse(src, current, out node);
+
+            current = _unary_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new PrefixIncrement(node);
+
+            expr = new PrefixIncrement(expr);
             return current;
 
         case OperatorVal.DEC:
+            // '--'
             current++;
-            current = _unary_expression.Parse(src, current, out node);
+
+            current = _unary_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new PrefixDecrement(node);
+
+            expr = new PrefixDecrement(expr);
             return current;
 
         case OperatorVal.BITAND:
+            // '&' (reference)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new Reference(node);
+            
+            expr = new Reference(expr);
             return current;
 
         case OperatorVal.MULT:
+            // '*' (dereference)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new Dereference(node);
+
+            expr = new Dereference(expr);
             return current;
 
         case OperatorVal.ADD:
+            // '+' (positive)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new Positive(node);
+
+            expr = new Positive(expr);
             return current;
 
         case OperatorVal.SUB:
+            // '-' (negative)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new Negative(node);
+
+            expr = new Negative(expr);
             return current;
 
         case OperatorVal.TILDE:
+            // '~' (bitwise not)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new BitwiseNot(node);
+
+            expr = new BitwiseNot(expr);
             return current;
 
         case OperatorVal.NOT:
+            // '!' (logical not)
             current++;
-            current = _cast_expression.Parse(src, current, out node);
+
+            current = _cast_expression.Parse(src, current, out expr);
             if (current == -1) {
+                expr = null;
                 return -1;
             }
-            node = new Not(node);
+
+            expr = new Not(expr);
             return current;
 
         default:
+
+            // no match
             return -1;
-        }
+
+        } // case (val)
 
     }
 }
 
-class SizeofType : Expression {
+public class SizeofType : Expression {
     public SizeofType(TypeName _type_name) {
         type_name = _type_name;
     }
     public TypeName type_name;
 }
 
-class SizeofExpression : Expression {
+public class SizeofExpression : Expression {
     public SizeofExpression(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class PrefixIncrement : Expression {
+public class PrefixIncrement : Expression {
     public PrefixIncrement(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class PrefixDecrement : Expression {
+public class PrefixDecrement : Expression {
     public PrefixDecrement(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Reference : Expression {
+public class Reference : Expression {
     public Reference(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Dereference : Expression {
+public class Dereference : Expression {
     public Dereference(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Positive : Expression {
+public class Positive : Expression {
     public Positive(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Negative : Expression {
+public class Negative : Expression {
     public Negative(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class BitwiseNot : Expression {
+public class BitwiseNot : Expression {
     public BitwiseNot(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
 }
 
-class Not : Expression {
+public class Not : Expression {
     public Not(Expression _expr) {
         expr = _expr;
     }
@@ -1014,7 +1159,7 @@ class Not : Expression {
 //                | ( type_name ) cast_expression
 // [ note: my solution ]
 // cast_expression: < ( type_name ) >* unary_expression
-class _cast_expression : Expression {
+public class _cast_expression : Expression {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         node = null;
         int current = begin;
@@ -1040,7 +1185,7 @@ class _cast_expression : Expression {
     }
 }
 
-class TypeCast : Expression {
+public class TypeCast : Expression {
     public TypeCast(TypeName _type_name, Expression _expr) {
         type_name = _type_name;
         expr = _expr;
@@ -1055,7 +1200,7 @@ class TypeCast : Expression {
 //                          | multiplicative_expression % cast_expression
 // [ note: my solution ]
 // multiplicative_Expression: cast_expression < < * | / | % > cast_expression >*
-class _multiplicative_expression : PTNode {
+public class _multiplicative_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _cast_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1101,7 +1246,7 @@ class _multiplicative_expression : PTNode {
     }
 }
 
-class Multiplication : Expression {
+public class Multiplication : Expression {
     public Multiplication(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1110,7 +1255,7 @@ class Multiplication : Expression {
     public Expression rhs;
 }
 
-class Division : Expression {
+public class Division : Expression {
     public Division(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1119,7 +1264,7 @@ class Division : Expression {
     public Expression rhs;
 }
 
-class Modulo : Expression {
+public class Modulo : Expression {
     public Modulo(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1134,7 +1279,7 @@ class Modulo : Expression {
 //                    | additive_expression - multiplicative_expression
 // [ note: my solution ]
 // additive_expression: multiplicative_expression < < + | - > multiplicative_expression >*
-class _additive_expression : PTNode {
+public class _additive_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _multiplicative_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1171,7 +1316,7 @@ class _additive_expression : PTNode {
     }
 }
 
-class Addition : Expression {
+public class Addition : Expression {
     public Addition(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1180,7 +1325,7 @@ class Addition : Expression {
     public Expression rhs;
 }
 
-class Subtraction : Expression {
+public class Subtraction : Expression {
     public Subtraction(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1195,7 +1340,7 @@ class Subtraction : Expression {
 //                 | shift_expression >> additive_expression
 // [ note: my solution ]
 // shift_expression: additive_expression < < << | >> > additive_expression >*
-class _shift_expression : PTNode {
+public class _shift_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _additive_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1232,7 +1377,7 @@ class _shift_expression : PTNode {
     }
 }
 
-class LeftShift : Expression {
+public class LeftShift : Expression {
     public LeftShift(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1241,7 +1386,7 @@ class LeftShift : Expression {
     public Expression rhs;
 }
 
-class RightShift : Expression {
+public class RightShift : Expression {
     public RightShift(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1258,7 +1403,7 @@ class RightShift : Expression {
 //                      | relational_expression >= shift_expression
 // [ note: my solution ]
 // relational_expression: shift_expression < < < | > | <= | >= > > shift_expression >*
-class _relational_expression : PTNode {
+public class _relational_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _shift_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1312,7 +1457,7 @@ class _relational_expression : PTNode {
     }
 }
 
-class LessThan : Expression {
+public class LessThan : Expression {
     public LessThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1321,7 +1466,7 @@ class LessThan : Expression {
     public Expression rhs;
 }
 
-class LessEqualThan : Expression {
+public class LessEqualThan : Expression {
     public LessEqualThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1330,7 +1475,7 @@ class LessEqualThan : Expression {
     public Expression rhs;
 }
 
-class GreaterThan : Expression {
+public class GreaterThan : Expression {
     public GreaterThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1339,7 +1484,7 @@ class GreaterThan : Expression {
     public Expression rhs;
 }
 
-class GreaterEqualThan : Expression {
+public class GreaterEqualThan : Expression {
     public GreaterEqualThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1354,7 +1499,7 @@ class GreaterEqualThan : Expression {
 //                    | equality_expression != relational_expression
 // [ note: my solution ]
 // equality_expression: relational_expression < < == | != > relational_expression >*
-class _equality_expression : PTNode {
+public class _equality_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _relational_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1392,7 +1537,7 @@ class _equality_expression : PTNode {
     }
 }
 
-class Equal : Expression {
+public class Equal : Expression {
     public Equal(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1401,7 +1546,7 @@ class Equal : Expression {
     public Expression rhs;
 }
 
-class NotEqual : Expression {
+public class NotEqual : Expression {
     public NotEqual(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1414,7 +1559,7 @@ class NotEqual : Expression {
 //               | and_expression & equality_expression
 // [ note: my solution ]
 // and_expression: equality_expression < & equality_expression >*
-class _and_expression : PTNode {
+public class _and_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _equality_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1443,7 +1588,7 @@ class _and_expression : PTNode {
     }
 }
 
-class BitwiseAnd : Expression {
+public class BitwiseAnd : Expression {
     public BitwiseAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1457,7 +1602,7 @@ class BitwiseAnd : Expression {
 //                         | exclusive_or_expression ^ and_expression
 // [ note: my solution ]
 // exclusive_or_expression: and_expression < ^ and_expression >*
-class _exclusive_or_expression : PTNode {
+public class _exclusive_or_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _and_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1486,7 +1631,7 @@ class _exclusive_or_expression : PTNode {
     }
 }
 
-class Xor : Expression {
+public class Xor : Expression {
     public Xor(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1500,7 +1645,7 @@ class Xor : Expression {
 //                        | inclusive_or_expression | exclulsive_or_expression
 // [ note: my solution ]
 // inclusive_or_expression: exclulsive_or_expression < | exclulsive_or_expression >*
-class _inclusive_or_expression : PTNode {
+public class _inclusive_or_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _exclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1529,7 +1674,7 @@ class _inclusive_or_expression : PTNode {
     }
 }
 
-class BitwiseOr : Expression {
+public class BitwiseOr : Expression {
     public BitwiseOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1543,7 +1688,7 @@ class BitwiseOr : Expression {
 //                       | logical_and_expression && inclusive_or_expression
 // [ note: my solution ]
 // logical_and_expression: inclusive_or_expression < && inclusive_or_expression >*
-class _logical_and_expression : PTNode {
+public class _logical_and_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _inclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1572,7 +1717,7 @@ class _logical_and_expression : PTNode {
     }
 }
 
-class LogicalAnd : Expression {
+public class LogicalAnd : Expression {
     public LogicalAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
@@ -1587,7 +1732,7 @@ class LogicalAnd : Expression {
 // [ note: my solution ]
 // logical_or_expression: logical_and_expression < || logical_and_expression >*
 
-class _logical_or_expression : PTNode {
+public class _logical_or_expression : PTNode {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _logical_and_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1616,7 +1761,7 @@ class _logical_or_expression : PTNode {
     }
 }
 
-class LogicalOr : Expression {
+public class LogicalOr : Expression {
     public LogicalOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;

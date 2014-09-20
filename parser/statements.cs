@@ -11,7 +11,7 @@ using System.IO;
 //          | selection_statement
 //          | iteration_statement
 //          | jump_statement
-class _statement : PTNode {
+public class _statement : PTNode {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         int current = _labeled_statement.Parse(src, begin, out stmt);
@@ -48,7 +48,7 @@ class _statement : PTNode {
     }
 }
 
-class Statement : ASTNode {
+public class Statement : ASTNode {
 }
 
 
@@ -56,7 +56,7 @@ class Statement : ASTNode {
 //               | continue ;
 //               | break ;
 //               | return <expression>? ;
-class _jump_statement : PTNode {
+public class _jump_statement : PTNode {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
 
@@ -106,20 +106,20 @@ class _jump_statement : PTNode {
     }
 }
 
-class GotoStatement : Statement {
+public class GotoStatement : Statement {
     public GotoStatement(String _label) {
         label = _label;
     }
     public String label;
 }
 
-class ContinueStatement : Statement {
+public class ContinueStatement : Statement {
 }
 
-class BreakStatement : Statement {
+public class BreakStatement : Statement {
 }
 
-class ReturnStatement : Statement {
+public class ReturnStatement : Statement {
     public ReturnStatement(Expression _expr) {
         expr = _expr;
     }
@@ -128,7 +128,7 @@ class ReturnStatement : Statement {
 
 
 // compound_statement : { <declaration_list>? <statement_list>? }
-class _compound_statement : PTNode {
+public class _compound_statement : PTNode {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         if (!Parser.IsLCURL(src[begin])) {
@@ -162,7 +162,7 @@ class _compound_statement : PTNode {
     }
 }
 
-class CompoundStatement : Statement {
+public class CompoundStatement : Statement {
     public CompoundStatement(List<Declaration> _decl_list, List<Statement> _stmt_list) {
         decl_list = _decl_list;
         stmt_list = _stmt_list;
@@ -176,7 +176,7 @@ class CompoundStatement : Statement {
 //                 | declaration_list declaration
 // [ note: my solution ]
 // declaration_list: <declaration>+
-class _declaration_list : PTNode {
+public class _declaration_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Declaration> decl_list) {
         decl_list = new List<Declaration>();
         Declaration decl;
@@ -202,7 +202,7 @@ class _declaration_list : PTNode {
 //               | statement_list statement
 // [ note: my solution ]
 // statement_list: <statement>+
-class _statement_list : PTNode {
+public class _statement_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Statement> stmt_list) {
         stmt_list = new List<Statement>();
         Statement stmt;
@@ -225,7 +225,7 @@ class _statement_list : PTNode {
 
 
 // expression_statement: <expression>? ;
-class _expression_statement : PTNode {
+public class _expression_statement : PTNode {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         Expression expr;
@@ -245,7 +245,7 @@ class _expression_statement : PTNode {
     }
 }
 
-class ExpressionStatement : Statement {
+public class ExpressionStatement : Statement {
     public ExpressionStatement(Expression _expr) {
         expr = _expr;
     }
@@ -256,7 +256,7 @@ class ExpressionStatement : Statement {
 // iteration_statement: while ( expression ) statement
 //                    | do statement while ( expression ) ;
 //                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
-class _iteration_statement : PTNode {
+public class _iteration_statement : PTNode {
     private static int ParseExpression(List<Token> src, int begin, out Expression expr) {
         expr = null;
         if (!Parser.IsLPAREN(src[begin])) {
@@ -385,7 +385,7 @@ class _iteration_statement : PTNode {
     }
 }
 
-class WhileStatement : Statement {
+public class WhileStatement : Statement {
     public WhileStatement(Expression _cond, Statement _body) {
         cond = _cond;
         body = _body;
@@ -394,7 +394,7 @@ class WhileStatement : Statement {
     public Statement body;
 }
 
-class DoWhileStatement : Statement {
+public class DoWhileStatement : Statement {
     public DoWhileStatement(Statement _body, Expression _cond) {
         body = _body;
         cond = _cond;
@@ -403,7 +403,7 @@ class DoWhileStatement : Statement {
     public Expression cond;
 }
 
-class ForStatement : Statement {
+public class ForStatement : Statement {
     public ForStatement(Expression _init, Expression _cond, Expression _loop, Statement _body) {
         init = _init;
         cond = _cond;
@@ -420,7 +420,7 @@ class ForStatement : Statement {
 // selection_statement: if ( expression ) statement
 //                    | if ( expression ) statement else statement
 //                    | switch ( expression ) statement
-class _selection_statement : PTNode {
+public class _selection_statement : PTNode {
     private static int ParseExpression(List<Token> src, int begin, out Expression expr) {
         expr = null;
         if (!Parser.IsLPAREN(src[begin])) {
@@ -490,7 +490,7 @@ class _selection_statement : PTNode {
     }
 }
 
-class SwitchStatement : Statement {
+public class SwitchStatement : Statement {
     public SwitchStatement(Expression _expr, Statement _stmt) {
         expr = _expr;
         stmt = _stmt;
@@ -499,7 +499,7 @@ class SwitchStatement : Statement {
     public Statement stmt;
 }
 
-class IfStatement : Statement {
+public class IfStatement : Statement {
     public IfStatement(Expression _cond, Statement _stmt) {
         cond = _cond;
         stmt = _stmt;
@@ -508,7 +508,7 @@ class IfStatement : Statement {
     public Statement stmt;
 }
 
-class IfElseStatement : Statement {
+public class IfElseStatement : Statement {
     public IfElseStatement(Expression _cond, Statement _true_stmt, Statement _false_stmt) {
         cond = _cond;
         true_stmt = _true_stmt;
@@ -523,7 +523,7 @@ class IfElseStatement : Statement {
 // labeled_statement : identifier : statement
 //                   | case constant_expression : statement
 //                   | default : statement
-class _labeled_statement : PTNode {
+public class _labeled_statement : PTNode {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
 
@@ -598,7 +598,7 @@ class _labeled_statement : PTNode {
     }
 }
 
-class LabeledStatement : Statement {
+public class LabeledStatement : Statement {
     public LabeledStatement(String _label, Statement _stmt) {
         label = _label;
         stmt = _stmt;
@@ -607,7 +607,7 @@ class LabeledStatement : Statement {
     public Statement stmt;
 }
 
-class CaseStatement : Statement {
+public class CaseStatement : Statement {
     public CaseStatement(Expression _expr, Statement _stmt) {
         expr = _expr;
         stmt = _stmt;

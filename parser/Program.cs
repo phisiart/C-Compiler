@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-class Parser {
+public class Parser {
     public static bool IsSizeof(Token token) {
         if (token.type == TokenType.KEYWORD) {
             if (((TokenKeyword)token).val == KeywordVal.SIZEOF) {
@@ -170,11 +170,11 @@ class Parser {
 
 }
 
-class ParserEnvironment {
+public class ParserEnvironment {
     public static bool debug = false;
 }
 
-class Scope {
+public class Scope {
     public Scope() {
         vars = new List<String>();
         typedef_names = new List<string>();
@@ -200,7 +200,7 @@ class Scope {
     public List<String> vars;
 }
 
-class ScopeSandbox {
+public class ScopeSandbox {
     public ScopeSandbox() {
         scopes = new Stack<Scope>();
         scopes.Push(new Scope());
@@ -283,12 +283,12 @@ static class ScopeEnvironment {
 
 }
 
-interface PTNode {
+public interface PTNode {
 }
-interface ASTNode {
+public interface ASTNode {
 }
 
-class Program {
+public class Program {
     public static void Main(string[] args) {
         Console.WriteLine("hello");
     }

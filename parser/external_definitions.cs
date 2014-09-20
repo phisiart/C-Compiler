@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // translation_unit : [external_declaration]+
-class _translation_unit : PTNode {
+public class _translation_unit : PTNode {
     public static int Parse(List<Token> src, int begin, out List<ASTNode> unit) {
         unit = null;
 
@@ -32,7 +32,7 @@ class _translation_unit : PTNode {
 
 
 // external_declaration: function_definition | declaration
-class _external_declaration : PTNode {
+public class _external_declaration : PTNode {
     public static int Parse(List<Token> src, int begin, out ASTNode node) {
         node = null;
 
@@ -59,7 +59,7 @@ class _external_declaration : PTNode {
 // [ note: declaration_list is for old-style prototype, i'm not supporting this ]
 // [ note: my solution ]
 // function_definition : <declaration_specifiers>? declarator compound_statement
-class _function_definition : PTNode {
+public class _function_definition : PTNode {
     public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
         def = null;
 
@@ -87,7 +87,7 @@ class _function_definition : PTNode {
     }
 }
 
-class FunctionDefinition : ASTNode {
+public class FunctionDefinition : ASTNode {
     public FunctionDefinition(DeclarationSpecifiers _specs, Declarator _decl, Statement _stmt) {
         specs = _specs;
         decl = _decl;

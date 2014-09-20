@@ -114,7 +114,7 @@ public class TokenOperator : Token {
     }
 }
 
-class FSAOperator : FSA {
+public class FSAOperator : FSA {
     public enum OpState {
         START,
         END,

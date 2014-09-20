@@ -23,7 +23,7 @@ public class Token {
     public TokenType type;
 }
 
-enum FSAStatus {
+public enum FSAStatus {
     NONE,
     END,
     RUN,
@@ -38,7 +38,7 @@ interface FSA {
     Token RetrieveToken();
 }
 
-class FSASpace : FSA {
+public class FSASpace : FSA {
     public enum SpaceState {
         START,
         END,
@@ -108,7 +108,7 @@ class FSASpace : FSA {
     }
 }
 
-class FSANewLine : FSA {
+public class FSANewLine : FSA {
     public enum NewLineState {
         START,
         END,
