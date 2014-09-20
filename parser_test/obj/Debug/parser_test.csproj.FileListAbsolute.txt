@@ -1,0 +1,9 @@
+D:\GitHub\CCompiler\parser_test\obj\Debug\parser_test.csprojResolveAssemblyReference.cache
+D:\GitHub\CCompiler\parser_test\bin\Debug\parser_test.dll
+D:\GitHub\CCompiler\parser_test\bin\Debug\parser_test.pdb
+D:\GitHub\CCompiler\parser_test\bin\Debug\lexical_analysis.exe
+D:\GitHub\CCompiler\parser_test\bin\Debug\parser.exe
+D:\GitHub\CCompiler\parser_test\bin\Debug\lexical_analysis.pdb
+D:\GitHub\CCompiler\parser_test\bin\Debug\parser.pdb
+D:\GitHub\CCompiler\parser_test\obj\Debug\parser_test.dll
+D:\GitHub\CCompiler\parser_test\obj\Debug\parser_test.pdb

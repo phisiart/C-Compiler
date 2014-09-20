@@ -1,0 +1,7 @@
+D:\GitHub\CCompiler\lex_test\bin\Debug\lex_test.dll
+D:\GitHub\CCompiler\lex_test\bin\Debug\lex_test.pdb
+D:\GitHub\CCompiler\lex_test\obj\Debug\lex_test.csprojResolveAssemblyReference.cache
+D:\GitHub\CCompiler\lex_test\obj\Debug\lex_test.dll
+D:\GitHub\CCompiler\lex_test\obj\Debug\lex_test.pdb
+D:\GitHub\CCompiler\lex_test\bin\Debug\lexical_analysis.exe
+D:\GitHub\CCompiler\lex_test\bin\Debug\lexical_analysis.pdb
