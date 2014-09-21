@@ -55,30 +55,66 @@ public class _external_declaration : PTNode {
 }
 
 
-// function_definition : <declaration_specifiers>? declarator <declaration_list>? compound_statement
-// [ note: declaration_list is for old-style prototype, i'm not supporting this ]
-// [ note: my solution ]
-// function_definition : <declaration_specifiers>? declarator compound_statement
+// function_definition : [declaration_specifiers]? declarator [declaration_list]? compound_statement
+//
+// NOTE: the optional declaration_list is for the **old-style** function prototype like this:
+// +-------------------------------+
+// |    int foo(param1, param2)    |
+// |    int param1;                |
+// |    char param2;               |
+// |    {                          |
+// |        ....                   |
+// |    }                          |
+// +-------------------------------+
+//
+// i'm **not** going to support this style. function prototypes should always be like this:
+// +------------------------------------------+
+// |    int foo(int param1, char param2) {    |
+// |        ....                              |
+// |    }                                     |
+// +------------------------------------------+
+//
+// so the grammar becomes:
+// function_definition : [declaration_specifiers]? declarator compound_statement
+//
+// RETURN: FunctionDefinition
+//
+// FAIL: null
+//
 public class _function_definition : PTNode {
-    public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
-        def = null;
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
+        FunctionDefinition def;
+        int current = Parse(src, 0, out def);
+        if (current == -1) {
+            return false;
+        }
 
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
+        // try to match declaration_specifiers, if not found, create an empty one.
         DeclarationSpecifiers specs;
         int current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = null;
+            specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
             current = begin;
         }
 
+        // match declarator
         Declarator decl;
         current = _declarator.Parse(src, current, out decl);
         if (current == -1) {
+            def = null;
             return -1;
         }
 
+        // match compound_statement
         Statement stmt;
         current = _compound_statement.Parse(src, current, out stmt);
         if (current == -1) {
+            def = null;
             return -1;
         }
 

@@ -1549,11 +1549,11 @@ public class RightShift : Expression {
 }
 
 
-// relational_expression: shift_expression                          /* Expression */
-//                      | relational_expression < shift_expression  /* LessThan */
-//                      | relational_expression > shift_expression  /* GreaterThan */
-//                      | relational_expression <= shift_expression /* LessEqualThan */
-//                      | relational_expression >= shift_expression /* GreaterEqualThan */
+// relational_expression: shift_expression                              /* Expression */
+//                      | relational_expression '<' shift_expression    /* LessThan */
+//                      | relational_expression '>' shift_expression    /* GreaterThan */
+//                      | relational_expression '<=' shift_expression   /* LessEqualThan */
+//                      | relational_expression '>=' shift_expression   /* GreaterEqualThan */
 //
 // RETURN: Expression
 //

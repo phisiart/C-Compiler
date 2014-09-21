@@ -534,6 +534,7 @@ public class TypedefName : TypeSpecifier {
     public String name;
 }
 
+// the follwing code is deleted
 //public class TypeSpecifier : ASTNode {
 //    public TypeSpecifier(KeywordVal _content) {
 //        content = _content;
@@ -543,36 +544,76 @@ public class TypedefName : TypeSpecifier {
 
 
 // type_qualifier : const | volatile
-// [ return: TypeQualifier / null]
-// [ note: there can be multiple type_qualifiers in one declaration ]
+//
+// RETURN: enum TypeQualifier
+//
+// FAIL: TypeQUalifier.NULL
+//
+// NOTE: there can be multiple type_qualifiers in one declaration
+//
 public class _type_qualifier : PTNode {
-    public static int Parse(List<Token> src, int begin, out TypeQualifier node) {
-        node = null;
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("const volatile");
+        TypeQualifier qualifier;
+        int current = Parse(src, 0, out qualifier);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("volatile const");
+        current = Parse(src, 0, out qualifier);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("haha volatile const");
+        current = Parse(src, 0, out qualifier);
+        if (current != -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out TypeQualifier qualifier) {
 
         // make sure te token is a keyword
-        if (src[begin].type != TokenType.KEYWORD)
+        if (src[begin].type != TokenType.KEYWORD) {
+            qualifier = TypeQualifier.NULL;
             return -1;
+        }
 
         // check the value
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.CONST:
-        case KeywordVal.VOLATILE:
-            node = new TypeQualifier(val);
+            qualifier = TypeQualifier.CONST;
             return begin + 1;
+
+        case KeywordVal.VOLATILE:
+            qualifier = TypeQualifier.VOLATILE;
+            return begin + 1;
+
         default:
+            qualifier = TypeQualifier.NULL;
             return -1;
         }
 
     }
 }
 
-public class TypeQualifier : ASTNode {
-    public TypeQualifier(KeywordVal _content) {
-        content = _content;
-    }
-    public KeywordVal content;
+public enum TypeQualifier {
+    NULL,
+    CONST,
+    VOLATILE
 }
+
+//public class TypeQualifier : ASTNode {
+//    public TypeQualifier(KeywordVal _content) {
+//        content = _content;
+//    }
+//    public KeywordVal content;
+//}
 
 
 // declarator : [pointer]? direct_declarator
@@ -600,11 +641,17 @@ public interface TypeInfo {
 }
 
 public class FunctionInfo : TypeInfo {
-
+    public FunctionInfo(ParameterTypeList _param_type_list) {
+        param_type_list = _param_type_list;
+    }
+    public ParameterTypeList param_type_list;
 }
 
 public class ArrayInfo : TypeInfo {
-
+    public ArrayInfo(Expression _nelems) {
+        nelems = _nelems;
+    }
+    public Expression nelems;
 }
 
 public class PointerInfo : TypeInfo {
@@ -760,80 +807,249 @@ public class _type_qualifier_list : PTNode {
 //                   | '(' declarator ')'
 //                   | direct_declarator '[' [constant_expression]? ']'
 //                   | direct_declarator '(' [parameter_type_list]? ')'
-//                   | direct_declarator '(' identifier_list ')' /* old style, i'm deleting this */
-// [ return: Declarator / null ]
-// [ note: left recursion! ]
-// { note: simplified! no const_expr, param_type_list, id_list now }
-// direct_declarator : < identifier | ( declarator ) > < [ ] | ( ) >*
+//                   | direct_declarator '(' identifier_list ')'            /* old style, i'm deleting this */
+//
+// NOTE: the grammar [ direct_declarator '(' identifier_list ')' ] is for the **old-style** function prototype like this:
+// +-------------------------------+
+// |    int foo(param1, param2)    |
+// |    int param1;                |
+// |    char param2;               |
+// |    {                          |
+// |        ....                   |
+// |    }                          |
+// +-------------------------------+
+//
+// i'm **not** going to support this style. function prototypes should always be like this:
+// +------------------------------------------+
+// |    int foo(int param1, char param2) {    |
+// |        ....                              |
+// |    }                                     |
+// +------------------------------------------+
+//
+// so, i'm deleting this particular production and changing the grammar to:
+// direct_declarator : identifier                                           /* Declarator */
+//                   | '(' declarator ')'                                   /* Declarator */
+//                   | direct_declarator '[' [constant_expression]? ']'     /* Declarator */
+//                   | direct_declarator '(' [parameter_type_list]? ')'     /* Declarator */
+//
+// RETURN: Declarator
+//
+// FAIL: null
+//
+// NOTE: this grammar is left-recursive, so i'm changing it to:
+// direct_declarator : [ identifier | '(' declarator ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
 public class _direct_declarator : PTNode {
-    public static int Parse(List<Token> src, int begin, out Declarator node) {
-        node = null;
-        int current;
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("(*a)[3][5 + 7][]");
+        Declarator decl;
+        int current = Parse(src, 0, out decl);
+        if (current == -1) {
+            return false;
+        }
 
-        // match id | ( declarator )
-        if (src[begin].type == TokenType.IDENTIFIER) {
-            // match id
-            String name = ((TokenIdentifier)src[begin]).val;
-            //if (ScopeEnvironment.IsNewId(name)) {
-            // ScopeEnvironment.AddVar(name);
-            if (true) {
-                node = new Declarator();
-                node.name = name;
-                current = begin + 1;
-            } else {
-                // have seen this identifier, not good
-                return -1;
-            }
-        } else if (src[begin].type == TokenType.OPERATOR) {
-            // match ( declarator )
-            if (((TokenOperator)src[begin]).val != OperatorVal.LPAREN) {
-                return -1;
-            }
-            current = begin + 1;
-            current = _direct_declarator.Parse(src, current, out node);
-            if (current == -1) {
-                return -1;
-            }
-            if (src[current].type != TokenType.OPERATOR) {
-                return -1;
-            }
-            if (((TokenOperator)src[current]).val != OperatorVal.RPAREN) {
-                return -1;
-            }
-            current++;
-        } else {
+        return true;
+    }
+    
+    public static int ParseDeclarator(List<Token> src, int begin, out Declarator decl) {
+        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
+            decl = null;
+            return -1;
+        }
+        begin++;
+
+        begin = _declarator.Parse(src, begin, out decl);
+        if (begin == -1) {
+            decl = null;
             return -1;
         }
 
-        if (src[current].type != TokenType.OPERATOR) {
+        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
+            decl = null;
+            return -1;
+        }
+        begin++;
+
+        return begin;
+    }
+
+    public static int ParseArrayInfo(List<Token> src, int begin, out ArrayInfo info) {
+        // match '['
+        if (!Parser.IsOperator(src[begin], OperatorVal.LBRACKET)) {
+            info = null;
+            return -1;
+        }
+        begin++;
+        
+        // match constant_expression, if fail, just put null
+        Expression nelems;
+        int saved = begin;
+        begin = _constant_expression.Parse(src, begin, out nelems);
+        if (begin == -1) {
+            nelems = null;
+            begin = saved;
+        }
+
+        // match ']'
+        if (!Parser.IsOperator(src[begin], OperatorVal.RBRACKET)) {
+            info = null;
+            return -1;
+        }
+        begin++;
+
+        info = new ArrayInfo(nelems);
+        return begin;
+    }
+
+    public static int ParseFunctionInfo(List<Token> src, int begin, out FunctionInfo info) {
+        // match '('
+        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
+            info = null;
+            return -1;
+        }
+        begin++;
+
+        // match constant_expression, if fail, just put null
+        ParameterTypeList param_type_list;
+        int saved = begin;
+        begin = _parameter_type_list.Parse(src, begin, out param_type_list);
+        if (begin == -1) {
+            param_type_list = null;
+            begin = saved;
+        }
+
+        // match ')'
+        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
+            info = null;
+            return -1;
+        }
+        begin++;
+
+        info = new FunctionInfo(param_type_list);
+        return begin;
+    }
+
+    public static int ParseTypeInfo(List<Token> src, int begin, out TypeInfo info) {
+        ArrayInfo array_info;
+        int current = ParseArrayInfo(src, begin, out array_info);
+        if (current != -1) {
+            info = array_info;
             return current;
         }
-        while (src[current].type == TokenType.OPERATOR) {
-            OperatorVal op = ((TokenOperator)src[current]).val;
-            if (op == OperatorVal.LPAREN) {
-                current++;
-                op = ((TokenOperator)src[current]).val;
-                if (op == OperatorVal.RPAREN) {
-                    current++;
-                    node.type_infos.Add(new FunctionInfo());
-                } else {
-                    return -1;
-                }
-            } else if (op == OperatorVal.LBRACKET) {
-                current++;
-                op = ((TokenOperator)src[current]).val;
-                if (op == OperatorVal.RBRACKET) {
-                    current++;
-                    node.type_infos.Add(new ArrayInfo());
-                } else {
-                    return -1;
-                }
-            } else {
-                return current;
-            }
+
+        FunctionInfo function_info;
+        current = ParseFunctionInfo(src, begin, out function_info);
+        if (current != -1) {
+            info = function_info;
+            return current;
         }
-        return current;
+
+        info = null;
+        return -1;
     }
+    
+    public static int Parse(List<Token> src, int begin, out Declarator decl) {
+
+        // 1. match id | '(' declarator ')'
+        // 1.1. try '(' declarator ')'
+        int current = ParseDeclarator(src, begin, out decl);
+        if (current == -1) {
+            // if fail, 1.2. try id
+            if (src[begin].type != TokenType.IDENTIFIER) {
+                decl = null;
+                return -1;
+            }
+            String name = ((TokenIdentifier)src[begin]).val;
+            current = begin + 1;
+            
+            decl = new Declarator();
+            decl.name = name;
+        }
+
+        // now match infos
+        int saved;
+        while (true) {
+            TypeInfo info;
+            saved = current;
+            current = ParseTypeInfo(src, current, out info);
+            if (current != -1) {
+                decl.type_infos.Add(info);
+                continue;
+            }
+
+            current = saved;
+            return current;
+        }
+    }
+
+    // the following code is deleted
+    //public static int Parse2(List<Token> src, int begin, out Declarator node) {
+    //    node = null;
+    //    int current;
+
+    //    // match id | ( declarator )
+    //    if (src[begin].type == TokenType.IDENTIFIER) {
+    //        // match id
+    //        String name = ((TokenIdentifier)src[begin]).val;
+    //        //if (ScopeEnvironment.IsNewId(name)) {
+    //        // ScopeEnvironment.AddVar(name);
+    //        if (true) {
+    //            node = new Declarator();
+    //            node.name = name;
+    //            current = begin + 1;
+    //        } else {
+    //            // have seen this identifier, not good
+    //            return -1;
+    //        }
+    //    } else if (src[begin].type == TokenType.OPERATOR) {
+    //        // match ( declarator )
+    //        if (((TokenOperator)src[begin]).val != OperatorVal.LPAREN) {
+    //            return -1;
+    //        }
+    //        current = begin + 1;
+    //        current = _direct_declarator.Parse(src, current, out node);
+    //        if (current == -1) {
+    //            return -1;
+    //        }
+    //        if (src[current].type != TokenType.OPERATOR) {
+    //            return -1;
+    //        }
+    //        if (((TokenOperator)src[current]).val != OperatorVal.RPAREN) {
+    //            return -1;
+    //        }
+    //        current++;
+    //    } else {
+    //        return -1;
+    //    }
+
+    //    if (src[current].type != TokenType.OPERATOR) {
+    //        return current;
+    //    }
+    //    while (src[current].type == TokenType.OPERATOR) {
+    //        OperatorVal op = ((TokenOperator)src[current]).val;
+    //        if (op == OperatorVal.LPAREN) {
+    //            current++;
+    //            op = ((TokenOperator)src[current]).val;
+    //            if (op == OperatorVal.RPAREN) {
+    //                current++;
+    //                node.type_infos.Add(new FunctionInfo());
+    //            } else {
+    //                return -1;
+    //            }
+    //        } else if (op == OperatorVal.LBRACKET) {
+    //            current++;
+    //            op = ((TokenOperator)src[current]).val;
+    //            if (op == OperatorVal.RBRACKET) {
+    //                current++;
+    //                node.type_infos.Add(new ArrayInfo());
+    //            } else {
+    //                return -1;
+    //            }
+    //        } else {
+    //            return current;
+    //        }
+    //    }
+    //    return current;
+    //}
 }
 
 
@@ -1393,22 +1609,36 @@ public class AbstractDeclarator : ASTNode {
     public List<TypeInfo> type_infos;
 }
 
-// direct_abstract_declarator : ( abstract_declarator )
-//                            | <direct_abstract_declarator>? [ <constant_expression>? ]
-//                            | <direct_abstract_declarator>? ( <parameter_type_list>? )
-// [ note: my solution ]
-// direct_abstract_declarator : ( abstract_declarator ) < < [ <constant_expression>? ] > | < ( <parameter_type_list>? ) > >*
-//                            | < < [ <constant_expression>? ] > | < ( <parameter_type_list>? ) > >+
-// [ note: parameter_type_list and abstract_declarator are distinguishable ]
-// [ note: first let me ignore parameter_type_list and constant_expression ]
+// direct_abstract_declarator : '(' abstract_declarator ')'
+//                            | [direct_abstract_declarator]? '[' [constant_expression]? ']'
+//                            | [direct_abstract_declarator]? '(' [parameter_type_list]? ')'
+//
+// NOTE: this grammar is left-recursive, so i'm turning it to:
+// direct_abstract_declarator : [ '(' abstract_declarator ')' | '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
+//
+// RETURN: AbstratDeclarator
+//
+// FAIL: null
+//
 public class _direct_abstract_declarator : PTNode {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("(*)[3][5 + 7][]");
+        AbstractDeclarator decl;
+        int current = Parse(src, 0, out decl);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
     private static int ParseInfo(List<Token> src, int begin, out TypeInfo info) {
         info = null;
         int current;
         if (Parser.IsLPAREN(src[begin])) {
             current = begin + 1;
             if (Parser.IsRPAREN(src[current])) {
-                info = new FunctionInfo();
+                info = new FunctionInfo(null);
                 current++;
                 return current;
             }
@@ -1416,7 +1646,7 @@ public class _direct_abstract_declarator : PTNode {
         if (Parser.IsLBRACKET(src[begin])) {
             current = begin + 1;
             if (Parser.IsRBRACKET(src[current])) {
-                info = new ArrayInfo();
+                info = new ArrayInfo(null);
                 current++;
                 return current;
             }
@@ -1424,56 +1654,113 @@ public class _direct_abstract_declarator : PTNode {
         return -1;
     }
 
-    public static int Parse(List<Token> src, int begin, out AbstractDeclarator decl) {
-        TypeInfo info;
-        List<TypeInfo> type_infos;
-        int current;
-        int saved;
-
-        if (Parser.IsLPAREN(src[begin])) {
-            current = begin + 1;
-            current = _abstract_declarator.Parse(src, current, out decl);
-            if (current != -1) {
-                type_infos = decl.type_infos;
-                if (!Parser.IsRPAREN(src[current])) {
-                    decl = null;
-                    return -1;
-                }
-                current++;
-
-                while (true) {
-                    saved = current;
-                    current = ParseInfo(src, current, out info);
-                    if (current == -1) {
-                        decl = new AbstractDeclarator();
-                        decl.type_infos = type_infos;
-                        return saved;
-                    }
-                    type_infos.Add(info);
-                }
-            }
-        }
-
-        // if not start with abstract declarator
-        type_infos = new List<TypeInfo>();
-        current = ParseInfo(src, begin, out info);
-        if (current == -1) {
+    public static int ParseAbstractDeclarator(List<Token> src, int begin, out AbstractDeclarator decl) {
+        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
             decl = null;
             return -1;
         }
-        type_infos.Add(info);
-        while (true) {
-            saved = current;
-            current = ParseInfo(src, current, out info);
-            if (current == -1) {
-                decl = new AbstractDeclarator();
-                decl.type_infos = type_infos;
-                return saved;
-            }
-            type_infos.Add(info);
+        begin++;
+
+        begin = _abstract_declarator.Parse(src, begin, out decl);
+        if (begin == -1) {
+            decl = null;
+            return -1;
         }
 
+        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
+            decl = null;
+            return -1;
+        }
+        begin++;
+
+        return begin;
     }
+    
+    public static int Parse(List<Token> src, int begin, out AbstractDeclarator decl) {
+        // 1. match typeinfo | '(' abstract_declarator ')'
+        // 1.1 try '(' abstract_declarator ')'
+        int current = ParseAbstractDeclarator(src, begin, out decl);
+        if (current == -1) {
+            // if fail, 1.2. try typeinfo
+            TypeInfo info;
+            current = _direct_declarator.ParseTypeInfo(src, begin, out info);
+            if (current == -1) {
+                decl = null;
+                return -1;
+            }
+
+            decl = new AbstractDeclarator();
+            decl.type_infos.Add(info);
+        }
+
+        // now match infos
+        int saved;
+        while (true) {
+            TypeInfo info;
+            saved = current;
+            current = _direct_declarator.ParseTypeInfo(src, current, out info);
+            if (current != -1) {
+                decl.type_infos.Add(info);
+                continue;
+            }
+
+            current = saved;
+            return current;
+        }
+        
+    }
+
+    // the following code is deleted
+    //public static int Parse2(List<Token> src, int begin, out AbstractDeclarator decl) {
+    //    TypeInfo info;
+    //    List<TypeInfo> type_infos;
+    //    int current;
+    //    int saved;
+
+    //    if (Parser.IsLPAREN(src[begin])) {
+    //        current = begin + 1;
+    //        current = _abstract_declarator.Parse(src, current, out decl);
+    //        if (current != -1) {
+    //            type_infos = decl.type_infos;
+    //            if (!Parser.IsRPAREN(src[current])) {
+    //                decl = null;
+    //                return -1;
+    //            }
+    //            current++;
+
+    //            while (true) {
+    //                saved = current;
+    //                current = ParseInfo(src, current, out info);
+    //                if (current == -1) {
+    //                    decl = new AbstractDeclarator();
+    //                    decl.type_infos = type_infos;
+    //                    return saved;
+    //                }
+    //                type_infos.Add(info);
+    //            }
+    //        }
+    //    }
+
+    //    // if not start with abstract declarator
+    //    type_infos = new List<TypeInfo>();
+    //    current = ParseInfo(src, begin, out info);
+    //    if (current == -1) {
+    //        decl = null;
+    //        return -1;
+    //    }
+    //    type_infos.Add(info);
+    //    while (true) {
+    //        saved = current;
+    //        current = ParseInfo(src, current, out info);
+    //        if (current == -1) {
+    //            decl = new AbstractDeclarator();
+    //            decl.type_infos = type_infos;
+    //            return saved;
+    //        }
+    //        type_infos.Add(info);
+    //    }
+
+    //}
 }
 
 // initializer : assignment_expression

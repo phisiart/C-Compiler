@@ -58,5 +58,25 @@ public class ParserTest {
     public void test_type_specifier() {
         Assert.IsTrue(_type_specifier.Test());
     }
+
+    [TestMethod]
+    public void test_type_qualifier() {
+        Assert.IsTrue(_type_qualifier.Test());
+    }
+
+    [TestMethod]
+    public void test_function_definition() {
+        Assert.IsTrue(_function_definition.Test());
+    }
+
+    [TestMethod]
+    public void test_direct_declarator() {
+        Assert.IsTrue(_direct_declarator.Test());
+    }
+
+    [TestMethod]
+    public void test_direct_abstract_declarator() {
+        Assert.IsTrue(_direct_abstract_declarator.Test());
+    }
 }
 
