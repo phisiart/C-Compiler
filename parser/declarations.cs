@@ -268,27 +268,64 @@ public class _init_declarator_list : PTNode {
 
 
 // init_declarator : declarator [= initializer]?
-// [[note: no support for = initializer now]]
-// return InitDeclarator / null
+//
+// RETURN: InitDeclarator
+//
+// FAIL: null
+//
 public class _init_declarator : PTNode {
-    public static int Parse(List<Token> src, int begin, out InitDeclarator init_declarator) {
-        init_declarator = null;
-
-        Declarator declarator;
-        int current = _declarator.Parse(src, begin, out declarator);
-        if (current != -1) {
-            init_declarator = new InitDeclarator();
-            init_declarator.declarator = declarator;
-            return current;
-        } else {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a = 3 + 4");
+        InitDeclarator decl;
+        int current = Parse(src, 0, out decl);
+        if (current == -1) {
+            return false;
+        }
+        return true;
+    }
+    
+    public static int ParseInitializer(List<Token> src, int begin, out Expression init) {
+        if (!Parser.IsOperator(src[begin], OperatorVal.ASSIGN)) {
+            init = null;
             return -1;
         }
+
+        begin++;
+        return _initializer.Parse(src, begin, out init);
+    }
+    
+    public static int Parse(List<Token> src, int begin, out InitDeclarator init_declarator) {
+        // step 1. match declarator
+        Declarator declarator;
+        int current = _declarator.Parse(src, begin, out declarator);
+        if (current == -1) {
+            init_declarator = null;
+            return -1;
+        }
+
+        // step 2. match initializer
+        int saved = current;
+        Expression init;
+        current = ParseInitializer(src, current, out init);
+        if (current == -1) {
+            current = saved;
+            init = null;
+        }
+
+        init_declarator = new InitDeclarator(declarator, init);
+        return current;
     }
 }
 
 public class InitDeclarator : ASTNode {
+    public InitDeclarator(Declarator _decl, Expression _init) {
+        declarator = _decl;
+        init = _init;
+    }
     public Declarator declarator;
+    public Expression init;
 }
+
 
 // storage_class_specifier : auto | register | static | extern | typedef
 //
@@ -616,29 +653,48 @@ public enum TypeQualifier {
 //}
 
 
+
 // declarator : [pointer]? direct_declarator
-// [ return: Declarator / null ]
+//
+// RETURN: Declarator
+//
+// FAIL: null
+//
 public class _declarator : PTNode {
-    public static int Parse(List<Token> src, int begin, out Declarator node) {
-        node = null;
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("* const * const a[3][4]");
+        Declarator decl;
+        int current = Parse(src, 0, out decl);
+        if (current == -1) {
+            return false;
+        }
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Declarator decl) {
+        
+        // try to match pointer
         List<PointerInfo> pointer_infos;
         int current = _pointer.Parse(src, begin, out pointer_infos);
         if (current == -1) {
+            // if fail, just create an empty list
+            pointer_infos = new List<PointerInfo>();
             current = begin;
         }
 
-        current = _direct_declarator.Parse(src, current, out node);
+        // match direct_declarator
+        current = _direct_declarator.Parse(src, current, out decl);
         if (current != -1) {
-            node.type_infos.AddRange(pointer_infos);
+            decl.type_infos.AddRange(pointer_infos);
             return current;
         } else {
+            decl = null;
             return -1;
         }
     }
 }
 
-public interface TypeInfo {
-}
+public interface TypeInfo {}
 
 public class FunctionInfo : TypeInfo {
     public FunctionInfo(ParameterTypeList _param_type_list) {
@@ -1387,11 +1443,27 @@ public class StructDecleration : ASTNode {
     public List<Declarator> decl_list;
 }
 
-// specifier_qualifier_list : type_specifier <specifier_qualifier_list>?
-//                          | type_qualifier <specifier_qualifier_list>?
-// [ note: my solution ]
-// specifier_qualifier_list : < type_specifier | type_qualifier >+
+// specifier_qualifier_list : type_specifier [specifier_qualifier_list]?
+//                          | type_qualifier [specifier_qualifier_list]?
+//
+// RETURN: DeclarationSpecifiers
+//
+// FAIL: null
+//
+// NOTE: this is simply a list
+// specifier_qualifier_list : [ type_specifier | type_qualifier ]+
 public class _specifier_qualifier_list : PTNode {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("int long const");
+        DeclarationSpecifiers specs;
+        int current = Parse(src, 0, out specs);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
     public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers decl_specs) {
         List<TypeSpecifier> type_specifiers = new List<TypeSpecifier>();
         List<TypeQualifier> type_qualifiers = new List<TypeQualifier>();
@@ -1434,6 +1506,7 @@ public class _specifier_qualifier_list : PTNode {
 
     }
     
+    // the following code is deleted
     //public static int Parse2(List<Token> src, int begin, out DeclarationSpecifiers node) {
     //    node = null;
     //    DeclarationSpecifiers.Type type;
@@ -1474,22 +1547,43 @@ public class _specifier_qualifier_list : PTNode {
 
 
 // struct_declarator_list : struct_declarator
-//                        | struct_declarator_list , struct_declarator
-// [ note: my solution ]
-// struct_declarator_list : struct_declarator < , struct_declarator >*
+//                        | struct_declarator_list ',' struct_declarator
+//
+// NOTE:
+// this grammar is left recursive, and i'm turning it into a list
+// struct_declarator_list : struct_declarator [ ',' struct_declarator ]*
+//
+// RETURN: List<Declarator>
+//
+// FAIL: null
+//
 public class _struct_declarator_list : PTNode {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("*a, *b[3]");
+        List<Declarator> decl_list;
+        int current = Parse(src, 0, out decl_list);
+        if (current == -1) {
+            return false;
+        }
+        return true;
+    }
+    
     public static int Parse(List<Token> src, int begin, out List<Declarator> decl_list) {
         Declarator decl;
-        decl_list = new List<Declarator>();
+        
+        // match the first declarator
         int current = _struct_declarator.Parse(src, begin, out decl);
         if (current == -1) {
+            decl_list = null;
             return -1;
         }
+        decl_list = new List<Declarator>();
         decl_list.Add(decl);
-        int saved;
 
+        // try to match more
+        int saved;
         while (true) {
-            if (Parser.IsCOMMA(src[current])) {
+            if (Parser.IsOperator(src[current], OperatorVal.COMMA)) {
                 saved = current;
                 current++;
                 current = _struct_declarator.Parse(src, current, out decl);
@@ -1515,18 +1609,37 @@ public class _struct_declarator : PTNode {
     }
 }
 
+
 // parameter_declaration : declaration_specifiers declarator
-//                       | declaration_specifiers <abstract_declarator>?
+//                       | declaration_specifiers [abstract_declarator]?
+//
+// RETURN: ParameterDeclaration
+//
+// FAIL: null
+//
 public class _parameter_declaration : PTNode {
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("int *a[]");
+        ParameterDeclaration decl;
+        int current = Parse(src, 0, out decl);
+        if (current == -1) {
+            return false;
+        }
+        return true;
+    }
+    
     public static int Parse(List<Token> src, int begin, out ParameterDeclaration decl) {
-        decl = null;
+
+        // step 1. match declaration_specifiers
         DeclarationSpecifiers specs;
         int current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
+            decl = null;
             return -1;
         }
-        int saved = current;
 
+        // step 2. try to match declarator
+        int saved = current;
         Declarator declarator;
         current = _declarator.Parse(src, current, out declarator);
         if (current != -1) {
@@ -1534,6 +1647,7 @@ public class _parameter_declaration : PTNode {
             return current;
         }
 
+        // if fail, step 3. try to match abstract_declarator
         current = saved;
         AbstractDeclarator abstract_declarator;
         current = _abstract_declarator.Parse(src, current, out abstract_declarator);
@@ -1542,6 +1656,7 @@ public class _parameter_declaration : PTNode {
             return current;
         }
 
+        // if fail, never mind, just return specifiers
         decl = new ParameterDeclaration(specs);
         return saved;
 

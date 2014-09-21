@@ -15,6 +15,7 @@ public class _translation_unit : PTNode {
             return -1;
         }
 
+        unit = new List<ASTNode>();
         unit.Add(node);
 
         int saved;

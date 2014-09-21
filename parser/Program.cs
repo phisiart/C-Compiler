@@ -290,6 +290,11 @@ public interface ASTNode {
 
 public class Program {
     public static void Main(string[] args) {
-        Console.WriteLine("hello");
+        LexicalAnalysis lex = new LexicalAnalysis();
+        lex.OpenFile("../../../hello.c");
+        lex.Lex();
+        var src = lex.tokens;
+        List<ASTNode> root;
+        int current = _translation_unit.Parse(src, 0, out root);
     }
 }
