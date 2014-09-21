@@ -103,5 +103,10 @@ public class ParserTest {
     public void test_init_declarator() {
         Assert.IsTrue(_init_declarator.Test());
     }
+
+    [TestMethod]
+    public void test_pointer() {
+        Assert.IsTrue(_pointer.Test());
+    }
 }
 

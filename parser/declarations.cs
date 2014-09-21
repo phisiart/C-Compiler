@@ -645,6 +645,7 @@ public enum TypeQualifier {
     VOLATILE
 }
 
+
 //public class TypeQualifier : ASTNode {
 //    public TypeQualifier(KeywordVal _content) {
 //        content = _content;
@@ -711,6 +712,9 @@ public class ArrayInfo : TypeInfo {
 }
 
 public class PointerInfo : TypeInfo {
+    public PointerInfo(List<TypeQualifier> _type_qualifiers) {
+        type_qualifiers = _type_qualifiers;
+    }
     public List<TypeQualifier> type_qualifiers;
 }
 
@@ -723,37 +727,54 @@ public class Declarator : ASTNode {
 }
 
 
-// pointer : * [type_qualifier_list]? [pointer]?
-// [ note: my solution ]
-// pointer : < * [type_qualifier_list]? >+
-// [ return: List<PointerInfo> ]
-// [ if fail, return empty List<PointerInfo> ]
+// pointer : '*' [type_qualifier_list]? [pointer]?
+//
+// RETURN: List<PointerInfo>
+//
+// FAIL: null
+//
 public class _pointer : PTNode {
-    public static int Parse(List<Token> src, int begin, out List<PointerInfo> infos) {
-        infos = new List<PointerInfo>();
-        if (src[begin].type != TokenType.OPERATOR) {
-            return -1;
-        }
-        if (((TokenOperator)src[begin]).val != OperatorVal.MULT) {
-            return -1;
-        }
-
-        PointerInfo info = new PointerInfo();
-        int current = _type_qualifier_list.Parse(src, begin + 1, out info.type_qualifiers);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("* const * volatile const *");
+        List<PointerInfo> infos;
+        int current = Parse(src, 0, out infos);
         if (current == -1) {
-            current = begin + 1;
+            return false;
         }
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out List<PointerInfo> infos) {
+        // match '*'
+        if (!Parser.IsOperator(src[begin], OperatorVal.MULT)) {
+            infos = null;
+            return -1;
+        }
+        int current = begin + 1;
 
+        // try to match type_qualifier_list, if fail, just create an empty list
+        List<TypeQualifier> type_qualifiers;
         int saved = current;
+        current = _type_qualifier_list.Parse(src, current, out type_qualifiers);
+        if (current == -1) {
+            current = saved;
+            type_qualifiers = new List<TypeQualifier>();
+        }
+        PointerInfo info = new PointerInfo(type_qualifiers);
+
+        saved = current;
         current = _pointer.Parse(src, current, out infos);
-        infos.Add(info);
-        if (current != -1) {
-            return current;
-        } else {
+        if (current == -1) {
+            infos = new List<PointerInfo>();
+            infos.Add(info);
             return saved;
+        } else {
+            infos.Add(info);
+            return current;
         }
     }
 }
+
 
 // parameter_type_list : parameter_list
 //                     | parameter_list , ...
@@ -1878,6 +1899,7 @@ public class _direct_abstract_declarator : PTNode {
     //}
 }
 
+
 // initializer : assignment_expression
 //             | { initializer_list }
 //             | { initializer_list , }
@@ -1989,14 +2011,21 @@ public class TypeName : ASTNode {
 
 
 // typedef_name : identifier
-// [ note: must be something already defined, so this needs environment ]
+//
+// RETURN: String
+//
+// FAIL: null
+//
+// NOTE: must be something already defined, so this needs environment
+//
 public class _typedef_name : PTNode {
     public static int Parse(List<Token> src, int begin, out String name) {
-        name = null;
         if (src[begin].type != TokenType.IDENTIFIER) {
+            name = null;
             return -1;
         }
         if (!ScopeEnvironment.HasTypedefName(((TokenIdentifier)src[begin]).val)) {
+            name = null;
             return -1;
         }
 

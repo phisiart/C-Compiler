@@ -283,10 +283,10 @@ static class ScopeEnvironment {
 
 }
 
-public interface PTNode {
-}
-public interface ASTNode {
-}
+
+public interface PTNode {}
+public interface ASTNode {}
+
 
 public class Program {
     public static void Main(string[] args) {
