@@ -1,8 +1,0 @@
-D:\GitHub\CCompiler\parser\obj\Debug\parser.csprojResolveAssemblyReference.cache
-D:\GitHub\CCompiler\parser\bin\Debug\parser.exe.config
-D:\GitHub\CCompiler\parser\bin\Debug\parser.exe
-D:\GitHub\CCompiler\parser\bin\Debug\parser.pdb
-D:\GitHub\CCompiler\parser\bin\Debug\lexical_analysis.exe
-D:\GitHub\CCompiler\parser\bin\Debug\lexical_analysis.pdb
-D:\GitHub\CCompiler\parser\obj\Debug\parser.exe
-D:\GitHub\CCompiler\parser\obj\Debug\parser.pdb

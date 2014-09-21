@@ -1,5 +1,0 @@
-D:\GitHub\CCompiler\lexical_analysis\bin\Debug\lexical_analysis.exe.config
-D:\GitHub\CCompiler\lexical_analysis\bin\Debug\lexical_analysis.exe
-D:\GitHub\CCompiler\lexical_analysis\bin\Debug\lexical_analysis.pdb
-D:\GitHub\CCompiler\lexical_analysis\obj\Debug\lexical_analysis.exe
-D:\GitHub\CCompiler\lexical_analysis\obj\Debug\lexical_analysis.pdb
