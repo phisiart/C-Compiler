@@ -504,7 +504,7 @@ public class BitwiseOrAssign : Expression {
 
 // postfix_expression: primary_expression                                       /* Expression */
 //                   | postfix_expression '[' expression ']'                    /* ArrayElement */
-//                   | postfix_expression '(' [argument_expression_list>]? ')'  /* FunctionCall */
+//                   | postfix_expression '(' [argument_expression_list]? ')'  /* FunctionCall */
 //                   | postfix_expression '.' identifier                        /* Attribute */
 //                   | postfix_expression '->' identifier                       /* PointerAttribute */
 //                   | postfix_expression '++'                                  /* Increment */
@@ -1155,33 +1155,64 @@ public class Not : Expression {
 }
 
 
-// cast_expression: unary_expression
-//                | ( type_name ) cast_expression
-// [ note: my solution ]
-// cast_expression: < ( type_name ) >* unary_expression
+// cast_expression: unary_expression                    /* Expression */
+//                | '(' type_name ')' cast_expression   /* TypeCast */
+//
+// RETURN: Expression
+//
+// FAIL: null
+//
+// NOTE:
+// this is right-recursive, which is totally fine
+//
 public class _cast_expression : Expression {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        node = null;
-        int current = begin;
-
-        if (Parser.IsLPAREN(src[begin])) {
-            current++;
-            TypeName type_name;
-            current = _type_name.Parse(src, current, out type_name);
-            if (current != -1) {
-                if (Parser.IsRPAREN(src[current])) {
-                    current++;
-                    current = _cast_expression.Parse(src, current, out node);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new TypeCast(type_name, node);
-                    return current;
-                }
-            }
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
         }
 
+        src = Parser.GetTokensFromString("(int)a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("(int)(float)a");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Expression node) {
+
+        // 1. try to match '(' type_name ')'
+        TypeName type_name;
+        int current = _unary_expression.ParseTypeName(src, begin, out type_name);
+        if (current != -1) {
+            // successful match '(' type_name ')'
+            
+            // match cast_expression recursively
+            current = _cast_expression.Parse(src, current, out node);
+            if (current == -1) {
+                node = null;
+                return -1;
+            }
+            
+            // successful match
+            node = new TypeCast(type_name, node);
+            return current;
+
+        }
+
+        // 2. unary_expression
         return _unary_expression.Parse(src, begin, out node);
+
     }
 }
 
@@ -1194,19 +1225,48 @@ public class TypeCast : Expression {
     public Expression expr;
 }
 
-// multiplicative_expression: cast_expression
-//                          | multiplicative_expression * cast_expression
-//                          | multiplicative_expression / cast_expression
-//                          | multiplicative_expression % cast_expression
-// [ note: my solution ]
-// multiplicative_Expression: cast_expression < < * | / | % > cast_expression >*
+
+// multiplicative_expression: cast_expression                                   /* Expression */
+//                          | multiplicative_expression '*' cast_expression     /* Multiplication */
+//                          | multiplicative_expression '/' cast_expression     /* Division */
+//                          | multiplicative_expression '%' cast_expression     /* Modulo */
+//
+// RETURN: Expression
+//
+// FAIL: null
+//
+// NOTE:
+// this grammar is left-recursive, so we turn it into:
+// multiplicative_Expression: cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
+//
 public class _multiplicative_expression : PTNode {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _cast_expression.Parse(src, begin, out node);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a * b");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
         if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("a * b / c % d");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static int Parse(List<Token> src, int begin, out Expression expr) {
+
+        // 1. match the leftmost cast_expression
+        int current = _cast_expression.Parse(src, begin, out expr);
+        if (current == -1) {
+            expr = null;
             return -1;
         }
 
+        // 2. try to find more
         Expression rhs;
         while (true) {
             if (src[current].type != TokenType.OPERATOR) {
@@ -1215,29 +1275,44 @@ public class _multiplicative_expression : PTNode {
             OperatorVal val = ((TokenOperator)src[current]).val;
             switch (val) {
             case OperatorVal.MULT:
+                // '*'
                 current++;
+
                 current = _cast_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new Multiplication(node, rhs);
+
+                expr = new Multiplication(expr, rhs);
                 break;
+
             case OperatorVal.DIV:
+                // '/'
                 current++;
+
                 current = _cast_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new Division(node, rhs);
+
+                expr = new Division(expr, rhs);
                 break;
+
             case OperatorVal.MOD:
+                // '%'
                 current++;
+
                 current = _cast_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new Modulo(node, rhs);
+
+                expr = new Modulo(expr, rhs);
                 break;
+
             default:
                 return current;
             }
@@ -1274,17 +1349,46 @@ public class Modulo : Expression {
 }
 
 
-// additive_expression: multiplicative_expression
-//                    | additive_expression + multiplicative_expression
-//                    | additive_expression - multiplicative_expression
-// [ note: my solution ]
-// additive_expression: multiplicative_expression < < + | - > multiplicative_expression >*
+// additive_expression: multiplicative_expression                           /* Expression */
+//                    | additive_expression '+' multiplicative_expression   /* Addition */
+//                    | additive_expression '-' multiplicative_expression   /* Subtraction */
+//
+// RETURN: Expression
+//
+// FAIL: null
+//
+// NOTE:
+// this grammar is left-recursive, so turn it into:
+// additive_expression: multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
+//
 public class _additive_expression : PTNode {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _multiplicative_expression.Parse(src, begin, out node);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a * b + c");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
         if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("a + c + d");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Expression expr) {
+
+        // match the first multiplicative_expression
+        int current = _multiplicative_expression.Parse(src, begin, out expr);
+        if (current == -1) {
+            expr = null;
             return -1;
         }
+        
+        // try more
         Expression rhs;
         while (true) {
             if (src[current].type != TokenType.OPERATOR) {
@@ -1293,21 +1397,31 @@ public class _additive_expression : PTNode {
             OperatorVal val = ((TokenOperator)src[current]).val;
             switch (val) {
             case OperatorVal.ADD:
+                // '+'
                 current++;
+
                 current = _multiplicative_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new Addition(node, rhs);
+
+                expr = new Addition(expr, rhs);
                 break;
+
             case OperatorVal.SUB:
+                // '-'
                 current++;
+
                 current = _multiplicative_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new Subtraction(node, rhs);
+
+                expr = new Subtraction(expr, rhs);
                 break;
+
             default:
                 return current;
             }
@@ -1335,17 +1449,46 @@ public class Subtraction : Expression {
 }
 
 
-// shift_expression: additive_expression
-//                 | shift_expression << additive_expression
-//                 | shift_expression >> additive_expression
-// [ note: my solution ]
-// shift_expression: additive_expression < < << | >> > additive_expression >*
+// shift_expression: additive_expression                        /* Expression */
+//                 | shift_expression '<<' additive_expression  /* LeftShift */
+//                 | shift_expression '>>' additive_expression  /* RightShift */
+//
+// RETURN: Expression
+//
+// FAIL: null
+//
+// NOTE:
+// this grammar is left-recursive, so turn it into:
+// shift_expression: additive_expression [ [ '<<' | '>>' ] additive_expression ]*
+//
 public class _shift_expression : PTNode {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _additive_expression.Parse(src, begin, out node);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("a * b + c << 3");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
         if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("a << 3 >> 4");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Expression expr) {
+        
+        // match the leftmost additive_expression
+        int current = _additive_expression.Parse(src, begin, out expr);
+        if (current == -1) {
+            expr = null;
             return -1;
         }
+
+        // try to match more
         Expression rhs;
         while (true) {
             if (src[current].type != TokenType.OPERATOR) {
@@ -1354,21 +1497,31 @@ public class _shift_expression : PTNode {
             OperatorVal val = ((TokenOperator)src[current]).val;
             switch (val) {
             case OperatorVal.LSHIFT:
+                // '<<'
                 current++;
+
                 current = _additive_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new LeftShift(node, rhs);
+
+                expr = new LeftShift(expr, rhs);
                 break;
+
             case OperatorVal.RSHIFT:
+                // '>>'
                 current++;
+
                 current = _additive_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new RightShift(node, rhs);
+
+                expr = new RightShift(expr, rhs);
                 break;
+
             default:
                 return current;
             }
@@ -1396,20 +1549,48 @@ public class RightShift : Expression {
 }
 
 
-// relational_expression: shift_expression
-//                      | relational_expression < shift_expression
-//                      | relational_expression > shift_expression
-//                      | relational_expression <= shift_expression
-//                      | relational_expression >= shift_expression
-// [ note: my solution ]
-// relational_expression: shift_expression < < < | > | <= | >= > > shift_expression >*
+// relational_expression: shift_expression                          /* Expression */
+//                      | relational_expression < shift_expression  /* LessThan */
+//                      | relational_expression > shift_expression  /* GreaterThan */
+//                      | relational_expression <= shift_expression /* LessEqualThan */
+//                      | relational_expression >= shift_expression /* GreaterEqualThan */
+//
+// RETURN: Expression
+//
+// FAIL: null
+//
+// NOTE:
+// this grammar is left-recursive, so turn it into:
+// relational_expression: shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
+//
 public class _relational_expression : PTNode {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _shift_expression.Parse(src, begin, out node);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("3 < 4");
+        Expression expr;
+        int current = Parse(src, 0, out expr);
         if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("a < 3 > 4");
+        current = Parse(src, 0, out expr);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int begin, out Expression expr) {
+        
+        // match the first shift_expression
+        int current = _shift_expression.Parse(src, begin, out expr);
+        if (current == -1) {
+            expr = null;
             return -1;
         }
 
+        // try to match more
         Expression rhs;
         while (true) {
             if (src[current].type != TokenType.OPERATOR) {
@@ -1418,37 +1599,56 @@ public class _relational_expression : PTNode {
             OperatorVal val = ((TokenOperator)src[current]).val;
             switch (val) {
             case OperatorVal.LT:
+                // '<'
                 current++;
+
                 current = _shift_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new LessThan(node, rhs);
+
+                expr = new LessThan(expr, rhs);
                 break;
+
             case OperatorVal.GT:
+                // '>'
                 current++;
+                
                 current = _shift_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new GreaterThan(node, rhs);
+
+                expr = new GreaterThan(expr, rhs);
                 break;
+            
             case OperatorVal.LEQ:
+                // '<='
                 current++;
+
                 current = _shift_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new LessEqualThan(node, rhs);
+
+                expr = new LessEqualThan(expr, rhs);
                 break;
             case OperatorVal.GEQ:
+                // '>='
                 current++;
+
                 current = _shift_expression.Parse(src, current, out rhs);
                 if (current == -1) {
+                    expr = null;
                     return -1;
                 }
-                node = new GreaterEqualThan(node, rhs);
+
+                expr = new GreaterEqualThan(expr, rhs);
                 break;
+
             default:
                 return current;
             }

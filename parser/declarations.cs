@@ -54,79 +54,176 @@ public class Declaration : ASTNode {
 // declaration_specifiers : storage_class specifier [declaration_specifiers]?
 //                        | type_specifier [declaration_specifiers]?
 //                        | type_qualifier [declaration_specifiers]?
-// [ note: my solution ]
-// declaration_specifiers : [storage_class_specifier | type_specifier | type_qualifier] [declaration_specifiers]?
 //
-// [ return: DeclarationSpecifiers ]
+// RETURN: DeclarationSpecifiers
+//
+// FAIL: null
+//
+// NOTE:
+// this is just a list, i'm turning it into:
+//
+// declaration_specifiers : [ storage_class_specifier | type_specifier | type_qualifier ]+
+//
 public class _declaration_specifiers : PTNode {
-    public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers node) {
-        node = null;
-        DeclarationSpecifiers.Type type;
-        ASTNode content = null;
-        int current;
+    public static bool Test() {
+        DeclarationSpecifiers decl_specs;
 
-        StorageClassSpecifier storage_class_specifier;
-        if ((current = _storage_class_specifier.Parse(src, begin, out storage_class_specifier)) != -1) {
-            // storage_class_specifier successful match
-            content = storage_class_specifier;
-            type = DeclarationSpecifiers.Type.STORAGE_CLASS_SPECIFIER;
-        } else {
-            TypeSpecifier type_specifier;
-            if ((current = _type_specifier.Parse(src, begin, out type_specifier)) != -1) {
-                // type_specifier successful match
-                content = type_specifier;
-                type = DeclarationSpecifiers.Type.TYPE_SPECIFIER;
-            } else {
-                TypeQualifier type_qualifier;
-                if ((current = _type_qualifier.Parse(src, begin, out type_qualifier)) != -1) {
-                    // type_qualifier successful match
-                    content = type_qualifier;
-                    type = DeclarationSpecifiers.Type.TYPE_QUALIFIER;
-                } else {
-                    // all fail, return
-                    return -1;
-                }
+        var src = Parser.GetTokensFromString("typedef int long const");
+        int current = Parse(src, 0, out decl_specs);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("typedef typedef typedef const const");
+        current = Parse(src, 0, out decl_specs);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers decl_specs) {
+        List<StorageClassSpecifier> storage_class_specifiers = new List<StorageClassSpecifier>();
+        List<TypeSpecifier> type_specifiers = new List<TypeSpecifier>();
+        List<TypeQualifier> type_qualifiers = new List<TypeQualifier>();
+        
+        int current = begin;
+        while (true) {
+            int saved = current;
+
+            // 1. match storage_class_specifier
+            StorageClassSpecifier storage_class_specifier;
+            current = _storage_class_specifier.Parse(src, current, out storage_class_specifier);
+            if (current != -1) {
+                storage_class_specifiers.Add(storage_class_specifier);
+                continue;
             }
+
+            // 2. if failed, match type_specifier
+            current = saved;
+            TypeSpecifier type_specifier;
+            current = _type_specifier.Parse(src, current, out type_specifier);
+            if (current != -1) {
+                type_specifiers.Add(type_specifier);
+                continue;
+            }
+
+            // 3. if failed, match type_qualifier
+            current = saved;
+            TypeQualifier type_qualifier;
+            current = _type_qualifier.Parse(src, current, out type_qualifier);
+            if (current != -1) {
+                type_qualifiers.Add(type_qualifier);
+                continue;
+            }
+
+            // 4. if all failed, break out of the loop
+            current = saved;
+            break;
+
         }
 
-        node = new DeclarationSpecifiers(type, content, null);
-        // now check whether their is a next
-
-        int saved = current;
-        if ((current = _declaration_specifiers.Parse(src, current, out node.next)) != -1) {
-            return current;
-        } else {
-            return saved;
+        if (storage_class_specifiers.Count == 0 && type_specifiers.Count == 0 && type_qualifiers.Count == 0) {
+            decl_specs = null;
+            return -1;
         }
+
+        decl_specs = new DeclarationSpecifiers(storage_class_specifiers, type_specifiers, type_qualifiers);
+        return current;
 
     }
+    
+    // the following code is deleted.
+
+    //public static int Parse2(List<Token> src, int begin, out DeclarationSpecifiers node) {
+    //    node = null;
+    //    DeclarationSpecifiers.Type type;
+    //    ASTNode content = null;
+    //    int current;
+
+    //    StorageClassSpecifier storage_class_specifier;
+    //    if ((current = _storage_class_specifier.Parse(src, begin, out storage_class_specifier)) != -1) {
+    //        // storage_class_specifier successful match
+    //        content = storage_class_specifier;
+    //        type = DeclarationSpecifiers.Type.STORAGE_CLASS_SPECIFIER;
+    //    } else {
+    //        TypeSpecifier type_specifier;
+    //        if ((current = _type_specifier.Parse(src, begin, out type_specifier)) != -1) {
+    //            // type_specifier successful match
+    //            content = type_specifier;
+    //            type = DeclarationSpecifiers.Type.TYPE_SPECIFIER;
+    //        } else {
+    //            TypeQualifier type_qualifier;
+    //            if ((current = _type_qualifier.Parse(src, begin, out type_qualifier)) != -1) {
+    //                // type_qualifier successful match
+    //                content = type_qualifier;
+    //                type = DeclarationSpecifiers.Type.TYPE_QUALIFIER;
+    //            } else {
+    //                // all fail, return
+    //                return -1;
+    //            }
+    //        }
+    //    }
+
+    //    node = new DeclarationSpecifiers(type, content, null);
+    //    // now check whether their is a next
+
+    //    int saved = current;
+    //    if ((current = _declaration_specifiers.Parse(src, current, out node.next)) != -1) {
+    //        return current;
+    //    } else {
+    //        return saved;
+    //    }
+
+    //}
 }
 
 public class DeclarationSpecifiers : ASTNode {
-    public DeclarationSpecifiers(Type _type, ASTNode _content, DeclarationSpecifiers _next) {
-        type = _type;
-        content = _content;
-        next = _next;
+    public DeclarationSpecifiers(List<StorageClassSpecifier> _storage_class_specifiers,
+                                 List<TypeSpecifier> _type_specifiers,
+                                 List<TypeQualifier> _type_qualifiers) {
+        storage_class_specifiers = _storage_class_specifiers;
+        type_qualifiers = _type_qualifiers;
+        type_specifiers = _type_specifiers;
     }
-    public enum Type {
-        STORAGE_CLASS_SPECIFIER,
-        TYPE_SPECIFIER,
-        TYPE_QUALIFIER
-    };
+
     public bool IsTypedef() {
-        if (type == Type.STORAGE_CLASS_SPECIFIER) {
-            if (((StorageClassSpecifier)content).content == KeywordVal.TYPEDEF) {
-                return true;
-            }
-        }
-        if (next == null) {
-            return false;
-        }
-        return next.IsTypedef();
+        return storage_class_specifiers.FindIndex(x => x == StorageClassSpecifier.TYPEDEF) != -1;
     }
-    public Type type;
-    public ASTNode content;
-    public DeclarationSpecifiers next;
+
+    public List<StorageClassSpecifier> storage_class_specifiers;
+    public List<TypeSpecifier> type_specifiers;
+    public List<TypeQualifier> type_qualifiers;
+
+    // The following code is deleted.
+
+    //public DeclarationSpecifiers(Type _type, ASTNode _content, DeclarationSpecifiers _next) {
+    //    type = _type;
+    //    content = _content;
+    //    next = _next;
+    //}
+    //public enum Type {
+    //    STORAGE_CLASS_SPECIFIER,
+    //    TYPE_SPECIFIER,
+    //    TYPE_QUALIFIER
+    //};
+    //public bool IsTypedef2() {
+    //    if (type == Type.STORAGE_CLASS_SPECIFIER) {
+    //        if (((StorageClassSpecifier)content).content == KeywordVal.TYPEDEF) {
+    //            return true;
+    //        }
+    //    }
+    //    if (next == null) {
+    //        return false;
+    //    }
+    //    return next.IsTypedef();
+    //}
+
+
+    //public Type type;
+    //public ASTNode content;
+    //public DeclarationSpecifiers next;
 }
 
 
@@ -193,85 +290,256 @@ public class InitDeclarator : ASTNode {
     public Declarator declarator;
 }
 
-
 // storage_class_specifier : auto | register | static | extern | typedef
-// [ return: StorageClassSpecifier / null]
-// [ note: there can be only one storage class in one declaration ]
+//
+// RETURN:
+// enum StorageClassSpecifier
+//
+// FAIL:
+// StorageClassSpecifier.NULL
+//
+// NOTE:
+// there can be only one storage class in one declaration
+//
 public class _storage_class_specifier : PTNode {
-    public static int Parse(List<Token> src, int begin, out StorageClassSpecifier node) {
-        node = null;
+    public static bool Test() {
+        StorageClassSpecifier decl_specs;
 
+        var src = Parser.GetTokensFromString("typedef");
+        int current = Parse(src, 0, out decl_specs);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("typedef typedef typedef const const");
+        current = Parse(src, 0, out decl_specs);
+        if (current == -1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static int Parse(List<Token> src, int begin, out StorageClassSpecifier spec) {
         // make sure the token is a keyword
-        if (src[begin].type != TokenType.KEYWORD)
+        if (src[begin].type != TokenType.KEYWORD) {
+            spec = StorageClassSpecifier.NULL;
             return -1;
+        }
 
         // check the value
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.AUTO:
-        case KeywordVal.REGISTER:
-        case KeywordVal.STATIC:
-        case KeywordVal.EXTERN:
-        case KeywordVal.TYPEDEF:
-            node = new StorageClassSpecifier(val);
+            spec = StorageClassSpecifier.AUTO;
             return begin + 1;
+
+        case KeywordVal.REGISTER:
+            spec = StorageClassSpecifier.REGISTER;
+            return begin + 1;
+
+        case KeywordVal.STATIC:
+            spec = StorageClassSpecifier.STATIC;
+            return begin + 1;
+
+        case KeywordVal.EXTERN:
+            spec = StorageClassSpecifier.EXTERN;
+            return begin + 1;
+
+        case KeywordVal.TYPEDEF:
+            spec = StorageClassSpecifier.TYPEDEF;
+            return begin + 1;
+
         default:
+            spec = StorageClassSpecifier.NULL;
             return -1;
         }
-
     }
 }
 
-public class StorageClassSpecifier : ASTNode {
-    public StorageClassSpecifier(KeywordVal _content) {
-        content = _content;
-    }
-    public KeywordVal content;
+public enum StorageClassSpecifier {
+    NULL,
+    AUTO,
+    REGISTER,
+    STATIC,
+    EXTERN,
+    TYPEDEF
 }
 
+//public class StorageClassSpecifier : ASTNode {
+//    public StorageClassSpecifier(KeywordVal _content) {
+//        content = _content;
+//    }
+//    public KeywordVal content;
+//}
 
-// type_specifier : void | char | short | int | long | float | double | signed | unsigned
-//                | struct_or_union_specifier | enum_specifier | typedef_name
-// [ return: TypeSpecifier / null ]
-// [note: the last three need scope environment!]
-// [[note: no support for struct, union, enum, typedef]]
-// [ note: there can be multiple type specifiers in one declaration ]
-// [ note: typedef_name is some previously typedefed symbol ]
+
+// type_specifier : void                        /* VoidSpecifier : PrimitiveTypeSpecifier */
+//                | char                        /* CharSpecifier : PrimitiveTypeSpecifier */
+//                | short                       /* ShortSpecifier : PrimitiveTypeSpecifier */
+//                | int                         /* IntSpecifier : PrimitiveTypeSpecifier */
+//                | long                        /* LongSpecifier : PrimitiveTypeSpecifier */
+//                | float                       /* FloatSpecifier : PrimitiveTypeSpecifier */
+//                | double                      /* DoubleSpecifier : PrimitiveTypeSpecifier */
+//                | signed                      /* SignedSpecifier : PrimitiveTypeSpecifier */
+//                | unsigned                    /* UnsignedSpecifier : PrimitiveTypeSpecifier */
+//                | struct_or_union_specifier   /* StructOrUnionSpecifier : PrimitiveTypeSpecifier */
+//                | enum_specifier              /* EnumSpecifier : PrimitiveTypeSpecifier */
+//                | typedef_name                /* TypedefName : TypeSpecifier */
+//
+// RETURN: TypeSpecifier
+//
+// FAIL: null
+//
+// NOTE: typedef_name needs environment
+//
 public class _type_specifier : PTNode {
-    public static int Parse(List<Token> src, int begin, out TypeSpecifier node) {
-        node = null;
+    public static bool Test() {
+        TypeSpecifier spec;
 
+        List<String> codes = new List<string> {
+            "union { int a; }", "void", "char", "short", "int", "long", "float", "double", "signed", "unsigned",
+            "struct { int a; }"
+        };
+
+        ScopeEnvironment.InScope();
+        ScopeEnvironment.AddTypedefName("Mytype");
+        var src = Parser.GetTokensFromString("Mytype");
+        int current = Parse(src, 0, out spec);
+        if (current == -1) {
+            return false;
+        }
+        ScopeEnvironment.OutScope();
+
+        foreach (var code in codes) {
+            src = Parser.GetTokensFromString(code);
+            current = Parse(src, 0, out spec);
+            if (current == -1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static int Parse(List<Token> src, int begin, out TypeSpecifier spec) {
+
+        // 1. match struct or union
+        StructOrUnionSpecifier struct_or_union_specifier;
+        int current = _struct_or_union_specifier.Parse(src, begin, out struct_or_union_specifier);
+        if (current != -1) {
+            spec = struct_or_union_specifier;
+            return current;
+        }
+
+        // 2. match enum
+        EnumSpecifier enum_specifier;
+        current = _enum_specifier.Parse(src, begin, out enum_specifier);
+        if (current != -1) {
+            spec = enum_specifier;
+            return current;
+        }
+
+        // 3. match typedef name
+        String typedef_name;
+        current = _typedef_name.Parse(src, begin, out typedef_name);
+        if (current != -1) {
+            spec = new TypedefName(typedef_name);
+            return current;
+        }
+
+        // now we only have keywords left
         // make sure the token is a keyword
-        if (src[begin].type != TokenType.KEYWORD)
+        if (src[begin].type != TokenType.KEYWORD) {
+            spec = null;
             return -1;
+        }
 
         // check the value
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.VOID:
-        case KeywordVal.CHAR:
-        case KeywordVal.SHORT:
-        case KeywordVal.INT:
-        case KeywordVal.LONG:
-        case KeywordVal.FLOAT:
-        case KeywordVal.DOUBLE:
-        case KeywordVal.SIGNED:
-        case KeywordVal.UNSIGNED:
-            node = new TypeSpecifier(val);
+            spec = new VoidSpecifier();
             return begin + 1;
+
+        case KeywordVal.CHAR:
+            spec = new CharSpecifier();
+            return begin + 1;
+
+        case KeywordVal.SHORT:
+            spec = new ShortSpecifier();
+            return begin + 1;
+
+        case KeywordVal.INT:
+            spec = new IntSpecifier();
+            return begin + 1;
+
+        case KeywordVal.LONG:
+            spec = new LongSpecifier();
+            return begin + 1;
+
+        case KeywordVal.FLOAT:
+            spec = new FloatSpecifier();
+            return begin + 1;
+
+        case KeywordVal.DOUBLE:
+            spec = new DoubleSpecifier();
+            return begin + 1;
+
+        case KeywordVal.SIGNED:
+            spec = new SignedSpecifier();
+            return begin + 1;
+
+        case KeywordVal.UNSIGNED:
+            spec = new UnsignedSpecifier();
+            return begin + 1;
+
         default:
+            spec = null;
             return -1;
         }
 
     }
 }
 
-public class TypeSpecifier : ASTNode {
-    public TypeSpecifier(KeywordVal _content) {
-        content = _content;
+public class TypeSpecifier : ASTNode {}
+
+public class PrimitiveTypeSpecifier : TypeSpecifier {}
+
+public class IntSpecifier : PrimitiveTypeSpecifier {}
+
+public class ShortSpecifier : PrimitiveTypeSpecifier {}
+
+public class LongSpecifier : PrimitiveTypeSpecifier {}
+
+public class FloatSpecifier : PrimitiveTypeSpecifier {}
+
+public class DoubleSpecifier : PrimitiveTypeSpecifier {}
+
+public class CharSpecifier : PrimitiveTypeSpecifier {}
+
+// this is just temporary
+public class SignedSpecifier : PrimitiveTypeSpecifier {}
+
+// this is just temporary
+public class UnsignedSpecifier : PrimitiveTypeSpecifier {}
+
+public class VoidSpecifier : PrimitiveTypeSpecifier {}
+
+// this is just temporary
+public class TypedefName : TypeSpecifier {
+    public TypedefName(String _name) {
+        name = _name;
     }
-    public KeywordVal content;
+    public String name;
 }
+
+//public class TypeSpecifier : ASTNode {
+//    public TypeSpecifier(KeywordVal _content) {
+//        content = _content;
+//    }
+//    public KeywordVal content;
+//}
 
 
 // type_qualifier : const | volatile
@@ -625,7 +893,7 @@ public class _enum_specifier : PTNode {
     }
 }
 
-public class EnumSpecifier : ASTNode {
+public class EnumSpecifier : TypeSpecifier {
     public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
         name = _name;
         enum_list = _enum_list;
@@ -781,14 +1049,19 @@ public class _struct_or_union_specifier : PTNode {
                 return -1;
             }
 
-            spec = new StructSpecifier("", decl_list);
+            if (struct_or_union.is_union) {
+                spec = new UnionSpecifier("", decl_list);
+            } else {
+                spec = new StructSpecifier("", decl_list);
+            }
+
             return current;
 
         }
     }
 }
 
-public class StructOrUnionSpecifier : ASTNode {
+public class StructOrUnionSpecifier : TypeSpecifier {
     public String name;
     public List<StructDecleration> decl_list;
 }
@@ -903,42 +1176,84 @@ public class StructDecleration : ASTNode {
 // [ note: my solution ]
 // specifier_qualifier_list : < type_specifier | type_qualifier >+
 public class _specifier_qualifier_list : PTNode {
-    public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers node) {
-        node = null;
-        DeclarationSpecifiers.Type type;
-        ASTNode content = null;
-        int current;
+    public static int Parse(List<Token> src, int begin, out DeclarationSpecifiers decl_specs) {
+        List<TypeSpecifier> type_specifiers = new List<TypeSpecifier>();
+        List<TypeQualifier> type_qualifiers = new List<TypeQualifier>();
 
+        int current = begin;
+        while (true) {
+            int saved = current;
 
-        TypeSpecifier type_specifier;
-        if ((current = _type_specifier.Parse(src, begin, out type_specifier)) != -1) {
-            // type_specifier successful match
-            content = type_specifier;
-            type = DeclarationSpecifiers.Type.TYPE_SPECIFIER;
-        } else {
-            TypeQualifier type_qualifier;
-            if ((current = _type_qualifier.Parse(src, begin, out type_qualifier)) != -1) {
-                // type_qualifier successful match
-                content = type_qualifier;
-                type = DeclarationSpecifiers.Type.TYPE_QUALIFIER;
-            } else {
-                // all fail, return
-                return -1;
+            // 1. match type_specifier
+            current = saved;
+            TypeSpecifier type_specifier;
+            current = _type_specifier.Parse(src, current, out type_specifier);
+            if (current != -1) {
+                type_specifiers.Add(type_specifier);
+                continue;
             }
+
+            // 2. match type_qualifier
+            current = saved;
+            TypeQualifier type_qualifier;
+            current = _type_qualifier.Parse(src, current, out type_qualifier);
+            if (current != -1) {
+                type_qualifiers.Add(type_qualifier);
+                continue;
+            }
+
+            // 3. if all failed, break out of the loop
+            current = saved;
+            break;
+
         }
 
-
-        node = new DeclarationSpecifiers(type, content, null);
-        // now check whether their is a next
-
-        int saved = current;
-        if ((current = _specifier_qualifier_list.Parse(src, current, out node.next)) != -1) {
-            return current;
-        } else {
-            return saved;
+        if (type_specifiers.Count == 0 && type_qualifiers.Count == 0) {
+            decl_specs = null;
+            return -1;
         }
+
+        decl_specs = new DeclarationSpecifiers(null, type_specifiers, type_qualifiers);
+        return current;
 
     }
+    
+    //public static int Parse2(List<Token> src, int begin, out DeclarationSpecifiers node) {
+    //    node = null;
+    //    DeclarationSpecifiers.Type type;
+    //    ASTNode content = null;
+    //    int current;
+
+
+    //    TypeSpecifier type_specifier;
+    //    if ((current = _type_specifier.Parse(src, begin, out type_specifier)) != -1) {
+    //        // type_specifier successful match
+    //        content = type_specifier;
+    //        type = DeclarationSpecifiers.Type.TYPE_SPECIFIER;
+    //    } else {
+    //        TypeQualifier type_qualifier;
+    //        if ((current = _type_qualifier.Parse(src, begin, out type_qualifier)) != -1) {
+    //            // type_qualifier successful match
+    //            content = type_qualifier;
+    //            type = DeclarationSpecifiers.Type.TYPE_QUALIFIER;
+    //        } else {
+    //            // all fail, return
+    //            return -1;
+    //        }
+    //    }
+
+
+    //    node = new DeclarationSpecifiers(type, content, null);
+    //    // now check whether their is a next
+
+    //    int saved = current;
+    //    if ((current = _specifier_qualifier_list.Parse(src, current, out node.next)) != -1) {
+    //        return current;
+    //    } else {
+    //        return saved;
+    //    }
+
+    //}
 }
 
 
