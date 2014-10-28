@@ -13,6 +13,7 @@ public class TokenString : Token {
     }
     public string raw;
     public string val;
+    public int idx;
     public override string ToString() {
         return type.ToString() + ": " + "\"" + raw + "\"" + "\n\"" + val + "\"";
     }
@@ -59,6 +60,12 @@ public class FSAString : FSA {
         token.type = TokenType.STRING;
         token.val = val;
         token.raw = raw;
+        int idx;
+        if ((idx = StringTable.entrys.FindIndex(x => x == raw)) == -1) {
+            StringTable.entrys.Add(raw);
+            idx = StringTable.entrys.Count - 1;
+        }
+        token.idx = idx;
         return token;
     }
     public void ReadChar(char ch) {

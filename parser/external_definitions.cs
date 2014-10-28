@@ -6,52 +6,63 @@ using System.Threading.Tasks;
 
 // translation_unit : [external_declaration]+
 public class _translation_unit : PTNode {
-    public static int Parse(List<Token> src, int begin, out List<ASTNode> unit) {
-        unit = null;
-
-        ASTNode node;
-        int current = _external_declaration.Parse(src, begin, out node);
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
+        TranslationUnit unit;
+        int current = Parse(src, 0, out unit);
         if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("int a() { return 1; } int b;");
+        current = Parse(src, 0, out unit);
+        if (current == -1) {
+            return false;
+        }
+
+        src = Parser.GetTokensFromString("int a");
+        current = Parse(src, 0, out unit);
+        if (current != -1) {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static int Parse(List<Token> src, int pos, out TranslationUnit unit) {
+        List<ASTNode> list;
+        int current;
+        if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
+            unit = new TranslationUnit(list);
+            return current;
+        } else {
+            unit = null;
             return -1;
         }
-
-        unit = new List<ASTNode>();
-        unit.Add(node);
-
-        int saved;
-        while (true) {
-            saved = current;
-            current = _external_declaration.Parse(src, current, out node);
-            if (current == -1) {
-                return saved;
-            }
-            unit.Add(node);
-        }
-
     }
+    
 }
-
-
 // external_declaration: function_definition | declaration
 public class _external_declaration : PTNode {
-    public static int Parse(List<Token> src, int begin, out ASTNode node) {
-        node = null;
-
-        FunctionDefinition func_def;
-        int current = _function_definition.Parse(src, begin, out func_def);
-        if (current != -1) {
-            node = func_def;
-            return current;
+    public static bool Test() {
+        var src = Parser.GetTokensFromString("int a;");
+        ASTNode node;
+        int current = Parse(src, 0, out node);
+        if (current == -1) {
+            return false;
         }
 
-        Declaration decl;
-        current = _declaration.Parse(src, begin, out decl);
-        if (current != -1) {
-            node = decl;
-            return current;
+        src = Parser.GetTokensFromString("int a() { return 1; }");
+        current = Parse(src, 0, out node);
+        if (current == -1) {
+            return false;
         }
 
-        return -1;
+        return true;
+    }
+
+    public static int Parse(List<Token> src, int pos, out ASTNode node) {
+        return Parser.Parse2Choices<ASTNode, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -96,15 +107,15 @@ public class _function_definition : PTNode {
     
     public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
         // try to match declaration_specifiers, if not found, create an empty one.
-        DeclarationSpecifiers specs;
+        DeclnSpecs specs;
         int current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
+            specs = new DeclnSpecs(new List<StorageClassSpecifier>(), new List<TypeSpec>(), new List<TypeQualifier>());
             current = begin;
         }
 
         // match declarator
-        Declarator decl;
+        Declr decl;
         current = _declarator.Parse(src, current, out decl);
         if (current == -1) {
             def = null;
@@ -122,15 +133,4 @@ public class _function_definition : PTNode {
         def = new FunctionDefinition(specs, decl, stmt);
         return current;
     }
-}
-
-public class FunctionDefinition : ASTNode {
-    public FunctionDefinition(DeclarationSpecifiers _specs, Declarator _decl, Statement _stmt) {
-        specs = _specs;
-        decl = _decl;
-        stmt = _stmt;
-    }
-    public DeclarationSpecifiers specs;
-    public Declarator decl;
-    public Statement stmt;
 }

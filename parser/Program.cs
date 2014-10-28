@@ -168,124 +168,94 @@ public class Parser {
         return lex.tokens;
     }
 
+    // tries to eat an operator
+    // if succeed, current++, return true
+    // if fail, current remains the same, return false
+    public static bool EatOperator(List<Token> src, ref int current, OperatorVal val) {
+        if (src[current].type != TokenType.OPERATOR) {
+            return false;
+        }
+
+        if (((TokenOperator)src[current]).val != val) {
+            return false;
+        }
+
+        current++;
+        return true;
+    }
+
+    public delegate int FParse<TRet>(List<Token> src, int begin, out TRet node) where TRet : ASTNode;
+
+    public static int ParseList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : ASTNode {
+        int current = begin;
+
+        list = new List<TRet>();
+        TRet item;
+
+        while (true) {
+            int saved = current;
+            if ((current = Parse(src, current, out item)) == -1) {
+                return saved;
+            }
+            list.Add(item);
+        }
+
+    }
+
+    public static int ParseNonEmptyList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : ASTNode {
+        begin = ParseList<TRet>(src, begin, out list, Parse);
+        if (list.Any()) {
+            return begin;
+        } else {
+            return -1;
+        }
+    }
+    
+    public static int Parse2Choices<TRet, T1, T2>(List<Token> src, int begin, out TRet node, FParse<T1> Parse1, FParse<T2> Parse2)
+        where T1 : TRet
+        where T2 : TRet
+        where TRet : ASTNode {
+        int ret;
+
+        T1 node1;
+        if ((ret = Parse1(src, begin, out node1)) != -1) {
+            node = node1;
+            return ret;
+        }
+
+        T2 node2;
+        if ((ret = Parse2(src, begin, out node2)) != -1) {
+            node = node2;
+            return ret;
+        }
+        
+        node = null;
+        return -1;
+    }
+
+    public static int ParseNonEmptyListWithSep<TRet>(List<Token> src, int pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : ASTNode {
+        list = new List<TRet>();
+        TRet item;
+
+        if ((pos = Parse(src, pos, out item)) == -1)
+            return -1;
+        list.Add(item);
+
+        while (true) {
+            int saved = pos;
+            if (!Parser.EatOperator(src, ref pos, op))
+                return saved;
+            if ((pos = Parse(src, pos, out item)) == -1)
+                return saved;
+            list.Add(item);
+        }
+
+    }
 }
 
 public class ParserEnvironment {
     public static bool debug = false;
 }
-
-public class Scope {
-    public Scope() {
-        vars = new List<String>();
-        typedef_names = new List<string>();
-    }
-
-    public bool HasVariable(String var) {
-        return vars.FindIndex(x => x == var) != -1;
-    }
-
-    public bool HasTypedefName(String type) {
-        return typedef_names.FindIndex(x => x == type) != -1;
-    }
-
-    public bool HasIdentifier(String id) {
-        return HasVariable(id) || HasTypedefName(id);
-    }
-
-    public void AddTypedefName(String type) {
-        typedef_names.Add(type);
-    }
-
-    public List<String> typedef_names;
-    public List<String> vars;
-}
-
-public class ScopeSandbox {
-    public ScopeSandbox() {
-        scopes = new Stack<Scope>();
-        scopes.Push(new Scope());
-    }
-
-    public void InScope() {
-        scopes.Push(new Scope());
-    }
-
-    public void OutScope() {
-        scopes.Pop();
-    }
-
-    public bool HasVariable(String var) {
-        return scopes.Peek().HasVariable(var);
-    }
-
-    public bool HasTypedefName(String type) {
-        return scopes.Peek().HasTypedefName(type);
-    }
-
-    public void AddTypedefName(String type) {
-        scopes.Peek().AddTypedefName(type);
-    }
-
-    public bool HasIdentifier(String id) {
-        return scopes.Peek().HasIdentifier(id);
-    }
-
-    public Stack<Scope> scopes;
-}
-
-static class ScopeEnvironment {
-    static ScopeEnvironment() {
-        sandboxes = new Stack<ScopeSandbox>();
-        sandboxes.Push(new ScopeSandbox());
-    }
-
-    public static void PushSandbox() {
-        if (sandboxes.Count == 0) {
-            return;
-        }
-        sandboxes.Push(sandboxes.Peek());
-    }
-
-    public static void PopSandbox() {
-        if (sandboxes.Count < 2) {
-            return;
-        }
-        ScopeSandbox top = sandboxes.Pop();
-        sandboxes.Pop();
-        sandboxes.Push(top);
-    }
-
-    public static void InScope() {
-        sandboxes.Peek().InScope();
-    }
-
-    public static void OutScope() {
-        sandboxes.Peek().OutScope();
-    }
-
-    public static bool HasVariable(String var) {
-        return sandboxes.Peek().HasVariable(var);
-    }
-
-    public static bool HasTypedefName(String type) {
-        return sandboxes.Peek().HasTypedefName(type);
-    }
-
-    public static void AddTypedefName(String type) {
-        sandboxes.Peek().AddTypedefName(type);
-    }
-
-    public static bool HasIdentifier(String id) {
-        return sandboxes.Peek().HasIdentifier(id);
-    }
-
-    public static Stack<ScopeSandbox> sandboxes;
-
-}
-
-
-public interface PTNode {}
-public interface ASTNode {}
 
 
 public class Program {
@@ -294,7 +264,7 @@ public class Program {
         lex.OpenFile("../../../hello.c");
         lex.Lex();
         var src = lex.tokens;
-        List<ASTNode> root;
+        TranslationUnit root;
         int current = _translation_unit.Parse(src, 0, out root);
     }
 }

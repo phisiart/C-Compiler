@@ -4,9 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-
-public class Expression : ASTNode {}
-
 // primary_expression: identifier           /* Variable : Expression */
 //
 //                   | constant             /* ConstChar : Expression
@@ -135,49 +132,6 @@ public class _primary_expression : PTNode {
     }
 }
 
-public class Variable : Expression {
-    public Variable(String _name) {
-        name = _name;
-    }
-    public String name;
-}
-
-public class Constant : Expression {
-}
-
-public class ConstChar : Constant {
-    public ConstChar(Char _val) {
-        val = _val;
-    }
-    public Char val;
-}
-
-public class ConstFloat : Constant {
-    public ConstFloat(Double _val, FloatType _float_type) {
-        val = _val;
-        float_type = _float_type;
-    }
-    public FloatType float_type;
-    public Double val;
-}
-
-public class ConstInt : Constant {
-    public ConstInt(long _val, IntType _int_type) {
-        val = _val;
-        int_type = _int_type;
-    }
-    public IntType int_type;
-    public long val;
-}
-
-public class StringLiteral : Expression {
-    public StringLiteral(String _val) {
-        val = _val;
-    }
-    public String val;
-}
-
-
 // expression: assignment_expression < , assignment_expression >*
 // [ note: it's okay if there is a lonely ',', just leave it be ]
 public class _expression : PTNode {
@@ -209,14 +163,6 @@ public class _expression : PTNode {
         }
     }
 }
-
-public class AssignmentList : Expression {
-    public AssignmentList(List<Expression> _exprs) {
-        exprs = _exprs;
-    }
-    public List<Expression> exprs;
-}
-
 
 // constant_expression: conditional_expression
 // [ note: when declaring an array, the size should be a const ]
@@ -261,18 +207,6 @@ public class _conditional_expression : PTNode {
         return current;
     }
 }
-
-public class ConditionalExpression : Expression {
-    public ConditionalExpression(Expression _cond, Expression _true_expr, Expression _false_expr) {
-        cond = _cond;
-        true_expr = _true_expr;
-        false_expr = _false_expr;
-    }
-    public Expression cond;
-    public Expression true_expr;
-    public Expression false_expr;
-}
-
 
 // assignment_expression: conditional_expression
 //                      | unary_expression assignment_operator assignment_expression
@@ -401,106 +335,6 @@ public class _assignment_expression : PTNode {
         return _conditional_expression.Parse(src, begin, out node);
     }
 }
-
-public class Assignment : Expression {
-    public Assignment(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class MultAssign : Expression {
-    public MultAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class DivAssign : Expression {
-    public DivAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class ModAssign : Expression {
-    public ModAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class AddAssign : Expression {
-    public AddAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class SubAssign : Expression {
-    public SubAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class LeftShiftAssign : Expression {
-    public LeftShiftAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class RightShiftAssign : Expression {
-    public RightShiftAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class BitwiseAndAssign : Expression {
-    public BitwiseAndAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class XorAssign : Expression {
-    public XorAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
-public class BitwiseOrAssign : Expression {
-    public BitwiseOrAssign(Expression _lvalue, Expression _rvalue) {
-        lvalue = _lvalue;
-        rvalue = _rvalue;
-    }
-    public Expression lvalue;
-    public Expression rvalue;
-}
-
 
 // postfix_expression: primary_expression                                       /* Expression */
 //                   | postfix_expression '[' expression ']'                    /* ArrayElement */
@@ -699,57 +533,6 @@ public class _postfix_expression : PTNode {
     }
 }
 
-public class ArrayElement : Expression {
-    public ArrayElement(Expression _var, Expression _idx) {
-        var = _var;
-        idx = _idx;
-    }
-    public Expression var;
-    public Expression idx;
-}
-
-public class FunctionCall : Expression {
-    public FunctionCall(Expression _func, List<Expression> _args) {
-        func = _func;
-        args = _args;
-    }
-    public Expression func;
-    public List<Expression> args;
-}
-
-public class Attribute : Expression {
-    public Attribute(Expression _expr, Variable _attrib) {
-        expr = _expr;
-        attrib = _attrib;
-    }
-    public Expression expr;
-    public Variable attrib;
-}
-
-public class PointerAttribute : Expression {
-    public PointerAttribute(Expression _expr, Variable _attrib) {
-        expr = _expr;
-        attrib = _attrib;
-    }
-    public Expression expr;
-    public Variable attrib;
-}
-
-public class Increment : Expression {
-    public Increment(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Decrement : Expression {
-    public Decrement(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-
 // argument_expression_list: assignment_expression < , assignment_expression >*
 public class _argument_expression_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Expression> node) {
@@ -780,14 +563,6 @@ public class _argument_expression_list : PTNode {
         }
     }
 }
-
-public class ArgumentList : Expression {
-    public ArgumentList(List<Expression> _exprs) {
-        exprs = _exprs;
-    }
-    public List<Expression> exprs;
-}
-
 
 
 // unary_expression: postfix_expression                     /* Expression */
@@ -1084,77 +859,6 @@ public class _unary_expression : PTNode {
     }
 }
 
-public class SizeofType : Expression {
-    public SizeofType(TypeName _type_name) {
-        type_name = _type_name;
-    }
-    public TypeName type_name;
-}
-
-public class SizeofExpression : Expression {
-    public SizeofExpression(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class PrefixIncrement : Expression {
-    public PrefixIncrement(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class PrefixDecrement : Expression {
-    public PrefixDecrement(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Reference : Expression {
-    public Reference(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Dereference : Expression {
-    public Dereference(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Positive : Expression {
-    public Positive(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Negative : Expression {
-    public Negative(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class BitwiseNot : Expression {
-    public BitwiseNot(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-public class Not : Expression {
-    public Not(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
-
 // cast_expression: unary_expression                    /* Expression */
 //                | '(' type_name ')' cast_expression   /* TypeCast */
 //
@@ -1215,16 +919,6 @@ public class _cast_expression : Expression {
 
     }
 }
-
-public class TypeCast : Expression {
-    public TypeCast(TypeName _type_name, Expression _expr) {
-        type_name = _type_name;
-        expr = _expr;
-    }
-    public TypeName type_name;
-    public Expression expr;
-}
-
 
 // multiplicative_expression: cast_expression                                   /* Expression */
 //                          | multiplicative_expression '*' cast_expression     /* Multiplication */
@@ -1321,34 +1015,6 @@ public class _multiplicative_expression : PTNode {
     }
 }
 
-public class Multiplication : Expression {
-    public Multiplication(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class Division : Expression {
-    public Division(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class Modulo : Expression {
-    public Modulo(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // additive_expression: multiplicative_expression                           /* Expression */
 //                    | additive_expression '+' multiplicative_expression   /* Addition */
 //                    | additive_expression '-' multiplicative_expression   /* Subtraction */
@@ -1430,25 +1096,6 @@ public class _additive_expression : PTNode {
     }
 }
 
-public class Addition : Expression {
-    public Addition(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class Subtraction : Expression {
-    public Subtraction(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // shift_expression: additive_expression                        /* Expression */
 //                 | shift_expression '<<' additive_expression  /* LeftShift */
 //                 | shift_expression '>>' additive_expression  /* RightShift */
@@ -1529,25 +1176,6 @@ public class _shift_expression : PTNode {
 
     }
 }
-
-public class LeftShift : Expression {
-    public LeftShift(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class RightShift : Expression {
-    public RightShift(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
 
 // relational_expression: shift_expression                              /* Expression */
 //                      | relational_expression '<' shift_expression    /* LessThan */
@@ -1657,43 +1285,6 @@ public class _relational_expression : PTNode {
     }
 }
 
-public class LessThan : Expression {
-    public LessThan(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class LessEqualThan : Expression {
-    public LessEqualThan(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class GreaterThan : Expression {
-    public GreaterThan(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class GreaterEqualThan : Expression {
-    public GreaterEqualThan(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // equality_expression: relational_expression
 //                    | equality_expression == relational_expression
 //                    | equality_expression != relational_expression
@@ -1737,23 +1328,6 @@ public class _equality_expression : PTNode {
     }
 }
 
-public class Equal : Expression {
-    public Equal(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-public class NotEqual : Expression {
-    public NotEqual(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
 
 // and_expression: equality_expression
 //               | and_expression & equality_expression
@@ -1788,16 +1362,6 @@ public class _and_expression : PTNode {
     }
 }
 
-public class BitwiseAnd : Expression {
-    public BitwiseAnd(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // exclusive_or_expression: and_expression
 //                         | exclusive_or_expression ^ and_expression
 // [ note: my solution ]
@@ -1830,16 +1394,6 @@ public class _exclusive_or_expression : PTNode {
         }
     }
 }
-
-public class Xor : Expression {
-    public Xor(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
 
 // inclusive_or_expression: exclulsive_or_expression
 //                        | inclusive_or_expression | exclulsive_or_expression
@@ -1874,16 +1428,6 @@ public class _inclusive_or_expression : PTNode {
     }
 }
 
-public class BitwiseOr : Expression {
-    public BitwiseOr(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // logical_and_expression: inclusive_or_expression
 //                       | logical_and_expression && inclusive_or_expression
 // [ note: my solution ]
@@ -1917,16 +1461,6 @@ public class _logical_and_expression : PTNode {
     }
 }
 
-public class LogicalAnd : Expression {
-    public LogicalAnd(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
 // logical_or_expression: logical_and_expression
 //                      | logical_or_expression || logical_and_expression
 // [ note: my solution ]
@@ -1959,13 +1493,4 @@ public class _logical_or_expression : PTNode {
             }
         }
     }
-}
-
-public class LogicalOr : Expression {
-    public LogicalOr(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
-    }
-    public Expression lhs;
-    public Expression rhs;
 }

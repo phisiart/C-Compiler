@@ -3,11 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C127BADE-A0A5-46DD-BDD1-1FDFD62CD16B}</ProjectGuid>
+    <ProjectGuid>{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>parser_test</RootNamespace>
-    <AssemblyName>parser_test</AssemblyName>
+    <RootNamespace>semant_test</RootNamespace>
+    <AssemblyName>semant_test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -50,7 +50,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="parer_test.cs" />
+    <Compile Include="semant_test.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

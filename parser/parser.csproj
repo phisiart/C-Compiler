@@ -47,14 +47,21 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="statements.cs" />
+    <Compile Include="TRet.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lexical_analysis\lexical_analysis.csproj">
       <Project>{61b4af5e-aff2-4293-a5de-e1997e06cabb}</Project>
       <Name>lexical_analysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\semantic_analysis\semantic_analysis.csproj">
+      <Project>{3afd99a3-370a-4643-9a21-77261916d14c}</Project>
+      <Name>semantic_analysis</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

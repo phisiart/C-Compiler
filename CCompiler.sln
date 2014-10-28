@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "parser", "parser\parser.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "parser_test", "parser_test\parser_test.csproj", "{C127BADE-A0A5-46DD-BDD1-1FDFD62CD16B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semantic_analysis", "semantic_analysis\semantic_analysis.csproj", "{3AFD99A3-370A-4643-9A21-77261916D14C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant_test", "semant_test\semant_test.csproj", "{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{C127BADE-A0A5-46DD-BDD1-1FDFD62CD16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C127BADE-A0A5-46DD-BDD1-1FDFD62CD16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C127BADE-A0A5-46DD-BDD1-1FDFD62CD16B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AFD99A3-370A-4643-9A21-77261916D14C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AFD99A3-370A-4643-9A21-77261916D14C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AFD99A3-370A-4643-9A21-77261916D14C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AFD99A3-370A-4643-9A21-77261916D14C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
+
 // statement: labeled_statement
 //          | compound_statement
 //          | expression_statement
@@ -46,9 +47,6 @@ public class _statement : PTNode {
 
         return -1;
     }
-}
-
-public class Statement : ASTNode {
 }
 
 
@@ -106,26 +104,6 @@ public class _jump_statement : PTNode {
     }
 }
 
-public class GotoStatement : Statement {
-    public GotoStatement(String _label) {
-        label = _label;
-    }
-    public String label;
-}
-
-public class ContinueStatement : Statement {
-}
-
-public class BreakStatement : Statement {
-}
-
-public class ReturnStatement : Statement {
-    public ReturnStatement(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
-}
-
 
 // compound_statement : { <declaration_list>? <statement_list>? }
 public class _compound_statement : PTNode {
@@ -136,11 +114,11 @@ public class _compound_statement : PTNode {
         }
         int current = begin + 1;
 
-        List<Declaration> decl_list;
+        List<Decln> decl_list;
         int saved = current;
         current = _declaration_list.Parse(src, current, out decl_list);
         if (current == -1) {
-            decl_list = new List<Declaration>();
+            decl_list = new List<Decln>();
             current = saved;
         }
 
@@ -162,24 +140,15 @@ public class _compound_statement : PTNode {
     }
 }
 
-public class CompoundStatement : Statement {
-    public CompoundStatement(List<Declaration> _decl_list, List<Statement> _stmt_list) {
-        decl_list = _decl_list;
-        stmt_list = _stmt_list;
-    }
-    List<Declaration> decl_list;
-    List<Statement> stmt_list;
-}
-
 
 // declaration_list: declaration
 //                 | declaration_list declaration
 // [ note: my solution ]
 // declaration_list: <declaration>+
 public class _declaration_list : PTNode {
-    public static int Parse(List<Token> src, int begin, out List<Declaration> decl_list) {
-        decl_list = new List<Declaration>();
-        Declaration decl;
+    public static int Parse(List<Token> src, int begin, out List<Decln> decl_list) {
+        decl_list = new List<Decln>();
+        Decln decl;
         int current = _declaration.Parse(src, begin, out decl);
         if (current == -1) {
             return -1;
@@ -204,22 +173,23 @@ public class _declaration_list : PTNode {
 // statement_list: <statement>+
 public class _statement_list : PTNode {
     public static int Parse(List<Token> src, int begin, out List<Statement> stmt_list) {
-        stmt_list = new List<Statement>();
-        Statement stmt;
-        int current = _statement.Parse(src, begin, out stmt);
-        if (current == -1) {
-            return -1;
-        }
-        stmt_list.Add(stmt);
-        int saved;
-        while (true) {
-            saved = current;
-            current = _statement.Parse(src, current, out stmt);
-            if (current == -1) {
-                return saved;
-            }
-            stmt_list.Add(stmt);
-        }
+        return Parser.ParseNonEmptyList(src, begin, out stmt_list, _statement.Parse);
+        //stmt_list = new List<Statement>();
+        //Statement stmt;
+        //int current = _statement.Parse(src, begin, out stmt);
+        //if (current == -1) {
+        //    return -1;
+        //}
+        //stmt_list.Add(stmt);
+        //int saved;
+        //while (true) {
+        //    saved = current;
+        //    current = _statement.Parse(src, current, out stmt);
+        //    if (current == -1) {
+        //        return saved;
+        //    }
+        //    stmt_list.Add(stmt);
+        //}
     }
 }
 
@@ -243,13 +213,6 @@ public class _expression_statement : PTNode {
         stmt = new ExpressionStatement(expr);
         return current;
     }
-}
-
-public class ExpressionStatement : Statement {
-    public ExpressionStatement(Expression _expr) {
-        expr = _expr;
-    }
-    public Expression expr;
 }
 
 
@@ -385,37 +348,6 @@ public class _iteration_statement : PTNode {
     }
 }
 
-public class WhileStatement : Statement {
-    public WhileStatement(Expression _cond, Statement _body) {
-        cond = _cond;
-        body = _body;
-    }
-    public Expression cond;
-    public Statement body;
-}
-
-public class DoWhileStatement : Statement {
-    public DoWhileStatement(Statement _body, Expression _cond) {
-        body = _body;
-        cond = _cond;
-    }
-    public Statement body;
-    public Expression cond;
-}
-
-public class ForStatement : Statement {
-    public ForStatement(Expression _init, Expression _cond, Expression _loop, Statement _body) {
-        init = _init;
-        cond = _cond;
-        loop = _loop;
-        body = _body;
-    }
-    public Expression init;
-    public Expression cond;
-    public Expression loop;
-    public Statement body;
-}
-
 
 // selection_statement: if ( expression ) statement
 //                    | if ( expression ) statement else statement
@@ -488,35 +420,6 @@ public class _selection_statement : PTNode {
             return -1;
         }
     }
-}
-
-public class SwitchStatement : Statement {
-    public SwitchStatement(Expression _expr, Statement _stmt) {
-        expr = _expr;
-        stmt = _stmt;
-    }
-    public Expression expr;
-    public Statement stmt;
-}
-
-public class IfStatement : Statement {
-    public IfStatement(Expression _cond, Statement _stmt) {
-        cond = _cond;
-        stmt = _stmt;
-    }
-    public Expression cond;
-    public Statement stmt;
-}
-
-public class IfElseStatement : Statement {
-    public IfElseStatement(Expression _cond, Statement _true_stmt, Statement _false_stmt) {
-        cond = _cond;
-        true_stmt = _true_stmt;
-        false_stmt = _false_stmt;
-    }
-    public Expression cond;
-    public Statement true_stmt;
-    public Statement false_stmt;
 }
 
 
@@ -596,23 +499,4 @@ public class _labeled_statement : PTNode {
 
 
     }
-}
-
-public class LabeledStatement : Statement {
-    public LabeledStatement(String _label, Statement _stmt) {
-        label = _label;
-        stmt = _stmt;
-    }
-    public String label;
-    public Statement stmt;
-}
-
-public class CaseStatement : Statement {
-    public CaseStatement(Expression _expr, Statement _stmt) {
-        expr = _expr;
-        stmt = _stmt;
-    }
-    // expr == null means 'default'
-    public Expression expr;
-    public Statement stmt;
 }

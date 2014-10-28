@@ -108,5 +108,30 @@ public class ParserTest {
     public void test_pointer() {
         Assert.IsTrue(_pointer.Test());
     }
+
+    [TestMethod]
+    public void test_initializer() {
+        Assert.IsTrue(_initializer.Test());
+    }
+
+    [TestMethod]
+    public void test_declaration() {
+        Assert.IsTrue(_declaration.Test());
+    }
+
+    [TestMethod]
+    public void test_external_declaration() {
+        Assert.IsTrue(_external_declaration.Test());
+    }
+
+    [TestMethod]
+    public void test_translation_unit() {
+        Assert.IsTrue(_translation_unit.Test());
+    }
+
+    [TestMethod]
+    public void test_initializer_list() {
+        Assert.IsTrue(_initializer_list.Test());
+    }
 }
 
