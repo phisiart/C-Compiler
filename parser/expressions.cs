@@ -447,7 +447,8 @@ public class _postfix_expression : PTNode {
                 current++;
 
                 // successful match
-                expr = new ArrayElement(expr, idx);
+                expr = new Dereference(new Addition(expr, idx));
+                // expr = new ArrayElement(expr, idx);
                 break;
 
             case OperatorVal.LPAREN:
@@ -501,7 +502,8 @@ public class _postfix_expression : PTNode {
                 current++;
 
                 // successful match
-                expr = new PointerAttribute(expr, new Variable(pattrib));
+                expr = new Attribute(new Dereference(expr), new Variable(pattrib));
+                // expr = new PointerAttribute(expr, new Variable(pattrib));
                 break;
 
             case OperatorVal.INC:

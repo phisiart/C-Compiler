@@ -32,6 +32,54 @@ public class TType {
         UNION,
         OTHER
     }
+
+    public bool IsInt() {
+        switch (kind) {
+        case Kind.INT8:
+        case Kind.UINT8:
+        case Kind.INT16:
+        case Kind.UINT16:
+        case Kind.INT32:
+        case Kind.UINT32:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public bool IsArith() {
+        switch (kind) {
+        case Kind.INT8:
+        case Kind.UINT8:
+        case Kind.INT16:
+        case Kind.UINT16:
+        case Kind.INT32:
+        case Kind.UINT32:
+        case Kind.FLOAT32:
+        case Kind.FLOAT64:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public bool IsScalar() {
+        switch (kind) {
+        case Kind.INT8:
+        case Kind.UINT8:
+        case Kind.INT16:
+        case Kind.UINT16:
+        case Kind.INT32:
+        case Kind.UINT32:
+        case Kind.FLOAT32:
+        case Kind.FLOAT64:
+        case Kind.POINTER:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
     public Kind kind;
     public bool is_const;
     public bool is_volatile;

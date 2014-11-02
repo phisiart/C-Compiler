@@ -22,6 +22,38 @@ using System.IO;
 
 public class Expression : ASTNode {
     public TType type;
+    public void SemantUsualArithmeticConversion(ref Expression lhs, ref Expression rhs) {
+
+        // if either operand has type double, the other operand is converted to double.
+        if (lhs.type.kind == TType.Kind.FLOAT64 || rhs.type.kind == TType.Kind.FLOAT64) {
+            lhs = new TypeCast(new TFloat64(), lhs);
+            rhs = new TypeCast(new TFloat64(), rhs);
+            type = new TFloat64();
+            return;
+        }
+
+        // if either operand has type float, the other operand is converted to float.
+        if (lhs.type.kind == TType.Kind.FLOAT32 || rhs.type.kind == TType.Kind.FLOAT32) {
+            lhs = new TypeCast(new TFloat32(), lhs);
+            rhs = new TypeCast(new TFloat32(), rhs);
+            type = new TFloat32();
+            return;
+        }
+
+        // if either operand has type unsigned long int, the other operand is converted to unsigned long int.
+        if (lhs.type.kind == TType.Kind.UINT32 || rhs.type.kind == TType.Kind.UINT32) {
+            lhs = new TypeCast(new TUInt32(), lhs);
+            rhs = new TypeCast(new TUInt32(), rhs);
+            type = new TUInt32();
+            return;
+        }
+
+        // both operands have type int.
+        lhs = new TypeCast(new TInt32(), lhs);
+        rhs = new TypeCast(new TInt32(), rhs);
+        type = new TInt32();
+
+    }
 }
 
 
@@ -258,15 +290,16 @@ public class BitwiseOrAssign : Expression {
 }
 
 
-public class ArrayElement : Expression {
-    public ArrayElement(Expression _var, Expression _idx) {
-        var = _var;
-        idx = _idx;
-    }
-    public Expression var;
-    public Expression idx;
-}
+//public class ArrayElement : Expression {
+//    public ArrayElement(Expression _var, Expression _idx) {
+//        var = _var;
+//        idx = _idx;
+//    }
+//    public Expression var;
+//    public Expression idx;
+//}
 
+// not finished.
 public class FunctionCall : Expression {
     public FunctionCall(Expression _func, List<Expression> _args) {
         func = _func;
@@ -274,6 +307,19 @@ public class FunctionCall : Expression {
     }
     public Expression func;
     public List<Expression> args;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+
+        scope = func.Semant(scope);
+        foreach (Expression arg in args) {
+            scope = arg.Semant(scope);
+        }
+
+        // args are assigned
+
+        return scope;
+    }
 }
 
 public class Attribute : Expression {
@@ -285,20 +331,30 @@ public class Attribute : Expression {
     public Variable attrib;
 }
 
-public class PointerAttribute : Expression {
-    public PointerAttribute(Expression _expr, Variable _attrib) {
-        expr = _expr;
-        attrib = _attrib;
-    }
-    public Expression expr;
-    public Variable attrib;
-}
+//public class PointerAttribute : Expression {
+//    public PointerAttribute(Expression _expr, Variable _attrib) {
+//        expr = _expr;
+//        attrib = _attrib;
+//    }
+//    public Expression expr;
+//    public Variable attrib;
+//}
 
 public class Increment : Expression {
     public Increment(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsScalar()) {
+            Log.SemantError("Error: increment expected scalar type.");
+        }
+        type = expr.type;
+        return scope;
+    }
 }
 
 public class Decrement : Expression {
@@ -306,15 +362,25 @@ public class Decrement : Expression {
         expr = _expr;
     }
     public Expression expr;
-}
 
-
-public class ArgumentList : Expression {
-    public ArgumentList(List<Expression> _exprs) {
-        exprs = _exprs;
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsScalar()) {
+            Log.SemantError("Error: decrement expected scalar type.");
+        }
+        type = expr.type;
+        return scope;
     }
-    public List<Expression> exprs;
 }
+
+
+//public class ArgumentList : Expression {
+//    public ArgumentList(List<Expression> _exprs) {
+//        exprs = _exprs;
+//    }
+//    public List<Expression> exprs;
+//}
 
 
 
@@ -322,14 +388,39 @@ public class SizeofType : Expression {
     public SizeofType(TypeName _type_name) {
         type_name = _type_name;
     }
+
+    // after parsing
     public TypeName type_name;
+
+    // after semant
+    public Int64 size;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = type_name.Semant(scope);
+        size = type_name.type.SizeOf();
+        return scope;
+    }
+
 }
 
 public class SizeofExpression : Expression {
     public SizeofExpression(Expression _expr) {
         expr = _expr;
     }
+
+    // after parsing
     public Expression expr;
+
+    // after semant
+    public Int64 size;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        size = expr.type.SizeOf();
+        return scope;
+    }
+
 }
 
 public class PrefixIncrement : Expression {
@@ -337,6 +428,17 @@ public class PrefixIncrement : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsScalar()) {
+            Log.SemantError("Error: increment expected scalar type.");
+        }
+        type = expr.type;
+        return scope;
+    }
+
 }
 
 public class PrefixDecrement : Expression {
@@ -344,6 +446,17 @@ public class PrefixDecrement : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsScalar()) {
+            Log.SemantError("Error: decrement expected scalar type.");
+        }
+        type = expr.type;
+        return scope;
+    }
+
 }
 
 public class Reference : Expression {
@@ -351,6 +464,14 @@ public class Reference : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        type = new TPointer(expr.type);
+        return scope;
+    }
+
 }
 
 public class Dereference : Expression {
@@ -358,6 +479,18 @@ public class Dereference : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (expr.type.kind != TType.Kind.POINTER) {
+            Log.SemantError("Error: dereferencing expected pointer type.");
+        }
+        TPointer ptype = (TPointer)expr.type;
+        type = ptype.ref_t;
+        return scope;
+    }
+
 }
 
 public class Positive : Expression {
@@ -365,6 +498,12 @@ public class Positive : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        return scope;
+    }
 }
 
 public class Negative : Expression {
@@ -372,6 +511,12 @@ public class Negative : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        return scope;
+    }
 }
 
 public class BitwiseNot : Expression {
@@ -394,8 +539,302 @@ public class TypeCast : Expression {
         type_name = _type_name;
         expr = _expr;
     }
+
+    public TypeCast(TType _type, Expression _expr) {
+        expr = _expr;
+        type_name = null;
+        type = _type;
+        scope = expr.scope;
+        SemantConversion();
+    }
+
+    // after parsing
     public TypeName type_name;
     public Expression expr;
+
+    // after semant
+    public List<Cast> casts;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        scope = type_name.Semant(scope);
+        type = type_name.type;
+        return SemantConversion();
+    }
+
+    public ScopeSandbox SemantConversion() {
+
+        TType.Kind kind_from = expr.type.kind;
+        TType.Kind kind_to = type.kind;
+
+        if (kind_from == kind_to) {
+            casts = new List<Cast>();
+            return scope;
+        }
+
+        if ((casts = SemantConversionFromSignedIntegral(kind_from, kind_to)) != null) {
+            return scope;
+        }
+
+        if ((casts = SemantConversionFromUnsignedIntegral(kind_from, kind_to)) != null) {
+            return scope;
+        }
+
+        if ((casts = SemantConversionFromFloat(kind_from, kind_to)) != null) {
+            return scope;
+        }
+
+        if ((casts = SemantConversionFromPointer(kind_from, kind_to)) != null) {
+            return scope;
+        }
+
+        Log.SemantError("Error: cannot convert from " + kind_from.ToString() + " to " + kind_to.ToString());
+        return scope;
+
+    }
+
+    public enum Cast {
+        INT8_TO_INT16,
+        INT8_TO_INT32,
+        INT8_TO_UINT8,
+
+        INT16_TO_INT8,
+        INT16_TO_INT32,
+        INT16_TO_UINT16,
+
+        INT32_TO_INT8,
+        INT32_TO_INT16,
+        INT32_TO_UINT32,
+        INT32_TO_FLOAT32,
+        INT32_TO_FLOAT64,
+
+        UINT8_TO_UINT16,
+        UINT8_TO_UINT32,
+        UINT8_TO_INT8,
+
+        UINT16_TO_UINT8,
+        UINT16_TO_UINT32,
+        UINT16_TO_INT16,
+
+        UINT32_TO_UINT8,
+        UINT32_TO_UINT16,
+        UINT32_TO_INT32,
+        UINT32_TO_FLOAT32,
+        UINT32_TO_FLOAT64,
+
+        FLOAT32_TO_INT32,
+        FLOAT32_TO_FLOAT64,
+
+        FLOAT64_TO_FLOAT32,
+        FLOAT64_TO_INT32,
+
+    }
+
+    public List<Cast> SemantConversionFromSignedIntegral(TType.Kind from, TType.Kind to) {
+        switch (from) {
+        case TType.Kind.INT8:
+            switch (to) {
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.INT8_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.INT8_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.INT8_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.INT8_TO_INT16, Cast.INT16_TO_UINT16 };
+            case TType.Kind.UINT32:
+            case TType.Kind.POINTER:
+                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        case TType.Kind.INT16:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.INT16_TO_INT8 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.INT16_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.INT16_TO_INT8, Cast.INT8_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.INT16_TO_UINT16 };
+            case TType.Kind.UINT32:
+            case TType.Kind.POINTER:
+                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        case TType.Kind.INT32:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.INT32_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.INT32_TO_INT16 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+            case TType.Kind.UINT32:
+            case TType.Kind.POINTER:
+                return new List<Cast> { Cast.INT32_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        default:
+            return null;
+        }
+    }
+
+    public List<Cast> SemantConversionFromUnsignedIntegral(TType.Kind from, TType.Kind to) {
+        switch (from) {
+        case TType.Kind.UINT8:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.UINT8_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.UINT8_TO_UINT16, Cast.UINT16_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.UINT8_TO_UINT16 };
+            case TType.Kind.UINT32:
+            case TType.Kind.POINTER:
+                return new List<Cast> { Cast.UINT8_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        case TType.Kind.UINT16:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.UINT16_TO_UINT8, Cast.UINT8_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.UINT16_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.UINT16_TO_UINT8 };
+            case TType.Kind.UINT32:
+            case TType.Kind.POINTER:
+                return new List<Cast> { Cast.UINT16_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        case TType.Kind.UINT32:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.UINT32_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.UINT32_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.UINT32_TO_UINT16 };
+            case TType.Kind.POINTER:
+                return new List<Cast>();
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        default:
+            return null;
+        }
+    }
+
+    public List<Cast> SemantConversionFromFloat(TType.Kind from, TType.Kind to) {
+        switch (from) {
+        case TType.Kind.FLOAT32:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+            case TType.Kind.UINT32:
+                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_UINT32 };
+            case TType.Kind.FLOAT64:
+                return new List<Cast> { Cast.FLOAT32_TO_FLOAT64 };
+            default:
+                return null;
+            }
+        case TType.Kind.FLOAT64:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.FLOAT64_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+            case TType.Kind.UINT32:
+                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_UINT32 };
+            case TType.Kind.FLOAT32:
+                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32 };
+            default:
+                return null;
+            }
+        default:
+            return null;
+        }
+    }
+
+    public List<Cast> SemantConversionFromPointer(TType.Kind from, TType.Kind to) {
+        switch (from) {
+        case TType.Kind.POINTER:
+            switch (to) {
+            case TType.Kind.INT8:
+                return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
+            case TType.Kind.INT16:
+                return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
+            case TType.Kind.INT32:
+                return new List<Cast> { Cast.UINT32_TO_INT32 };
+            case TType.Kind.UINT8:
+                return new List<Cast> { Cast.UINT32_TO_UINT8 };
+            case TType.Kind.UINT16:
+                return new List<Cast> { Cast.UINT32_TO_UINT16 };
+            case TType.Kind.UINT32:
+                return new List<Cast>();
+            default:
+                return null;
+            }
+        default:
+            return null;
+        }
+    }
+
 }
 
 
@@ -438,17 +877,14 @@ public class Addition : Expression {
         scope = lhs.Semant(scope);
         scope = rhs.Semant(scope);
         
-        TType.Kind kind1 = lhs.type.kind;
-        TType.Kind kind2 = lhs.type.kind;
-
-        if (kind1 == TType.Kind.FLOAT64) {
-            // rhs = new TypeCast()
-        }
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
         
         return scope;
     }
+
     public Expression lhs;
     public Expression rhs;
+
 }
 
 public class Subtraction : Expression {
@@ -456,6 +892,17 @@ public class Subtraction : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+
+        return scope;
+    }
+
     public Expression lhs;
     public Expression rhs;
 }
@@ -563,6 +1010,13 @@ public class BitwiseOr : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        lhs.scope = _scope;
+        rhs.scope = _scope;
+        lhs.type.kind
+    }
 }
 
 
@@ -581,6 +1035,8 @@ public class LogicalOr : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
+
     public Expression lhs;
     public Expression rhs;
+
 }

@@ -922,12 +922,16 @@ public class TypeName : ASTNode {
         decl = _decl;
     }
 
+    public TypeName(TType _type) {
+        type = _type;
+    }
+
     // after parsing
     public DeclnSpecs specs;
     public Declr decl;
 
     // after semant
-    TType type;
+    public TType type;
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
