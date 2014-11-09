@@ -515,6 +515,10 @@ public class Negative : Expression {
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
         scope = expr.Semant(scope);
+        if (!expr.type.IsArith()) {
+            Log.SemantError("Error: negation expected arithmetic type.");
+        }
+        type = expr.type;
         return scope;
     }
 }
@@ -524,6 +528,16 @@ public class BitwiseNot : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsInt()) {
+            Log.SemantError("Error: bitwise not expected integral type.");
+        }
+        type = expr.type;
+        return scope;
+    }
 }
 
 public class Not : Expression {
@@ -531,6 +545,17 @@ public class Not : Expression {
         expr = _expr;
     }
     public Expression expr;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = expr.Semant(scope);
+        if (!expr.type.IsArith()) {
+            Log.SemantError("Error: logical not expected integral type.");
+        }
+        type = expr.type;
+        return scope;
+    }
+
 }
 
 
@@ -845,6 +870,14 @@ public class Multiplication : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
 }
 
 public class Division : Expression {
@@ -854,6 +887,15 @@ public class Division : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
+
 }
 
 public class Modulo : Expression {
@@ -863,6 +905,17 @@ public class Modulo : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+            Log.SemantError("Error: modulo expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
 }
 
 
@@ -876,7 +929,33 @@ public class Addition : Expression {
         scope = _scope;
         scope = lhs.Semant(scope);
         scope = rhs.Semant(scope);
-        
+
+        // ptr + ptr : error!
+        if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
+            Log.SemantError("Error: you cannot add two pointers.");
+        }
+
+        // ptr + int
+        if (lhs.type.kind == TType.Kind.POINTER) {
+            if (!rhs.type.IsInt()) {
+                Log.SemantError("Error: must add integral to pointer");
+            }
+            rhs = new TypeCast(new TInt32(), rhs);
+            type = lhs.type;
+            return scope;
+        }
+
+        // int + ptr
+        if (rhs.type.kind == TType.Kind.POINTER) {
+            if (!lhs.type.IsInt()) {
+                Log.SemantError("Error: must add integral to pointer");
+            }
+            lhs = new TypeCast(new TInt32(), lhs);
+            type = rhs.type;
+            return scope;
+        }
+
+        // arith + arith
         SemantUsualArithmeticConversion(ref lhs, ref rhs);
         
         return scope;
@@ -898,6 +977,26 @@ public class Subtraction : Expression {
         scope = lhs.Semant(scope);
         scope = rhs.Semant(scope);
 
+        // ptr - ptr
+        if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
+            if (lhs.type.SizeOf() != rhs.type.SizeOf()) {
+                Log.SemantError("Error: you cannot subtract two pointers that don't conform.");
+            }
+            type = new TInt32();
+            return scope;
+        }
+
+        // ptr - int
+        if (lhs.type.kind == TType.Kind.POINTER) {
+            if (!rhs.type.IsInt()) {
+                Log.SemantError("Error: must subtract integral from pointer");
+            }
+            rhs = new TypeCast(new TInt32(), rhs);
+            type = lhs.type;
+            return scope;
+        }
+
+        // arith - arith
         SemantUsualArithmeticConversion(ref lhs, ref rhs);
 
         return scope;
@@ -915,6 +1014,18 @@ public class LeftShift : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+            Log.SemantError("Error: expected integral operands.");
+        }
+        rhs = new TypeCast(new TInt32(), rhs);
+        type = lhs.type;
+        return scope;
+    }
 }
 
 public class RightShift : Expression {
@@ -924,6 +1035,19 @@ public class RightShift : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+            Log.SemantError("Error: expected integral operands.");
+        }
+        rhs = new TypeCast(new TInt32(), rhs);
+        type = lhs.type;
+        return scope;
+    }
+
 }
 
 
@@ -934,6 +1058,15 @@ public class LessThan : Expression {
     }
     public Expression lhs;
     public Expression rhs;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        if (lhs.type.kind == TType.Kind.POINTER)
+        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
 }
 
 public class LessEqualThan : Expression {
