@@ -22,6 +22,8 @@ using System.IO;
 
 public class Expression : ASTNode {
     public TType type;
+
+    // consider lhs & rhs are double/float/integral, make their types match.
     public void SemantUsualArithmeticConversion(ref Expression lhs, ref Expression rhs) {
 
         // if either operand has type double, the other operand is converted to double.
@@ -53,6 +55,41 @@ public class Expression : ASTNode {
         rhs = new TypeCast(new TInt32(), rhs);
         type = new TInt32();
 
+    }
+
+    // consider lhs & rhs are both pointers or both arithmetic
+    public void SemantPointerOrArithmeticConversion(ref Expression lhs, ref Expression rhs) {
+        if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
+            lhs = new TypeCast(new TUInt32(), lhs);
+            rhs = new TypeCast(new TUInt32(), rhs);
+            type = new TUInt32();
+        } else {
+            SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        }
+    }
+
+    // consider lhs & rhs are both integrals
+    public void SemantIntegralConversion(ref Expression lhs, ref Expression rhs) {
+        if (lhs.type.IsInt() && rhs.type.IsInt()) {
+            SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        } else {
+            Log.SemantError("Error: expected integral type.");
+        }
+    }
+    
+    // consider lhs & rhs are pointer/integral, make their types match and converted to int
+    public void SemantIntegralOrPointerConversion(ref Expression lhs, ref Expression rhs) {
+        if (lhs.type.kind == TType.Kind.POINTER) {
+            lhs = new TypeCast(new TUInt32(), lhs);
+        }
+        if (rhs.type.kind == TType.Kind.POINTER) {
+            rhs = new TypeCast(new TUInt32(), rhs);
+        }
+        if (lhs.type.IsInt() && rhs.type.IsInt()) {
+            SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        } else {
+            Log.SemantError("Error: Expected pointer or integral type.");
+        }
     }
 }
 
@@ -177,7 +214,7 @@ public class AssignmentList : Expression {
     public List<Expression> exprs;
 }
 
-
+// Finished.
 public class ConditionalExpression : Expression {
     public ConditionalExpression(Expression _cond, Expression _true_expr, Expression _false_expr) {
         cond = _cond;
@@ -187,9 +224,33 @@ public class ConditionalExpression : Expression {
     public Expression cond;
     public Expression true_expr;
     public Expression false_expr;
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = cond.Semant(scope);
+        scope = true_expr.Semant(scope);
+        scope = false_expr.Semant(scope);
+
+        if (!cond.type.IsArith()) {
+            Log.SemantError("Error: expected arithmetic type.");
+        }
+
+        if (true_expr.type.IsArith() || false_expr.type.IsArith()) {
+            SemantUsualArithmeticConversion(ref true_expr, ref false_expr);
+        } else if ((true_expr.type.kind == TType.Kind.STRUCT && false_expr.type.kind == TType.Kind.STRUCT)
+            || (true_expr.type.kind == TType.Kind.UNION && false_expr.type.kind == TType.Kind.UNION)
+            || (true_expr.type.kind == TType.Kind.POINTER && false_expr.type.kind == TType.Kind.POINTER)) {
+            Log.SemantError("Not implemented.");
+        } else if (true_expr.type.kind == TType.Kind.VOID && false_expr.type.kind == TType.Kind.VOID) {
+            type = new TVoid();
+        } else {
+            Log.SemantError("Error: conditional expression types not match.");
+        }
+        
+        return scope;
+    }
 }
 
-
+// Finished.
 public class Assignment : Expression {
     public Assignment(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -197,8 +258,18 @@ public class Assignment : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        rvalue = new TypeCast(lvalue.type, rvalue);
+        type = lvalue.type;
+        return scope;
+    }
 }
 
+// Finished.
 public class MultAssign : Expression {
     public MultAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -206,8 +277,24 @@ public class MultAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    // after semant
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class DivAssign : Expression {
     public DivAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -215,8 +302,25 @@ public class DivAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    // after semant
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
+
 }
 
+// Finished.
 public class ModAssign : Expression {
     public ModAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -224,8 +328,26 @@ public class ModAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class AddAssign : Expression {
     public AddAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -233,8 +355,25 @@ public class AddAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    // after semant
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
+
 }
 
+// Finished.
 public class SubAssign : Expression {
     public SubAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -242,8 +381,25 @@ public class SubAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    // after semant
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
+
 }
 
+// Finished.
 public class LeftShiftAssign : Expression {
     public LeftShiftAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -251,8 +407,26 @@ public class LeftShiftAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class RightShiftAssign : Expression {
     public RightShiftAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -260,8 +434,26 @@ public class RightShiftAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class BitwiseAndAssign : Expression {
     public BitwiseAndAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -269,8 +461,26 @@ public class BitwiseAndAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class XorAssign : Expression {
     public XorAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -278,8 +488,26 @@ public class XorAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
+// Finished.
 public class BitwiseOrAssign : Expression {
     public BitwiseOrAssign(Expression _lvalue, Expression _rvalue) {
         lvalue = _lvalue;
@@ -287,6 +515,23 @@ public class BitwiseOrAssign : Expression {
     }
     public Expression lvalue;
     public Expression rvalue;
+
+    public TType ltype;
+    public TypeCast cast;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lvalue.Semant(scope);
+        scope = rvalue.Semant(scope);
+        ltype = lvalue.type;
+        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+            Log.SemantError("Error: expected integral type.");
+        }
+        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+        cast = new TypeCast(ltype, this);
+        cast.expr = null;
+        return scope;
+    }
 }
 
 
@@ -340,6 +585,7 @@ public class Attribute : Expression {
 //    public Variable attrib;
 //}
 
+// Finished.
 public class Increment : Expression {
     public Increment(Expression _expr) {
         expr = _expr;
@@ -357,6 +603,7 @@ public class Increment : Expression {
     }
 }
 
+// Finished
 public class Decrement : Expression {
     public Decrement(Expression _expr) {
         expr = _expr;
@@ -383,7 +630,7 @@ public class Decrement : Expression {
 //}
 
 
-
+// Finished.
 public class SizeofType : Expression {
     public SizeofType(TypeName _type_name) {
         type_name = _type_name;
@@ -404,6 +651,7 @@ public class SizeofType : Expression {
 
 }
 
+// Finished.
 public class SizeofExpression : Expression {
     public SizeofExpression(Expression _expr) {
         expr = _expr;
@@ -423,6 +671,7 @@ public class SizeofExpression : Expression {
 
 }
 
+// Finished.
 public class PrefixIncrement : Expression {
     public PrefixIncrement(Expression _expr) {
         expr = _expr;
@@ -441,6 +690,7 @@ public class PrefixIncrement : Expression {
 
 }
 
+// Finished.
 public class PrefixDecrement : Expression {
     public PrefixDecrement(Expression _expr) {
         expr = _expr;
@@ -459,6 +709,7 @@ public class PrefixDecrement : Expression {
 
 }
 
+// Finished.
 public class Reference : Expression {
     public Reference(Expression _expr) {
         expr = _expr;
@@ -474,6 +725,7 @@ public class Reference : Expression {
 
 }
 
+// Finished.
 public class Dereference : Expression {
     public Dereference(Expression _expr) {
         expr = _expr;
@@ -493,6 +745,7 @@ public class Dereference : Expression {
 
 }
 
+// Finished.
 public class Positive : Expression {
     public Positive(Expression _expr) {
         expr = _expr;
@@ -506,6 +759,7 @@ public class Positive : Expression {
     }
 }
 
+// Finished.
 public class Negative : Expression {
     public Negative(Expression _expr) {
         expr = _expr;
@@ -523,6 +777,7 @@ public class Negative : Expression {
     }
 }
 
+// Finished.
 public class BitwiseNot : Expression {
     public BitwiseNot(Expression _expr) {
         expr = _expr;
@@ -540,6 +795,7 @@ public class BitwiseNot : Expression {
     }
 }
 
+// Finished.
 public class Not : Expression {
     public Not(Expression _expr) {
         expr = _expr;
@@ -558,7 +814,7 @@ public class Not : Expression {
 
 }
 
-
+// Finished.
 public class TypeCast : Expression {
     public TypeCast(TypeName _type_name, Expression _expr) {
         type_name = _type_name;
@@ -862,7 +1118,7 @@ public class TypeCast : Expression {
 
 }
 
-
+// Finished.
 public class Multiplication : Expression {
     public Multiplication(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -880,6 +1136,7 @@ public class Multiplication : Expression {
     }
 }
 
+// Finished.
 public class Division : Expression {
     public Division(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -898,6 +1155,7 @@ public class Division : Expression {
 
 }
 
+// Finished.
 public class Modulo : Expression {
     public Modulo(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -918,7 +1176,7 @@ public class Modulo : Expression {
     }
 }
 
-
+// Finished.
 public class Addition : Expression {
     public Addition(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -966,6 +1224,7 @@ public class Addition : Expression {
 
 }
 
+// Finished.
 public class Subtraction : Expression {
     public Subtraction(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1006,7 +1265,7 @@ public class Subtraction : Expression {
     public Expression rhs;
 }
 
-
+// Finished.
 public class LeftShift : Expression {
     public LeftShift(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1028,6 +1287,7 @@ public class LeftShift : Expression {
     }
 }
 
+// Finished.
 public class RightShift : Expression {
     public RightShift(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1050,7 +1310,7 @@ public class RightShift : Expression {
 
 }
 
-
+// Finished.
 public class LessThan : Expression {
     public LessThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1063,79 +1323,131 @@ public class LessThan : Expression {
         scope = _scope;
         scope = lhs.Semant(scope);
         scope = rhs.Semant(scope);
-        if (lhs.type.kind == TType.Kind.POINTER)
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
         return scope;
     }
 }
 
+// Finished.
 public class LessEqualThan : Expression {
     public LessEqualThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
+// Finished.
 public class GreaterThan : Expression {
     public GreaterThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
+// Finished.
 public class GreaterEqualThan : Expression {
     public GreaterEqualThan(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
-
+// Finished.
 public class Equal : Expression {
     public Equal(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
+// Finished.
 public class NotEqual : Expression {
     public NotEqual(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
-
+// Finished.
 public class BitwiseAnd : Expression {
     public BitwiseAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public Expression lhs;
-    public Expression rhs;
-}
-
-
-public class Xor : Expression {
-    public Xor(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantIntegralConversion(ref lhs, ref rhs);
+        return scope;
     }
     public Expression lhs;
     public Expression rhs;
 }
 
+// Finished.
+public class Xor : Expression {
+    public Xor(Expression _lhs, Expression _rhs) {
+        lhs = _lhs;
+        rhs = _rhs;
+    }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantIntegralConversion(ref lhs, ref rhs);
+        return scope;
+    }
+    public Expression lhs;
+    public Expression rhs;
+}
 
+// Finished.
 public class BitwiseOr : Expression {
     public BitwiseOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1146,29 +1458,43 @@ public class BitwiseOr : Expression {
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
-        lhs.scope = _scope;
-        rhs.scope = _scope;
-        lhs.type.kind
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantIntegralConversion(ref lhs, ref rhs);
+        return scope;
     }
 }
 
-
+// Finished.
 public class LogicalAnd : Expression {
     public LogicalAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantIntegralConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 }
 
-
+// Finished.
 public class LogicalOr : Expression {
     public LogicalOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
         rhs = _rhs;
     }
-
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = lhs.Semant(scope);
+        scope = rhs.Semant(scope);
+        SemantIntegralConversion(ref lhs, ref rhs);
+        return scope;
+    }
     public Expression lhs;
     public Expression rhs;
 

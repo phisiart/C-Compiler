@@ -31,4 +31,14 @@ public class SemantTest {
         int current = _expression.Parse(src, 0, out expr);
 
     }
+
+    [TestMethod]
+    public void TestFunction() {
+        var src = Parser.GetTokensFromString("int fun(int p1, int p2);");
+        Decln decln;
+        int current = _declaration.Parse(src, 0, out decln);
+        Assert.IsTrue(current != -1);
+        ScopeSandbox scope = new ScopeSandbox();
+        scope = decln.Semant(scope);
+    }
 }

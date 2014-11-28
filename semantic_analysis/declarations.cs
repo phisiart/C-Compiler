@@ -718,6 +718,14 @@ public class FunctionInfo : TypeInfo {
         type = TypeInfoType.FUNCTION;
     }
     public ParamTypeList param_type_list;
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = param_type_list.Semant(scope);
+        return scope;
+    }
+    public override TType WrapTType(TType type) {
+        return new TFunction(param_type_list.__params, param_type_list.IsVarArgs);
+    }
 }
 
 public class ArrayInfo : TypeInfo {
@@ -727,6 +735,12 @@ public class ArrayInfo : TypeInfo {
     }
     public override TType WrapTType(TType type) {
         return new TArray(type, __nelems);
+    }
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = nelems.Semant(scope);
+        __nelems = 0;
+        return scope;
     }
     public Expression nelems;
     public int __nelems;
@@ -764,6 +778,9 @@ public class Declr : ASTNode {
     // Wrap the type
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
+        foreach (TypeInfo info in type_infos) {
+            scope = info.Semant(scope);
+        }
         type = WrapTType(type);
         return scope;
     }
@@ -775,7 +792,7 @@ public class Declr : ASTNode {
     
 }
 
-
+// Finished
 public class ParamTypeList : ASTNode {
     public ParamTypeList(List<ParamDecln> _param_list) {
         IsVarArgs = false;
@@ -784,6 +801,18 @@ public class ParamTypeList : ASTNode {
 
     public bool IsVarArgs;
     public List<ParamDecln> param_list;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        foreach (ParamDecln param in param_list) {
+            scope = param.Semant(scope);
+        }
+        __params = new List<ScopeEntry>();
+        foreach (ParamDecln param in param_list) {
+            __params.Add(param.__entry);
+        }
+        return scope;
+    }
 
     public List<ScopeEntry> __params;
 }
@@ -849,6 +878,7 @@ public class Enumerator : ASTNode {
 }
 
 
+// Just a base class
 public class StructOrUnionSpec : TypeSpec {
     public String name;
     public List<StructDecln> decl_list;
@@ -863,7 +893,16 @@ public class StructSpec : StructOrUnionSpec {
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
-
+        foreach (StructDecln decl in decl_list) {
+            scope = decl.Semant(scope);
+        }
+        TStruct _type = new TStruct();
+        foreach (StructDecln decl in decl_list) {
+            foreach (Declr d in decl.decl_list) {
+                _type.attribs.Add(new ScopeEntry(d.name, d.type));
+            }
+        }
+        type = _type;
         return scope;
     }
 }
@@ -873,6 +912,21 @@ public class UnionSpec : StructOrUnionSpec {
     public UnionSpec(String _name, List<StructDecln> _decl_list) {
         name = _name;
         decl_list = _decl_list;
+    }
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        foreach (StructDecln decl in decl_list) {
+            scope = decl.Semant(scope);
+        }
+        TUnion _type = new TUnion();
+        foreach (StructDecln decl in decl_list) {
+            foreach (Declr d in decl.decl_list) {
+                _type.attribs.Add(new ScopeEntry(d.name, d.type));
+            }
+        }
+        type = _type;
+        return scope;
     }
 }
 
@@ -892,9 +946,21 @@ public class StructDecln : ASTNode {
     }
     public DeclnSpecs specs;
     public List<Declr> decl_list;
+
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = specs.Semant(scope);
+        foreach (Declr decl in decl_list) {
+            decl.type = specs.type;
+            scope = decl.Semant(scope);
+        }
+        return scope;
+    }
+
+    
 }
 
-
+// Finished.
 public class ParamDecln : ASTNode {
     public ParamDecln(DeclnSpecs _specs, Declr _decl) {
         specs = _specs;
@@ -904,6 +970,17 @@ public class ParamDecln : ASTNode {
     public DeclnSpecs specs;
     public Declr decl;
 
+    // Create __entry
+    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+        scope = _scope;
+        scope = specs.Semant(scope);
+        decl.type = specs.type;
+        scope = decl.Semant(scope);
+        __entry = new ScopeEntry(decl.name, decl.type);
+        return scope;
+    }
+
+    // After semant
     public ScopeEntry __entry;
 }
 

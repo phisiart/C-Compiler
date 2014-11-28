@@ -30,6 +30,7 @@ public class TType {
         ARRAY,
         STRUCT,
         UNION,
+        FUNCTION,
         OTHER
     }
 
@@ -308,6 +309,7 @@ public class TFunction : TType {
     public TFunction(List<ScopeEntry> _params_, bool _varargs = false) {
         params_ = _params_;
         varargs = _varargs;
+        kind = Kind.FUNCTION;
     }
     public List<ScopeEntry> params_;
     public bool varargs;
