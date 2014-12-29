@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semantic_analysis", "semant
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant_test", "semant_test\semant_test.csproj", "{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant2", "semant2\semant2.csproj", "{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{202D2616-0AD2-4002-91B0-CE55DC6EFEAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
