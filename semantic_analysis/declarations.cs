@@ -247,6 +247,12 @@ public class Decln : ASTNode {
     public DeclnSpecs decl_specs;
     public List<InitDeclr> init_declarators;
 
+    //public List<AST.Decln> SemantDeclns(AST.Environment env) {
+    //    foreach (InitDeclr init_declr in init_declarators) {
+            
+    //    }
+    //}
+    
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
 
@@ -347,6 +353,10 @@ public class DeclnSpecs : ASTNode {
     public TType type;
 
 
+    public Tuple<AST.Decln.EnumSCS, AST.ExprType> SemantDeclnSpecs() {
+        return null;
+    }
+
     // Semant
     // ------
     // 1. Get storage class
@@ -367,6 +377,80 @@ public class DeclnSpecs : ASTNode {
         return scope;
     }
 
+    // DeclnSpecs.GetExprType
+    // ======================
+    // input: env
+    // output: ExprType, Environment
+    // get the type from the specifiers
+    // 
+    public Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env) {
+
+        bool is_const = type_qualifiers.Exists(qual => qual == TypeQualifier.CONST);
+        bool is_volatile = type_qualifiers.Exists(qual => qual == TypeQualifier.VOLATILE);
+
+        // 1. if no type specifier => int
+        if (type_specifiers.Count == 0) {
+            return new Tuple<AST.ExprType, AST.Environment>(new AST.TLong(), env);
+        }
+
+        // 2. now let's analyse type specs
+        int nbasics = type_specifiers.Count(spec => spec.basic != BTypeSpec.NULL);
+        if (nbasics == type_specifiers.Count) {
+            List<BTypeSpec> basic_specs = new List<BTypeSpec>();
+            foreach (TypeSpec spec in type_specifiers) {
+                basic_specs.Add(spec.basic);
+            }
+
+            // this might fail and cause the program to exit.
+            AST.ExprType.EnumExprType enum_type = GetBasicType(basic_specs);
+            AST.ExprType type = null;
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.CHAR:
+                type = new AST.TChar(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.UCHAR:
+                type = new AST.TUChar(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.SHORT:
+                type = new AST.TShort(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.USHORT:
+                type = new AST.TUShort(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                type = new AST.TLong(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                type = new AST.TULong(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                type = new AST.TFloat(is_const, is_volatile);
+                break;
+            case AST.ExprType.EnumExprType.DOUBLE:
+                type = new AST.TDouble(is_const, is_volatile);
+                break;
+            default:
+                Log.SemantError("Error: can't match type specifier");
+                return null;
+            }
+            return new Tuple<AST.ExprType, AST.Environment>(type, env);
+
+        } else if (nbasics > 0) {
+            // partly basic specs, partly not
+            Log.SemantError("Error: can't match type specifier");
+            return null;
+
+        } else if (type_specifiers.Count != 1) {
+            // now we can only match for struct, union, function...
+            Log.SemantError("Error: can't match type specifier");
+            return null;
+
+        } else {
+            // now semant the only type spec
+            return type_specifiers[0].GetExprType(env, is_const, is_volatile);
+
+        }
+    }
 
     // SemantTypeSpecs : used inside Semant
     // ---------------
@@ -442,8 +526,9 @@ public class DeclnSpecs : ASTNode {
     }
 
     
-    // MatchBasicType(list of specs)
-    // -----------------------------
+    // MatchBasicType
+    // ==============
+    // 
     // private
     // On fail: Exit
     private static TType MatchBasicType(List<BTypeSpec> specs) {
@@ -456,10 +541,27 @@ public class DeclnSpecs : ASTNode {
         Environment.Exit(1);
         return null;
     }
-    
 
-    // MatchSpecs(specs, key specs)
-    // ----------------------------
+
+    // GetBasicType
+    // ============
+    // input: specs
+    // output: EnumExprType
+    // returns a type from a list of type specifiers
+    // 
+    private static AST.ExprType.EnumExprType GetBasicType(List<BTypeSpec> specs) {
+        foreach (KeyValuePair<List<BTypeSpec>, AST.ExprType.EnumExprType> pair in bspecs2enumtype) {
+            if (MatchSpecs(specs, pair.Key)) {
+                return pair.Value;
+            }
+        }
+        Log.SemantError("Error: can't match type specifiers");
+        return AST.ExprType.EnumExprType.ERROR;
+    }
+    
+    // MatchSpecs
+    // ============================
+    // input: specs, key
     // private
     // Test whether the basic type specs matches the key
     private static bool MatchSpecs(List<BTypeSpec> specs, List<BTypeSpec> key) {
@@ -474,6 +576,72 @@ public class DeclnSpecs : ASTNode {
         return true;
     }
 
+
+    // bspecs2enumtype
+    // ===============
+    #region bspecs2enumtype
+    private static Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> bspecs2enumtype = new Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> {
+        
+        // void : { void }
+        { new List<BTypeSpec> { BTypeSpec.VOID }, AST.ExprType.EnumExprType.VOID },
+
+        // char : { char }
+        //      | { signed char }
+        { new List<BTypeSpec> { BTypeSpec.CHAR }, AST.ExprType.EnumExprType.CHAR },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.CHAR}, AST.ExprType.EnumExprType.CHAR },
+
+        // uchar : { unsigned char }
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.CHAR}, AST.ExprType.EnumExprType.UCHAR },
+
+        // short : { short }
+        //       | { signed short }
+        //       | { short int }
+        //       | { signed short int }
+        { new List<BTypeSpec> { BTypeSpec.SHORT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.SHORT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BTypeSpec> { BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.SHORT },
+
+        // ushort : { unsigned short }
+        //        | { unsigned short int }
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.SHORT }, AST.ExprType.EnumExprType.USHORT },
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.USHORT },
+
+        // long : { int }
+        //      | { signed }
+        //      | { signed int }
+        //      | { long }
+        //      | { signed long }
+        //      | { long int }
+        //      | { signed long int }
+        { new List<BTypeSpec> { BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.LONG }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.LONG }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
+
+        // ulong : { unsigned }
+        //       | { unsigned int }
+        //       | { unsigned long }
+        //       | { unsigned long int }
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.INT }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.LONG }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.ULONG },
+
+        // float : { float }
+        { new List<BTypeSpec> { BTypeSpec.FLOAT }, AST.ExprType.EnumExprType.FLOAT },
+
+        // double : { double }
+        //        | { long double }
+        { new List<BTypeSpec> { BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
+        { new List<BTypeSpec> { BTypeSpec.LONG, BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
+
+    };
+
+    #endregion
 
     #region type_map : { basic type specs } -> basic type
     // --------------------------------------------------
@@ -638,7 +806,8 @@ public enum BTypeSpec {
     UNSIGNED
 }
 
-
+// TypeSpec
+// ========
 // TypeSpec
 //    |
 //    +--- TypedefName
@@ -658,6 +827,16 @@ public class TypeSpec : ASTNode {
     public TypeSpec(BTypeSpec spec) {
         basic = spec;
     }
+
+    // GetExprType
+    // ===========
+    // input: env
+    // output: tuple<ExprType, Environment>
+    // 
+    public virtual Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+        return null;
+    }
+
     public TType type;
     public TType GetTType() {
         return null;
@@ -670,6 +849,17 @@ public class TypeSpec : ASTNode {
 public class TypedefName : TypeSpec {
     public TypedefName(String _name) {
         name = _name;
+    }
+
+    // GetExprType
+    // ===========
+    // input: env, is_const, is_volatile
+    // output: tuple<ExprType, Environment>
+    // 
+    // ** NOT FINISHED **
+    // 
+    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+        return null;
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -818,10 +1008,26 @@ public class ParamTypeList : ASTNode {
 }
 
 
+// EnumSpec : TypeSpec
+// ===================
+// enum <name> {
+//     ENUM0,
+//     ENUM1,
+//     ...
+// }
+// 
+// members:
+//   name      : String
+//   enum_list : List<Enumerator>
+// 
 public class EnumSpec : TypeSpec {
     public EnumSpec(String _name, List<Enumerator> _enum_list) {
         name = _name;
         enum_list = _enum_list;
+    }
+
+    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+        return null;
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -878,17 +1084,38 @@ public class Enumerator : ASTNode {
 }
 
 
-// Just a base class
+// StructOrUnionSpec
+// =================
+// a base class of StructSpec and UnionSpec
+// not present in the semant phase
+// 
 public class StructOrUnionSpec : TypeSpec {
     public String name;
     public List<StructDecln> decl_list;
 }
 
 
+// StructSpec
+// ==========
+// 
 public class StructSpec : StructOrUnionSpec {
     public StructSpec(String _name, List<StructDecln> _decl_list) {
         name = _name;
         decl_list = _decl_list;
+    }
+
+    // GetExprType
+    // ===========
+    // input: env, is_const, is_volatile
+    // output: tuple<ExprType, Environment>
+    // 
+    // ** NOT FINISHED **
+    // 
+    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        
+        AST.TStruct type = new AST.TStruct(attribs, is_const, is_volatile);
+        return new Tuple<AST.ExprType, AST.Environment>(type, env);
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -908,10 +1135,27 @@ public class StructSpec : StructOrUnionSpec {
 }
 
 
+// UnionSpec
+// =========
+// 
 public class UnionSpec : StructOrUnionSpec {
     public UnionSpec(String _name, List<StructDecln> _decl_list) {
         name = _name;
         decl_list = _decl_list;
+    }
+
+    // GetExprType
+    // ===========
+    // input: env, is_const, is_volatile
+    // output: tuple<ExprType, Environment>
+    // 
+    // ** NOT FINISHED **
+    // 
+    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+
+        AST.TUnion type = new AST.TUnion(attribs, is_const, is_volatile);
+        return new Tuple<AST.ExprType, AST.Environment>(type, env);
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -931,6 +1175,10 @@ public class UnionSpec : StructOrUnionSpec {
 }
 
 
+// StructOrUnion
+// =============
+// only used in parsing phase
+// 
 public class StructOrUnion : ASTNode {
     public StructOrUnion(bool _is_union) {
         is_union = _is_union;
@@ -957,7 +1205,6 @@ public class StructDecln : ASTNode {
         return scope;
     }
 
-    
 }
 
 // Finished.

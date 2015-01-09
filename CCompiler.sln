@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant_test", "semant_test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant2", "semant2\semant2.csproj", "{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "semant2_test", "semant2_test\semant2_test.csproj", "{90DF0EED-E72E-4389-AAAE-3E34F61B1252}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90DF0EED-E72E-4389-AAAE-3E34F61B1252}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90DF0EED-E72E-4389-AAAE-3E34F61B1252}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90DF0EED-E72E-4389-AAAE-3E34F61B1252}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90DF0EED-E72E-4389-AAAE-3E34F61B1252}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -60,6 +60,10 @@
       <Project>{61b4af5e-aff2-4293-a5de-e1997e06cabb}</Project>
       <Name>lexical_analysis</Name>
     </ProjectReference>
+    <ProjectReference Include="..\semant2\semant2.csproj">
+      <Project>{bb1e5c0f-8ba8-466f-ba49-f41b6aefa8c1}</Project>
+      <Name>semant2</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

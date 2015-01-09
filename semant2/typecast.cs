@@ -45,6 +45,12 @@ namespace AST {
             return t1.EqualType(t2);
         }
         
+        // SignedIntegralToArith
+        // =====================
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         public static TypeCast SignedIntegralToArith(Expression expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
@@ -132,9 +138,16 @@ namespace AST {
             }
         }
 
+        // UnsignedIntegralToArith
+        // =======================
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         // Note: according to MSDN "Conversions from Unsigned Integral Types",
         //       unsigned long converts directly to double.
         //       however, I just treat unsigned long as long.
+        // 
         public static TypeCast UnsignedIntegralToArith(Expression expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
@@ -222,9 +235,16 @@ namespace AST {
             }
         }
 
+        // FloatToArith
+        // ============
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         // Note: according to MSDN "Conversions from Floating-Point Types",
         //       float cannot convert to unsigned char.
         //       I don't know why, but I follow it.
+        // 
         public static TypeCast FloatToArith(Expression expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
@@ -283,9 +303,16 @@ namespace AST {
             }
         }
 
+        // FromPointer
+        // ===========
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         // Note: a pointer behaves like a ulong.
         //       it can be converted to 1) another pointer 2) an integral
         //       if else, assert.
+        // 
         public static TypeCast FromPointer(Expression expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
@@ -307,9 +334,16 @@ namespace AST {
             return null;
         }
 
+        // ToPointer
+        // =========
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         // Note: a pointer behaves like a ulong.
         //       it can be converted from 1) another pointer 2) an integral
         //       if else, assert.
+        // 
         public static TypeCast ToPointer(Expression expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
@@ -331,6 +365,12 @@ namespace AST {
             return null;
         }
 
+        // MakeCast
+        // ========
+        // input: expr, type
+        // output: TypeCast
+        // converts expr to type
+        // 
         public static TypeCast MakeCast(Expression expr, ExprType type) {
             
             // if two types are equal, return NOP
@@ -373,6 +413,12 @@ namespace AST {
 
         }
         
+        // UsualArithmeticConversion
+        // =========================
+        // input: e1, e2
+        // output: tuple<e1', e2', enumexprtype>
+        // performs the usual arithmetic conversion on e1 & e2
+        // 
         public static Tuple<Expression, Expression, ExprType.EnumExprType> UsualArithmeticConversion(Expression e1, Expression e2) {
             ExprType t1 = e1.type;
             ExprType t2 = e2.type;
