@@ -296,7 +296,7 @@ namespace AST {
             return other.expr_type == EnumExprType.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
         public override string ToString() {
-            return "pointer to " + referenced_type.ToString();
+            return "ptr<" + referenced_type.ToString() + ">";
         }
     }
 
@@ -436,7 +436,17 @@ namespace AST {
         }
 
         public override string ToString() {
-            return "function";
+            String str = "";
+            for (int i = 0; i < args.Count; ++i) {
+                if (i != 0) {
+                    str += ", ";
+                }
+                str += args[i].entry_type.ToString();
+            }
+            if (args.Count > 0) {
+                str = "(" + str + ")";
+            }
+            return str + " -> " + ret_type;
         }
 
         public readonly ExprType ret_type;
@@ -453,14 +463,14 @@ namespace AST {
 
     // public class 
     // ========================================================================
-    public class Expression {
-        public Expression(ExprType _type) {
+    public class Expr {
+        public Expr(ExprType _type) {
             type = _type;
         }
         public readonly ExprType type;
     }
 
-    public class Variable : Expression {
+    public class Variable : Expr {
         public Variable(ExprType _type, String _name)
             : base(_type) {
             name = _name;
@@ -468,7 +478,7 @@ namespace AST {
         protected String name;
     }
 
-    public class Constant : Expression {
+    public class Constant : Expr {
         public Constant(ExprType _type)
             : base(_type) {}
     }

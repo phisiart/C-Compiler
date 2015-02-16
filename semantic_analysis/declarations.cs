@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+//using AST;
 
 // basic rule: Semant(scope): return scope
 
@@ -30,17 +29,17 @@ public class Symbol {
         type = _type;
         value = _value;
     }
-    
+
     public Kind kind;
     public TType type;
     public Int64 value;
 
     public override String ToString() {
         switch (kind) {
-        case Kind.ENUM:
-            return value.ToString();
-        default:
-            return type.ToString();
+            case Kind.ENUM:
+                return value.ToString();
+            default:
+                return type.ToString();
         }
     }
 
@@ -135,7 +134,7 @@ public class ScopeSandbox {
         }
         return null;
     }
-    
+
     //public void AddTypedefs(List<ScopeEntry> entries) {
     //    scopes.Peek().typedefs.AddRange(entries);
     //}
@@ -143,11 +142,11 @@ public class ScopeSandbox {
     //public void AddStatics(List<ScopeEntry> entries) {
     //    scopes.Peek().statics.AddRange(entries);
     //}
-    
+
     //public void AddAutos(List<ScopeEntry> entries) {
     //    scopes.Peek().autos.AddRange(entries);
     //}
-    
+
     //public void AddExterns(List<ScopeEntry> entries) {
     //    scopes.Peek().externs.AddRange(entries);
     //}
@@ -155,11 +154,11 @@ public class ScopeSandbox {
     //public void AddExtern(ScopeEntry entry) {
     //    scopes.Peek().externs.Add(entry);
     //}
-    
+
     //public void AddFormals(List<ScopeEntry> entries) {
     //    scopes.Peek().formals.AddRange(entries);
     //}
-    
+
     //public void AddEnum(String name, Int64 value) {
     //    scopes.Peek().enums.Add(name, value);
     //}
@@ -231,7 +230,7 @@ public class ASTNode {
         scope = _scope;
         return scope;
     }
-    
+
     public ScopeSandbox scope;
 
 }
@@ -247,41 +246,35 @@ public class Decln : ASTNode {
     public DeclnSpecs decl_specs;
     public List<InitDeclr> init_declarators;
 
-    //public List<AST.Decln> SemantDeclns(AST.Environment env) {
-    //    foreach (InitDeclr init_declr in init_declarators) {
-            
-    //    }
-    //}
-    
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
 
         // semant declaration specifiers
         // to get 1) storage class 2) type
         scope = decl_specs.Semant(scope);
-        
+
         foreach (InitDeclr init_declr in init_declarators) {
             init_declr.type = decl_specs.type;
             scope = init_declr.Semant(scope);
 
             switch (decl_specs.storage_class) {
-            case StorageClassSpecifier.TYPEDEF:
-                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.TYPEDEF, init_declr.type, 0));
-                break;
-            case StorageClassSpecifier.STATIC:
-                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.STATIC, init_declr.type, 0));
-                break;
-            case StorageClassSpecifier.EXTERN:
-                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.EXTERN, init_declr.type, 0));
-                break;
-            case StorageClassSpecifier.AUTO:
-            case StorageClassSpecifier.NULL:
-            case StorageClassSpecifier.REGISTER:
-                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.AUTO, init_declr.type, 0));
-                break;
-            default:
-                Log.SemantError("Error: Storage class error.");
-                break;
+                case StorageClassSpecifier.TYPEDEF:
+                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.TYPEDEF, init_declr.type, 0));
+                    break;
+                case StorageClassSpecifier.STATIC:
+                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.STATIC, init_declr.type, 0));
+                    break;
+                case StorageClassSpecifier.EXTERN:
+                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.EXTERN, init_declr.type, 0));
+                    break;
+                case StorageClassSpecifier.AUTO:
+                case StorageClassSpecifier.NULL:
+                case StorageClassSpecifier.REGISTER:
+                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.AUTO, init_declr.type, 0));
+                    break;
+                default:
+                    Log.SemantError("Error: Storage class error.");
+                    break;
             }
 
         }
@@ -317,6 +310,12 @@ public class Decln : ASTNode {
         return scope;
     }
 
+    // TODO : Decln(env) -> (env, decln)[] : semant declarations
+    public List<Tuple<AST.Env, AST.Decln>> GetDeclns(AST.Env env) {
+        List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
+        return declns;
+    }
+
     // calculate all the types
     public void GetEntries() {
         __entries.Clear();
@@ -331,6 +330,15 @@ public class Decln : ASTNode {
 }
 
 
+// DeclnSpecs
+// ==========
+// Declaration specifiers
+// includes storage class specifiers
+//          type specifiers,
+//          type qualifiers
+//
+// in semant, use GetExprType(env) to get (type, env).
+// 
 public class DeclnSpecs : ASTNode {
     public DeclnSpecs(List<StorageClassSpecifier> _storage_class_specifiers,
                                  List<TypeSpec> _type_specifiers,
@@ -353,8 +361,34 @@ public class DeclnSpecs : ASTNode {
     public TType type;
 
 
-    public Tuple<AST.Decln.EnumSCS, AST.ExprType> SemantDeclnSpecs() {
-        return null;
+    // TODO : [finished] DeclnSpecs.SemantDeclnSpecs(env) -> (env, scs, type)
+    public Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> SemantDeclnSpecs(AST.Env env) {
+        Tuple<AST.ExprType, AST.Env> r_type = GetExprType(env);
+        AST.ExprType type = r_type.Item1;
+        env = r_type.Item2;
+
+        AST.Decln.EnumSCS scs;
+        switch (GetStorageClass()) {
+            case StorageClassSpecifier.AUTO:
+            case StorageClassSpecifier.NULL:
+            case StorageClassSpecifier.REGISTER:
+                scs = AST.Decln.EnumSCS.AUTO;
+                break;
+            case StorageClassSpecifier.EXTERN:
+                scs = AST.Decln.EnumSCS.EXTERN;
+                break;
+            case StorageClassSpecifier.STATIC:
+                scs = AST.Decln.EnumSCS.STATIC;
+                break;
+            case StorageClassSpecifier.TYPEDEF:
+                scs = AST.Decln.EnumSCS.TYPEDEF;
+                break;
+            default:
+                Log.SemantError("scs error");
+                return null;
+        }
+
+        return new Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType>(env, scs, type);
     }
 
     // Semant
@@ -383,14 +417,14 @@ public class DeclnSpecs : ASTNode {
     // output: ExprType, Environment
     // get the type from the specifiers
     // 
-    public Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env) {
+    public Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env) {
 
         bool is_const = type_qualifiers.Exists(qual => qual == TypeQualifier.CONST);
         bool is_volatile = type_qualifiers.Exists(qual => qual == TypeQualifier.VOLATILE);
 
         // 1. if no type specifier => int
         if (type_specifiers.Count == 0) {
-            return new Tuple<AST.ExprType, AST.Environment>(new AST.TLong(), env);
+            return new Tuple<AST.ExprType, AST.Env>(new AST.TLong(), env);
         }
 
         // 2. now let's analyse type specs
@@ -405,47 +439,50 @@ public class DeclnSpecs : ASTNode {
             AST.ExprType.EnumExprType enum_type = GetBasicType(basic_specs);
             AST.ExprType type = null;
             switch (enum_type) {
-            case AST.ExprType.EnumExprType.CHAR:
-                type = new AST.TChar(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.UCHAR:
-                type = new AST.TUChar(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.SHORT:
-                type = new AST.TShort(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.USHORT:
-                type = new AST.TUShort(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.LONG:
-                type = new AST.TLong(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.ULONG:
-                type = new AST.TULong(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.FLOAT:
-                type = new AST.TFloat(is_const, is_volatile);
-                break;
-            case AST.ExprType.EnumExprType.DOUBLE:
-                type = new AST.TDouble(is_const, is_volatile);
-                break;
-            default:
-                Log.SemantError("Error: can't match type specifier");
-                return null;
+                case AST.ExprType.EnumExprType.CHAR:
+                    type = new AST.TChar(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.UCHAR:
+                    type = new AST.TUChar(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.SHORT:
+                    type = new AST.TShort(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.USHORT:
+                    type = new AST.TUShort(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.LONG:
+                    type = new AST.TLong(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.ULONG:
+                    type = new AST.TULong(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.FLOAT:
+                    type = new AST.TFloat(is_const, is_volatile);
+                    break;
+                case AST.ExprType.EnumExprType.DOUBLE:
+                    type = new AST.TDouble(is_const, is_volatile);
+                    break;
+                default:
+                    Log.SemantError("Error: can't match type specifier");
+                    return null;
             }
-            return new Tuple<AST.ExprType, AST.Environment>(type, env);
+            return new Tuple<AST.ExprType, AST.Env>(type, env);
 
-        } else if (nbasics > 0) {
+        }
+        else if (nbasics > 0) {
             // partly basic specs, partly not
             Log.SemantError("Error: can't match type specifier");
             return null;
 
-        } else if (type_specifiers.Count != 1) {
+        }
+        else if (type_specifiers.Count != 1) {
             // now we can only match for struct, union, function...
             Log.SemantError("Error: can't match type specifier");
             return null;
 
-        } else {
+        }
+        else {
             // now semant the only type spec
             return type_specifiers[0].GetExprType(env, is_const, is_volatile);
 
@@ -474,14 +511,14 @@ public class DeclnSpecs : ASTNode {
             }
             return MatchBasicType(basic_specs);
         }
-        
+
         // 2.2. you cannot have a part of basic specs.
         if (nbasics != 0) {
             Console.Error.WriteLine("Error: can't match type specifier");
             Environment.Exit(1);
             return null;
         }
-        
+
         // 2.3. try to match struct, union, enum ...
         if (type_specifiers.Count != 1) {
             Console.Error.WriteLine("Error: can't match type specifier");
@@ -493,8 +530,8 @@ public class DeclnSpecs : ASTNode {
         return type_specifiers[0].type;
 
     }
-    
-    
+
+
     public bool IsTypedef() {
         return storage_class_specifiers.FindIndex(x => x == StorageClassSpecifier.TYPEDEF) != -1;
     }
@@ -515,17 +552,19 @@ public class DeclnSpecs : ASTNode {
         if (storage_class_specifiers.Count == 0) {
             return StorageClassSpecifier.NULL;
 
-        } else if (storage_class_specifiers.Count == 1) {
+        }
+        else if (storage_class_specifiers.Count == 1) {
             return storage_class_specifiers[0];
 
-        } else {
+        }
+        else {
             Console.Error.WriteLine("Error: storage class specifier");
             Environment.Exit(1);
             return StorageClassSpecifier.ERROR;
         }
     }
 
-    
+
     // MatchBasicType
     // ==============
     // 
@@ -558,7 +597,7 @@ public class DeclnSpecs : ASTNode {
         Log.SemantError("Error: can't match type specifiers");
         return AST.ExprType.EnumExprType.ERROR;
     }
-    
+
     // MatchSpecs
     // ============================
     // input: specs, key
@@ -581,7 +620,7 @@ public class DeclnSpecs : ASTNode {
     // ===============
     #region bspecs2enumtype
     private static Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> bspecs2enumtype = new Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> {
-        
+
         // void : { void }
         { new List<BTypeSpec> { BTypeSpec.VOID }, AST.ExprType.EnumExprType.VOID },
 
@@ -739,6 +778,10 @@ public class DeclnSpecs : ASTNode {
 }
 
 
+// InitDeclr
+// =========
+// initialization declarator: a normal declarator + an initialization expression
+// 
 public class InitDeclr : ASTNode {
 
     public InitDeclr(Declr _decl, Expression _init) {
@@ -777,8 +820,22 @@ public class InitDeclr : ASTNode {
 
         return scope;
     }
-    
-    
+
+    // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
+    public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
+
+        Tuple<AST.Env, AST.Expr> r_init = init.GetExpression(env);
+        env = r_init.Item1;
+        AST.Expr ast_init = r_init.Item2;
+
+        Tuple<AST.Env, AST.ExprType, String> r_declr = declarator.WrapExprType(env, type);
+        env = r_declr.Item1;
+        type = r_declr.Item2;
+        String name = r_declr.Item3;
+
+        return new Tuple<AST.Env, AST.ExprType, AST.Expr, String>(env, type, ast_init, name);
+    }
+
 }
 
 
@@ -833,7 +890,7 @@ public class TypeSpec : ASTNode {
     // input: env
     // output: tuple<ExprType, Environment>
     // 
-    public virtual Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+    public virtual Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
         return null;
     }
 
@@ -858,7 +915,7 @@ public class TypedefName : TypeSpec {
     // 
     // ** NOT FINISHED **
     // 
-    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
         return null;
     }
 
@@ -890,6 +947,10 @@ public enum TypeQualifier {
 }
 
 
+// TypeInfo
+// ========
+// a base class of FunctionInfo, ArrayInfo, and PointerInfo
+// 
 public class TypeInfo : ASTNode {
     public enum TypeInfoType {
         FUNCTION,
@@ -898,6 +959,9 @@ public class TypeInfo : ASTNode {
     }
     public virtual TType WrapTType(TType type) {
         return type;
+    }
+    public virtual Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
+        return null;
     }
     public TypeInfoType type;
 }
@@ -916,6 +980,12 @@ public class FunctionInfo : TypeInfo {
     public override TType WrapTType(TType type) {
         return new TFunction(param_type_list.__params, param_type_list.IsVarArgs);
     }
+
+    // TODO : FunctionInfo.Wrap(env, type) -> (env, type)
+    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
+        param_type_list.GetParamTypes
+        return new Tuple<AST.Env, AST.ExprType>(env, type);
+    }
 }
 
 public class ArrayInfo : TypeInfo {
@@ -931,6 +1001,11 @@ public class ArrayInfo : TypeInfo {
         scope = nelems.Semant(scope);
         __nelems = 0;
         return scope;
+    }
+
+    // TODO : ArrayInfo.WrapType(env, type) -> (env, type)
+    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
+        return new Tuple<AST.Env, AST.ExprType>(env, type);
     }
     public Expression nelems;
     public int __nelems;
@@ -949,6 +1024,12 @@ public class PointerInfo : TypeInfo {
         return ptr;
     }
 
+    // TODO : [finished] PointerInfo.WrapType(env, type) -> (env, type)
+    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
+        bool is_const = type_qualifiers.Any(x => x == TypeQualifier.CONST);
+        bool is_volatile = type_qualifiers.Any(x => x == TypeQualifier.VOLATILE);
+        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TPointer(type, is_const, is_volatile));
+    }
     public List<TypeQualifier> type_qualifiers;
 }
 
@@ -957,11 +1038,11 @@ public class Declr : ASTNode {
         type_infos = new List<TypeInfo>();
         name = _name;
     }
-    
+
     // after parsing
     public List<TypeInfo> type_infos;
     public String name;
-    
+
     // after semant
     public TType type;
 
@@ -979,7 +1060,16 @@ public class Declr : ASTNode {
         type_infos.ForEach(info => type = info.WrapTType(type));
         return type;
     }
-    
+
+    // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
+    public Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
+        type_infos.ForEach(info => {
+            Tuple<AST.Env, AST.ExprType> r = info.WrapType(env, type);
+            env = r.Item1;
+            type = r.Item2;
+        });
+        return new Tuple<AST.Env, AST.ExprType, string>(env, type, name);
+    }
 }
 
 // Finished
@@ -1004,6 +1094,16 @@ public class ParamTypeList : ASTNode {
         return scope;
     }
 
+    // TODO : ParamTypeList.GetParamTypes(env) -> (env, type)[]
+    public List<Tuple<AST.Env, String, AST.ExprType>> GetParamTypes(AST.Env env) {
+        List<Tuple<AST.Env, String, AST.ExprType>> param_types = new List<Tuple<AST.Env, String, AST.ExprType>>();
+        foreach (ParamDecln decln in param_list) {
+            Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDecln(env);
+            param_types.Add(r_decln);
+        }
+        return param_types;
+    }
+
     public List<ScopeEntry> __params;
 }
 
@@ -1026,8 +1126,25 @@ public class EnumSpec : TypeSpec {
         enum_list = _enum_list;
     }
 
-    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
-        return null;
+    public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
+        if (enum_list == null) {
+            // if there is no content in this enum type, we must find it's definition in the environment
+            AST.Env.Entry entry = env.Find("enum " + name);
+            if (entry == null || entry.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+                Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
+                return null;
+            }
+        }
+        else {
+            // so there are something in this enum type, we need to put this type into the environment
+            int idx = 0;
+            foreach (Enumerator elem in enum_list) {
+                env = env.PushEnum(elem.name, new AST.TLong(), idx);
+                idx++;
+            }
+            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "enum " + name, new AST.TLong());
+        }
+        return new Tuple<AST.ExprType, AST.Env>(new AST.TLong(is_const, is_volatile), env);
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -1038,7 +1155,8 @@ public class EnumSpec : TypeSpec {
             if (enum_list != null && enum_list.Count != 0) {
                 Log.SemantError("Error: type 'enum " + name + " ' redifinition.");
             }
-        } else {
+        }
+        else {
             // if the enum type is not found in scope, we must make sure that this is a definition.
             if (enum_list == null) {
                 Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
@@ -1111,11 +1229,20 @@ public class StructSpec : StructOrUnionSpec {
     // 
     // ** NOT FINISHED **
     // 
-    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
-        
+
+        if (name != "") {
+            // add a non-complete type
+            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, null);
+        }
+
+        foreach (StructDecln decl in decl_list) {
+
+        }
+
         AST.TStruct type = new AST.TStruct(attribs, is_const, is_volatile);
-        return new Tuple<AST.ExprType, AST.Environment>(type, env);
+        return new Tuple<AST.ExprType, AST.Env>(type, env);
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -1151,11 +1278,11 @@ public class UnionSpec : StructOrUnionSpec {
     // 
     // ** NOT FINISHED **
     // 
-    public override Tuple<AST.ExprType, AST.Environment> GetExprType(AST.Environment env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
 
         AST.TUnion type = new AST.TUnion(attribs, is_const, is_volatile);
-        return new Tuple<AST.ExprType, AST.Environment>(type, env);
+        return new Tuple<AST.ExprType, AST.Env>(type, env);
     }
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
@@ -1227,6 +1354,21 @@ public class ParamDecln : ASTNode {
         return scope;
     }
 
+    // TODO : [finished] ParamDecln.GetParamDecln(env) -> (env, name, type)
+    public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
+        Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> r_specs = specs.SemantDeclnSpecs(env);
+        env = r_specs.Item1;
+        AST.Decln.EnumSCS scs = r_specs.Item2;
+        AST.ExprType type = r_specs.Item3;
+
+        Tuple<AST.Env, AST.ExprType, String> r_declr = decl.WrapExprType(env, type);
+        env = r_declr.Item1;
+        type = r_declr.Item2;
+        String name = r_declr.Item3;
+
+        return new Tuple<AST.Env, string, AST.ExprType>(env, name, type);
+    }
+
     // After semant
     public ScopeEntry __entry;
 }
@@ -1268,6 +1410,6 @@ public class TypeName : ASTNode {
 
         return scope;
     }
-   
+
 }
 

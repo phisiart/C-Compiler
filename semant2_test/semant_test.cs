@@ -10,9 +10,9 @@ namespace semant2_test {
     public class EnvironmentTest {
         [TestMethod]
         public void TestEnv() {
-            AST.Environment env = new AST.Environment();
+            AST.Env env = new AST.Env();
             
-            env = env.PushEntry(AST.Environment.EntryLoc.GLOBAL, "global_var", new AST.TLong());
+            env = env.PushEntry(AST.Env.EntryLoc.GLOBAL, "global_var", new AST.TLong());
 
             env = env.InScope();
             List<Tuple<String, AST.ExprType>> args = new List<Tuple<string, AST.ExprType>>();
@@ -22,7 +22,7 @@ namespace semant2_test {
             args.Add(new Tuple<string, AST.ExprType>("another_double", new AST.TDouble()));
             args.Add(new Tuple<string, AST.ExprType>("some_int", new AST.TLong()));
             AST.TFunction func = new AST.TFunction(new AST.TVoid(), args);
-            AST.Environment env2 = env.SetCurrentFunction(func);
+            AST.Env env2 = env.SetCurrentFunction(func);
 
             String log = env.Dump();
             System.Diagnostics.Debug.WriteLine(log);
@@ -30,15 +30,15 @@ namespace semant2_test {
 
         [TestMethod]
         public void TestShadow() {
-            AST.Environment env = new AST.Environment();
-            env = env.PushEntry(AST.Environment.EntryLoc.GLOBAL, "c", new AST.TChar());
+            AST.Env env = new AST.Env();
+            env = env.PushEntry(AST.Env.EntryLoc.GLOBAL, "c", new AST.TChar());
             env = env.InScope();
-            env = env.PushEntry(AST.Environment.EntryLoc.STACK, "c", new AST.TLong());
+            env = env.PushEntry(AST.Env.EntryLoc.STACK, "c", new AST.TLong());
 
             String log = env.Dump();
             System.Diagnostics.Debug.WriteLine(log);
 
-            AST.Environment.Entry entry = env.Find("c");
+            AST.Env.Entry entry = env.Find("c");
 
             System.Diagnostics.Debug.WriteLine("c : " + entry.entry_loc + " " + entry.entry_type);
         }
@@ -97,8 +97,8 @@ namespace semant2_test {
             List<Token> tokens = Parser.GetTokensFromString(src);
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Environment env = new AST.Environment();
-            Tuple<AST.ExprType, AST.Environment> t = decln_specs.GetExprType(env);
+            AST.Env env = new AST.Env();
+            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
         }
 
         [TestMethod]
@@ -107,8 +107,8 @@ namespace semant2_test {
             List<Token> tokens = Parser.GetTokensFromString(src);
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Environment env = new AST.Environment();
-            Tuple<AST.ExprType, AST.Environment> t = decln_specs.GetExprType(env);
+            AST.Env env = new AST.Env();
+            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
         }
 
         [TestMethod]
@@ -117,9 +117,38 @@ namespace semant2_test {
             List<Token> tokens = Parser.GetTokensFromString(src);
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Environment env = new AST.Environment();
-            Tuple<AST.ExprType, AST.Environment> t = decln_specs.GetExprType(env);
+            AST.Env env = new AST.Env();
+            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
         }
 
+        [TestMethod]
+        public void TestEnum() {
+            String src = "enum MyEnum { VAL1, VAL2, VAL3 }";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            DeclnSpecs decln_specs;
+            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
+            AST.Env env = new AST.Env();
+            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+            env = t.Item2;
+            String log = t.Item2.Dump();
+            System.Diagnostics.Debug.WriteLine(log);
+
+            src = "enum MyEnum";
+            tokens = Parser.GetTokensFromString(src);
+            r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
+            t = decln_specs.GetExprType(env);
+
+        }
+
+        [TestMethod]
+        // This test should not pass!
+        public void TestEnum2() {
+            String src = "enum MyEnum";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            DeclnSpecs decln_specs;
+            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
+            AST.Env env = new AST.Env();
+            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+        }
     }
 }

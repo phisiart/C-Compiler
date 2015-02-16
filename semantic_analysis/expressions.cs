@@ -91,6 +91,11 @@ public class Expression : ASTNode {
             Log.SemantError("Error: Expected pointer or integral type.");
         }
     }
+
+    // TODO : Expression.GetExpression(env) -> (env, expr)
+    public virtual Tuple<AST.Env, AST.Expr> GetExpression(AST.Env env) {
+        return new Tuple<AST.Env, AST.Expr>(env, null);
+    }
 }
 
 

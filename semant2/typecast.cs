@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace AST {
-    public class TypeCast : Expression {
+    public class TypeCast : Expr {
         public enum EnumTypeCast {
             NOP,
             INT8_TO_INT16,
@@ -32,10 +32,10 @@ namespace AST {
             DOUBLE_TO_FLOAT,
         }
 
-        public readonly Expression expr;
+        public readonly Expr expr;
         public readonly EnumTypeCast cast;
 
-        public TypeCast(EnumTypeCast _cast, Expression _expr, ExprType _type)
+        public TypeCast(EnumTypeCast _cast, Expr _expr, ExprType _type)
             : base(_type) {
             expr = _expr;
             cast = _cast;
@@ -51,7 +51,7 @@ namespace AST {
         // output: TypeCast
         // converts expr to type
         // 
-        public static TypeCast SignedIntegralToArith(Expression expr, ExprType type) {
+        public static TypeCast SignedIntegralToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -148,7 +148,7 @@ namespace AST {
         //       unsigned long converts directly to double.
         //       however, I just treat unsigned long as long.
         // 
-        public static TypeCast UnsignedIntegralToArith(Expression expr, ExprType type) {
+        public static TypeCast UnsignedIntegralToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -245,7 +245,7 @@ namespace AST {
         //       float cannot convert to unsigned char.
         //       I don't know why, but I follow it.
         // 
-        public static TypeCast FloatToArith(Expression expr, ExprType type) {
+        public static TypeCast FloatToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -313,7 +313,7 @@ namespace AST {
         //       it can be converted to 1) another pointer 2) an integral
         //       if else, assert.
         // 
-        public static TypeCast FromPointer(Expression expr, ExprType type) {
+        public static TypeCast FromPointer(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -344,7 +344,7 @@ namespace AST {
         //       it can be converted from 1) another pointer 2) an integral
         //       if else, assert.
         // 
-        public static TypeCast ToPointer(Expression expr, ExprType type) {
+        public static TypeCast ToPointer(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -371,7 +371,7 @@ namespace AST {
         // output: TypeCast
         // converts expr to type
         // 
-        public static TypeCast MakeCast(Expression expr, ExprType type) {
+        public static TypeCast MakeCast(Expr expr, ExprType type) {
             
             // if two types are equal, return NOP
             if (EqualType(expr.type, type)) {
@@ -419,7 +419,7 @@ namespace AST {
         // output: tuple<e1', e2', enumexprtype>
         // performs the usual arithmetic conversion on e1 & e2
         // 
-        public static Tuple<Expression, Expression, ExprType.EnumExprType> UsualArithmeticConversion(Expression e1, Expression e2) {
+        public static Tuple<Expr, Expr, ExprType.EnumExprType> UsualArithmeticConversion(Expr e1, Expr e2) {
             ExprType t1 = e1.type;
             ExprType t2 = e2.type;
 
@@ -429,21 +429,21 @@ namespace AST {
             bool v2 = t2.is_volatile;
             // 1. if either expr is double: both are converted to double
             if (t1.expr_type == ExprType.EnumExprType.DOUBLE || t2.expr_type == ExprType.EnumExprType.DOUBLE) {
-                return new Tuple<Expression, Expression, ExprType.EnumExprType>(MakeCast(e1, new TDouble(c1, v1)), MakeCast(e2, new TDouble(c2, v2)), ExprType.EnumExprType.DOUBLE);
+                return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TDouble(c1, v1)), MakeCast(e2, new TDouble(c2, v2)), ExprType.EnumExprType.DOUBLE);
             }
 
             // 2. if either expr is float: both are converted to float
             if (t1.expr_type == ExprType.EnumExprType.FLOAT || t2.expr_type == ExprType.EnumExprType.FLOAT) {
-                return new Tuple<Expression, Expression, ExprType.EnumExprType>(MakeCast(e1, new TFloat(c1, v1)), MakeCast(e2, new TFloat(c2, v2)), ExprType.EnumExprType.FLOAT);
+                return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TFloat(c1, v1)), MakeCast(e2, new TFloat(c2, v2)), ExprType.EnumExprType.FLOAT);
             }
 
             // 3. if either expr is unsigned long: both are converted to unsigned long
             if (t1.expr_type == ExprType.EnumExprType.ULONG || t2.expr_type == ExprType.EnumExprType.ULONG) {
-                return new Tuple<Expression, Expression, ExprType.EnumExprType>(MakeCast(e1, new TULong(c1, v1)), MakeCast(e2, new TULong(c2, v2)), ExprType.EnumExprType.ULONG);
+                return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TULong(c1, v1)), MakeCast(e2, new TULong(c2, v2)), ExprType.EnumExprType.ULONG);
             }
 
             // 4. both are converted to long
-            return new Tuple<Expression, Expression, ExprType.EnumExprType>(MakeCast(e1, new TLong(c1, v1)), MakeCast(e2, new TLong(c2, v2)), ExprType.EnumExprType.LONG);
+            return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TLong(c1, v1)), MakeCast(e2, new TLong(c2, v2)), ExprType.EnumExprType.LONG);
 
         }
 

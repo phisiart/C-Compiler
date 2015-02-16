@@ -19,8 +19,9 @@ namespace AST {
             decln_type = type;
         }
 
-        private readonly String   decln_name;
-        private readonly EnumSCS  decln_scs;
-        private readonly ExprType decln_type;
+        private readonly String     decln_name;
+        private readonly EnumSCS    decln_scs;
+        private readonly ExprType   decln_type;
+        private readonly Expr decln_init;
     }
 }

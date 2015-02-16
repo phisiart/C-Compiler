@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AST {
-    public class Environment {
+    public class Env {
 
         // enum EntryLoc
         // =============
@@ -42,7 +42,7 @@ namespace AST {
             }
             public readonly EntryLoc entry_loc;
             public readonly ExprType entry_type;
-            public readonly int entry_offset;
+            public readonly int      entry_offset;
         }
 
         private class Scope {
@@ -120,6 +120,9 @@ namespace AST {
                     break;
                 case EntryLoc.GLOBAL:
                     scope.scope_global_entries.Add(new Utils.StoreEntry(name, type, 0));
+                    break;
+                case EntryLoc.TYPEDEF:
+                    scope.scope_typedef_entries.Add(new Utils.StoreEntry(name, type, 0));
                     break;
                 default:
                     return null;
@@ -214,6 +217,14 @@ namespace AST {
                     str += indent;
                     str += "[%ebp - " + entry.entry_offset + "] " + entry.entry_name + " : " + entry.entry_type.ToString() + "\n";
                 }
+                foreach (Utils.StoreEntry entry in scope_typedef_entries) {
+                    str += indent;
+                    str += "typedef: " + entry.entry_name + " <- " + entry.entry_type.ToString() + "\n";
+                }
+                foreach (Utils.StoreEntry entry in scope_enum_entries) {
+                    str += indent;
+                    str += entry.entry_name + " = " + entry.entry_offset + "\n";
+                }
                 return str;
 
             }
@@ -235,7 +246,7 @@ namespace AST {
         // Environment
         // ===========
         // construct an environment with a single empty scope
-        public Environment() {
+        public Env() {
             env_scopes = new Stack<Scope>();
             env_scopes.Push(new Scope());
         }
@@ -244,7 +255,7 @@ namespace AST {
         // ===========
         // construct an environment with the given scopes
         // 
-        private Environment(Stack<Scope> scopes) {
+        private Env(Stack<Scope> scopes) {
             env_scopes = scopes;
         }
         
@@ -254,10 +265,10 @@ namespace AST {
         // output: Environment
         // return a new environment which has a new inner scope
         // 
-        public Environment InScope() {
+        public Env InScope() {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             scopes.Push(new Scope());
-            return new Environment(scopes);
+            return new Env(scopes);
         }
 
         // OutScope
@@ -266,10 +277,10 @@ namespace AST {
         // output: Environment
         // return a new environment which goes out of the most inner scope of the current environment
         // 
-        public Environment OutScope() {
+        public Env OutScope() {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             scopes.Pop();
-            return new Environment(scopes);
+            return new Env(scopes);
         }
 
         // PushEntry
@@ -278,12 +289,12 @@ namespace AST {
         // ouput: Environment
         // return a new environment which adds a symbol entry
         // 
-        public Environment PushEntry(EntryLoc loc, String name, ExprType type) {
+        public Env PushEntry(EntryLoc loc, String name, ExprType type) {
             // note the nested copy constructor. this is because the constructor would reverse the elements.
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEntry(loc, name, type);
             scopes.Push(top);
-            return new Environment(scopes);
+            return new Env(scopes);
         }
 
         // PushEnum
@@ -292,11 +303,11 @@ namespace AST {
         // output: Environment
         // return a new environment which adds a enum value
         // 
-        public Environment PushEnum(String name, ExprType type, int value) {
+        public Env PushEnum(String name, ExprType type, int value) {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEnum(name, type, value);
             scopes.Push(top);
-            return new Environment(scopes);
+            return new Env(scopes);
         }
 
         // SetCurrentFunction
@@ -305,11 +316,11 @@ namespace AST {
         // ouput: Environment
         // return a new environment which sets the current function
         // 
-        public Environment SetCurrentFunction(TFunction type) {
+        public Env SetCurrentFunction(TFunction type) {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().SetCurrentFunction(type);
             scopes.Push(top);
-            return new Environment(scopes);
+            return new Env(scopes);
         }
 
         public Entry Find(String name) {
@@ -321,7 +332,11 @@ namespace AST {
             }
             return entry;
         }
-        
+
+        public Entry FindInCurrentScope(String name) {
+            return env_scopes.Peek().Find(name);
+        }
+
         public String Dump() {
             String str = "";
             int depth = 0;
