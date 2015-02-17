@@ -93,11 +93,18 @@ public class Expression : ASTNode {
     }
 
     // TODO : Expression.GetExpression(env) -> (env, expr)
-    public virtual Tuple<AST.Env, AST.Expr> GetExpression(AST.Env env) {
+    public virtual Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
         return new Tuple<AST.Env, AST.Expr>(env, null);
     }
 }
 
+public class NullExpression : Expression {
+
+    // TODO : NullExpression.GetExpression(env) -> (env, expr)
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.NullExpr());
+    }
+}
 
 public class Variable : Expression {
     public Variable(String _name) {
@@ -126,19 +133,20 @@ public class Variable : Expression {
 
 public class Constant : Expression {}
 
-public class ConstChar : Constant {
-    public ConstChar(Char _val) {
-        val = _val;
-    }
+// NOTE : there is no const char in C, there is only const int ...
+//public class ConstChar : Constant {
+//    public ConstChar(Char _val) {
+//        val = _val;
+//    }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        type = new TChar();
-        return scope;
-    }
+//    public override ScopeSandbox Semant(ScopeSandbox _scope) {
+//        scope = _scope;
+//        type = new TChar();
+//        return scope;
+//    }
 
-    public Char val;
-}
+//    public Char val;
+//}
 
 public class ConstFloat : Constant {
     public ConstFloat(Double _val, FloatType _float_type) {
@@ -149,17 +157,28 @@ public class ConstFloat : Constant {
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
         switch (float_type) {
-        case FloatType.F:
-            type = new TFloat();
-            break;
-        case FloatType.LF:
-            type = new TLongDouble();
-            break;
-        case FloatType.NONE:
-            type = new TDouble();
-            break;
+            case FloatType.F:
+                type = new TFloat();
+                break;
+            case FloatType.LF:
+                type = new TLongDouble();
+                break;
+            case FloatType.NONE:
+                type = new TDouble();
+                break;
         }
         return scope;
+    }
+
+    // GetExpr
+    // =======
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        switch (float_type) {
+            case FloatType.F:
+                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstFloat((float)val));
+            default:
+                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstDouble(val));
+        }
     }
 
     public FloatType float_type;
@@ -190,9 +209,20 @@ public class ConstInt : Constant {
         }
         return scope;
     }
-    
-    public IntType int_type;
 
+    // GetExpr
+    // =======
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        switch (int_type) {
+            case IntType.U:
+            case IntType.UL:
+                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
+            default:
+                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
+        }
+    }
+
+    public IntType int_type;
     public long val;
 }
 
@@ -206,6 +236,12 @@ public class StringLiteral : Expression {
         type = new TPointer(new TChar());
         type.is_const = true;
         return scope;
+    }
+
+    // GetExpr
+    // =======
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstStringLiteral(val));
     }
 
     public String val;

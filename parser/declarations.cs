@@ -1217,7 +1217,7 @@ public class _struct_or_union_specifier : PTNode {
 
             current = ParseDeclarationList(src, current, out decl_list);
             if (current != -1) {
-                spec.decl_list = decl_list;
+                spec.declns = decl_list;
                 return current;
             }
 

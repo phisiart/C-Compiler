@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-//using AST;
 
 // basic rule: Semant(scope): return scope
 
@@ -238,13 +237,21 @@ public class ASTNode {
 
 // the declaration of an object
 public class Decln : ASTNode {
-    public Decln(DeclnSpecs decl_specs_, List<InitDeclr> init_declarators_) {
+    public Decln(DeclnSpecs decl_specs_, List<InitDeclr> init_declrs_) {
         decl_specs = decl_specs_;
-        init_declarators = init_declarators_;
+        //init_declrs = new List<InitDeclr>();
+        //foreach (InitDeclr init_declr in init_declarators_) {
+        //    if (init_declr != null) {
+        //        init_declrs.Add(init_declr);
+        //    } else {
+        //        init_declrs.Add(new Null)
+        //    }
+        //}
+        init_declrs = init_declrs_;
         __entries = new List<ScopeEntry>();
     }
     public DeclnSpecs decl_specs;
-    public List<InitDeclr> init_declarators;
+    public List<InitDeclr> init_declrs;
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
@@ -253,7 +260,7 @@ public class Decln : ASTNode {
         // to get 1) storage class 2) type
         scope = decl_specs.Semant(scope);
 
-        foreach (InitDeclr init_declr in init_declarators) {
+        foreach (InitDeclr init_declr in init_declrs) {
             init_declr.type = decl_specs.type;
             scope = init_declr.Semant(scope);
 
@@ -310,10 +317,53 @@ public class Decln : ASTNode {
         return scope;
     }
 
-    // TODO : Decln(env) -> (env, decln)[] : semant declarations
-    public List<Tuple<AST.Env, AST.Decln>> GetDeclns(AST.Env env) {
+    // TODO : Decln(env) -> (env, (env, decln)[]) : semant declarations
+    public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
         List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
-        return declns;
+
+        Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> r_specs = decl_specs.SemantDeclnSpecs(env);
+        env = r_specs.Item1;
+        AST.Decln.EnumSCS scs = r_specs.Item2;
+        AST.ExprType base_type = r_specs.Item3;
+
+        foreach (InitDeclr init_declr in init_declrs) {
+            Tuple<AST.Env, AST.ExprType, AST.Expr, String> r_declr = init_declr.GetInitDeclr(env, base_type);
+
+            env = r_declr.Item1;
+            AST.ExprType type = r_declr.Item2;
+            AST.Expr init = r_declr.Item3;
+            String name = r_declr.Item4;
+
+            // TODO : [finished] add the newly declared object into the environment
+            AST.Env.EntryLoc loc;
+            switch (scs) {
+                case AST.Decln.EnumSCS.AUTO:
+                    if (env.IsGlobal()) {
+                        loc = AST.Env.EntryLoc.GLOBAL;
+                    }
+                    else {
+                        loc = AST.Env.EntryLoc.STACK;
+                    }
+                    break;
+                case AST.Decln.EnumSCS.EXTERN:
+                    loc = AST.Env.EntryLoc.GLOBAL;
+                    break;
+                case AST.Decln.EnumSCS.STATIC:
+                    loc = AST.Env.EntryLoc.GLOBAL;
+                    break;
+                case AST.Decln.EnumSCS.TYPEDEF:
+                    loc = AST.Env.EntryLoc.TYPEDEF;
+                    break;
+                default:
+                    Log.SemantError("scs error");
+                    return null;
+            }
+            env = env.PushEntry(loc, name, type);
+
+            declns.Add(new Tuple<AST.Env, AST.Decln>(env, new AST.Decln(name, scs, type, init)));
+        }
+
+        return new Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>>(env, declns);
     }
 
     // calculate all the types
@@ -321,7 +371,7 @@ public class Decln : ASTNode {
         __entries.Clear();
 
         //TType type = decl_specs.GetNonQualifiedType();
-        foreach (InitDeclr init_declr in init_declarators) {
+        foreach (InitDeclr init_declr in init_declrs) {
             //__entries.Add(init_declr.GetEntry(type));
         }
 
@@ -785,8 +835,19 @@ public class DeclnSpecs : ASTNode {
 public class InitDeclr : ASTNode {
 
     public InitDeclr(Declr _decl, Expression _init) {
-        declarator = _decl;
-        init = _init;
+        if (_decl != null) {
+            declarator = _decl;
+        }
+        else {
+            declarator = new NullDeclr();
+        }
+
+        if (_init != null) {
+            init = _init;
+        }
+        else {
+            init = new NullExpression();
+        }
     }
 
 
@@ -824,7 +885,7 @@ public class InitDeclr : ASTNode {
     // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
     public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
 
-        Tuple<AST.Env, AST.Expr> r_init = init.GetExpression(env);
+        Tuple<AST.Env, AST.Expr> r_init = init.GetExpr(env);
         env = r_init.Item1;
         AST.Expr ast_init = r_init.Item2;
 
@@ -981,10 +1042,15 @@ public class FunctionInfo : TypeInfo {
         return new TFunction(param_type_list.__params, param_type_list.IsVarArgs);
     }
 
-    // TODO : FunctionInfo.Wrap(env, type) -> (env, type)
+    // TODO : [finished] FunctionInfo.Wrap(env, type) -> (env, type)
     public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
-        param_type_list.GetParamTypes
-        return new Tuple<AST.Env, AST.ExprType>(env, type);
+        List<Tuple<AST.Env, String, AST.ExprType>> r_params = param_type_list.GetParamTypes(env);
+        List<Tuple<String, AST.ExprType>> args = new List<Tuple<String, AST.ExprType>>();
+        foreach (Tuple<AST.Env, String, AST.ExprType> r_param in r_params) {
+            env = r_param.Item1;
+            args.Add(new Tuple<string, AST.ExprType>(r_param.Item2, r_param.Item3));
+        }
+        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFunction(type, args));
     }
 }
 
@@ -1062,13 +1128,21 @@ public class Declr : ASTNode {
     }
 
     // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
-    public Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
+    public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
         type_infos.ForEach(info => {
             Tuple<AST.Env, AST.ExprType> r = info.WrapType(env, type);
             env = r.Item1;
             type = r.Item2;
         });
         return new Tuple<AST.Env, AST.ExprType, string>(env, type, name);
+    }
+}
+
+public class NullDeclr : Declr {
+    public NullDeclr() : base("") { }
+
+    public override Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
+        return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
     }
 }
 
@@ -1094,7 +1168,7 @@ public class ParamTypeList : ASTNode {
         return scope;
     }
 
-    // TODO : ParamTypeList.GetParamTypes(env) -> (env, type)[]
+    // TODO : [finished] ParamTypeList.GetParamTypes(env) -> (env, type)[]
     public List<Tuple<AST.Env, String, AST.ExprType>> GetParamTypes(AST.Env env) {
         List<Tuple<AST.Env, String, AST.ExprType>> param_types = new List<Tuple<AST.Env, String, AST.ExprType>>();
         foreach (ParamDecln decln in param_list) {
@@ -1209,7 +1283,7 @@ public class Enumerator : ASTNode {
 // 
 public class StructOrUnionSpec : TypeSpec {
     public String name;
-    public List<StructDecln> decl_list;
+    public List<StructDecln> declns;
 }
 
 
@@ -1217,9 +1291,9 @@ public class StructOrUnionSpec : TypeSpec {
 // ==========
 // 
 public class StructSpec : StructOrUnionSpec {
-    public StructSpec(String _name, List<StructDecln> _decl_list) {
+    public StructSpec(String _name, List<StructDecln> _declns) {
         name = _name;
-        decl_list = _decl_list;
+        declns = _declns;
     }
 
     // GetExprType
@@ -1227,18 +1301,21 @@ public class StructSpec : StructOrUnionSpec {
     // input: env, is_const, is_volatile
     // output: tuple<ExprType, Environment>
     // 
-    // ** NOT FINISHED **
+    // TODO : StructSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
     // 
     public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
-        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
 
+        // TODO : non-complete type
         if (name != "") {
             // add a non-complete type
-            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, null);
+            // env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, null);
         }
 
-        foreach (StructDecln decl in decl_list) {
-
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        foreach (StructDecln decln in declns) {
+            Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+            env = r_decln.Item1;
+            attribs.AddRange(r_decln.Item2);
         }
 
         AST.TStruct type = new AST.TStruct(attribs, is_const, is_volatile);
@@ -1247,12 +1324,12 @@ public class StructSpec : StructOrUnionSpec {
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
-        foreach (StructDecln decl in decl_list) {
+        foreach (StructDecln decl in declns) {
             scope = decl.Semant(scope);
         }
         TStruct _type = new TStruct();
-        foreach (StructDecln decl in decl_list) {
-            foreach (Declr d in decl.decl_list) {
+        foreach (StructDecln decl in declns) {
+            foreach (Declr d in decl.declrs) {
                 _type.attribs.Add(new ScopeEntry(d.name, d.type));
             }
         }
@@ -1268,7 +1345,7 @@ public class StructSpec : StructOrUnionSpec {
 public class UnionSpec : StructOrUnionSpec {
     public UnionSpec(String _name, List<StructDecln> _decl_list) {
         name = _name;
-        decl_list = _decl_list;
+        declns = _decl_list;
     }
 
     // GetExprType
@@ -1276,10 +1353,15 @@ public class UnionSpec : StructOrUnionSpec {
     // input: env, is_const, is_volatile
     // output: tuple<ExprType, Environment>
     // 
-    // ** NOT FINISHED **
+    // TODO : UnionSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
     // 
     public override Tuple<AST.ExprType, AST.Env> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        foreach (StructDecln decln in declns) {
+            Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+            env = r_decln.Item1;
+            attribs.AddRange(r_decln.Item2);
+        }
 
         AST.TUnion type = new AST.TUnion(attribs, is_const, is_volatile);
         return new Tuple<AST.ExprType, AST.Env>(type, env);
@@ -1287,12 +1369,12 @@ public class UnionSpec : StructOrUnionSpec {
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
-        foreach (StructDecln decl in decl_list) {
+        foreach (StructDecln decl in declns) {
             scope = decl.Semant(scope);
         }
         TUnion _type = new TUnion();
-        foreach (StructDecln decl in decl_list) {
-            foreach (Declr d in decl.decl_list) {
+        foreach (StructDecln decl in declns) {
+            foreach (Declr d in decl.declrs) {
                 _type.attribs.Add(new ScopeEntry(d.name, d.type));
             }
         }
@@ -1315,21 +1397,37 @@ public class StructOrUnion : ASTNode {
 
 
 public class StructDecln : ASTNode {
-    public StructDecln(DeclnSpecs _specs, List<Declr> _decl_list) {
+    public StructDecln(DeclnSpecs _specs, List<Declr> _declrs) {
         specs = _specs;
-        decl_list = _decl_list;
+        declrs = _declrs;
     }
     public DeclnSpecs specs;
-    public List<Declr> decl_list;
+    public List<Declr> declrs;
 
     public override ScopeSandbox Semant(ScopeSandbox _scope) {
         scope = _scope;
         scope = specs.Semant(scope);
-        foreach (Declr decl in decl_list) {
+        foreach (Declr decl in declrs) {
             decl.type = specs.type;
             scope = decl.Semant(scope);
         }
         return scope;
+    }
+
+    public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
+        Tuple<AST.ExprType, AST.Env> r_specs = specs.GetExprType(env);
+        AST.ExprType base_type = r_specs.Item1;
+        env = r_specs.Item2;
+
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        foreach (Declr declr in declrs) {
+            Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, base_type);
+            env = r_declr.Item1;
+            AST.ExprType type = r_declr.Item2;
+            String name = r_declr.Item3;
+            attribs.Add(new Tuple<string, AST.ExprType>(name, type));
+        }
+        return new Tuple<AST.Env, List<Tuple<string, AST.ExprType>>>(env, attribs);
     }
 
 }
@@ -1338,7 +1436,13 @@ public class StructDecln : ASTNode {
 public class ParamDecln : ASTNode {
     public ParamDecln(DeclnSpecs _specs, Declr _decl) {
         specs = _specs;
-        decl = _decl;
+
+        if (_decl != null) {
+            decl = _decl;
+        }
+        else {
+            decl = new NullDeclr();
+        }
     }
 
     public DeclnSpecs specs;

@@ -470,6 +470,12 @@ namespace AST {
         public readonly ExprType type;
     }
 
+    public class NullExpr : Expr {
+
+        // TODO : AST.NullExpr.type = ??
+        public NullExpr() : base(null) {}
+    }
+
     public class Variable : Expr {
         public Variable(ExprType _type, String _name)
             : base(_type) {
@@ -483,13 +489,13 @@ namespace AST {
             : base(_type) {}
     }
 
-    public class ConstChar : Constant {
-        public ConstChar(SByte _value)
-            : base(new TChar(true)) {
-            value = _value;
-        }
-        protected SByte value;
-    }
+    //public class ConstChar : Constant {
+    //    public ConstChar(SByte _value)
+    //        : base(new TChar(true)) {
+    //        value = _value;
+    //    }
+    //    protected SByte value;
+    //}
 
     //public class ConstInt : Constant {
     //    public ConstInt(Int32 _value)

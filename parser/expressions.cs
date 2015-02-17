@@ -84,7 +84,9 @@ public class _primary_expression : PTNode {
         // 2. match const
         // 2.1. match char
         if (src[begin].type == TokenType.CHAR) {
-            expr = new ConstChar(((TokenChar)src[begin]).val);
+            // expr = new ConstChar(((TokenChar)src[begin]).val);
+            // NOTE : there is no const char in C, there is only const int ...
+            expr = new ConstInt(((TokenChar)src[begin]).val, IntType.NONE);
             return begin + 1;
         }
 

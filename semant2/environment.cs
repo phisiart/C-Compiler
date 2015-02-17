@@ -337,6 +337,10 @@ namespace AST {
             return env_scopes.Peek().Find(name);
         }
 
+        public bool IsGlobal() {
+            return env_scopes.Count == 1;
+        }
+
         public String Dump() {
             String str = "";
             int depth = 0;

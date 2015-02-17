@@ -151,4 +151,43 @@ namespace semant2_test {
             Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
         }
     }
+
+    [TestClass]
+    public class DeclnTest {
+        [TestMethod]
+        public void TestInt() {
+            string src = "int a, *b, c(int haha, int), d[];";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            Decln decln;
+            int r = _declaration.Parse(tokens, 0, out decln);
+
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
+            //AST.ExprType type = new AST.TDouble(true, true);
+            //type = type.GetQualifiedType(false, false);
+        }
+
+        [TestMethod]
+        public void TestStruct() {
+            string src = "struct MyStruct { int a; int b; } my_struct;";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            Decln decln;
+            int r = _declaration.Parse(tokens, 0, out decln);
+
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
+        }
+
+        [TestMethod]
+        public void TestUnion() {
+            string src = "union MyUnion { int a; int b; } my_union;";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            Decln decln;
+            int r = _declaration.Parse(tokens, 0, out decln);
+
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
+        }
+    }
+
 }
