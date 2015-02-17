@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 // declaration : declaration_specifiers [init_declarator_list]? ;
 // [ return: Declaration ]
-public class _declaration : PTNode {
+public class _declaration : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("static int a = 3, *b = 0;");
         Decln decl;
@@ -92,7 +92,7 @@ public class _declaration : PTNode {
 // 2. you can only have **one** storage-class specifier
 // 3. you can have many type qualifiers though, because it doesn't cause ambiguity
 //
-public class _declaration_specifiers : PTNode {
+public class _declaration_specifiers : ParseRule {
     public static bool Test() {
         DeclnSpecs decl_specs;
 
@@ -219,7 +219,7 @@ public class _declaration_specifiers : PTNode {
 //
 // [ return: List<InitDeclarator> ]
 // [ if fail, return empty List<InitDeclarator> ]
-public class _init_declarator_list : PTNode {
+public class _init_declarator_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<InitDeclr> init_declarators) {
         init_declarators = new List<InitDeclr>();
 
@@ -258,7 +258,7 @@ public class _init_declarator_list : PTNode {
 //
 // FAIL: null
 //
-public class _init_declarator : PTNode {
+public class _init_declarator : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a = 3 + 4");
         InitDeclr decl;
@@ -312,7 +312,7 @@ public class _init_declarator : PTNode {
 // NOTE:
 // there can be only one storage class in one declaration
 //
-public class _storage_class_specifier : PTNode {
+public class _storage_class_specifier : ParseRule {
     public static bool Test() {
         StorageClassSpecifier decl_specs;
 
@@ -395,7 +395,7 @@ public class StorageClassSpecifier : ASTNode {
 //
 // NOTE: typedef_name needs environment
 //
-public class _type_specifier : PTNode {
+public class _type_specifier : ParseRule {
     public static bool Test() {
         TypeSpec spec;
 
@@ -544,7 +544,7 @@ public class _type_specifier : PTNode {
 //
 // NOTE: there can be multiple type_qualifiers in one declaration
 //
-public class _type_qualifier : PTNode {
+public class _type_qualifier : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("const volatile");
         TypeQualifier qualifier;
@@ -611,7 +611,7 @@ public class TypeQualifier : ASTNode {
 //
 // FAIL: null
 //
-public class _declarator : PTNode {
+public class _declarator : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("* const * const a[3][4]");
         Declr decl;
@@ -651,7 +651,7 @@ public class _declarator : PTNode {
 //
 // FAIL: null
 //
-public class _pointer : PTNode {
+public class _pointer : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("* const * volatile const *");
         List<PointerInfo> infos;
@@ -698,7 +698,7 @@ public class _pointer : PTNode {
 //                     | parameter_list , ...
 // [ note: my solution ]
 // parameter_type_list : parameter_list < , ... >?
-public class _parameter_type_list : PTNode {
+public class _parameter_type_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out ParamTypeList param_type_list) {
         param_type_list = null;
 
@@ -732,7 +732,7 @@ public class _parameter_type_list : PTNode {
 // [ note: my solution ]
 // parameter_list : parameter_declaration < , parameter_declaration >*
 // [ note: it's okay to have a lonely ',', just leave it alone ]
-public class _parameter_list : PTNode {
+public class _parameter_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<ParamDecln> param_list) {
         ParamDecln decl;
         int current = _parameter_declaration.Parse(src, begin, out decl);
@@ -765,7 +765,7 @@ public class _parameter_list : PTNode {
 // type_qualifier_list : [type_qualifier]+
 // [ return: List<TypeQualifier> ]
 // [ if fail, return empty List<TypeQualifier> ]
-public class _type_qualifier_list : PTNode {
+public class _type_qualifier_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<TypeQualifier> type_qualifiers) {
         type_qualifiers = new List<TypeQualifier>();
 
@@ -823,7 +823,7 @@ public class _type_qualifier_list : PTNode {
 //
 // NOTE: this grammar is left-recursive, so i'm changing it to:
 // direct_declarator : [ identifier | '(' declarator ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
-public class _direct_declarator : PTNode {
+public class _direct_declarator : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("(*a)[3][5 + 7][]");
         Declr decl;
@@ -1040,7 +1040,7 @@ public class _direct_declarator : PTNode {
 
 // enum_specifier : enum <identifier>? { enumerator_list }
 //                | enum identifier
-public class _enum_specifier : PTNode {
+public class _enum_specifier : ParseRule {
 
     // this parses { enumerator_list }
     private static int ParseEnumList(List<Token> src, int begin, out List<Enumerator> enum_list) {
@@ -1099,7 +1099,7 @@ public class _enum_specifier : PTNode {
 //                 | enumerator_list, enumerator
 // [ note: my solution ]
 // enumerator_list : enumerator < , enumerator >*
-public class _enumerator_list : PTNode {
+public class _enumerator_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<Enumerator> enum_list) {
         Enumerator enumerator;
         enum_list = new List<Enumerator>();
@@ -1131,7 +1131,7 @@ public class _enumerator_list : PTNode {
 //            | enumeration_constant = constant_expression
 // [ note: my solution ]
 // enumerator : enumeration_constant < = constant_expression >?
-public class _enumerator : PTNode {
+public class _enumerator : ParseRule {
     public static int Parse(List<Token> src, int begin, out Enumerator enumerator) {
         int current = _enumeration_constant.Parse(src, begin, out enumerator);
         if (current == -1) {
@@ -1155,7 +1155,7 @@ public class _enumerator : PTNode {
 }
 
 // enumeration_constant : identifier
-public class _enumeration_constant : PTNode {
+public class _enumeration_constant : ParseRule {
     public static int Parse(List<Token> src, int begin, out Enumerator enumerator) {
         if (src[begin].type == TokenType.IDENTIFIER) {
             enumerator = new Enumerator(((TokenIdentifier)src[begin]).val, null);
@@ -1170,7 +1170,7 @@ public class _enumeration_constant : PTNode {
 // struct_or_union_specifier : struct_or_union <identifier>? { struct_declaration_list }
 //                           | struct_or_union identifier
 // [ note: need some treatment ]
-public class _struct_or_union_specifier : PTNode {
+public class _struct_or_union_specifier : ParseRule {
     public static int ParseDeclarationList(List<Token> src, int begin, out List<StructDecln> decl_list) {
         decl_list = null;
 
@@ -1244,7 +1244,7 @@ public class _struct_or_union_specifier : PTNode {
 }
 
 // struct_or_union : struct | union
-public class _struct_or_union : PTNode {
+public class _struct_or_union : ParseRule {
     public static int Parse(List<Token> src, int begin, out StructOrUnion struct_or_union) {
         struct_or_union = null;
         if (src[begin].type != TokenType.KEYWORD) {
@@ -1267,7 +1267,7 @@ public class _struct_or_union : PTNode {
 //                         | struct_declaration_list struct_declaration
 // [ note: my solution ]
 // struct_declaration_list : <struct_declaration>+
-public class _struct_declaration_list : PTNode {
+public class _struct_declaration_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<StructDecln> decl_list) {
         decl_list = new List<StructDecln>();
 
@@ -1292,7 +1292,7 @@ public class _struct_declaration_list : PTNode {
 
 
 // struct_declaration : specifier_qualifier_list struct_declarator_list ;
-public class _struct_declaration : PTNode {
+public class _struct_declaration : ParseRule {
     public static int Parse(List<Token> src, int begin, out StructDecln decl) {
         decl = null;
 
@@ -1326,7 +1326,7 @@ public class _struct_declaration : PTNode {
 // NOTE: this is simply a list
 // specifier_qualifier_list : [ type_specifier | type_qualifier ]+
 //
-public class _specifier_qualifier_list : PTNode {
+public class _specifier_qualifier_list : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int long const");
         DeclnSpecs specs;
@@ -1429,7 +1429,7 @@ public class _specifier_qualifier_list : PTNode {
 //
 // FAIL: null
 //
-public class _struct_declarator_list : PTNode {
+public class _struct_declarator_list : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("*a, *b[3]");
         List<Declr> decl_list;
@@ -1477,7 +1477,7 @@ public class _struct_declarator_list : PTNode {
 //                   | type_specifier <declarator>? : constant_expression
 // [ note: the second is for bit-field ]
 // [ note: i'm not supporting bit-field ]
-public class _struct_declarator : PTNode {
+public class _struct_declarator : ParseRule {
     public static int Parse(List<Token> src, int begin, out Declr decl) {
         return _declarator.Parse(src, begin, out decl);
     }
@@ -1491,7 +1491,7 @@ public class _struct_declarator : PTNode {
 //
 // FAIL: null
 //
-public class _parameter_declaration : PTNode {
+public class _parameter_declaration : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int *a[]");
         ParamDecln decl;
@@ -1540,7 +1540,7 @@ public class _parameter_declaration : PTNode {
 //                     | <pointer>? direct_abstract_declarator
 // [ note: this is for anonymous declarator ]
 // [ note: there couldn't be any typename in an abstract_declarator ]
-public class _abstract_declarator : PTNode {
+public class _abstract_declarator : ParseRule {
     public static int Parse(List<Token> src, int begin, out Declr decl) {
         List<PointerInfo> infos;
         int current = _pointer.Parse(src, begin, out infos);
@@ -1582,7 +1582,7 @@ public class _abstract_declarator : PTNode {
 //
 // FAIL: null
 //
-public class _direct_abstract_declarator : PTNode {
+public class _direct_abstract_declarator : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("(*)[3][5 + 7][]");
         Declr decl;
@@ -1730,7 +1730,7 @@ public class _direct_abstract_declarator : PTNode {
 // initializer : assignment_expression
 //             | '{' initializer_list '}'
 //             | '{' initializer_list ',' '}'
-public class _initializer : PTNode {
+public class _initializer : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a = 3");
         Expression expr;
@@ -1786,7 +1786,7 @@ public class _initializer : PTNode {
 //
 // initializer_list : initializer [ ',' initializer ]*
 //
-public class _initializer_list : PTNode {
+public class _initializer_list : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("{1, 2}, {2, 3}");
         Expression init;
@@ -1839,7 +1839,7 @@ public class _initializer_list : PTNode {
 
 
 // type_name : specifier_qualifier_list <abstract_declarator>?
-public class _type_name : PTNode {
+public class _type_name : ParseRule {
     public static int Parse(List<Token> src, int begin, out TypeName type_name) {
         type_name = null;
         DeclnSpecs specs;
@@ -1868,7 +1868,7 @@ public class _type_name : PTNode {
 //
 // NOTE: must be something already defined, so this needs environment
 //
-public class _typedef_name : PTNode {
+public class _typedef_name : ParseRule {
     public static bool Parse(List<Token> src, ref int pos, out String name) {
         if (src[pos].type != TokenType.IDENTIFIER) {
             name = null;

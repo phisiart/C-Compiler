@@ -7,13 +7,20 @@ using System.Threading.Tasks;
 namespace AST {
     /* From 3.1.2.5 Types (modified):
      
-     * Types are partitioned into 1) object types (types that describe objects), 2) function types (types that describe functions), and 3) incomplete types (types that describe objects but lack information needed to determine their sizes).
+     * Types are partitioned into
+       1) object types (types that describe objects)
+       2) function types (types that describe functions)
+       3) incomplete types (types that describe objects but lack information needed to determine their sizes).
      
-     * An object declared as type char is large enough to store any member of the basic execution character set. An ANSI character is positive.
+     * [char] large enough to store any member of the basic execution character set.
+       An ANSI character is positive.
 
-     * There are four signed integer types: signed char < short int < int < long int.
+     * There are 4 signed integer types:
+       [signed char] < [short int] < [int] < [long int].
 
-     * An object declared as type signed char occupies the same amount of storage as a "plain" char object. A "plain" int object has the natural size suggested by the architecture of the execution environment.
+     * [signed char] occupies the same amount of storage as a "plain" char object.
+     
+     * [int] has the natural size suggested by the architecture of the execution environment.
 
      * For each of the signed integer types, there is a corresponding (but different) unsigned integer type (designated with the keyword unsigned) that uses the same amount of storage (including sign information) and has the same alignment requirements. The range of nonnegative values of a signed integer type is a subrange of the corresponding unsigned integer type, and the representation of the same value in each type is the same. A computation involving unsigned operands can never overflow, because a result that cannot be represented by the resulting unsigned integer type is reduced modulo the number that is one greater than the largest value that can be represented by the resulting unsigned integer type.
 
@@ -81,8 +88,8 @@ namespace AST {
         }
 
         public readonly EnumExprType expr_type;
-        public virtual bool IsArith()                 { return false; }
-        public virtual bool IsIntegral()              { return false; }
+        public virtual bool IsArith() { return false; }
+        public virtual bool IsIntegral() { return false; }
         public virtual bool EqualType(ExprType other) { return false; }
         public String DumpQualifiers() {
             String str = "";
@@ -94,7 +101,7 @@ namespace AST {
             }
             return str;
         }
-        
+
         public virtual ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
             return null;
         }
@@ -109,7 +116,7 @@ namespace AST {
         protected int alignment;
         public readonly bool is_const;
         public readonly bool is_volatile;
-        
+
     }
     
     public class TVoid : ExprType {
@@ -351,7 +358,12 @@ namespace AST {
         }
 
         public override string ToString() {
-            return "struct";
+            String str = DumpQualifiers() + "struct { ";
+            foreach (Utils.StoreEntry attrib in attribs) {
+                str += attrib.entry_name + " : " + attrib.entry_type.ToString() + "; ";
+            }
+            str += "}";
+            return str;
         }
 
         public readonly List<Utils.StoreEntry> attribs;
@@ -391,7 +403,12 @@ namespace AST {
         }
 
         public override string ToString() {
-            return "union";
+            String str = DumpQualifiers() + "union { ";
+            foreach (Tuple<String, ExprType> attrib in attribs) {
+                str += attrib.Item1 + " : " + attrib.Item2.ToString() + "; ";
+            }
+            str += "}";
+            return str;
         }
 
         public readonly List<Tuple<String, ExprType>> attribs;
@@ -467,6 +484,7 @@ namespace AST {
         public Expr(ExprType _type) {
             type = _type;
         }
+        public virtual bool IsConstExpr() { return false; }
         public readonly ExprType type;
     }
 
@@ -487,6 +505,7 @@ namespace AST {
     public class Constant : Expr {
         public Constant(ExprType _type)
             : base(_type) {}
+        public override bool IsConstExpr() { return true; }
     }
 
     //public class ConstChar : Constant {
@@ -518,7 +537,7 @@ namespace AST {
             : base(new TLong(true)) {
             value = _value;
         }
-        protected Int32 value;
+        public readonly Int32 value;
     }
 
     public class ConstULong : Constant {
@@ -526,7 +545,7 @@ namespace AST {
             : base(new TULong(true)) {
             value = _value;
         }
-        protected UInt32 value;
+        public readonly UInt32 value;
     }
 
     public class ConstFloat : Constant {
@@ -534,7 +553,7 @@ namespace AST {
             : base(new TFloat(true)) {
             value = _value;
         }
-        protected Single value;
+        public readonly Single value;
     }
 
     public class ConstDouble : Constant {
@@ -542,7 +561,7 @@ namespace AST {
             : base(new TDouble(true)) {
             value = _value;
         }
-        protected Double value;
+        public readonly Double value;
     }
 
     public class ConstStringLiteral : Constant {
@@ -550,7 +569,7 @@ namespace AST {
             : base(new TPointer(new TChar(true), true)) {
             value=_value;
         }
-        protected String value;
+        public readonly String value;
     }
 
 }

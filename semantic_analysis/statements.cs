@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-public class Statement : ASTNode {}
+public class Statement : PTNode {}
 
 
 public class GotoStatement : Statement {
@@ -13,10 +13,10 @@ public class GotoStatement : Statement {
         label = _label;
     }
     public String label;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    return scope;
+    //}
 }
 
 
@@ -31,11 +31,11 @@ public class ReturnStatement : Statement {
         expr = _expr;
     }
     public Expression expr;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -46,18 +46,18 @@ public class CompoundStatement : Statement {
     }
     List<Decln> decl_list;
     List<Statement> stmt_list;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope.InScope();
-        foreach (Decln decl in decl_list) {
-            scope = decl.Semant(scope);
-        }
-        foreach (Statement stmt in stmt_list) {
-            scope = stmt.Semant(scope);
-        }
-        scope.OutScope();
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope.InScope();
+    //    foreach (Decln decl in decl_list) {
+    //        scope = decl.Semant(scope);
+    //    }
+    //    foreach (Statement stmt in stmt_list) {
+    //        scope = stmt.Semant(scope);
+    //    }
+    //    scope.OutScope();
+    //    return scope;
+    //}
 }
 
 
@@ -79,12 +79,12 @@ public class WhileStatement : Statement {
     }
     public Expression cond;
     public Statement body;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = cond.Semant(scope);
-        scope = body.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = cond.Semant(scope);
+    //    scope = body.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -95,12 +95,12 @@ public class DoWhileStatement : Statement {
     }
     public Statement body;
     public Expression cond;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = cond.Semant(scope);
-        scope = body.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = cond.Semant(scope);
+    //    scope = body.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -115,14 +115,14 @@ public class ForStatement : Statement {
     public Expression cond;
     public Expression loop;
     public Statement body;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = init.Semant(scope);
-        scope = cond.Semant(scope);
-        scope = loop.Semant(scope);
-        scope = body.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = init.Semant(scope);
+    //    scope = cond.Semant(scope);
+    //    scope = loop.Semant(scope);
+    //    scope = body.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -133,12 +133,12 @@ public class SwitchStatement : Statement {
     }
     public Expression expr;
     public Statement stmt;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        scope = stmt.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    scope = stmt.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -150,12 +150,12 @@ public class IfStatement : Statement {
     public Expression cond;
     public Statement stmt;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = cond.Semant(scope);
-        scope = stmt.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = cond.Semant(scope);
+    //    scope = stmt.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -169,13 +169,13 @@ public class IfElseStatement : Statement {
     public Statement true_stmt;
     public Statement false_stmt;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = cond.Semant(scope);
-        scope = true_stmt.Semant(scope);
-        scope = false_stmt.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = cond.Semant(scope);
+    //    scope = true_stmt.Semant(scope);
+    //    scope = false_stmt.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -187,11 +187,11 @@ public class LabeledStatement : Statement {
     public String label;
     public Statement stmt;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = stmt.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = stmt.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -204,10 +204,10 @@ public class CaseStatement : Statement {
     public Expression expr;
     public Statement stmt;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        scope = stmt.Semant(scope);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    scope = stmt.Semant(scope);
+    //    return scope;
+    //}
 }

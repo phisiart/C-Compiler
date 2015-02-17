@@ -20,7 +20,7 @@ using System.IO;
 // My simplification:
 // I let long = int, long double = double
 
-public class Expression : ASTNode {
+public class Expression : PTNode {
     public TType type;
 
     // consider lhs & rhs are double/float/integral, make their types match.
@@ -76,7 +76,7 @@ public class Expression : ASTNode {
             Log.SemantError("Error: expected integral type.");
         }
     }
-    
+
     // consider lhs & rhs are pointer/integral, make their types match and converted to int
     public void SemantIntegralOrPointerConversion(ref Expression lhs, ref Expression rhs) {
         if (lhs.type.kind == TType.Kind.POINTER) {
@@ -111,27 +111,27 @@ public class Variable : Expression {
         name = _name;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        Symbol symbol = scope.FindSymbol(name);
-        if (symbol == null) {
-            Log.SemantError("Error: cannot find variable " + name);
-        }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    Symbol symbol = scope.FindSymbol(name);
+    //    if (symbol == null) {
+    //        Log.SemantError("Error: cannot find variable " + name);
+    //    }
 
-        if (symbol.kind == Symbol.Kind.TYPEDEF) {
-            Log.SemantError("Error: expected a variable, but found a type");
-        }
+    //    if (symbol.kind == Symbol.Kind.TYPEDEF) {
+    //        Log.SemantError("Error: expected a variable, but found a type");
+    //    }
 
-        type = symbol.type;
+    //    type = symbol.type;
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
     public String name;
 }
 
 
-public class Constant : Expression {}
+public class Constant : Expression { }
 
 // NOTE : there is no const char in C, there is only const int ...
 //public class ConstChar : Constant {
@@ -148,36 +148,40 @@ public class Constant : Expression {}
 //    public Char val;
 //}
 
+
+// ConstFloat
+// ==========
+// TODO : [finished] const float
 public class ConstFloat : Constant {
     public ConstFloat(Double _val, FloatType _float_type) {
         val = _val;
         float_type = _float_type;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        switch (float_type) {
-            case FloatType.F:
-                type = new TFloat();
-                break;
-            case FloatType.LF:
-                type = new TLongDouble();
-                break;
-            case FloatType.NONE:
-                type = new TDouble();
-                break;
-        }
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    switch (float_type) {
+    //        case FloatType.F:
+    //            type = new TFloat();
+    //            break;
+    //        case FloatType.LF:
+    //            type = new TLongDouble();
+    //            break;
+    //        case FloatType.NONE:
+    //            type = new TDouble();
+    //            break;
+    //    }
+    //    return scope;
+    //}
 
     // GetExpr
     // =======
     public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
         switch (float_type) {
-            case FloatType.F:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstFloat((float)val));
-            default:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstDouble(val));
+        case FloatType.F:
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstFloat((float)val));
+        default:
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstDouble(val));
         }
     }
 
@@ -185,40 +189,43 @@ public class ConstFloat : Constant {
     public Double val;
 }
 
+// ConstInt
+// ========
+// TODO : [finished] const int
 public class ConstInt : Constant {
     public ConstInt(long _val, IntType _int_type) {
         val = _val;
         int_type = _int_type;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        switch (int_type) {
-        case IntType.NONE:
-            type = new TInt();
-            break;
-        case IntType.L:
-            type = new TLong();
-            break;
-        case IntType.U:
-            type = new TUInt();
-            break;
-        case IntType.UL:
-            type = new TULong();
-            break;
-        }
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    switch (int_type) {
+    //    case IntType.NONE:
+    //        type = new TInt();
+    //        break;
+    //    case IntType.L:
+    //        type = new TLong();
+    //        break;
+    //    case IntType.U:
+    //        type = new TUInt();
+    //        break;
+    //    case IntType.UL:
+    //        type = new TULong();
+    //        break;
+    //    }
+    //    return scope;
+    //}
 
     // GetExpr
     // =======
     public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
         switch (int_type) {
-            case IntType.U:
-            case IntType.UL:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
-            default:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
+        case IntType.U:
+        case IntType.UL:
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
+        default:
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
         }
     }
 
@@ -226,17 +233,20 @@ public class ConstInt : Constant {
     public long val;
 }
 
+// StringLiteral
+// =============
+// TODO : [finished] string literal
 public class StringLiteral : Expression {
     public StringLiteral(String _val) {
         val = _val;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        type = new TPointer(new TChar());
-        type.is_const = true;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    type = new TPointer(new TChar());
+    //    type.is_const = true;
+    //    return scope;
+    //}
 
     // GetExpr
     // =======
@@ -265,30 +275,30 @@ public class ConditionalExpression : Expression {
     public Expression cond;
     public Expression true_expr;
     public Expression false_expr;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = cond.Semant(scope);
-        scope = true_expr.Semant(scope);
-        scope = false_expr.Semant(scope);
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = cond.Semant(scope);
+    //    scope = true_expr.Semant(scope);
+    //    scope = false_expr.Semant(scope);
 
-        if (!cond.type.IsArith()) {
-            Log.SemantError("Error: expected arithmetic type.");
-        }
+    //    if (!cond.type.IsArith()) {
+    //        Log.SemantError("Error: expected arithmetic type.");
+    //    }
 
-        if (true_expr.type.IsArith() || false_expr.type.IsArith()) {
-            SemantUsualArithmeticConversion(ref true_expr, ref false_expr);
-        } else if ((true_expr.type.kind == TType.Kind.STRUCT && false_expr.type.kind == TType.Kind.STRUCT)
-            || (true_expr.type.kind == TType.Kind.UNION && false_expr.type.kind == TType.Kind.UNION)
-            || (true_expr.type.kind == TType.Kind.POINTER && false_expr.type.kind == TType.Kind.POINTER)) {
-            Log.SemantError("Not implemented.");
-        } else if (true_expr.type.kind == TType.Kind.VOID && false_expr.type.kind == TType.Kind.VOID) {
-            type = new TVoid();
-        } else {
-            Log.SemantError("Error: conditional expression types not match.");
-        }
-        
-        return scope;
-    }
+    //    if (true_expr.type.IsArith() || false_expr.type.IsArith()) {
+    //        SemantUsualArithmeticConversion(ref true_expr, ref false_expr);
+    //    } else if ((true_expr.type.kind == TType.Kind.STRUCT && false_expr.type.kind == TType.Kind.STRUCT)
+    //        || (true_expr.type.kind == TType.Kind.UNION && false_expr.type.kind == TType.Kind.UNION)
+    //        || (true_expr.type.kind == TType.Kind.POINTER && false_expr.type.kind == TType.Kind.POINTER)) {
+    //        Log.SemantError("Not implemented.");
+    //    } else if (true_expr.type.kind == TType.Kind.VOID && false_expr.type.kind == TType.Kind.VOID) {
+    //        type = new TVoid();
+    //    } else {
+    //        Log.SemantError("Error: conditional expression types not match.");
+    //    }
+
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -300,14 +310,14 @@ public class Assignment : Expression {
     public Expression lvalue;
     public Expression rvalue;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        rvalue = new TypeCast(lvalue.type, rvalue);
-        type = lvalue.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    rvalue = new TypeCast(lvalue.type, rvalue);
+    //    type = lvalue.type;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -323,16 +333,16 @@ public class MultAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -348,16 +358,16 @@ public class DivAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 
 }
 
@@ -373,19 +383,19 @@ public class ModAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -401,16 +411,16 @@ public class AddAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 
 }
 
@@ -427,16 +437,16 @@ public class SubAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 
 }
 
@@ -452,19 +462,19 @@ public class LeftShiftAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -479,19 +489,19 @@ public class RightShiftAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -506,19 +516,19 @@ public class BitwiseAndAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -533,19 +543,19 @@ public class XorAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -560,19 +570,19 @@ public class BitwiseOrAssign : Expression {
     public TType ltype;
     public TypeCast cast;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lvalue.Semant(scope);
-        scope = rvalue.Semant(scope);
-        ltype = lvalue.type;
-        if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
-            Log.SemantError("Error: expected integral type.");
-        }
-        SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
-        cast = new TypeCast(ltype, this);
-        cast.expr = null;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lvalue.Semant(scope);
+    //    scope = rvalue.Semant(scope);
+    //    ltype = lvalue.type;
+    //    if (!lvalue.type.IsInt() || !rvalue.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lvalue, ref rvalue);
+    //    cast = new TypeCast(ltype, this);
+    //    cast.expr = null;
+    //    return scope;
+    //}
 }
 
 
@@ -594,18 +604,18 @@ public class FunctionCall : Expression {
     public Expression func;
     public List<Expression> args;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        scope = func.Semant(scope);
-        foreach (Expression arg in args) {
-            scope = arg.Semant(scope);
-        }
+    //    scope = func.Semant(scope);
+    //    foreach (Expression arg in args) {
+    //        scope = arg.Semant(scope);
+    //    }
 
-        // args are assigned
+    //    // args are assigned
 
-        return scope;
-    }
+    //    return scope;
+    //}
 }
 
 public class Attribute : Expression {
@@ -633,15 +643,15 @@ public class Increment : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (!expr.type.IsScalar()) {
-            Log.SemantError("Error: increment expected scalar type.");
-        }
-        type = expr.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsScalar()) {
+    //        Log.SemantError("Error: increment expected scalar type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 }
 
 // Finished
@@ -651,15 +661,15 @@ public class Decrement : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (!expr.type.IsScalar()) {
-            Log.SemantError("Error: decrement expected scalar type.");
-        }
-        type = expr.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsScalar()) {
+    //        Log.SemantError("Error: decrement expected scalar type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 }
 
 
@@ -683,12 +693,12 @@ public class SizeofType : Expression {
     // after semant
     public Int64 size;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = type_name.Semant(scope);
-        size = type_name.type.SizeOf();
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = type_name.Semant(scope);
+    //    size = type_name.type.SizeOf();
+    //    return scope;
+    //}
 
 }
 
@@ -704,11 +714,11 @@ public class SizeofExpression : Expression {
     // after semant
     public Int64 size;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        size = expr.type.SizeOf();
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    size = expr.type.SizeOf();
+    //    return scope;
+    //}
 
 }
 
@@ -719,15 +729,15 @@ public class PrefixIncrement : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (!expr.type.IsScalar()) {
-            Log.SemantError("Error: increment expected scalar type.");
-        }
-        type = expr.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsScalar()) {
+    //        Log.SemantError("Error: increment expected scalar type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 
 }
 
@@ -738,15 +748,15 @@ public class PrefixDecrement : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (!expr.type.IsScalar()) {
-            Log.SemantError("Error: decrement expected scalar type.");
-        }
-        type = expr.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsScalar()) {
+    //        Log.SemantError("Error: decrement expected scalar type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 
 }
 
@@ -757,12 +767,12 @@ public class Reference : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        type = new TPointer(expr.type);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    type = new TPointer(expr.type);
+    //    return scope;
+    //}
 
 }
 
@@ -773,85 +783,217 @@ public class Dereference : Expression {
     }
     public Expression expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (expr.type.kind != TType.Kind.POINTER) {
-            Log.SemantError("Error: dereferencing expected pointer type.");
-        }
-        TPointer ptype = (TPointer)expr.type;
-        type = ptype.ref_t;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (expr.type.kind != TType.Kind.POINTER) {
+    //        Log.SemantError("Error: dereferencing expected pointer type.");
+    //    }
+    //    TPointer ptype = (TPointer)expr.type;
+    //    type = ptype.ref_t;
+    //    return scope;
+    //}
 
 }
 
 // Finished.
 public class Positive : Expression {
     public Positive(Expression _expr) {
-        expr = _expr;
+        pos_expr = _expr;
     }
-    public Expression expr;
+    public Expression pos_expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        return scope;
+    // TODO : [finished] Positive.GetExpr(env) -> (env, expr)
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = pos_expr.GetExpr(env);
+        env = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+
+        if (!expr.type.IsArith()) {
+            Log.SemantError("Error: negation expectes arithmetic type.");
+            return null;
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    return scope;
+    //}
 }
 
 // Finished.
 public class Negative : Expression {
     public Negative(Expression _expr) {
-        expr = _expr;
+        neg_expr = _expr;
     }
-    public Expression expr;
+    public Expression neg_expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
+    // TODO : [finished] Negative.GetExpr(env) -> (env, expr)
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = neg_expr.GetExpr(env);
+        env = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+
         if (!expr.type.IsArith()) {
-            Log.SemantError("Error: negation expected arithmetic type.");
+            Log.SemantError("Error: negation expectes arithmetic type.");
+            return null;
         }
-        type = expr.type;
-        return scope;
+
+        if (expr.IsConstExpr()) {
+            switch (expr.type.expr_type) {
+            case AST.ExprType.EnumExprType.LONG:
+                AST.ConstLong long_expr = (AST.ConstLong)expr;
+                expr = new AST.ConstLong(-long_expr.value);
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                AST.ConstULong ulong_expr = (AST.ConstULong)expr;
+                expr = new AST.ConstLong(-(Int32)ulong_expr.value);
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                AST.ConstFloat float_expr = (AST.ConstFloat)expr;
+                expr = new AST.ConstFloat(-float_expr.value);
+                break;
+            case AST.ExprType.EnumExprType.DOUBLE:
+                AST.ConstDouble double_expr = (AST.ConstDouble)expr;
+                expr = new AST.ConstDouble(-double_expr.value);
+                break;
+            default:
+                Log.SemantError("Error: wrong constant type?");
+                break;
+            }
+        } else {
+            expr = new AST.Negative(expr, expr.type);
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsArith()) {
+    //        Log.SemantError("Error: negation expected arithmetic type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 }
 
 // Finished.
 public class BitwiseNot : Expression {
     public BitwiseNot(Expression _expr) {
-        expr = _expr;
+        not_expr = _expr;
     }
-    public Expression expr;
+    public Expression not_expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        if (!expr.type.IsInt()) {
-            Log.SemantError("Error: bitwise not expected integral type.");
+    // TODO : [finished] BitwiseNot.GetExpr(env) -> (env, expr)
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = not_expr.GetExpr(env);
+        env = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+
+        if (!expr.type.IsIntegral()) {
+            Log.SemantError("Error: operator '~' expectes integral type.");
+            return null;
         }
-        type = expr.type;
-        return scope;
+
+        if (expr.IsConstExpr()) {
+            switch (expr.type.expr_type) {
+            case AST.ExprType.EnumExprType.LONG:
+                AST.ConstLong long_expr = (AST.ConstLong)expr;
+                expr = new AST.ConstLong(~long_expr.value);
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                AST.ConstULong ulong_expr = (AST.ConstULong)expr;
+                expr = new AST.ConstULong(~ulong_expr.value);
+                break;
+            default:
+                Log.SemantError("Error: wrong constant type?");
+                break;
+            }
+        } else {
+            expr = new AST.BitwiseNot(expr, expr.type);
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsInt()) {
+    //        Log.SemantError("Error: bitwise not expected integral type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 }
 
 // Finished.
 public class Not : Expression {
     public Not(Expression _expr) {
-        expr = _expr;
+        not_expr = _expr;
     }
-    public Expression expr;
+    public Expression not_expr;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
+    // TODO : [finished] Not.GetExpr(env) -> (env, expr(type=long))
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = not_expr.GetExpr(env);
+        env = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+
         if (!expr.type.IsArith()) {
-            Log.SemantError("Error: logical not expected integral type.");
+            Log.SemantError("Error: operator '!' expectes arithmetic type.");
+            return null;
         }
-        type = expr.type;
-        return scope;
+
+        if (expr.IsConstExpr()) {
+            bool value = false;
+            switch (expr.type.expr_type) {
+            case AST.ExprType.EnumExprType.LONG:
+                AST.ConstLong long_expr = (AST.ConstLong)expr;
+                value = long_expr.value != 0;
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                AST.ConstULong ulong_expr = (AST.ConstULong)expr;
+                value = ulong_expr.value != 0;
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                AST.ConstFloat float_expr = (AST.ConstFloat)expr;
+                value = float_expr.value != 0;
+                break;
+            case AST.ExprType.EnumExprType.DOUBLE:
+                AST.ConstDouble double_expr = (AST.ConstDouble)expr;
+                value = double_expr.value != 0;
+                break;
+            default:
+                Log.SemantError("Error: wrong constant type?");
+                break;
+            }
+            if (value) {
+                expr = new AST.ConstLong(1);
+            } else {
+                expr = new AST.ConstLong(0);
+            }
+        } else {
+            expr = new AST.LogicalNot(expr, new AST.TLong(expr.type.is_const, expr.type.is_volatile));
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    if (!expr.type.IsArith()) {
+    //        Log.SemantError("Error: logical not expected integral type.");
+    //    }
+    //    type = expr.type;
+    //    return scope;
+    //}
 
 }
 
@@ -867,7 +1009,7 @@ public class TypeCast : Expression {
         type_name = null;
         type = _type;
         scope = expr.scope;
-        SemantConversion();
+        //SemantConversion();
     }
 
     // after parsing
@@ -875,346 +1017,529 @@ public class TypeCast : Expression {
     public Expression expr;
 
     // after semant
-    public List<Cast> casts;
+    //public List<Cast> casts;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = expr.Semant(scope);
-        scope = type_name.Semant(scope);
-        type = type_name.type;
-        return SemantConversion();
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = expr.Semant(scope);
+    //    scope = type_name.Semant(scope);
+    //    type = type_name.type;
+    //    return SemantConversion();
+    //}
 
-    public ScopeSandbox SemantConversion() {
+    //public ScopeSandbox SemantConversion() {
 
-        TType.Kind kind_from = expr.type.kind;
-        TType.Kind kind_to = type.kind;
+    //    TType.Kind kind_from = expr.type.kind;
+    //    TType.Kind kind_to = type.kind;
 
-        if (kind_from == kind_to) {
-            casts = new List<Cast>();
-            return scope;
-        }
+    //    if (kind_from == kind_to) {
+    //        casts = new List<Cast>();
+    //        return scope;
+    //    }
 
-        if ((casts = SemantConversionFromSignedIntegral(kind_from, kind_to)) != null) {
-            return scope;
-        }
+    //    if ((casts = SemantConversionFromSignedIntegral(kind_from, kind_to)) != null) {
+    //        return scope;
+    //    }
 
-        if ((casts = SemantConversionFromUnsignedIntegral(kind_from, kind_to)) != null) {
-            return scope;
-        }
+    //    if ((casts = SemantConversionFromUnsignedIntegral(kind_from, kind_to)) != null) {
+    //        return scope;
+    //    }
 
-        if ((casts = SemantConversionFromFloat(kind_from, kind_to)) != null) {
-            return scope;
-        }
+    //    if ((casts = SemantConversionFromFloat(kind_from, kind_to)) != null) {
+    //        return scope;
+    //    }
 
-        if ((casts = SemantConversionFromPointer(kind_from, kind_to)) != null) {
-            return scope;
-        }
+    //    if ((casts = SemantConversionFromPointer(kind_from, kind_to)) != null) {
+    //        return scope;
+    //    }
 
-        Log.SemantError("Error: cannot convert from " + kind_from.ToString() + " to " + kind_to.ToString());
-        return scope;
+    //    Log.SemantError("Error: cannot convert from " + kind_from.ToString() + " to " + kind_to.ToString());
+    //    return scope;
 
-    }
+    //}
 
-    public enum Cast {
-        INT8_TO_INT16,
-        INT8_TO_INT32,
-        INT8_TO_UINT8,
+    //public enum Cast {
+    //    INT8_TO_INT16,
+    //    INT8_TO_INT32,
+    //    INT8_TO_UINT8,
 
-        INT16_TO_INT8,
-        INT16_TO_INT32,
-        INT16_TO_UINT16,
+    //    INT16_TO_INT8,
+    //    INT16_TO_INT32,
+    //    INT16_TO_UINT16,
 
-        INT32_TO_INT8,
-        INT32_TO_INT16,
-        INT32_TO_UINT32,
-        INT32_TO_FLOAT32,
-        INT32_TO_FLOAT64,
+    //    INT32_TO_INT8,
+    //    INT32_TO_INT16,
+    //    INT32_TO_UINT32,
+    //    INT32_TO_FLOAT32,
+    //    INT32_TO_FLOAT64,
 
-        UINT8_TO_UINT16,
-        UINT8_TO_UINT32,
-        UINT8_TO_INT8,
+    //    UINT8_TO_UINT16,
+    //    UINT8_TO_UINT32,
+    //    UINT8_TO_INT8,
 
-        UINT16_TO_UINT8,
-        UINT16_TO_UINT32,
-        UINT16_TO_INT16,
+    //    UINT16_TO_UINT8,
+    //    UINT16_TO_UINT32,
+    //    UINT16_TO_INT16,
 
-        UINT32_TO_UINT8,
-        UINT32_TO_UINT16,
-        UINT32_TO_INT32,
-        UINT32_TO_FLOAT32,
-        UINT32_TO_FLOAT64,
+    //    UINT32_TO_UINT8,
+    //    UINT32_TO_UINT16,
+    //    UINT32_TO_INT32,
+    //    UINT32_TO_FLOAT32,
+    //    UINT32_TO_FLOAT64,
 
-        FLOAT32_TO_INT32,
-        FLOAT32_TO_FLOAT64,
+    //    FLOAT32_TO_INT32,
+    //    FLOAT32_TO_FLOAT64,
 
-        FLOAT64_TO_FLOAT32,
-        FLOAT64_TO_INT32,
+    //    FLOAT64_TO_FLOAT32,
+    //    FLOAT64_TO_INT32,
 
-    }
+    //}
 
-    public List<Cast> SemantConversionFromSignedIntegral(TType.Kind from, TType.Kind to) {
-        switch (from) {
-        case TType.Kind.INT8:
-            switch (to) {
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.INT8_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.INT8_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.INT8_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.INT8_TO_INT16, Cast.INT16_TO_UINT16 };
-            case TType.Kind.UINT32:
-            case TType.Kind.POINTER:
-                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        case TType.Kind.INT16:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.INT16_TO_INT8 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.INT16_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.INT16_TO_INT8, Cast.INT8_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.INT16_TO_UINT16 };
-            case TType.Kind.UINT32:
-            case TType.Kind.POINTER:
-                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        case TType.Kind.INT32:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.INT32_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.INT32_TO_INT16 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
-            case TType.Kind.UINT32:
-            case TType.Kind.POINTER:
-                return new List<Cast> { Cast.INT32_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        default:
-            return null;
-        }
-    }
+    //public List<Cast> SemantConversionFromSignedIntegral(TType.Kind from, TType.Kind to) {
+    //    switch (from) {
+    //    case TType.Kind.INT8:
+    //        switch (to) {
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.INT8_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.INT8_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.INT8_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.INT8_TO_INT16, Cast.INT16_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.INT8_TO_INT32, Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    case TType.Kind.INT16:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.INT16_TO_INT8 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.INT16_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.INT16_TO_INT8, Cast.INT8_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.INT16_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.INT16_TO_INT32, Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    case TType.Kind.INT32:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.INT32_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.INT32_TO_INT16 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast> { Cast.INT32_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    default:
+    //        return null;
+    //    }
+    //}
 
-    public List<Cast> SemantConversionFromUnsignedIntegral(TType.Kind from, TType.Kind to) {
-        switch (from) {
-        case TType.Kind.UINT8:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.UINT8_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.UINT8_TO_UINT16, Cast.UINT16_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.UINT8_TO_UINT16 };
-            case TType.Kind.UINT32:
-            case TType.Kind.POINTER:
-                return new List<Cast> { Cast.UINT8_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        case TType.Kind.UINT16:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.UINT16_TO_UINT8, Cast.UINT8_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.UINT16_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.UINT16_TO_UINT8 };
-            case TType.Kind.UINT32:
-            case TType.Kind.POINTER:
-                return new List<Cast> { Cast.UINT16_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        case TType.Kind.UINT32:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.UINT32_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.UINT32_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.UINT32_TO_UINT16 };
-            case TType.Kind.POINTER:
-                return new List<Cast>();
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        default:
-            return null;
-        }
-    }
+    //public List<Cast> SemantConversionFromUnsignedIntegral(TType.Kind from, TType.Kind to) {
+    //    switch (from) {
+    //    case TType.Kind.UINT8:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.UINT8_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT16, Cast.UINT16_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.UINT8_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    case TType.Kind.UINT16:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT8, Cast.UINT8_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.UINT16_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT8 };
+    //        case TType.Kind.UINT32:
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.UINT16_TO_UINT32, Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    case TType.Kind.UINT32:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.UINT32_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT16 };
+    //        case TType.Kind.POINTER:
+    //            return new List<Cast>();
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.UINT32_TO_INT32, Cast.INT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    default:
+    //        return null;
+    //    }
+    //}
 
-    public List<Cast> SemantConversionFromFloat(TType.Kind from, TType.Kind to) {
-        switch (from) {
-        case TType.Kind.FLOAT32:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
-            case TType.Kind.UINT32:
-                return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_UINT32 };
-            case TType.Kind.FLOAT64:
-                return new List<Cast> { Cast.FLOAT32_TO_FLOAT64 };
-            default:
-                return null;
-            }
-        case TType.Kind.FLOAT64:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.FLOAT64_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
-            case TType.Kind.UINT32:
-                return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_UINT32 };
-            case TType.Kind.FLOAT32:
-                return new List<Cast> { Cast.FLOAT64_TO_FLOAT32 };
-            default:
-                return null;
-            }
-        default:
-            return null;
-        }
-    }
+    //public List<Cast> SemantConversionFromFloat(TType.Kind from, TType.Kind to) {
+    //    switch (from) {
+    //    case TType.Kind.FLOAT32:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //            return new List<Cast> { Cast.FLOAT32_TO_INT32, Cast.INT32_TO_UINT32 };
+    //        case TType.Kind.FLOAT64:
+    //            return new List<Cast> { Cast.FLOAT32_TO_FLOAT64 };
+    //        default:
+    //            return null;
+    //        }
+    //    case TType.Kind.FLOAT64:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.FLOAT64_TO_FLOAT32, Cast.FLOAT32_TO_INT32, Cast.INT32_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.FLOAT64_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT8, Cast.INT8_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_INT16, Cast.INT16_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //            return new List<Cast> { Cast.FLOAT64_TO_INT32, Cast.INT32_TO_UINT32 };
+    //        case TType.Kind.FLOAT32:
+    //            return new List<Cast> { Cast.FLOAT64_TO_FLOAT32 };
+    //        default:
+    //            return null;
+    //        }
+    //    default:
+    //        return null;
+    //    }
+    //}
 
-    public List<Cast> SemantConversionFromPointer(TType.Kind from, TType.Kind to) {
-        switch (from) {
-        case TType.Kind.POINTER:
-            switch (to) {
-            case TType.Kind.INT8:
-                return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
-            case TType.Kind.INT16:
-                return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
-            case TType.Kind.INT32:
-                return new List<Cast> { Cast.UINT32_TO_INT32 };
-            case TType.Kind.UINT8:
-                return new List<Cast> { Cast.UINT32_TO_UINT8 };
-            case TType.Kind.UINT16:
-                return new List<Cast> { Cast.UINT32_TO_UINT16 };
-            case TType.Kind.UINT32:
-                return new List<Cast>();
-            default:
-                return null;
-            }
-        default:
-            return null;
-        }
-    }
+    //public List<Cast> SemantConversionFromPointer(TType.Kind from, TType.Kind to) {
+    //    switch (from) {
+    //    case TType.Kind.POINTER:
+    //        switch (to) {
+    //        case TType.Kind.INT8:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT8, Cast.UINT8_TO_INT8 };
+    //        case TType.Kind.INT16:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT16, Cast.UINT16_TO_INT16 };
+    //        case TType.Kind.INT32:
+    //            return new List<Cast> { Cast.UINT32_TO_INT32 };
+    //        case TType.Kind.UINT8:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT8 };
+    //        case TType.Kind.UINT16:
+    //            return new List<Cast> { Cast.UINT32_TO_UINT16 };
+    //        case TType.Kind.UINT32:
+    //            return new List<Cast>();
+    //        default:
+    //            return null;
+    //        }
+    //    default:
+    //        return null;
+    //    }
+    //}
 
 }
 
 // Finished.
 public class Multiplication : Expression {
     public Multiplication(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
+        mult_lhs = _lhs;
+        mult_rhs = _rhs;
     }
-    public Expression lhs;
-    public Expression rhs;
+    public Expression mult_lhs;
+    public Expression mult_rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
-        return scope;
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_lhs = mult_lhs.GetExpr(env);
+        env = r_lhs.Item1;
+        AST.Expr lhs = r_lhs.Item2;
+
+        Tuple<AST.Env, AST.Expr> r_rhs = mult_rhs.GetExpr(env);
+        env = r_rhs.Item1;
+        AST.Expr rhs = r_rhs.Item2;
+
+        Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+        lhs = r_cast.Item1;
+        rhs = r_cast.Item2;
+        bool c1 = lhs.type.is_const;
+        bool c2 = rhs.type.is_const;
+        bool v1 = lhs.type.is_volatile;
+        bool v2 = rhs.type.is_volatile;
+        bool is_const = c1 || c2;
+        bool is_volatile = v1 || v2;
+
+        AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+
+        AST.Expr expr;
+        if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.DOUBLE:
+                expr = new AST.ConstDouble(((AST.ConstDouble)lhs).value * ((AST.ConstDouble)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                expr = new AST.ConstFloat(((AST.ConstFloat)lhs).value * ((AST.ConstFloat)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.ConstULong(((AST.ConstULong)lhs).value * ((AST.ConstULong)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.ConstLong(((AST.ConstLong)lhs).value * ((AST.ConstLong)rhs).value);
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
+
+        } else {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.DOUBLE:
+                expr = new AST.Multiply(lhs, rhs, new AST.TDouble(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                expr = new AST.Multiply(lhs, rhs, new AST.TFloat(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.Multiply(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.Multiply(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
+
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantUsualArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
 }
 
 // Finished.
 public class Division : Expression {
     public Division(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
+        div_lhs = _lhs;
+        div_rhs = _rhs;
     }
-    public Expression lhs;
-    public Expression rhs;
+    public Expression div_lhs;
+    public Expression div_rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
-        return scope;
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_lhs = div_lhs.GetExpr(env);
+        env = r_lhs.Item1;
+        AST.Expr lhs = r_lhs.Item2;
+
+        Tuple<AST.Env, AST.Expr> r_rhs = div_rhs.GetExpr(env);
+        env = r_rhs.Item1;
+        AST.Expr rhs = r_rhs.Item2;
+
+        Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+        lhs = r_cast.Item1;
+        rhs = r_cast.Item2;
+        bool c1 = lhs.type.is_const;
+        bool c2 = rhs.type.is_const;
+        bool v1 = lhs.type.is_volatile;
+        bool v2 = rhs.type.is_volatile;
+        bool is_const = c1 || c2;
+        bool is_volatile = v1 || v2;
+
+        AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+
+        AST.Expr expr;
+        if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.DOUBLE:
+                expr = new AST.ConstDouble(((AST.ConstDouble)lhs).value / ((AST.ConstDouble)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                expr = new AST.ConstFloat(((AST.ConstFloat)lhs).value / ((AST.ConstFloat)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.ConstULong(((AST.ConstULong)lhs).value / ((AST.ConstULong)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.ConstLong(((AST.ConstLong)lhs).value / ((AST.ConstLong)rhs).value);
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
+
+        } else {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.DOUBLE:
+                expr = new AST.Divide(lhs, rhs, new AST.TDouble(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.FLOAT:
+                expr = new AST.Divide(lhs, rhs, new AST.TFloat(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.Divide(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.Divide(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
+
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantUsualArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
 
 }
 
 // Finished.
 public class Modulo : Expression {
     public Modulo(Expression _lhs, Expression _rhs) {
-        lhs = _lhs;
-        rhs = _rhs;
+        mod_lhs = _lhs;
+        mod_rhs = _rhs;
     }
-    public Expression lhs;
-    public Expression rhs;
+    public Expression mod_lhs;
+    public Expression mod_rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
-            Log.SemantError("Error: modulo expected integral type.");
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_lhs = mod_lhs.GetExpr(env);
+        env = r_lhs.Item1;
+        AST.Expr lhs = r_lhs.Item2;
+
+        Tuple<AST.Env, AST.Expr> r_rhs = mod_rhs.GetExpr(env);
+        env = r_rhs.Item1;
+        AST.Expr rhs = r_rhs.Item2;
+
+        Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+        lhs = r_cast.Item1;
+        rhs = r_cast.Item2;
+        bool c1 = lhs.type.is_const;
+        bool c2 = rhs.type.is_const;
+        bool v1 = lhs.type.is_volatile;
+        bool v2 = rhs.type.is_volatile;
+        bool is_const = c1 || c2;
+        bool is_volatile = v1 || v2;
+
+        AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+
+        AST.Expr expr;
+        if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.ConstULong(((AST.ConstULong)lhs).value % ((AST.ConstULong)rhs).value);
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.ConstLong(((AST.ConstLong)lhs).value % ((AST.ConstLong)rhs).value);
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
+
+        } else {
+            switch (enum_type) {
+            case AST.ExprType.EnumExprType.ULONG:
+                expr = new AST.Modulo(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                break;
+            case AST.ExprType.EnumExprType.LONG:
+                expr = new AST.Modulo(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                break;
+            default:
+                Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+                return null;
+            }
         }
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
-        return scope;
+
+        return new Tuple<AST.Env, AST.Expr>(env, expr);
+
     }
+
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+    //        Log.SemantError("Error: modulo expected integral type.");
+    //    }
+    //    SemantUsualArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -1224,41 +1549,41 @@ public class Addition : Expression {
         rhs = _rhs;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
 
-        // ptr + ptr : error!
-        if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
-            Log.SemantError("Error: you cannot add two pointers.");
-        }
+    //    // ptr + ptr : error!
+    //    if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
+    //        Log.SemantError("Error: you cannot add two pointers.");
+    //    }
 
-        // ptr + int
-        if (lhs.type.kind == TType.Kind.POINTER) {
-            if (!rhs.type.IsInt()) {
-                Log.SemantError("Error: must add integral to pointer");
-            }
-            rhs = new TypeCast(new TInt32(), rhs);
-            type = lhs.type;
-            return scope;
-        }
+    //    // ptr + int
+    //    if (lhs.type.kind == TType.Kind.POINTER) {
+    //        if (!rhs.type.IsInt()) {
+    //            Log.SemantError("Error: must add integral to pointer");
+    //        }
+    //        rhs = new TypeCast(new TInt32(), rhs);
+    //        type = lhs.type;
+    //        return scope;
+    //    }
 
-        // int + ptr
-        if (rhs.type.kind == TType.Kind.POINTER) {
-            if (!lhs.type.IsInt()) {
-                Log.SemantError("Error: must add integral to pointer");
-            }
-            lhs = new TypeCast(new TInt32(), lhs);
-            type = rhs.type;
-            return scope;
-        }
+    //    // int + ptr
+    //    if (rhs.type.kind == TType.Kind.POINTER) {
+    //        if (!lhs.type.IsInt()) {
+    //            Log.SemantError("Error: must add integral to pointer");
+    //        }
+    //        lhs = new TypeCast(new TInt32(), lhs);
+    //        type = rhs.type;
+    //        return scope;
+    //    }
 
-        // arith + arith
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
-        
-        return scope;
-    }
+    //    // arith + arith
+    //    SemantUsualArithmeticConversion(ref lhs, ref rhs);
+
+    //    return scope;
+    //}
 
     public Expression lhs;
     public Expression rhs;
@@ -1272,35 +1597,35 @@ public class Subtraction : Expression {
         rhs = _rhs;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
 
-        // ptr - ptr
-        if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
-            if (lhs.type.SizeOf() != rhs.type.SizeOf()) {
-                Log.SemantError("Error: you cannot subtract two pointers that don't conform.");
-            }
-            type = new TInt32();
-            return scope;
-        }
+    //    // ptr - ptr
+    //    if (lhs.type.kind == TType.Kind.POINTER && rhs.type.kind == TType.Kind.POINTER) {
+    //        if (lhs.type.SizeOf() != rhs.type.SizeOf()) {
+    //            Log.SemantError("Error: you cannot subtract two pointers that don't conform.");
+    //        }
+    //        type = new TInt32();
+    //        return scope;
+    //    }
 
-        // ptr - int
-        if (lhs.type.kind == TType.Kind.POINTER) {
-            if (!rhs.type.IsInt()) {
-                Log.SemantError("Error: must subtract integral from pointer");
-            }
-            rhs = new TypeCast(new TInt32(), rhs);
-            type = lhs.type;
-            return scope;
-        }
+    //    // ptr - int
+    //    if (lhs.type.kind == TType.Kind.POINTER) {
+    //        if (!rhs.type.IsInt()) {
+    //            Log.SemantError("Error: must subtract integral from pointer");
+    //        }
+    //        rhs = new TypeCast(new TInt32(), rhs);
+    //        type = lhs.type;
+    //        return scope;
+    //    }
 
-        // arith - arith
-        SemantUsualArithmeticConversion(ref lhs, ref rhs);
+    //    // arith - arith
+    //    SemantUsualArithmeticConversion(ref lhs, ref rhs);
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
     public Expression lhs;
     public Expression rhs;
@@ -1315,17 +1640,17 @@ public class LeftShift : Expression {
     public Expression lhs;
     public Expression rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
-            Log.SemantError("Error: expected integral operands.");
-        }
-        rhs = new TypeCast(new TInt32(), rhs);
-        type = lhs.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral operands.");
+    //    }
+    //    rhs = new TypeCast(new TInt32(), rhs);
+    //    type = lhs.type;
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -1337,17 +1662,17 @@ public class RightShift : Expression {
     public Expression lhs;
     public Expression rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
-            Log.SemantError("Error: expected integral operands.");
-        }
-        rhs = new TypeCast(new TInt32(), rhs);
-        type = lhs.type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    if (!lhs.type.IsInt() || !rhs.type.IsInt()) {
+    //        Log.SemantError("Error: expected integral operands.");
+    //    }
+    //    rhs = new TypeCast(new TInt32(), rhs);
+    //    type = lhs.type;
+    //    return scope;
+    //}
 
 }
 
@@ -1360,13 +1685,13 @@ public class LessThan : Expression {
     public Expression lhs;
     public Expression rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -1375,13 +1700,13 @@ public class LessEqualThan : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1392,13 +1717,13 @@ public class GreaterThan : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1409,13 +1734,13 @@ public class GreaterEqualThan : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1426,13 +1751,13 @@ public class Equal : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1443,13 +1768,13 @@ public class NotEqual : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantPointerOrArithmeticConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1460,13 +1785,13 @@ public class BitwiseAnd : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantIntegralConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantIntegralConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1477,13 +1802,13 @@ public class Xor : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantIntegralConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantIntegralConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1497,13 +1822,13 @@ public class BitwiseOr : Expression {
     public Expression lhs;
     public Expression rhs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantIntegralConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantIntegralConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
 }
 
 // Finished.
@@ -1512,13 +1837,13 @@ public class LogicalAnd : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantIntegralConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantIntegralConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 }
@@ -1529,13 +1854,13 @@ public class LogicalOr : Expression {
         lhs = _lhs;
         rhs = _rhs;
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = lhs.Semant(scope);
-        scope = rhs.Semant(scope);
-        SemantIntegralConversion(ref lhs, ref rhs);
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = lhs.Semant(scope);
+    //    scope = rhs.Semant(scope);
+    //    SemantIntegralConversion(ref lhs, ref rhs);
+    //    return scope;
+    //}
     public Expression lhs;
     public Expression rhs;
 

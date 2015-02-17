@@ -184,9 +184,9 @@ public class Parser {
         return true;
     }
 
-    public delegate int FParse<TRet>(List<Token> src, int begin, out TRet node) where TRet : ASTNode;
+    public delegate int FParse<TRet>(List<Token> src, int begin, out TRet node) where TRet : PTNode;
 
-    public static int ParseList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : ASTNode {
+    public static int ParseList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
         int current = begin;
 
         list = new List<TRet>();
@@ -202,7 +202,7 @@ public class Parser {
 
     }
 
-    public static int ParseNonEmptyList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : ASTNode {
+    public static int ParseNonEmptyList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
         begin = ParseList<TRet>(src, begin, out list, Parse);
         if (list.Any()) {
             return begin;
@@ -214,7 +214,7 @@ public class Parser {
     public static int Parse2Choices<TRet, T1, T2>(List<Token> src, int begin, out TRet node, FParse<T1> Parse1, FParse<T2> Parse2)
         where T1 : TRet
         where T2 : TRet
-        where TRet : ASTNode {
+        where TRet : PTNode {
         int ret;
 
         T1 node1;
@@ -233,7 +233,7 @@ public class Parser {
         return -1;
     }
 
-    public static int ParseNonEmptyListWithSep<TRet>(List<Token> src, int pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : ASTNode {
+    public static int ParseNonEmptyListWithSep<TRet>(List<Token> src, int pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : PTNode {
         list = new List<TRet>();
         TRet item;
 

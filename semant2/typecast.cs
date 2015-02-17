@@ -51,7 +51,7 @@ namespace AST {
         // output: TypeCast
         // converts expr to type
         // 
-        public static TypeCast SignedIntegralToArith(Expr expr, ExprType type) {
+        public static Expr SignedIntegralToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -111,21 +111,53 @@ namespace AST {
             case ExprType.EnumExprType.LONG:
                 switch (to) {
                 case ExprType.EnumExprType.CHAR:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(SByte)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    }
+
                 case ExprType.EnumExprType.UCHAR:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(Byte)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    }
 
                 case ExprType.EnumExprType.SHORT:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(Int16)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    }
+
                 case ExprType.EnumExprType.USHORT:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(UInt16)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    }
 
                 case ExprType.EnumExprType.ULONG:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    }
 
                 case ExprType.EnumExprType.FLOAT:
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstFloat((Single)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                    }
 
                 case ExprType.EnumExprType.DOUBLE:
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstDouble((Double)((ConstLong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                    }
 
                 default:
                     Debug.Assert(false);
@@ -148,7 +180,7 @@ namespace AST {
         //       unsigned long converts directly to double.
         //       however, I just treat unsigned long as long.
         // 
-        public static TypeCast UnsignedIntegralToArith(Expr expr, ExprType type) {
+        public static Expr UnsignedIntegralToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -208,21 +240,53 @@ namespace AST {
             case ExprType.EnumExprType.ULONG:
                 switch (to) {
                 case ExprType.EnumExprType.CHAR:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(SByte)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    }
+
                 case ExprType.EnumExprType.UCHAR:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(Byte)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    }
 
                 case ExprType.EnumExprType.SHORT:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(Int16)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    }
+
                 case ExprType.EnumExprType.USHORT:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(UInt16)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                    }
 
-                case ExprType.EnumExprType.ULONG:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
-
+                case ExprType.EnumExprType.LONG:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    }
+                    
                 case ExprType.EnumExprType.FLOAT:
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstFloat((Single)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                    }
 
                 case ExprType.EnumExprType.DOUBLE:
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstDouble((Double)((ConstULong)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                    }
 
                 default:
                     Debug.Assert(false);
@@ -245,7 +309,7 @@ namespace AST {
         //       float cannot convert to unsigned char.
         //       I don't know why, but I follow it.
         // 
-        public static TypeCast FloatToArith(Expr expr, ExprType type) {
+        public static Expr FloatToArith(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -253,18 +317,46 @@ namespace AST {
             case ExprType.EnumExprType.FLOAT:
                 switch (to) {
                 case ExprType.EnumExprType.CHAR:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT8, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(SByte)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    }
 
                 case ExprType.EnumExprType.SHORT:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(Int16)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    }
+
                 case ExprType.EnumExprType.USHORT:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(UInt16)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    }
 
                 case ExprType.EnumExprType.LONG:
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, type);
+                    }
+
                 case ExprType.EnumExprType.ULONG:
-                    return new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, type);
+                    }
 
                 case ExprType.EnumExprType.DOUBLE:
-                    return new TypeCast(EnumTypeCast.FLOAT_TO_DOUBLE, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstDouble((Double)((ConstFloat)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.FLOAT_TO_DOUBLE, expr, type);
+                    }
 
                 default:
                     Debug.Assert(false);
@@ -275,22 +367,49 @@ namespace AST {
                 switch (to) {
                 case ExprType.EnumExprType.CHAR:
                     // double -> float -> char
-                    return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TChar(type.is_const, type.is_volatile));
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(SByte)((ConstDouble)expr).value);
+                    } else {
+                        return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TChar(type.is_const, type.is_volatile));
+                    }
 
                 case ExprType.EnumExprType.SHORT:
                     // double -> float -> short
-                    return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TShort(type.is_const, type.is_volatile));
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)(Int16)((ConstDouble)expr).value);
+                    } else {
+                        return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TShort(type.is_const, type.is_volatile));
+                    }
 
                 case ExprType.EnumExprType.LONG:
+                    // double -> float -> short
+                    if (expr.IsConstExpr()) {
+                        return new ConstLong((Int32)((ConstDouble)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, type);
+                    }
+
                 case ExprType.EnumExprType.ULONG:
-                    return new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)((ConstDouble)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, type);
+                    }
 
                 case ExprType.EnumExprType.USHORT:
                     // double -> long -> ushort
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstULong((UInt32)(UInt16)((ConstDouble)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    }
 
                 case ExprType.EnumExprType.FLOAT:
-                    return new TypeCast(EnumTypeCast.DOUBLE_TO_FLOAT, expr, type);
+                    if (expr.IsConstExpr()) {
+                        return new ConstFloat((Single)((ConstDouble)expr).value);
+                    } else {
+                        return new TypeCast(EnumTypeCast.DOUBLE_TO_FLOAT, expr, type);
+                    }
 
                 default:
                     Debug.Assert(false);
@@ -313,7 +432,7 @@ namespace AST {
         //       it can be converted to 1) another pointer 2) an integral
         //       if else, assert.
         // 
-        public static TypeCast FromPointer(Expr expr, ExprType type) {
+        public static Expr FromPointer(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -344,7 +463,7 @@ namespace AST {
         //       it can be converted from 1) another pointer 2) an integral
         //       if else, assert.
         // 
-        public static TypeCast ToPointer(Expr expr, ExprType type) {
+        public static Expr ToPointer(Expr expr, ExprType type) {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
@@ -371,7 +490,7 @@ namespace AST {
         // output: TypeCast
         // converts expr to type
         // 
-        public static TypeCast MakeCast(Expr expr, ExprType type) {
+        public static Expr MakeCast(Expr expr, ExprType type) {
             
             // if two types are equal, return NOP
             if (EqualType(expr.type, type)) {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // translation_unit : [external_declaration]+
-public class _translation_unit : PTNode {
+public class _translation_unit : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
         TranslationUnit unit;
@@ -30,7 +30,7 @@ public class _translation_unit : PTNode {
     }
     
     public static int Parse(List<Token> src, int pos, out TranslationUnit unit) {
-        List<ASTNode> list;
+        List<PTNode> list;
         int current;
         if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
             unit = new TranslationUnit(list);
@@ -43,10 +43,10 @@ public class _translation_unit : PTNode {
     
 }
 // external_declaration: function_definition | declaration
-public class _external_declaration : PTNode {
+public class _external_declaration : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int a;");
-        ASTNode node;
+        PTNode node;
         int current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
@@ -61,8 +61,8 @@ public class _external_declaration : PTNode {
         return true;
     }
 
-    public static int Parse(List<Token> src, int pos, out ASTNode node) {
-        return Parser.Parse2Choices<ASTNode, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+    public static int Parse(List<Token> src, int pos, out PTNode node) {
+        return Parser.Parse2Choices<PTNode, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -93,7 +93,7 @@ public class _external_declaration : PTNode {
 //
 // FAIL: null
 //
-public class _function_definition : PTNode {
+public class _function_definition : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
         FunctionDefinition def;

@@ -221,14 +221,14 @@ public static class ScopeEnvironment {
 }
 
 
-public interface PTNode {
+public interface ParseRule {
 }
-public class ASTNode {
-    // Semant: take in the scope before this node, return the scope after this node.
-    public virtual ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        return scope;
-    }
+public class PTNode {
+    //// Semant: take in the scope before this node, return the scope after this node.
+    //public virtual ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    return scope;
+    //}
 
     public ScopeSandbox scope;
 
@@ -236,86 +236,78 @@ public class ASTNode {
 
 
 // the declaration of an object
-public class Decln : ASTNode {
+public class Decln : PTNode {
     public Decln(DeclnSpecs decl_specs_, List<InitDeclr> init_declrs_) {
         decl_specs = decl_specs_;
-        //init_declrs = new List<InitDeclr>();
-        //foreach (InitDeclr init_declr in init_declarators_) {
-        //    if (init_declr != null) {
-        //        init_declrs.Add(init_declr);
-        //    } else {
-        //        init_declrs.Add(new Null)
-        //    }
-        //}
         init_declrs = init_declrs_;
         __entries = new List<ScopeEntry>();
     }
     public DeclnSpecs decl_specs;
     public List<InitDeclr> init_declrs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        // semant declaration specifiers
-        // to get 1) storage class 2) type
-        scope = decl_specs.Semant(scope);
+    //    // semant declaration specifiers
+    //    // to get 1) storage class 2) type
+    //    scope = decl_specs.Semant(scope);
 
-        foreach (InitDeclr init_declr in init_declrs) {
-            init_declr.type = decl_specs.type;
-            scope = init_declr.Semant(scope);
+    //    foreach (InitDeclr init_declr in init_declrs) {
+    //        init_declr.type = decl_specs.type;
+    //        scope = init_declr.Semant(scope);
 
-            switch (decl_specs.storage_class) {
-                case StorageClassSpecifier.TYPEDEF:
-                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.TYPEDEF, init_declr.type, 0));
-                    break;
-                case StorageClassSpecifier.STATIC:
-                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.STATIC, init_declr.type, 0));
-                    break;
-                case StorageClassSpecifier.EXTERN:
-                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.EXTERN, init_declr.type, 0));
-                    break;
-                case StorageClassSpecifier.AUTO:
-                case StorageClassSpecifier.NULL:
-                case StorageClassSpecifier.REGISTER:
-                    scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.AUTO, init_declr.type, 0));
-                    break;
-                default:
-                    Log.SemantError("Error: Storage class error.");
-                    break;
-            }
+    //        switch (decl_specs.storage_class) {
+    //            case StorageClassSpecifier.TYPEDEF:
+    //                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.TYPEDEF, init_declr.type, 0));
+    //                break;
+    //            case StorageClassSpecifier.STATIC:
+    //                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.STATIC, init_declr.type, 0));
+    //                break;
+    //            case StorageClassSpecifier.EXTERN:
+    //                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.EXTERN, init_declr.type, 0));
+    //                break;
+    //            case StorageClassSpecifier.AUTO:
+    //            case StorageClassSpecifier.NULL:
+    //            case StorageClassSpecifier.REGISTER:
+    //                scope.AddSymbol(init_declr.declarator.name, new Symbol(Symbol.Kind.AUTO, init_declr.type, 0));
+    //                break;
+    //            default:
+    //                Log.SemantError("Error: Storage class error.");
+    //                break;
+    //        }
 
-        }
+    //    }
 
-        //GetEntries();
-        //StorageClassSpecifier scs = decl_specs.GetStorageClass();
-        //switch (scs) {
-        //case StorageClassSpecifier.TYPEDEF:
-        //    //scope.AddTypedefs(__entries);
-        //    break;
-        //case StorageClassSpecifier.STATIC:
-        //    //scope.AddStatics(__entries);
-        //    break;
-        //case StorageClassSpecifier.EXTERN:
-        //    // a declaration of an object, no storage
-        //    //scope.AddExterns(__entries);
-        //    break;
-        //case StorageClassSpecifier.AUTO:
-        //case StorageClassSpecifier.NULL:
-        //case StorageClassSpecifier.REGISTER:
-        //    // a normal object
-        //    if (scope.IsGlobal()) {
-        //        //scope.AddExterns(__entries);
-        //    } else {
-        //        //scope.AddAutos(__entries);
-        //    }
-        //    break;
-        //default:
-        //    Console.Error.WriteLine("Error: can't match type specifier");
-        //    Environment.Exit(1);
-        //    break;
-        //}
-        return scope;
-    }
+    //    //GetEntries();
+    //    //StorageClassSpecifier scs = decl_specs.GetStorageClass();
+    //    //switch (scs) {
+    //    //case StorageClassSpecifier.TYPEDEF:
+    //    //    //scope.AddTypedefs(__entries);
+    //    //    break;
+    //    //case StorageClassSpecifier.STATIC:
+    //    //    //scope.AddStatics(__entries);
+    //    //    break;
+    //    //case StorageClassSpecifier.EXTERN:
+    //    //    // a declaration of an object, no storage
+    //    //    //scope.AddExterns(__entries);
+    //    //    break;
+    //    //case StorageClassSpecifier.AUTO:
+    //    //case StorageClassSpecifier.NULL:
+    //    //case StorageClassSpecifier.REGISTER:
+    //    //    // a normal object
+    //    //    if (scope.IsGlobal()) {
+    //    //        //scope.AddExterns(__entries);
+    //    //    } else {
+    //    //        //scope.AddAutos(__entries);
+    //    //    }
+    //    //    break;
+    //    //default:
+    //    //    Console.Error.WriteLine("Error: can't match type specifier");
+    //    //    Environment.Exit(1);
+    //    //    break;
+    //    //}
+    //    return scope;
+    //}
 
     // TODO : Decln(env) -> (env, (env, decln)[]) : semant declarations
     public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
@@ -389,7 +381,7 @@ public class Decln : ASTNode {
 //
 // in semant, use GetExprType(env) to get (type, env).
 // 
-public class DeclnSpecs : ASTNode {
+public class DeclnSpecs : PTNode {
     public DeclnSpecs(List<StorageClassSpecifier> _storage_class_specifiers,
                                  List<TypeSpec> _type_specifiers,
                                  List<TypeQualifier> _type_qualifiers) {
@@ -441,25 +433,25 @@ public class DeclnSpecs : ASTNode {
         return new Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType>(env, scs, type);
     }
 
-    // Semant
-    // ------
-    // 1. Get storage class
-    // 2. semant type specs and get TType
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //// Semant
+    //// ------
+    //// 1. Get storage class
+    //// 2. semant type specs and get TType
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        // 1. Get storage class
-        storage_class = GetStorageClass();
+    //    // 1. Get storage class
+    //    storage_class = GetStorageClass();
 
-        // 2. semant type specs
-        type = SemantTypeSpecs();
+    //    // 2. semant type specs
+    //    type = SemantTypeSpecs();
 
-        // 3. get is_const, is_volatile
-        type.is_const = type_qualifiers.Exists(x => x == TypeQualifier.CONST);
-        type.is_volatile = type_qualifiers.Exists(x => x == TypeQualifier.VOLATILE);
+    //    // 3. get is_const, is_volatile
+    //    type.is_const = type_qualifiers.Exists(x => x == TypeQualifier.CONST);
+    //    type.is_volatile = type_qualifiers.Exists(x => x == TypeQualifier.VOLATILE);
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
     // DeclnSpecs.GetExprType
     // ======================
@@ -539,47 +531,47 @@ public class DeclnSpecs : ASTNode {
         }
     }
 
-    // SemantTypeSpecs : used inside Semant
-    // ---------------
-    // 1. Semant (update scope)
-    // 2. Get TType
-    public TType SemantTypeSpecs() {
+    //// SemantTypeSpecs : used inside Semant
+    //// ---------------
+    //// 1. Semant (update scope)
+    //// 2. Get TType
+    //public TType SemantTypeSpecs() {
 
-        // 1. if no type specifier, return INT
-        if (type_specifiers.Count == 0) {
-            return new TInt();
-        }
+    //    // 1. if no type specifier, return INT
+    //    if (type_specifiers.Count == 0) {
+    //        return new TInt();
+    //    }
 
-        // 2. semant type specs.
-        int nbasics = type_specifiers.Count(x => x.basic != BTypeSpec.NULL);
+    //    // 2. semant type specs.
+    //    int nbasics = type_specifiers.Count(x => x.basic != BTypeSpec.NULL);
 
-        // 2.1. try to match basic type
-        if (nbasics == type_specifiers.Count) {
-            List<BTypeSpec> basic_specs = new List<BTypeSpec>();
-            foreach (TypeSpec spec in type_specifiers) {
-                basic_specs.Add(spec.basic);
-            }
-            return MatchBasicType(basic_specs);
-        }
+    //    // 2.1. try to match basic type
+    //    if (nbasics == type_specifiers.Count) {
+    //        List<BTypeSpec> basic_specs = new List<BTypeSpec>();
+    //        foreach (TypeSpec spec in type_specifiers) {
+    //            basic_specs.Add(spec.basic);
+    //        }
+    //        return MatchBasicType(basic_specs);
+    //    }
 
-        // 2.2. you cannot have a part of basic specs.
-        if (nbasics != 0) {
-            Console.Error.WriteLine("Error: can't match type specifier");
-            Environment.Exit(1);
-            return null;
-        }
+    //    // 2.2. you cannot have a part of basic specs.
+    //    if (nbasics != 0) {
+    //        Console.Error.WriteLine("Error: can't match type specifier");
+    //        Environment.Exit(1);
+    //        return null;
+    //    }
 
-        // 2.3. try to match struct, union, enum ...
-        if (type_specifiers.Count != 1) {
-            Console.Error.WriteLine("Error: can't match type specifier");
-            Environment.Exit(1);
-            return null;
-        }
+    //    // 2.3. try to match struct, union, enum ...
+    //    if (type_specifiers.Count != 1) {
+    //        Console.Error.WriteLine("Error: can't match type specifier");
+    //        Environment.Exit(1);
+    //        return null;
+    //    }
 
-        scope = type_specifiers[0].Semant(scope);
-        return type_specifiers[0].type;
+    //    scope = type_specifiers[0].Semant(scope);
+    //    return type_specifiers[0].type;
 
-    }
+    //}
 
 
     public bool IsTypedef() {
@@ -832,7 +824,7 @@ public class DeclnSpecs : ASTNode {
 // =========
 // initialization declarator: a normal declarator + an initialization expression
 // 
-public class InitDeclr : ASTNode {
+public class InitDeclr : PTNode {
 
     public InitDeclr(Declr _decl, Expression _init) {
         if (_decl != null) {
@@ -867,20 +859,20 @@ public class InitDeclr : ASTNode {
     }
 
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        if (init != null) {
-            scope = init.Semant(scope);
-        }
+    //    if (init != null) {
+    //        scope = init.Semant(scope);
+    //    }
 
-        // type is already the primitive type.
-        declarator.type = type;
-        scope = declarator.Semant(scope);
-        type = declarator.type;
+    //    // type is already the primitive type.
+    //    declarator.type = type;
+    //    scope = declarator.Semant(scope);
+    //    type = declarator.type;
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
     // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
     public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
@@ -938,7 +930,7 @@ public enum BTypeSpec {
 //                 |
 //                 +--- UnionSpec
 //
-public class TypeSpec : ASTNode {
+public class TypeSpec : PTNode {
     public TypeSpec() {
         basic = BTypeSpec.NULL;
     }
@@ -980,22 +972,22 @@ public class TypedefName : TypeSpec {
         return null;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        Symbol symbol = scope.FindSymbol(name);
-        if (symbol == null) {
-            Log.SemantError("Error: cannot find typedef name.");
-        }
+    //    Symbol symbol = scope.FindSymbol(name);
+    //    if (symbol == null) {
+    //        Log.SemantError("Error: cannot find typedef name.");
+    //    }
 
-        if (symbol.kind != Symbol.Kind.TYPEDEF) {
-            Log.SemantError("Error: expected typedef name.");
-        }
+    //    if (symbol.kind != Symbol.Kind.TYPEDEF) {
+    //        Log.SemantError("Error: expected typedef name.");
+    //    }
 
-        type = symbol.type;
+    //    type = symbol.type;
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
     public String name;
 }
@@ -1012,7 +1004,7 @@ public enum TypeQualifier {
 // ========
 // a base class of FunctionInfo, ArrayInfo, and PointerInfo
 // 
-public class TypeInfo : ASTNode {
+public class TypeInfo : PTNode {
     public enum TypeInfoType {
         FUNCTION,
         ARRAY,
@@ -1033,14 +1025,14 @@ public class FunctionInfo : TypeInfo {
         type = TypeInfoType.FUNCTION;
     }
     public ParamTypeList param_type_list;
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = param_type_list.Semant(scope);
-        return scope;
-    }
-    public override TType WrapTType(TType type) {
-        return new TFunction(param_type_list.__params, param_type_list.IsVarArgs);
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = param_type_list.Semant(scope);
+    //    return scope;
+    //}
+    //public override TType WrapTType(TType type) {
+    //    return new TFunction(param_type_list.__params, param_type_list.IsVarArgs);
+    //}
 
     // TODO : [finished] FunctionInfo.Wrap(env, type) -> (env, type)
     public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
@@ -1062,12 +1054,12 @@ public class ArrayInfo : TypeInfo {
     public override TType WrapTType(TType type) {
         return new TArray(type, __nelems);
     }
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = nelems.Semant(scope);
-        __nelems = 0;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = nelems.Semant(scope);
+    //    __nelems = 0;
+    //    return scope;
+    //}
 
     // TODO : ArrayInfo.WrapType(env, type) -> (env, type)
     public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
@@ -1099,7 +1091,7 @@ public class PointerInfo : TypeInfo {
     public List<TypeQualifier> type_qualifiers;
 }
 
-public class Declr : ASTNode {
+public class Declr : PTNode {
     public Declr(String _name) {
         type_infos = new List<TypeInfo>();
         name = _name;
@@ -1112,15 +1104,15 @@ public class Declr : ASTNode {
     // after semant
     public TType type;
 
-    // Wrap the type
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        foreach (TypeInfo info in type_infos) {
-            scope = info.Semant(scope);
-        }
-        type = WrapTType(type);
-        return scope;
-    }
+    //// Wrap the type
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    foreach (TypeInfo info in type_infos) {
+    //        scope = info.Semant(scope);
+    //    }
+    //    type = WrapTType(type);
+    //    return scope;
+    //}
 
     public TType WrapTType(TType type) {
         type_infos.ForEach(info => type = info.WrapTType(type));
@@ -1147,7 +1139,7 @@ public class NullDeclr : Declr {
 }
 
 // Finished
-public class ParamTypeList : ASTNode {
+public class ParamTypeList : PTNode {
     public ParamTypeList(List<ParamDecln> _param_list) {
         IsVarArgs = false;
         param_list = _param_list;
@@ -1156,17 +1148,17 @@ public class ParamTypeList : ASTNode {
     public bool IsVarArgs;
     public List<ParamDecln> param_list;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        foreach (ParamDecln param in param_list) {
-            scope = param.Semant(scope);
-        }
-        __params = new List<ScopeEntry>();
-        foreach (ParamDecln param in param_list) {
-            __params.Add(param.__entry);
-        }
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    foreach (ParamDecln param in param_list) {
+    //        scope = param.Semant(scope);
+    //    }
+    //    __params = new List<ScopeEntry>();
+    //    foreach (ParamDecln param in param_list) {
+    //        __params.Add(param.__entry);
+    //    }
+    //    return scope;
+    //}
 
     // TODO : [finished] ParamTypeList.GetParamTypes(env) -> (env, type)[]
     public List<Tuple<AST.Env, String, AST.ExprType>> GetParamTypes(AST.Env env) {
@@ -1221,36 +1213,36 @@ public class EnumSpec : TypeSpec {
         return new Tuple<AST.ExprType, AST.Env>(new AST.TLong(is_const, is_volatile), env);
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        if (scope.FindSymbol("enum " + name) != null) {
-            // if the enum type is already in scope, that means there is a definition.
-            if (enum_list != null && enum_list.Count != 0) {
-                Log.SemantError("Error: type 'enum " + name + " ' redifinition.");
-            }
-        }
-        else {
-            // if the enum type is not found in scope, we must make sure that this is a definition.
-            if (enum_list == null) {
-                Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
-            }
-            scope.AddSymbol("enum " + name, new Symbol(Symbol.Kind.TYPEDEF, new TInt(), 0));
-        }
+    //    if (scope.FindSymbol("enum " + name) != null) {
+    //        // if the enum type is already in scope, that means there is a definition.
+    //        if (enum_list != null && enum_list.Count != 0) {
+    //            Log.SemantError("Error: type 'enum " + name + " ' redifinition.");
+    //        }
+    //    }
+    //    else {
+    //        // if the enum type is not found in scope, we must make sure that this is a definition.
+    //        if (enum_list == null) {
+    //            Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
+    //        }
+    //        scope.AddSymbol("enum " + name, new Symbol(Symbol.Kind.TYPEDEF, new TInt(), 0));
+    //    }
 
-        int idx = 0;
-        foreach (Enumerator elem in enum_list) {
-            scope = elem.Semant(scope);
-            if (scope.FindSymbolInCurrentLevel(elem.name) != null) {
-                Log.SemantError("Error: " + elem.name + " already defined.");
-            }
-            scope.AddSymbol(elem.name, new Symbol(Symbol.Kind.ENUM, new TInt(), idx));
-            idx++;
-        }
+    //    int idx = 0;
+    //    foreach (Enumerator elem in enum_list) {
+    //        scope = elem.Semant(scope);
+    //        if (scope.FindSymbolInCurrentLevel(elem.name) != null) {
+    //            Log.SemantError("Error: " + elem.name + " already defined.");
+    //        }
+    //        scope.AddSymbol(elem.name, new Symbol(Symbol.Kind.ENUM, new TInt(), idx));
+    //        idx++;
+    //    }
 
-        type = new TInt();
-        return scope;
-    }
+    //    type = new TInt();
+    //    return scope;
+    //}
 
     public String name;
     public List<Enumerator> enum_list;
@@ -1258,19 +1250,19 @@ public class EnumSpec : TypeSpec {
 }
 
 
-public class Enumerator : ASTNode {
+public class Enumerator : PTNode {
     public Enumerator(String _name, Expression _init) {
         name = _name;
         init = _init;
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        if (init != null) {
-            scope = init.Semant(scope);
-        }
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    if (init != null) {
+    //        scope = init.Semant(scope);
+    //    }
+    //    return scope;
+    //}
     public Expression init;
     public String name;
 }
@@ -1319,23 +1311,28 @@ public class StructSpec : StructOrUnionSpec {
         }
 
         AST.TStruct type = new AST.TStruct(attribs, is_const, is_volatile);
+
+        if (name != "") {
+            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, type);
+        }
+
         return new Tuple<AST.ExprType, AST.Env>(type, env);
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        foreach (StructDecln decl in declns) {
-            scope = decl.Semant(scope);
-        }
-        TStruct _type = new TStruct();
-        foreach (StructDecln decl in declns) {
-            foreach (Declr d in decl.declrs) {
-                _type.attribs.Add(new ScopeEntry(d.name, d.type));
-            }
-        }
-        type = _type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    foreach (StructDecln decl in declns) {
+    //        scope = decl.Semant(scope);
+    //    }
+    //    TStruct _type = new TStruct();
+    //    foreach (StructDecln decl in declns) {
+    //        foreach (Declr d in decl.declrs) {
+    //            _type.attribs.Add(new ScopeEntry(d.name, d.type));
+    //        }
+    //    }
+    //    type = _type;
+    //    return scope;
+    //}
 }
 
 
@@ -1364,23 +1361,28 @@ public class UnionSpec : StructOrUnionSpec {
         }
 
         AST.TUnion type = new AST.TUnion(attribs, is_const, is_volatile);
+
+        if (name != "") {
+            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, type);
+        }
+
         return new Tuple<AST.ExprType, AST.Env>(type, env);
     }
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        foreach (StructDecln decl in declns) {
-            scope = decl.Semant(scope);
-        }
-        TUnion _type = new TUnion();
-        foreach (StructDecln decl in declns) {
-            foreach (Declr d in decl.declrs) {
-                _type.attribs.Add(new ScopeEntry(d.name, d.type));
-            }
-        }
-        type = _type;
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    foreach (StructDecln decl in declns) {
+    //        scope = decl.Semant(scope);
+    //    }
+    //    TUnion _type = new TUnion();
+    //    foreach (StructDecln decl in declns) {
+    //        foreach (Declr d in decl.declrs) {
+    //            _type.attribs.Add(new ScopeEntry(d.name, d.type));
+    //        }
+    //    }
+    //    type = _type;
+    //    return scope;
+    //}
 }
 
 
@@ -1388,7 +1390,7 @@ public class UnionSpec : StructOrUnionSpec {
 // =============
 // only used in parsing phase
 // 
-public class StructOrUnion : ASTNode {
+public class StructOrUnion : PTNode {
     public StructOrUnion(bool _is_union) {
         is_union = _is_union;
     }
@@ -1396,7 +1398,7 @@ public class StructOrUnion : ASTNode {
 }
 
 
-public class StructDecln : ASTNode {
+public class StructDecln : PTNode {
     public StructDecln(DeclnSpecs _specs, List<Declr> _declrs) {
         specs = _specs;
         declrs = _declrs;
@@ -1404,15 +1406,15 @@ public class StructDecln : ASTNode {
     public DeclnSpecs specs;
     public List<Declr> declrs;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = specs.Semant(scope);
-        foreach (Declr decl in declrs) {
-            decl.type = specs.type;
-            scope = decl.Semant(scope);
-        }
-        return scope;
-    }
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = specs.Semant(scope);
+    //    foreach (Declr decl in declrs) {
+    //        decl.type = specs.type;
+    //        scope = decl.Semant(scope);
+    //    }
+    //    return scope;
+    //}
 
     public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
         Tuple<AST.ExprType, AST.Env> r_specs = specs.GetExprType(env);
@@ -1433,7 +1435,7 @@ public class StructDecln : ASTNode {
 }
 
 // Finished.
-public class ParamDecln : ASTNode {
+public class ParamDecln : PTNode {
     public ParamDecln(DeclnSpecs _specs, Declr _decl) {
         specs = _specs;
 
@@ -1448,15 +1450,15 @@ public class ParamDecln : ASTNode {
     public DeclnSpecs specs;
     public Declr decl;
 
-    // Create __entry
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
-        scope = specs.Semant(scope);
-        decl.type = specs.type;
-        scope = decl.Semant(scope);
-        __entry = new ScopeEntry(decl.name, decl.type);
-        return scope;
-    }
+    //// Create __entry
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
+    //    scope = specs.Semant(scope);
+    //    decl.type = specs.type;
+    //    scope = decl.Semant(scope);
+    //    __entry = new ScopeEntry(decl.name, decl.type);
+    //    return scope;
+    //}
 
     // TODO : [finished] ParamDecln.GetParamDecln(env) -> (env, name, type)
     public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
@@ -1486,7 +1488,7 @@ public class InitrList : Expression {
 }
 
 
-public class TypeName : ASTNode {
+public class TypeName : PTNode {
     public TypeName(DeclnSpecs _specs, Declr _decl) {
         specs = _specs;
         decl = _decl;
@@ -1503,17 +1505,17 @@ public class TypeName : ASTNode {
     // after semant
     public TType type;
 
-    public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        scope = _scope;
+    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
+    //    scope = _scope;
 
-        scope = specs.Semant(scope);
+    //    scope = specs.Semant(scope);
 
-        decl.type = specs.type;
-        scope = decl.Semant(scope);
-        type = decl.type;
+    //    decl.type = specs.type;
+    //    scope = decl.Semant(scope);
+    //    type = decl.type;
 
-        return scope;
-    }
+    //    return scope;
+    //}
 
 }
 

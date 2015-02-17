@@ -24,7 +24,7 @@ using System.IO;
 //    this is to resolve the ambiguity of something like a * b
 // 3. first set : id, const, string, '('
 //
-public class _primary_expression : PTNode {
+public class _primary_expression : ParseRule {
     public static bool Test() {
         Expression expr;
 
@@ -136,7 +136,7 @@ public class _primary_expression : PTNode {
 
 // expression: assignment_expression < , assignment_expression >*
 // [ note: it's okay if there is a lonely ',', just leave it be ]
-public class _expression : PTNode {
+public class _expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         node = null;
         Expression expr;
@@ -168,7 +168,7 @@ public class _expression : PTNode {
 
 // constant_expression: conditional_expression
 // [ note: when declaring an array, the size should be a const ]
-public class _constant_expression : PTNode {
+public class _constant_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         return _conditional_expression.Parse(src, begin, out node);
     }
@@ -176,7 +176,7 @@ public class _constant_expression : PTNode {
 
 
 // conditional_expression: logical_or_expression < ? expression : conditional_expression >?
-public class _conditional_expression : PTNode {
+public class _conditional_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _logical_or_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -217,7 +217,7 @@ public class _conditional_expression : PTNode {
 // [ note: unary_expression is a special type of conditional_expression ]
 // [ note: first try unary ]
 // first(conditional_expression) = first(cast_expression)
-public class _assignment_expression : PTNode {
+public class _assignment_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         node = null;
         Expression lvalue;
@@ -357,7 +357,7 @@ public class _assignment_expression : PTNode {
 // MY SOLUTION:
 // postfix_expression: primary_expression [ one of these postfixes ]*
 //
-public class _postfix_expression : PTNode {
+public class _postfix_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a");
         Expression expr;
@@ -538,7 +538,7 @@ public class _postfix_expression : PTNode {
 }
 
 // argument_expression_list: assignment_expression < , assignment_expression >*
-public class _argument_expression_list : PTNode {
+public class _argument_expression_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<Expression> node) {
         node = null;
         Expression expr;
@@ -595,7 +595,7 @@ public class _argument_expression_list : PTNode {
 //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
 //           = { id const string ( ++ -- & * + - ~ ! sizeof }
 //
-public class _unary_expression : PTNode {
+public class _unary_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a");
         Expression expr;
@@ -937,7 +937,7 @@ public class _cast_expression : Expression {
 // this grammar is left-recursive, so we turn it into:
 // multiplicative_Expression: cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
 //
-public class _multiplicative_expression : PTNode {
+public class _multiplicative_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a * b");
         Expression expr;
@@ -1031,7 +1031,7 @@ public class _multiplicative_expression : PTNode {
 // this grammar is left-recursive, so turn it into:
 // additive_expression: multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
 //
-public class _additive_expression : PTNode {
+public class _additive_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a * b + c");
         Expression expr;
@@ -1112,7 +1112,7 @@ public class _additive_expression : PTNode {
 // this grammar is left-recursive, so turn it into:
 // shift_expression: additive_expression [ [ '<<' | '>>' ] additive_expression ]*
 //
-public class _shift_expression : PTNode {
+public class _shift_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("a * b + c << 3");
         Expression expr;
@@ -1195,7 +1195,7 @@ public class _shift_expression : PTNode {
 // this grammar is left-recursive, so turn it into:
 // relational_expression: shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
 //
-public class _relational_expression : PTNode {
+public class _relational_expression : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("3 < 4");
         Expression expr;
@@ -1294,7 +1294,7 @@ public class _relational_expression : PTNode {
 //                    | equality_expression != relational_expression
 // [ note: my solution ]
 // equality_expression: relational_expression < < == | != > relational_expression >*
-public class _equality_expression : PTNode {
+public class _equality_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _relational_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1337,7 +1337,7 @@ public class _equality_expression : PTNode {
 //               | and_expression & equality_expression
 // [ note: my solution ]
 // and_expression: equality_expression < & equality_expression >*
-public class _and_expression : PTNode {
+public class _and_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _equality_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1370,7 +1370,7 @@ public class _and_expression : PTNode {
 //                         | exclusive_or_expression ^ and_expression
 // [ note: my solution ]
 // exclusive_or_expression: and_expression < ^ and_expression >*
-public class _exclusive_or_expression : PTNode {
+public class _exclusive_or_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _and_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1403,7 +1403,7 @@ public class _exclusive_or_expression : PTNode {
 //                        | inclusive_or_expression | exclulsive_or_expression
 // [ note: my solution ]
 // inclusive_or_expression: exclulsive_or_expression < | exclulsive_or_expression >*
-public class _inclusive_or_expression : PTNode {
+public class _inclusive_or_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _exclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1436,7 +1436,7 @@ public class _inclusive_or_expression : PTNode {
 //                       | logical_and_expression && inclusive_or_expression
 // [ note: my solution ]
 // logical_and_expression: inclusive_or_expression < && inclusive_or_expression >*
-public class _logical_and_expression : PTNode {
+public class _logical_and_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _inclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
@@ -1470,7 +1470,7 @@ public class _logical_and_expression : PTNode {
 // [ note: my solution ]
 // logical_or_expression: logical_and_expression < || logical_and_expression >*
 
-public class _logical_or_expression : PTNode {
+public class _logical_or_expression : ParseRule {
     public static int Parse(List<Token> src, int begin, out Expression node) {
         int current = _logical_and_expression.Parse(src, begin, out node);
         if (current == -1) {

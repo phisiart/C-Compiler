@@ -12,7 +12,7 @@ using System.IO;
 //          | selection_statement
 //          | iteration_statement
 //          | jump_statement
-public class _statement : PTNode {
+public class _statement : ParseRule {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         int current = _labeled_statement.Parse(src, begin, out stmt);
@@ -54,7 +54,7 @@ public class _statement : PTNode {
 //               | continue ;
 //               | break ;
 //               | return <expression>? ;
-public class _jump_statement : PTNode {
+public class _jump_statement : ParseRule {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
 
@@ -106,7 +106,7 @@ public class _jump_statement : PTNode {
 
 
 // compound_statement : { <declaration_list>? <statement_list>? }
-public class _compound_statement : PTNode {
+public class _compound_statement : ParseRule {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         if (!Parser.IsLCURL(src[begin])) {
@@ -145,7 +145,7 @@ public class _compound_statement : PTNode {
 //                 | declaration_list declaration
 // [ note: my solution ]
 // declaration_list: <declaration>+
-public class _declaration_list : PTNode {
+public class _declaration_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<Decln> decl_list) {
         decl_list = new List<Decln>();
         Decln decl;
@@ -171,7 +171,7 @@ public class _declaration_list : PTNode {
 //               | statement_list statement
 // [ note: my solution ]
 // statement_list: <statement>+
-public class _statement_list : PTNode {
+public class _statement_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out List<Statement> stmt_list) {
         return Parser.ParseNonEmptyList(src, begin, out stmt_list, _statement.Parse);
         //stmt_list = new List<Statement>();
@@ -195,7 +195,7 @@ public class _statement_list : PTNode {
 
 
 // expression_statement: <expression>? ;
-public class _expression_statement : PTNode {
+public class _expression_statement : ParseRule {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
         Expression expr;
@@ -219,7 +219,7 @@ public class _expression_statement : PTNode {
 // iteration_statement: while ( expression ) statement
 //                    | do statement while ( expression ) ;
 //                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
-public class _iteration_statement : PTNode {
+public class _iteration_statement : ParseRule {
     private static int ParseExpression(List<Token> src, int begin, out Expression expr) {
         expr = null;
         if (!Parser.IsLPAREN(src[begin])) {
@@ -352,7 +352,7 @@ public class _iteration_statement : PTNode {
 // selection_statement: if ( expression ) statement
 //                    | if ( expression ) statement else statement
 //                    | switch ( expression ) statement
-public class _selection_statement : PTNode {
+public class _selection_statement : ParseRule {
     private static int ParseExpression(List<Token> src, int begin, out Expression expr) {
         expr = null;
         if (!Parser.IsLPAREN(src[begin])) {
@@ -426,7 +426,7 @@ public class _selection_statement : PTNode {
 // labeled_statement : identifier : statement
 //                   | case constant_expression : statement
 //                   | default : statement
-public class _labeled_statement : PTNode {
+public class _labeled_statement : ParseRule {
     public static int Parse(List<Token> src, int begin, out Statement stmt) {
         stmt = null;
 
