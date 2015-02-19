@@ -236,7 +236,7 @@ public class PTNode {
 
 
 // the declaration of an object
-public class Decln : PTNode {
+public class Decln : ExternalDeclaration {
     public Decln(DeclnSpecs decl_specs_, List<InitDeclr> init_declrs_) {
         decl_specs = decl_specs_;
         init_declrs = init_declrs_;
@@ -310,6 +310,7 @@ public class Decln : PTNode {
     //}
 
     // TODO : Decln(env) -> (env, (env, decln)[]) : semant declarations
+
     public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
         List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
 
@@ -356,6 +357,16 @@ public class Decln : PTNode {
         }
 
         return new Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>>(env, declns);
+    }
+
+    public override Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
+        Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_declns = GetDeclns(env);
+        env = r_declns.Item1;
+        List<Tuple<AST.Env, AST.ExternDecln>> declns = new List<Tuple<AST.Env, AST.ExternDecln>>();
+        foreach (Tuple<AST.Env, AST.Decln> decln in r_declns.Item2) {
+            declns.Add(new Tuple<AST.Env, AST.ExternDecln>(decln.Item1, decln.Item2));
+        }
+        return new Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>>(env, declns);
     }
 
     // calculate all the types

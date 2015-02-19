@@ -5,6 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AST {
+    public class AssignmentList : Expr {
+        public AssignmentList(List<Expr> _exprs, ExprType _type)
+            : base(_type) {
+            exprs = _exprs;
+        }
+
+        public readonly List<Expr> exprs;
+    }
+
     public class Assignment : Expr {
         public Assignment(Expr _lvalue, Expr _rvalue, ExprType _type)
             : base(_type) {

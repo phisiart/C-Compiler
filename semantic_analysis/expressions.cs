@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 // 3.2.1.5
 /* First, if either operand has type long double, the other operand is converted to long double.
@@ -127,11 +123,26 @@ public class Variable : Expression {
     //    return scope;
     //}
 
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        AST.Env.Entry entry = env.Find(name);
+        if (entry == null) {
+            Log.SemantError("Error: cannot find variable '" + name + "'");
+            return null;
+        }
+        if (entry.entry_loc == AST.Env.EntryLoc.TYPEDEF) {
+            Log.SemantError("Error: expected a variable, not a typedef.");
+            return null;
+        }
+
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.Variable(entry.entry_type, name));
+    }
+
     public String name;
 }
 
 
-public class Constant : Expression { }
+public class Constant : Expression {
+}
 
 // NOTE : there is no const char in C, there is only const int ...
 //public class ConstChar : Constant {
@@ -223,9 +234,9 @@ public class ConstInt : Constant {
         switch (int_type) {
         case IntType.U:
         case IntType.UL:
-            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
-        default:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
+        default:
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
         }
     }
 
@@ -260,9 +271,21 @@ public class StringLiteral : Expression {
 
 public class AssignmentList : Expression {
     public AssignmentList(List<Expression> _exprs) {
-        exprs = _exprs;
+        assign_exprs = _exprs;
     }
-    public List<Expression> exprs;
+    public List<Expression> assign_exprs;
+
+    public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+        List<AST.Expr> exprs = new List<AST.Expr>();
+        AST.ExprType type = new AST.TVoid();
+        foreach (Expression expr in assign_exprs) {
+            Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+            env = r_expr.Item1;
+            type = r_expr.Item2.type;
+            exprs.Add(r_expr.Item2);
+        }
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.AssignmentList(exprs, type));
+    }
 }
 
 // Finished.
@@ -1653,7 +1676,9 @@ public class LeftShift : Expression {
     //}
 }
 
-// Finished.
+// RightShift
+// ==========
+// requires integral type
 public class RightShift : Expression {
     public RightShift(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1745,7 +1770,9 @@ public class GreaterEqualThan : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// Equal
+// =====
+// requires arithmetic or pointer type
 public class Equal : Expression {
     public Equal(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1762,7 +1789,9 @@ public class Equal : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// NotEqual
+// ========
+// requires arithmetic or pointer type
 public class NotEqual : Expression {
     public NotEqual(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1779,7 +1808,9 @@ public class NotEqual : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// BitwiseAnd
+// ==========
+// requires integral type
 public class BitwiseAnd : Expression {
     public BitwiseAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1796,7 +1827,9 @@ public class BitwiseAnd : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// BitwiseAnd
+// ==========
+// requires integral type
 public class Xor : Expression {
     public Xor(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1813,7 +1846,9 @@ public class Xor : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// BitwiseOr
+// =========
+// requires integral type
 public class BitwiseOr : Expression {
     public BitwiseOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1831,7 +1866,9 @@ public class BitwiseOr : Expression {
     //}
 }
 
-// Finished.
+// LogicalAnd
+// ==========
+// requires integral or pointer type
 public class LogicalAnd : Expression {
     public LogicalAnd(Expression _lhs, Expression _rhs) {
         lhs = _lhs;
@@ -1848,7 +1885,9 @@ public class LogicalAnd : Expression {
     public Expression rhs;
 }
 
-// Finished.
+// LogicalOr
+// =========
+// requires integral or pointer type
 public class LogicalOr : Expression {
     public LogicalOr(Expression _lhs, Expression _rhs) {
         lhs = _lhs;

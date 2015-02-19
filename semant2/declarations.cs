@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AST {
-    public class Decln {
+    public class Decln : ExternDecln {
         public enum EnumSCS {
             AUTO,
             STATIC,

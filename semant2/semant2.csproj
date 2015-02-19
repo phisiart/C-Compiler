@@ -42,6 +42,8 @@
     <Compile Include="declarations.cs" />
     <Compile Include="environment.cs" />
     <Compile Include="expressions.cs" />
+    <Compile Include="external_declarations.cs" />
+    <Compile Include="statements.cs" />
     <Compile Include="typecast.cs" />
     <Compile Include="types.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

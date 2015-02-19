@@ -190,4 +190,58 @@ namespace semant2_test {
         }
     }
 
+    [TestClass]
+    public class ExprTest {
+        [TestMethod]
+        public void TestMult() {
+            string src = "3.0 * 5.0f;";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            Expression expr;
+            int r = _multiplicative_expression.Parse(tokens, 0, out expr);
+
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+            
+        }
+    }
+
+    [TestClass]
+    public class StmtTest {
+        [TestMethod]
+        public void TestCompountStmt() {
+            string src = @"{ int a; int b; 3.0f; 3 + 5; }";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            CompoundStatement stmt;
+            int r = _compound_statement.Parse(tokens, 0, out stmt);
+
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+
+        }
+
+        [TestMethod]
+        public void TestVariable() {
+            string src = "{int *a; a; }";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            CompoundStatement stmt;
+            int r = _compound_statement.Parse(tokens, 0, out stmt);
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+        }
+    }
+
+    [TestClass]
+    public class FullTest {
+        [TestMethod]
+        public void TestFunctionDef() {
+            string src = "int main(int argc, char **argv) { 0; 1; 3.0f; }";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            TranslationUnit unit;
+            int r = _translation_unit.Parse(tokens, 0, out unit);
+            
+            Tuple<AST.Env, AST.TranslationUnit> r_unit = unit.GetTranslationUnit();
+
+        }
+
+    }
 }

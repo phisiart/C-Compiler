@@ -492,9 +492,11 @@ namespace AST {
         // 
         public static Expr MakeCast(Expr expr, ExprType type) {
             
-            // if two types are equal, return NOP
+            // if two types are equal, return expr
             if (EqualType(expr.type, type)) {
-                return new TypeCast(EnumTypeCast.NOP, expr, type);
+                //return new TypeCast(EnumTypeCast.NOP, expr, type);
+
+                return expr;
             }
 
             // from pointer
@@ -507,7 +509,7 @@ namespace AST {
                 return ToPointer(expr, type);
             }
 
-            switch (type.expr_type) {
+            switch (expr.type.expr_type) {
                 // from signed integral
             case ExprType.EnumExprType.CHAR:
             case ExprType.EnumExprType.SHORT:

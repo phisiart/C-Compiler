@@ -537,6 +537,10 @@ namespace AST {
             : base(new TLong(true)) {
             value = _value;
         }
+
+        public override string ToString() {
+            return "int(" + value + ")";
+        }
         public readonly Int32 value;
     }
 
@@ -544,6 +548,10 @@ namespace AST {
         public ConstULong(UInt32 _value)
             : base(new TULong(true)) {
             value = _value;
+        }
+
+        public override string ToString() {
+            return "uint(" + value + ")";
         }
         public readonly UInt32 value;
     }
@@ -553,6 +561,9 @@ namespace AST {
             : base(new TFloat(true)) {
             value = _value;
         }
+        public override string ToString() {
+            return "float(" + value + ")";
+        }
         public readonly Single value;
     }
 
@@ -560,6 +571,9 @@ namespace AST {
         public ConstDouble(Double _value)
             : base(new TDouble(true)) {
             value = _value;
+        }
+        public override string ToString() {
+            return "double(" + value + ")";
         }
         public readonly Double value;
     }

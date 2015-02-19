@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
-public class Statement : PTNode {}
+public class Statement : PTNode {
+    public virtual Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+        return null;
+    }
+}
 
 
 public class GotoStatement : Statement {
@@ -13,10 +13,7 @@ public class GotoStatement : Statement {
         label = _label;
     }
     public String label;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    return scope;
-    //}
+
 }
 
 
@@ -25,53 +22,69 @@ public class ContinueStatement : Statement {}
 
 public class BreakStatement : Statement {}
 
-// Finished.
+
 public class ReturnStatement : Statement {
     public ReturnStatement(Expression _expr) {
         expr = _expr;
     }
     public Expression expr;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = expr.Semant(scope);
-    //    return scope;
-    //}
+
 }
 
-// Finished.
+
 public class CompoundStatement : Statement {
     public CompoundStatement(List<Decln> _decl_list, List<Statement> _stmt_list) {
-        decl_list = _decl_list;
-        stmt_list = _stmt_list;
+        stmt_declns = _decl_list;
+        stmt_stmts = _stmt_list;
     }
-    List<Decln> decl_list;
-    List<Statement> stmt_list;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope.InScope();
-    //    foreach (Decln decl in decl_list) {
-    //        scope = decl.Semant(scope);
-    //    }
-    //    foreach (Statement stmt in stmt_list) {
-    //        scope = stmt.Semant(scope);
-    //    }
-    //    scope.OutScope();
-    //    return scope;
-    //}
+    List<Decln> stmt_declns;
+    List<Statement> stmt_stmts;
+
+    public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+        env = env.InScope();
+        List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
+        List<Tuple<AST.Env, AST.Stmt>> stmts = new List<Tuple<AST.Env, AST.Stmt>>();
+
+        foreach (Decln decln in stmt_declns) {
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
+            env = r_decln.Item1;
+            declns.AddRange(r_decln.Item2);
+        }
+
+        foreach (Statement stmt in stmt_stmts) {
+            Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            stmts.Add(r_stmt);
+        }
+
+        env = env.OutScope();
+
+        return new Tuple<AST.Env, AST.Stmt>(env, new AST.CompoundStmt(declns, stmts));
+
+    }
+
 }
 
 
 public class ExpressionStatement : Statement {
     public ExpressionStatement(Expression _expr) {
-        expr = _expr;
+        stmt_expr = _expr;
     }
-    public Expression expr;
+    public Expression stmt_expr;
+
+    public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = stmt_expr.GetExpr(env);
+        env           = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+
+        return new Tuple<AST.Env, AST.Stmt>(env, new AST.ExprStmt(expr));
+    }
 }
 
 
 // loops:
 
-// Finished.
+
 public class WhileStatement : Statement {
     public WhileStatement(Expression _cond, Statement _body) {
         cond = _cond;
@@ -79,12 +92,7 @@ public class WhileStatement : Statement {
     }
     public Expression cond;
     public Statement body;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = cond.Semant(scope);
-    //    scope = body.Semant(scope);
-    //    return scope;
-    //}
+
 }
 
 // Finished.
@@ -95,12 +103,7 @@ public class DoWhileStatement : Statement {
     }
     public Statement body;
     public Expression cond;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = cond.Semant(scope);
-    //    scope = body.Semant(scope);
-    //    return scope;
-    //}
+
 }
 
 // Finished.
@@ -115,17 +118,10 @@ public class ForStatement : Statement {
     public Expression cond;
     public Expression loop;
     public Statement body;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = init.Semant(scope);
-    //    scope = cond.Semant(scope);
-    //    scope = loop.Semant(scope);
-    //    scope = body.Semant(scope);
-    //    return scope;
-    //}
+
 }
 
-// Finished.
+
 public class SwitchStatement : Statement {
     public SwitchStatement(Expression _expr, Statement _stmt) {
         expr = _expr;
@@ -133,15 +129,10 @@ public class SwitchStatement : Statement {
     }
     public Expression expr;
     public Statement stmt;
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = expr.Semant(scope);
-    //    scope = stmt.Semant(scope);
-    //    return scope;
-    //}
+
 }
 
-// Finished.
+
 public class IfStatement : Statement {
     public IfStatement(Expression _cond, Statement _stmt) {
         cond = _cond;
@@ -150,12 +141,6 @@ public class IfStatement : Statement {
     public Expression cond;
     public Statement stmt;
 
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = cond.Semant(scope);
-    //    scope = stmt.Semant(scope);
-    //    return scope;
-    //}
 }
 
 // Finished.
@@ -169,13 +154,6 @@ public class IfElseStatement : Statement {
     public Statement true_stmt;
     public Statement false_stmt;
 
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = cond.Semant(scope);
-    //    scope = true_stmt.Semant(scope);
-    //    scope = false_stmt.Semant(scope);
-    //    return scope;
-    //}
 }
 
 // Finished.
@@ -187,11 +165,6 @@ public class LabeledStatement : Statement {
     public String label;
     public Statement stmt;
 
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = stmt.Semant(scope);
-    //    return scope;
-    //}
 }
 
 // Finished.
@@ -204,10 +177,4 @@ public class CaseStatement : Statement {
     public Expression expr;
     public Statement stmt;
 
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    scope = expr.Semant(scope);
-    //    scope = stmt.Semant(scope);
-    //    return scope;
-    //}
 }

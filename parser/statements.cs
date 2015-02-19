@@ -20,8 +20,10 @@ public class _statement : ParseRule {
             return current;
         }
 
-        current = _compound_statement.Parse(src, begin, out stmt);
+        CompoundStatement compound_stmt;
+        current = _compound_statement.Parse(src, begin, out compound_stmt);
         if (current != -1) {
+            stmt = compound_stmt;
             return current;
         }
 
@@ -107,7 +109,7 @@ public class _jump_statement : ParseRule {
 
 // compound_statement : { <declaration_list>? <statement_list>? }
 public class _compound_statement : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Statement stmt) {
+    public static int Parse(List<Token> src, int begin, out CompoundStatement stmt) {
         stmt = null;
         if (!Parser.IsLCURL(src[begin])) {
             return -1;

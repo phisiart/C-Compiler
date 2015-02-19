@@ -30,7 +30,7 @@ public class _translation_unit : ParseRule {
     }
     
     public static int Parse(List<Token> src, int pos, out TranslationUnit unit) {
-        List<PTNode> list;
+        List<ExternalDeclaration> list;
         int current;
         if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
             unit = new TranslationUnit(list);
@@ -46,7 +46,7 @@ public class _translation_unit : ParseRule {
 public class _external_declaration : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int a;");
-        PTNode node;
+        ExternalDeclaration node;
         int current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
@@ -61,8 +61,8 @@ public class _external_declaration : ParseRule {
         return true;
     }
 
-    public static int Parse(List<Token> src, int pos, out PTNode node) {
-        return Parser.Parse2Choices<PTNode, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+    public static int Parse(List<Token> src, int pos, out ExternalDeclaration node) {
+        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -123,7 +123,7 @@ public class _function_definition : ParseRule {
         }
 
         // match compound_statement
-        Statement stmt;
+        CompoundStatement stmt;
         current = _compound_statement.Parse(src, current, out stmt);
         if (current == -1) {
             def = null;
