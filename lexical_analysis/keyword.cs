@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 // keyword
 // -------
@@ -48,7 +44,7 @@ public class TokenKeyword : Token {
         val = _val;
     }
     public readonly KeywordVal val;
-    public static Dictionary<string, KeywordVal> keywords = new Dictionary<string, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
+    public static Dictionary<String, KeywordVal> keywords = new Dictionary<String, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
         { "AUTO",        KeywordVal.AUTO      },
         { "DOUBLE",      KeywordVal.DOUBLE    },
         { "INT",         KeywordVal.INT       },
@@ -83,7 +79,7 @@ public class TokenKeyword : Token {
         { "WHILE",       KeywordVal.WHILE     }
     };
 
-    public override string ToString() {
+    public override String ToString() {
         return type.ToString() + ": " + val.ToString();
     }
 

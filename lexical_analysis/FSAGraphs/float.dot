@@ -1,0 +1,40 @@
+digraph float {
+    node [shape = circle, height = 0.6, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+    
+    node [shape = circle];
+        START; D; P; DE; DES;
+
+    node [style = filled];
+        DP PD DED PDF DPL;
+    
+    // node [shape = circle, fixedsize = true];
+        START -> D [ label = "[0-9]" ];
+        START -> P [ label = ".(dot)" ];
+        
+        D -> DE [ label = "[Ee]" ];
+        D -> D [ label = "[0-9]" ];
+        D -> DP [ label = ".(dot)" ];
+        
+        P -> PD [ label = "[0-9]" ];
+
+        DP -> DE [ label = "[Ee]" ];
+        DP -> PDF [ label = "[Ff]" ];
+        DP -> PD [ label = "[0-9]" ];
+        DP -> DPL [ label = "[Ll]" ];
+
+        PD -> PD [ label = "[0-9]" ];
+        PD -> PDF [ label = "[Ff]" ];
+        PD -> DE [ label = "[Ee]" ];
+        PD -> DPL [ label = "[Ll]" ];
+
+        DE -> DES [ label = "[+-]" ];
+        DE -> DED [ label = "[0-9]" ];
+
+        DES -> DED [ label = "[0-9]" ];
+
+        DED -> DED [ label = "[0-9]" ];
+        DED -> PDF [ label = "[Ff]" ];
+        DED -> DPL [ label = "[Ll]" ];
+
+}

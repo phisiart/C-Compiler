@@ -18,7 +18,7 @@ public class Token {
         type = _type;
     }
 
-    public override string ToString() {
+    public override String ToString() {
         return type.ToString();
     }
     public readonly TokenType type;
@@ -29,107 +29,96 @@ public class EmptyToken : Token {
         : base(TokenType.NONE) {}
 }
 
-public enum FSAStatus {
-    NONE,
-    END,
-    RUN,
-    ERROR
-}
 
-interface FSA {
-    FSAStatus GetStatus();
-    void ReadChar(char ch);
-    void Reset();
-    void ReadEOF();
-    Token RetrieveToken();
-}
 
 public class FSASpace : FSA {
-    public enum SpaceState {
+    private enum State {
         START,
         END,
         ERROR,
         SPACE
     };
 
-    public SpaceState state;
+    private State state;
+
     public FSASpace() {
-        state = SpaceState.START;
+        state = State.START;
     }
-    public void Reset() {
-        state = SpaceState.START;
+
+    public override sealed void Reset() {
+        state = State.START;
     }
-    public FSAStatus GetStatus() {
-        if (state == SpaceState.START) {
+
+    public override sealed FSAStatus GetStatus() {
+        if (state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == SpaceState.END) {
+        } else if (state == State.END) {
             return FSAStatus.END;
-        } else if (state == SpaceState.ERROR) {
+        } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
             return FSAStatus.RUN;
         }
     }
 
-    private bool IsSpace(char ch) {
-        return (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\f' || ch == '\v');
-    }
-
-    public Token RetrieveToken() {
+    public override sealed Token RetrieveToken() {
         return new EmptyToken();
     }
 
-    public void ReadChar(char ch) {
+    public override sealed void ReadChar(Char ch) {
         switch (state) {
-        case SpaceState.END:
-        case SpaceState.ERROR:
-            state = SpaceState.ERROR;
+        case State.END:
+        case State.ERROR:
+            state = State.ERROR;
             break;
-        case SpaceState.START:
-            if (IsSpace(ch)) {
-                state = SpaceState.SPACE;
+        case State.START:
+            if (Utils.IsSpace(ch)) {
+                state = State.SPACE;
             } else {
-                state = SpaceState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case SpaceState.SPACE:
-            if (IsSpace(ch)) {
-                state = SpaceState.SPACE;
+        case State.SPACE:
+            if (Utils.IsSpace(ch)) {
+                state = State.SPACE;
             } else {
-                state = SpaceState.END;
+                state = State.END;
             }
             break;
         }
     }
 
-    public void ReadEOF() {
+    public override sealed void ReadEOF() {
         switch (state) {
-        case SpaceState.SPACE:
-            state = SpaceState.END;
+        case State.SPACE:
+            state = State.END;
             break;
         default:
-            state = SpaceState.ERROR;
+            state = State.ERROR;
             break;
         }
     }
 }
 
 public class FSANewLine : FSA {
-    public enum NewLineState {
+    private enum NewLineState {
         START,
         END,
         ERROR,
         NEWLINE
     };
 
-    public NewLineState state;
+    private NewLineState state;
+
     public FSANewLine() {
         state = NewLineState.START;
     }
-    public void Reset() {
+
+    public override sealed void Reset() {
         state = NewLineState.START;
     }
-    public FSAStatus GetStatus() {
+
+    public override sealed FSAStatus GetStatus() {
         if (state == NewLineState.START) {
             return FSAStatus.NONE;
         } else if (state == NewLineState.END) {
@@ -140,10 +129,12 @@ public class FSANewLine : FSA {
             return FSAStatus.RUN;
         }
     }
-    public Token RetrieveToken() {
+
+    public override sealed Token RetrieveToken() {
         return new EmptyToken();
     }
-    public void ReadChar(char ch) {
+
+    public override sealed void ReadChar(Char ch) {
         switch (state) {
         case NewLineState.END:
         case NewLineState.ERROR:
@@ -162,7 +153,7 @@ public class FSANewLine : FSA {
         }
     }
 
-    public void ReadEOF() {
+    public override sealed void ReadEOF() {
         switch (state) {
         case NewLineState.NEWLINE:
             state = NewLineState.END;
@@ -176,18 +167,27 @@ public class FSANewLine : FSA {
 
 public class Scanner {
     public Scanner() {
-        fsas = new List<FSA>();
-        fsas.Add(new FSAFloat());
-        fsas.Add(new FSAInt());
-        fsas.Add(new FSAOperator());
-        fsas.Add(new FSAIdentifier());
-        fsas.Add(new FSASpace());
-        fsas.Add(new FSANewLine());
-        fsas.Add(new FSACharConst());
-        fsas.Add(new FSAString());
+        fsas = new List<FSA>() {
+            new FSAFloat(),
+            new FSAInt(),
+            new FSAOperator(),
+            new FSAIdentifier(),
+            new FSASpace(),
+            new FSANewLine(),
+            new FSACharConst(),
+            new FSAString(),
+        };
+        //fsas.Add(new FSAFloat());
+        //fsas.Add(new FSAInt());
+        //fsas.Add(new FSAOperator());
+        //fsas.Add(new FSAIdentifier());
+        //fsas.Add(new FSASpace());
+        //fsas.Add(new FSANewLine());
+        //fsas.Add(new FSACharConst());
+        //fsas.Add(new FSAString());
     }
 
-    public void OpenFile(string file_name) {
+    public void OpenFile(String file_name) {
         if (File.Exists(file_name)) {
             src = File.ReadAllText(file_name);
         } else {
@@ -237,13 +237,13 @@ public class Scanner {
         tokens.Add(new EmptyToken());
     }
 
-    public override string ToString() {
-        string str = "";
+    public override String ToString() {
+        String str = "";
         tokens.ForEach(token => str += token.ToString() + "\n");
         return str;
     }
 
-    public string src;
+    public String src;
     private List<FSA> fsas;
     public List<Token> tokens;
 

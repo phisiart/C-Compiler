@@ -1,54 +1,54 @@
 ﻿using System;
 
-// identifier
-// ----------
-// if the identifier is found to be a keyword, then it will be a keyword
+// TokenIdentifier
+// ===============
+// If the identifier is found to be a keyword, then it will be a keyword
+// 
 public class TokenIdentifier : Token {
     public TokenIdentifier(String _val)
         : base(TokenType.IDENTIFIER) {
         val = _val;
     }
-    public String val;
-    public override string ToString() {
+    public readonly String val;
+    public override String ToString() {
         return type.ToString() + ": " + val;
     }
 }
 
 public class FSAIdentifier : FSA {
-    public enum IdState {
+    private enum State {
         START,
         END,
         ERROR,
         ID
     };
-    public IdState state;
+    private State state;
+    private String scanned;
+
     public FSAIdentifier() {
-        state = IdState.START;
-        str = "";
+        state = State.START;
+        scanned = "";
     }
-    public void Reset() {
-        state = IdState.START;
-        str = "";
+
+    public override sealed void Reset() {
+        state = State.START;
+        scanned = "";
     }
-    public FSAStatus GetStatus() {
-        if (state == IdState.START) {
+
+    public override sealed FSAStatus GetStatus() {
+        if (state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == IdState.END) {
+        } else if (state == State.END) {
             return FSAStatus.END;
-        } else if (state == IdState.ERROR) {
+        } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
             return FSAStatus.RUN;
         }
     }
 
-    string str;
-    private bool IsNonDigit(char ch) {
-        return (ch == '_' || char.IsLetter(ch));
-    }
-
-    public Token RetrieveToken() {
-        String name = str.Substring(0, str.Length - 1);
+    public override sealed Token RetrieveToken() {
+        String name = scanned.Substring(0, scanned.Length - 1);
         if (TokenKeyword.keywords.ContainsKey(name)) {
             return new TokenKeyword(TokenKeyword.keywords[name]);
         } else {
@@ -56,38 +56,38 @@ public class FSAIdentifier : FSA {
         }
     }
 
-    public void ReadChar(char ch) {
-        str = str + ch;
+    public override sealed void ReadChar(Char ch) {
+        scanned = scanned + ch;
         switch (state) {
-        case IdState.END:
-        case IdState.ERROR:
-            state = IdState.ERROR;
+        case State.END:
+        case State.ERROR:
+            state = State.ERROR;
             break;
-        case IdState.START:
-            if (IsNonDigit(ch)) {
-                state = IdState.ID;
+        case State.START:
+            if (ch == '_' || Char.IsLetter(ch)) {
+                state = State.ID;
             } else {
-                state = IdState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case IdState.ID:
-            if (IsNonDigit(ch) || char.IsDigit(ch)) {
-                state = IdState.ID;
+        case State.ID:
+            if (Char.IsLetterOrDigit(ch) || ch == '-') {
+                state = State.ID;
             } else {
-                state = IdState.END;
+                state = State.END;
             }
             break;
         }
     }
 
-    public void ReadEOF() {
-        str = str + '0';
+    public override sealed void ReadEOF() {
+        scanned = scanned + '0';
         switch (state) {
-        case IdState.ID:
-            state = IdState.END;
+        case State.ID:
+            state = State.END;
             break;
         default:
-            state = IdState.ERROR;
+            state = State.ERROR;
             break;
         }
     }

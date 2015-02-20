@@ -1,11 +1,11 @@
 ﻿using System;
 
-// TokenChar
-// =========
+// TokenCharConst
+// ==============
 // A character constant
 // 
-public class TokenChar : Token {
-    public TokenChar(String _raw, Char _val)
+public class TokenCharConst : Token {
+    public TokenCharConst(String _raw, Char _val)
         : base(TokenType.CHAR) {
         raw = _raw;
         val = _val;
@@ -26,15 +26,15 @@ public class TokenChar : Token {
 // There are multiple ways to represent a character:
 // * A normal character : any character other than \\ \n or <quote>
 //     Note that <quote> might be \' or \" depending on the context.
-//     For example, inside a string, single quote are allowed, which means that the following code is legal:
-//       char *str = "single quote here >>> ' <<< see that?";
+//     For example, inside a String, single quote are allowed, which means that the following code is legal:
+//       Char *str = "single quote here >>> ' <<< see that?";
 
-//     However, if we need a double quote inside a string, we have to use an escape character, like this:
-//       char *str = "double quote needs to be escaped >>> \" <<<";
+//     However, if we need a double quote inside a String, we have to use an escape character, like this:
+//       Char *str = "double quote needs to be escaped >>> \" <<<";
 //
-//     Inside a char, double quotes are allowed while single quotes need to be escaped.
-//       char double_quote = '"';  // allowed
-//       char single_quote = '\''; // needs to be escaped
+//     Inside a Char, double quotes are allowed while single quotes need to be escaped.
+//       Char double_quote = '"';  // allowed
+//       Char single_quote = '\''; // needs to be escaped
 // 
 // * An escape character : \a \b \f \n \r \t \v \' \" \\ \?
 //     Note that even though \' and \" might not needs to be escaped, you can always use them as escaped.
@@ -47,7 +47,7 @@ public class TokenChar : Token {
 // * A hexadecimal number after a backslash and an 'x' or 'X'. FOr example : \xFF.
 // 
 public class FSAChar : FSA {
-    public enum CharState {
+    private enum State {
         START,
         END,
         ERROR,
@@ -61,29 +61,31 @@ public class FSAChar : FSA {
         SXHH
     }
 
-    private CharState state;
+    private State state;
     private String scanned;
     
     // quote : Char
     // ============
-    // \' in a char, and \" in a string.
+    // \' in a Char, and \" in a String.
     private Char quote;
 
-    public FSAChar(char _quote) {
-        state = CharState.START;
+    public FSAChar(Char _quote) {
+        state = State.START;
         quote = _quote;
         scanned = "";
     }
-    public void Reset() {
+
+    public override sealed void Reset() {
         scanned = "";
-        state = CharState.START;
+        state = State.START;
     }
-    public FSAStatus GetStatus() {
-        if (state == CharState.START) {
+
+    public override sealed FSAStatus GetStatus() {
+        if (state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == CharState.END) {
+        } else if (state == State.END) {
             return FSAStatus.END;
-        } else if (state == CharState.ERROR) {
+        } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
             return FSAStatus.RUN;
@@ -92,47 +94,13 @@ public class FSAChar : FSA {
 
     // IsChar : Char -> Boolean
     // ========================
-    // the character is a 'normal' char, other than <quote> \\ or \n
+    // the character is a 'normal' Char, other than <quote> \\ or \n
     // 
     private Boolean IsChar(Char ch) {
         return ch != quote && ch != '\\' && ch != '\n';
     }
 
-    // IsEscapeChar : Char -> Boolean
-    // ==============================
-    // 
-    private Boolean IsEscapeChar(Char ch) {
-        switch (ch) {
-        case 'a':
-        case 'b':
-        case 'f':
-        case 'n':
-        case 'r':
-        case 't':
-        case 'v':
-        case '\'':
-        case '\"':
-        case '\\':
-        case '?':
-            return true;
-        default:
-            return false;
-        }
-    }
 
-    // IsHexDigit : Char -> Boolean
-    // ============================
-    // 
-    private Boolean IsHexDigit(Char ch) {
-        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-    }
-
-    // IsOctDigit : Char -> Boolean
-    // ============================
-    // 
-    private Boolean IsOctDigit(Char ch) {
-        return ch >= '0' && ch <= '7';
-    }
 
     // RetrieveRaw : () -> String
     // ==========================
@@ -179,8 +147,9 @@ public class FSAChar : FSA {
 
     // RetrieveToken : () -> Token
     // ===========================
+    // Note that this function never gets used, because FSAChar is just an inner FSA for other FSAs.
     // 
-    public Token RetrieveToken() {
+    public override sealed Token RetrieveToken() {
         return new EmptyToken();
     }
 
@@ -188,72 +157,72 @@ public class FSAChar : FSA {
     // =====================
     // Implementation of the FSA
     // 
-    public void ReadChar(Char ch) {
+    public override sealed void ReadChar(Char ch) {
         scanned = scanned + ch;
         switch (state) {
-        case CharState.END:
-        case CharState.ERROR:
-            state = CharState.ERROR;
+        case State.END:
+        case State.ERROR:
+            state = State.ERROR;
             break;
-        case CharState.START:
+        case State.START:
             if (IsChar(ch)) {
-                state = CharState.C;
+                state = State.C;
             } else if (ch == '\\') {
-                state = CharState.S;
+                state = State.S;
             } else {
-                state = CharState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case CharState.C:
-            state = CharState.END;
+        case State.C:
+            state = State.END;
             break;
-        case CharState.S:
-            if (IsEscapeChar(ch)) {
-                state = CharState.C;
-            } else if (IsOctDigit(ch)) {
-                state = CharState.SO;
+        case State.S:
+            if (Utils.IsEscapeChar(ch)) {
+                state = State.C;
+            } else if (Utils.IsOctDigit(ch)) {
+                state = State.SO;
             } else if (ch == 'x' || ch == 'X') {
-                state = CharState.SX;
+                state = State.SX;
             } else {
-                state = CharState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case CharState.SX:
-            if (IsHexDigit(ch)) {
-                state = CharState.SXH;
+        case State.SX:
+            if (Utils.IsHexDigit(ch)) {
+                state = State.SXH;
             } else {
-                state = CharState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case CharState.SXH:
-            if (IsHexDigit(ch)) {
-                state = CharState.SXHH;
+        case State.SXH:
+            if (Utils.IsHexDigit(ch)) {
+                state = State.SXHH;
             } else {
-                state = CharState.END;
+                state = State.END;
             }
             break;
-        case CharState.SXHH:
-            state = CharState.END;
+        case State.SXHH:
+            state = State.END;
             break;
-        case CharState.SO:
-            if (IsOctDigit(ch)) {
-                state = CharState.SOO;
+        case State.SO:
+            if (Utils.IsOctDigit(ch)) {
+                state = State.SOO;
             } else {
-                state = CharState.END;
+                state = State.END;
             }
             break;
-        case CharState.SOO:
-            if (IsOctDigit(ch)) {
-                state = CharState.SOOO;
+        case State.SOO:
+            if (Utils.IsOctDigit(ch)) {
+                state = State.SOOO;
             } else {
-                state = CharState.END;
+                state = State.END;
             }
             break;
-        case CharState.SOOO:
-            state = CharState.END;
+        case State.SOOO:
+            state = State.END;
             break;
         default:
-            state = CharState.ERROR;
+            state = State.ERROR;
             break;
         }
     }
@@ -261,19 +230,19 @@ public class FSAChar : FSA {
     // ReadEOF : () -> ()
     // ==================
     // 
-    public void ReadEOF() {
+    public override sealed void ReadEOF() {
         scanned = scanned + '0';
         switch (state) {
-        case CharState.C:
-        case CharState.SO:
-        case CharState.SOO:
-        case CharState.SOOO:
-        case CharState.SXH:
-        case CharState.SXHH:
-            state = CharState.END;
+        case State.C:
+        case State.SO:
+        case State.SOO:
+        case State.SOOO:
+        case State.SXH:
+        case State.SXHH:
+            state = State.END;
             break;
         default:
-            state = CharState.ERROR;
+            state = State.ERROR;
             break;
         }
     }
@@ -286,15 +255,15 @@ public class FSAChar : FSA {
 // Upon finish, we can retrive a token of character.
 // 
 // A character constant can either be represented by
-// * '<char>'
+// * '<Char>'
 // or
-// * L'<char>'
+// * L'<Char>'
 //
 // The character inside the quotes is read by FSAChar.
 // Note that if the inner character is a single quote, it needs to be escaped.
 // 
 public class FSACharConst : FSA {
-    public enum CharConstState {
+    private enum State {
         START,
         END,
         ERROR,
@@ -304,102 +273,104 @@ public class FSACharConst : FSA {
         QCQ
     };
 
-    private CharConstState state;
+    private State state;
     private Char val;
     private String raw;
+    private FSAChar fsachar;
 
     public FSACharConst() {
-        state = CharConstState.START;
+        state = State.START;
         fsachar = new FSAChar('\'');
     }
-    public void Reset() {
-        state = CharConstState.START;
+
+    public override sealed void Reset() {
+        state = State.START;
         fsachar.Reset();
     }
-    public FSAStatus GetStatus() {
-        if (state == CharConstState.START) {
+
+    public override sealed FSAStatus GetStatus() {
+        if (state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == CharConstState.END) {
+        } else if (state == State.END) {
             return FSAStatus.END;
-        } else if (state == CharConstState.ERROR) {
+        } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
             return FSAStatus.RUN;
         }
     }
 
-    public Token RetrieveToken() {
-        return new TokenChar(raw, val);
+    public override sealed Token RetrieveToken() {
+        return new TokenCharConst(raw, val);
     }
-    public void ReadChar(char ch) {
+
+    public override sealed void ReadChar(Char ch) {
         switch (state) {
-        case CharConstState.END:
-        case CharConstState.ERROR:
-            state = CharConstState.ERROR;
+        case State.END:
+        case State.ERROR:
+            state = State.ERROR;
             break;
-        case CharConstState.START:
+        case State.START:
             switch (ch) {
             case 'L':
-                state = CharConstState.L;
+                state = State.L;
                 break;
             case '\'':
-                state = CharConstState.Q;
+                state = State.Q;
                 fsachar.Reset();
                 break;
             default:
-                state = CharConstState.ERROR;
+                state = State.ERROR;
                 break;
             }
             break;
-        case CharConstState.L:
+        case State.L:
             if (ch == '\'') {
-                state = CharConstState.Q;
+                state = State.Q;
                 fsachar.Reset();
             } else {
-                state = CharConstState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case CharConstState.Q:
+        case State.Q:
             fsachar.ReadChar(ch);
             switch (fsachar.GetStatus()) {
             case FSAStatus.END:
-                state = CharConstState.QC;
+                state = State.QC;
                 raw = fsachar.RetrieveRaw();
                 val = fsachar.RetrieveChar();
                 fsachar.Reset();
                 ReadChar(ch);
                 break;
             case FSAStatus.ERROR:
-                state = CharConstState.ERROR;
+                state = State.ERROR;
                 break;
             default:
                 break;
             }
             break;
-        case CharConstState.QC:
+        case State.QC:
             if (ch == '\'') {
-                state = CharConstState.QCQ;
+                state = State.QCQ;
             } else {
-                state = CharConstState.ERROR;
+                state = State.ERROR;
             }
             break;
-        case CharConstState.QCQ:
-            state = CharConstState.END;
+        case State.QCQ:
+            state = State.END;
             break;
         default:
-            state = CharConstState.ERROR;
+            state = State.ERROR;
             break;
         }
     }
 
-    public void ReadEOF() {
-        if (state == CharConstState.QCQ) {
-            state = CharConstState.END;
+    public override sealed void ReadEOF() {
+        if (state == State.QCQ) {
+            state = State.END;
         } else {
-            state = CharConstState.ERROR;
+            state = State.ERROR;
         }
     }
-
-    private FSAChar fsachar;
 
 }

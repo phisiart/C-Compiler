@@ -1,0 +1,20 @@
+digraph string {
+    node [shape = circle, height = 0.6, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+    START; L; Q;
+
+    node [style = filled];
+    QQ;
+
+    START -> L [label = "L"];
+    START -> Q [label = "\\\""];
+
+    L -> Q [label = "\\\""];
+    
+    Q -> Q [label = "<FSAChar succeed>"];
+
+    Q -> QQ [label = "\\\""];
+
+}

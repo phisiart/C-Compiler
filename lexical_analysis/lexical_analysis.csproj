@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="char.cs" />
     <Compile Include="float.cs" />
+    <Compile Include="fsa.cs" />
     <Compile Include="identifier.cs" />
     <Compile Include="int.cs" />
     <Compile Include="keyword.cs" />
@@ -52,6 +53,7 @@
     <Compile Include="string.cs" />
     <Compile Include="strtable.cs" />
     <Compile Include="tokens.cs" />
+    <Compile Include="utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

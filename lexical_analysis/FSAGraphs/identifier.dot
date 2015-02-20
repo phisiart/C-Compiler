@@ -1,0 +1,14 @@
+digraph identifier {
+	node [shape = circle, height = 0.6, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+    START;
+
+    node [style = filled];
+    ID;
+
+    START -> ID [label = "[_a-zA-Z]"];
+    ID -> ID [label = "[_0-9a-zA-Z]"];
+    
+}

@@ -1,50 +1,52 @@
 ﻿using System;
 
-// float
-// -----
-// there are two types of floating numbers: float & double
+
 public enum FloatSuffix {
     NONE,
     F,
-    LF
+    L
 }
 
-public class TokenFloat : Token {
-    public TokenFloat(Double _val, FloatSuffix _suffix, String _raw)
+// TokenFloatConst
+// ===============
+// The token representing a floating number.
+// It can either be a float or double.
+// 
+public class TokenFloatConst : Token {
+    public TokenFloatConst(Double _val, FloatSuffix _suffix, String _raw)
         : base(TokenType.FLOAT) {
         val = _val;
         suffix = _suffix;
         raw = _raw;
     }
+
     public readonly Double val;
     public readonly String raw;
     public readonly FloatSuffix suffix;
-    public override string ToString() {
-        string str = type.ToString();
+
+    public override String ToString() {
+        String str = type.ToString();
         switch (suffix) {
         case FloatSuffix.F:
             str += "(float)";
             break;
-        case FloatSuffix.LF:
+        case FloatSuffix.L:
             str += "(long double)";
             break;
         default:
+            str += "(double)";
             break;
         }
         return str + ": " + val.ToString() + " \"" + raw + "\"";
     }
 }
 
+// FSAFloat
+// ========
+// The FSA for scanning a float.
+// 
 public class FSAFloat : FSA {
-    string raw;
-    Int64 int_part;
-    Int64 frac_part;
-    Int64 frac_count;
-    Int64 exp_part;
-    bool exp_pos;
-    FloatSuffix float_type;
-
-    public enum FloatState {
+    private enum State {
         START,
         END,
         ERROR,
@@ -59,205 +61,206 @@ public class FSAFloat : FSA {
         DPL
     };
 
-    public FloatState state;
+    private String raw;
+    private Int64 int_part;
+    private Int64 frac_part;
+    private Int64 frac_count;
+    private Int64 exp_part;
+    private Boolean exp_pos;
+    private FloatSuffix suffix;
+    private State state;
 
     public FSAFloat() {
-        state = FloatState.START;
+        state = State.START;
         int_part = 0;
         frac_part = 0;
         frac_count = 0;
         exp_part = 0;
-        float_type = FloatSuffix.NONE;
-        exp_pos = true;
-        raw = "";
-    }
-    public void Reset() {
-        state = FloatState.START;
-        int_part = 0;
-        frac_part = 0;
-        frac_count = 0;
-        exp_part = 0;
-        float_type = FloatSuffix.NONE;
+        suffix = FloatSuffix.NONE;
         exp_pos = true;
         raw = "";
     }
 
-    public FSAStatus GetStatus() {
+    public override sealed void Reset() {
+        state = State.START;
+        int_part = 0;
+        frac_part = 0;
+        frac_count = 0;
+        exp_part = 0;
+        suffix = FloatSuffix.NONE;
+        exp_pos = true;
+        raw = "";
+    }
+
+    public override sealed FSAStatus GetStatus() {
         switch (state) {
-        case FloatState.START:
+        case State.START:
             return FSAStatus.NONE;
-        case FloatState.END:
+        case State.END:
             return FSAStatus.END;
-        case FloatState.ERROR:
+        case State.ERROR:
             return FSAStatus.ERROR;
         default:
             return FSAStatus.RUN;
         }
     }
 
-    public Token RetrieveToken() {
+    public override sealed Token RetrieveToken() {
         Double val;
         if (exp_pos) {
             val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, exp_part);
         } else {
             val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, -exp_part);
         }
-        return new TokenFloat(val, float_type, raw.Substring(0, raw.Length - 1));
+        return new TokenFloatConst(val, suffix, raw.Substring(0, raw.Length - 1));
     }
 
-    public void ReadChar(char ch) {
+    public override sealed void ReadChar(Char ch) {
         raw += ch;
         switch (state) {
-        case FloatState.ERROR:
-        case FloatState.END:
-            state = FloatState.ERROR;
+        case State.ERROR:
+        case State.END:
+            state = State.ERROR;
             break;
 
-        case FloatState.START:
-            if (char.IsDigit(ch)) {
+        case State.START:
+            if (Char.IsDigit(ch)) {
                 int_part = ch - '0';
-                state = FloatState.D;
+                state = State.D;
             } else if (ch == '.') {
-                state = FloatState.P;
+                state = State.P;
             } else {
-                state = FloatState.ERROR;
+                state = State.ERROR;
             }
             break;
 
-        case FloatState.D:
-            if (char.IsDigit(ch)) {
+        case State.D:
+            if (Char.IsDigit(ch)) {
                 int_part *= 10;
                 int_part += ch - '0';
-                state = FloatState.D;
+                state = State.D;
             } else if (ch == 'e' || ch == 'E') {
-                state = FloatState.DE;
+                state = State.DE;
             } else if (ch == '.') {
-                state = FloatState.DP;
+                state = State.DP;
             } else {
-                state = FloatState.ERROR;
+                state = State.ERROR;
             }
             break;
 
-        case FloatState.P:
-            if (char.IsDigit(ch)) {
+        case State.P:
+            if (Char.IsDigit(ch)) {
                 frac_part = ch - '0';
                 frac_count = 1;
-                state = FloatState.PD;
+                state = State.PD;
             } else {
-                state = FloatState.ERROR;
+                state = State.ERROR;
             }
             break;
 
-        case FloatState.DP:
-            if (char.IsDigit(ch)) {
+        case State.DP:
+            if (Char.IsDigit(ch)) {
                 frac_part = ch - '0';
                 frac_count = 1;
-                state = FloatState.PD;
+                state = State.PD;
             } else if (ch == 'e' || ch == 'E') {
-                state = FloatState.DE;
+                state = State.DE;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatSuffix.F;
-                state = FloatState.PDF;
+                suffix = FloatSuffix.F;
+                state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatSuffix.LF;
-                state = FloatState.DPL;
+                suffix = FloatSuffix.L;
+                state = State.DPL;
             } else {
-                state = FloatState.END;
+                state = State.END;
             }
             break;
 
-        case FloatState.PD:
-            if (char.IsDigit(ch)) {
+        case State.PD:
+            if (Char.IsDigit(ch)) {
                 frac_part *= 10;
                 frac_part += ch - '0';
                 frac_count++;
-                state = FloatState.PD;
+                state = State.PD;
             } else if (ch == 'e' || ch == 'E') {
-                state = FloatState.DE;
+                state = State.DE;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatSuffix.F;
-                state = FloatState.PDF;
+                suffix = FloatSuffix.F;
+                state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatSuffix.LF;
-                state = FloatState.DPL;
+                suffix = FloatSuffix.L;
+                state = State.DPL;
             } else {
-                state = FloatState.END;
+                state = State.END;
             }
             break;
 
-        case FloatState.DE:
-            if (char.IsDigit(ch)) {
+        case State.DE:
+            if (Char.IsDigit(ch)) {
                 exp_part = ch - '0';
-                state = FloatState.DED;
+                state = State.DED;
             } else if (ch == '+' || ch == '-') {
                 if (ch == '-') {
                     exp_pos = false;
                 }
-                state = FloatState.DES;
+                state = State.DES;
             } else {
-                state = FloatState.ERROR;
+                state = State.ERROR;
             }
             break;
 
-        case FloatState.DES:
-            if (char.IsDigit(ch)) {
+        case State.DES:
+            if (Char.IsDigit(ch)) {
                 exp_part = ch - '0';
-                state = FloatState.DED;
+                state = State.DED;
             } else {
-                state = FloatState.ERROR;
+                state = State.ERROR;
             }
             break;
 
-        case FloatState.DPL:
-            //if (ch == 'f') {
-            //    float_type = FloatType.LF;
-            //    state = FloatState.PDF;
-            //} else {
-            //    state = FloatState.ERROR;
-            //}
-            //break;
-            float_type = FloatSuffix.LF;
-            state = FloatState.END;
+        case State.DPL:
+            suffix = FloatSuffix.L;
+            state = State.END;
             break;
 
-        case FloatState.DED:
-            if (char.IsDigit(ch)) {
+        case State.DED:
+            if (Char.IsDigit(ch)) {
                 exp_part *= 10;
                 exp_part += ch - '0';
-                state = FloatState.DED;
+                state = State.DED;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatSuffix.F;
-                state = FloatState.PDF;
+                suffix = FloatSuffix.F;
+                state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatSuffix.LF;
-                state = FloatState.DPL;
+                suffix = FloatSuffix.L;
+                state = State.DPL;
             } else {
-                state = FloatState.END;
+                state = State.END;
             }
             break;
 
-        case FloatState.PDF:
-            state = FloatState.END;
+        case State.PDF:
+            state = State.END;
             break;
 
         default:
-            state = FloatState.ERROR;
+            state = State.ERROR;
             break;
         }
 
     }
 
-    public void ReadEOF() {
+    public override sealed void ReadEOF() {
         switch (state) {
-        case FloatState.DP:
-        case FloatState.PD:
-        case FloatState.DED:
-        case FloatState.PDF:
-        case FloatState.DPL:
-            state = FloatState.END;
+        case State.DP:
+        case State.PD:
+        case State.DED:
+        case State.PDF:
+        case State.DPL:
+            state = State.END;
             break;
         default:
-            state = FloatState.ERROR;
+            state = State.ERROR;
             break;
         }
     }

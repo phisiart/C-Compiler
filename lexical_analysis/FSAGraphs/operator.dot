@@ -1,0 +1,57 @@
+digraph operator {
+    rankdir = LR;
+
+    node [shape = circle, width = 0.7, height = 0.7, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+        START;
+
+    node [style = filled];
+        FINISH; SUB; ADD; AMP; MULT; LT; GT; EQ; OR; NOT; DIV; MOD; XOR; LTLT; GTGT;
+
+
+    START -> SUB [label = "-"];
+    START -> ADD [label = "+"];
+    START -> AMP [label = "&"];
+    START -> MULT [label = "*"];
+    START -> LT [label = "<"];
+    START -> GT [label = ">"];
+    START -> EQ [label = "="];
+    START -> OR [label = "|"];
+    START -> NOT [label = "!"];
+    START -> DIV [label = "/"];
+    START -> MOD [label = "%"];
+    START -> XOR [label = "^"];
+    START -> FINISH [label = "[\\[\\]().,?:~;{}]"];
+
+    SUB -> FINISH [label = "[>-=]"];
+
+    ADD -> FINISH [label = "[+=]"];
+
+    AMP -> FINISH [label = "[&=]"];
+
+    MULT -> FINISH [label = "="];
+
+    LT -> FINISH [label = "="];
+    LT -> LTLT [label = "<"];
+
+    GT -> FINISH [label = "="];
+    GT -> GTGT [label = ">"];
+
+    EQ -> FINISH [label = "="];
+
+    OR -> FINISH [label = "[|=]"];
+
+    NOT -> FINISH [label = "="];
+
+    DIV -> FINISH [label = "="];
+
+    MOD -> FINISH [label = "="];
+
+    XOR -> FINISH [label = "="];
+
+    LTLT -> FINISH [label = "="];
+
+    GTGT -> FINISH [label = "="];
+}
