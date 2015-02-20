@@ -8,12 +8,16 @@ using System.IO;
 // string literal
 // --------------
 public class TokenString : Token {
-    public TokenString() {
-        type = TokenType.STRING;
+    public TokenString(String _val, Int32 _idx, String _raw)
+        : base(TokenType.STRING) {
+        val = _val;
+        idx = _idx;
+        raw = _raw;
     }
-    public string raw;
-    public string val;
-    public int idx;
+    public readonly String raw;
+    public readonly String val;
+    public readonly int idx;
+
     public override string ToString() {
         return type.ToString() + ": " + "\"" + raw + "\"" + "\n\"" + val + "\"";
     }
@@ -56,17 +60,12 @@ public class FSAString : FSA {
     public string val;
     public string raw;
     public Token RetrieveToken() {
-        TokenString token = new TokenString();
-        token.type = TokenType.STRING;
-        token.val = val;
-        token.raw = raw;
         int idx;
         if ((idx = StringTable.entrys.FindIndex(x => x == raw)) == -1) {
             StringTable.entrys.Add(raw);
             idx = StringTable.entrys.Count - 1;
         }
-        token.idx = idx;
-        return token;
+        return new TokenString(val, idx, raw);
     }
     public void ReadChar(char ch) {
         switch (state) {

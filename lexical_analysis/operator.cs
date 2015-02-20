@@ -57,10 +57,11 @@ public enum OperatorVal {
 }
 
 public class TokenOperator : Token {
-    public TokenOperator() {
-        type = TokenType.OPERATOR;
+    public TokenOperator(OperatorVal _val)
+        : base(TokenType.OPERATOR) {
+        val = _val;
     }
-    public OperatorVal val;
+    public readonly OperatorVal val;
     public static Dictionary<string, OperatorVal> ops = new Dictionary<string, OperatorVal>() {
         { "[",    OperatorVal.LBRACKET     },
         { "]",    OperatorVal.RBRACKET     },
@@ -187,14 +188,11 @@ public class FSAOperator : FSA {
     }
 
     private string str;
+
     public Token RetrieveToken() {
-        TokenOperator token = new TokenOperator();
-        token.type = TokenType.OPERATOR;
-        //Console.WriteLine("str = [{0}]", str.Substring(0, str.Length - 1));
-        //Console.WriteLine(TokenOperator.ops.ContainsKey(str.Substring(0, str.Length - 1)));
-        token.val = TokenOperator.ops[str.Substring(0, str.Length - 1)];
-        return token;
+        return new TokenOperator(TokenOperator.ops[str.Substring(0, str.Length - 1)]);
     }
+
     public void ReadChar(char ch) {
 
         str = str + ch;

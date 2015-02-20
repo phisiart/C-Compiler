@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 public enum TokenType {
@@ -17,10 +14,19 @@ public enum TokenType {
 }
 
 public class Token {
+    public Token(TokenType _type) {
+        type = _type;
+    }
+
     public override string ToString() {
         return type.ToString();
     }
-    public TokenType type;
+    public readonly TokenType type;
+}
+
+public class EmptyToken : Token {
+    public EmptyToken()
+        : base(TokenType.NONE) {}
 }
 
 public enum FSAStatus {
@@ -70,7 +76,7 @@ public class FSASpace : FSA {
     }
 
     public Token RetrieveToken() {
-        return new Token();
+        return new EmptyToken();
     }
 
     public void ReadChar(char ch) {
@@ -135,9 +141,7 @@ public class FSANewLine : FSA {
         }
     }
     public Token RetrieveToken() {
-        Token token = new Token();
-        token.type = TokenType.NONE;
-        return token;
+        return new EmptyToken();
     }
     public void ReadChar(char ch) {
         switch (state) {
@@ -170,8 +174,8 @@ public class FSANewLine : FSA {
     }
 }
 
-public class LexicalAnalysis {
-    public LexicalAnalysis() {
+public class Scanner {
+    public Scanner() {
         fsas = new List<FSA>();
         fsas.Add(new FSAFloat());
         fsas.Add(new FSAInt());
@@ -229,7 +233,8 @@ public class LexicalAnalysis {
         } else {
             Console.WriteLine("error");
         }
-        tokens.Add(new Token());
+
+        tokens.Add(new EmptyToken());
     }
 
     public override string ToString() {

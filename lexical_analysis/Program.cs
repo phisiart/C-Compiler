@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace lexical_analysis {
     class Program {
         static void Main(string[] args) {
-            LexicalAnalysis lex = new LexicalAnalysis();
+            Scanner lex = new Scanner();
             lex.src = "int main() { return 0; }";
             lex.Lex();
             List<Token> tokens = lex.tokens;

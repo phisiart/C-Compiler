@@ -164,7 +164,7 @@ public class Constant : Expression {
 // ==========
 // TODO : [finished] const float
 public class ConstFloat : Constant {
-    public ConstFloat(Double _val, FloatType _float_type) {
+    public ConstFloat(Double _val, FloatSuffix _float_type) {
         val = _val;
         float_type = _float_type;
     }
@@ -189,14 +189,14 @@ public class ConstFloat : Constant {
     // =======
     public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
         switch (float_type) {
-        case FloatType.F:
+        case FloatSuffix.F:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstFloat((float)val));
         default:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstDouble(val));
         }
     }
 
-    public FloatType float_type;
+    public FloatSuffix float_type;
     public Double val;
 }
 
@@ -204,7 +204,7 @@ public class ConstFloat : Constant {
 // ========
 // TODO : [finished] const int
 public class ConstInt : Constant {
-    public ConstInt(long _val, IntType _int_type) {
+    public ConstInt(long _val, IntSuffix _int_type) {
         val = _val;
         int_type = _int_type;
     }
@@ -232,15 +232,15 @@ public class ConstInt : Constant {
     // =======
     public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
         switch (int_type) {
-        case IntType.U:
-        case IntType.UL:
+        case IntSuffix.U:
+        case IntSuffix.UL:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
         default:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
         }
     }
 
-    public IntType int_type;
+    public IntSuffix int_type;
     public long val;
 }
 

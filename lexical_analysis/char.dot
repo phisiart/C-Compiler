@@ -1,0 +1,20 @@
+digraph {
+    node [shape = circle, height = 0.8, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+    S; SX; START;
+
+    node [style = filled];
+    C; SO; SOO; SOOO; SXH; SXHH;
+
+    START -> S [label = "\\"];
+    START -> C [label = "[^\\\'\\\\\\n]"];
+    S -> C [label = "[abfnrtv\\\'\\\"\\\\\\\?]"];
+    S -> SX [label = "[Xx]"];
+    S -> SO [label = "[0-7]"];
+    SO -> SOO [label = "[0-7]"];
+    SOO -> SOOO [label = "[0-7]"];
+    SX -> SXH [label = "[0-9a-fA-F]"];
+    SXH -> SXHH [label = "[0-9a-fA-F]"];
+}

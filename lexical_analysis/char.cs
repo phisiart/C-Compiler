@@ -1,23 +1,51 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
-// char
-// ----
+// TokenChar
+// =========
+// A character constant
+// 
 public class TokenChar : Token {
-    public TokenChar() {
-        type = TokenType.CHAR;
+    public TokenChar(String _raw, Char _val)
+        : base(TokenType.CHAR) {
+        raw = _raw;
+        val = _val;
     }
-    public string raw;
-    public char val;
-    public override string ToString() {
+    public readonly String raw;
+    public readonly Char val;
+    public override String ToString() {
         return type.ToString() + ": " + "\'" + raw + "\'" + "\n\'" + val + "\'";
     }
 }
 
+// FSAChar
+// =======
+// The FSA for scanning a C character.
+// Note that this FSA doesn't scan the surrounding quotes.
+// It is used in both FSACharConst and FSAString.
+// 
+// There are multiple ways to represent a character:
+// * A normal character : any character other than \\ \n or <quote>
+//     Note that <quote> might be \' or \" depending on the context.
+//     For example, inside a string, single quote are allowed, which means that the following code is legal:
+//       char *str = "single quote here >>> ' <<< see that?";
+
+//     However, if we need a double quote inside a string, we have to use an escape character, like this:
+//       char *str = "double quote needs to be escaped >>> \" <<<";
+//
+//     Inside a char, double quotes are allowed while single quotes need to be escaped.
+//       char double_quote = '"';  // allowed
+//       char single_quote = '\''; // needs to be escaped
+// 
+// * An escape character : \a \b \f \n \r \t \v \' \" \\ \?
+//     Note that even though \' and \" might not needs to be escaped, you can always use them as escaped.
+//     If you escape a character not listed above, the behavior is undefined in the standard.
+//     I'll just assume you need the unescaped character.
+//     For example, if you typed '\c', then I'll just treat it as 'c'.
+// 
+// * An octal number after a backslash. For example : \123.
+// 
+// * A hexadecimal number after a backslash and an 'x' or 'X'. FOr example : \xFF.
+// 
 public class FSAChar : FSA {
     public enum CharState {
         START,
@@ -31,16 +59,23 @@ public class FSAChar : FSA {
         SX,
         SXH,
         SXHH
-    };
+    }
 
-    public CharState state;
+    private CharState state;
+    private String scanned;
+    
+    // quote : Char
+    // ============
+    // \' in a char, and \" in a string.
+    private Char quote;
+
     public FSAChar(char _quote) {
         state = CharState.START;
         quote = _quote;
-        str = "";
+        scanned = "";
     }
     public void Reset() {
-        str = "";
+        scanned = "";
         state = CharState.START;
     }
     public FSAStatus GetStatus() {
@@ -55,12 +90,18 @@ public class FSAChar : FSA {
         }
     }
 
-    private char quote;
-    private bool IsChar(char ch) {
+    // IsChar : Char -> Boolean
+    // ========================
+    // the character is a 'normal' char, other than <quote> \\ or \n
+    // 
+    private Boolean IsChar(Char ch) {
         return ch != quote && ch != '\\' && ch != '\n';
     }
 
-    private bool IsEscapeChar(char ch) {
+    // IsEscapeChar : Char -> Boolean
+    // ==============================
+    // 
+    private Boolean IsEscapeChar(Char ch) {
         switch (ch) {
         case 'a':
         case 'b':
@@ -78,13 +119,34 @@ public class FSAChar : FSA {
             return false;
         }
     }
-    string str;
-    public string RetrieveRaw() {
-        return str.Substring(0, str.Length - 1);
+
+    // IsHexDigit : Char -> Boolean
+    // ============================
+    // 
+    private Boolean IsHexDigit(Char ch) {
+        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
     }
-    public char RetrieveChar() {
-        if (str.Length == 3) {
-            switch (str[1]) {
+
+    // IsOctDigit : Char -> Boolean
+    // ============================
+    // 
+    private Boolean IsOctDigit(Char ch) {
+        return ch >= '0' && ch <= '7';
+    }
+
+    // RetrieveRaw : () -> String
+    // ==========================
+    // 
+    public String RetrieveRaw() {
+        return scanned.Substring(0, scanned.Length - 1);
+    }
+
+    // RetrieveChar : () -> Char
+    // =========================
+    // 
+    public Char RetrieveChar() {
+        if (scanned.Length == 3) {
+            switch (scanned[1]) {
             case 'a':
                 return '\a';
             case 'b':
@@ -108,18 +170,26 @@ public class FSAChar : FSA {
             case '?':
                 return '?';
             default:
-                return '?';
+                return scanned[1];
             }
         } else {
-            return str[0];
+            return scanned[0];
         }
     }
 
+    // RetrieveToken : () -> Token
+    // ===========================
+    // 
     public Token RetrieveToken() {
-        return new Token();
+        return new EmptyToken();
     }
-    public void ReadChar(char ch) {
-        str = str + ch;
+
+    // ReadChar : Char -> ()
+    // =====================
+    // Implementation of the FSA
+    // 
+    public void ReadChar(Char ch) {
+        scanned = scanned + ch;
         switch (state) {
         case CharState.END:
         case CharState.ERROR:
@@ -140,7 +210,7 @@ public class FSAChar : FSA {
         case CharState.S:
             if (IsEscapeChar(ch)) {
                 state = CharState.C;
-            } else if (ch >= '0' && ch <= '7') {
+            } else if (IsOctDigit(ch)) {
                 state = CharState.SO;
             } else if (ch == 'x' || ch == 'X') {
                 state = CharState.SX;
@@ -149,18 +219,14 @@ public class FSAChar : FSA {
             }
             break;
         case CharState.SX:
-            if ((ch >= '0' && ch <= '9')
-                || (ch >= 'a' && ch <= 'f')
-                || (ch >= 'A' && ch <= 'F')) {
+            if (IsHexDigit(ch)) {
                 state = CharState.SXH;
             } else {
                 state = CharState.ERROR;
             }
             break;
         case CharState.SXH:
-            if ((ch >= '0' && ch <= '9')
-                || (ch >= 'a' && ch <= 'f')
-                || (ch >= 'A' && ch <= 'F')) {
+            if (IsHexDigit(ch)) {
                 state = CharState.SXHH;
             } else {
                 state = CharState.END;
@@ -170,14 +236,14 @@ public class FSAChar : FSA {
             state = CharState.END;
             break;
         case CharState.SO:
-            if (ch >= '0' && ch <= '7') {
+            if (IsOctDigit(ch)) {
                 state = CharState.SOO;
             } else {
                 state = CharState.END;
             }
             break;
         case CharState.SOO:
-            if (ch >= '0' && ch <= '7') {
+            if (IsOctDigit(ch)) {
                 state = CharState.SOOO;
             } else {
                 state = CharState.END;
@@ -192,8 +258,11 @@ public class FSAChar : FSA {
         }
     }
 
+    // ReadEOF : () -> ()
+    // ==================
+    // 
     public void ReadEOF() {
-        str = str + '0';
+        scanned = scanned + '0';
         switch (state) {
         case CharState.C:
         case CharState.SO:
@@ -211,6 +280,19 @@ public class FSAChar : FSA {
 
 }
 
+// FSACharConst
+// ============
+// The FSA for scanning a C character constant.
+// Upon finish, we can retrive a token of character.
+// 
+// A character constant can either be represented by
+// * '<char>'
+// or
+// * L'<char>'
+//
+// The character inside the quotes is read by FSAChar.
+// Note that if the inner character is a single quote, it needs to be escaped.
+// 
 public class FSACharConst : FSA {
     public enum CharConstState {
         START,
@@ -222,7 +304,10 @@ public class FSACharConst : FSA {
         QCQ
     };
 
-    public CharConstState state;
+    private CharConstState state;
+    private Char val;
+    private String raw;
+
     public FSACharConst() {
         state = CharConstState.START;
         fsachar = new FSAChar('\'');
@@ -243,15 +328,8 @@ public class FSACharConst : FSA {
         }
     }
 
-    char val;
-    string raw;
-
     public Token RetrieveToken() {
-        TokenChar token = new TokenChar();
-        token.type = TokenType.CHAR;
-        token.val = val;
-        token.raw = raw;
-        return token;
+        return new TokenChar(raw, val);
     }
     public void ReadChar(char ch) {
         switch (state) {

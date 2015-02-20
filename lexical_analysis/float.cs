@@ -1,33 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 // float
 // -----
 // there are two types of floating numbers: float & double
-public enum FloatType {
+public enum FloatSuffix {
     NONE,
     F,
     LF
 }
 
 public class TokenFloat : Token {
-    public TokenFloat() {
-        type = TokenType.FLOAT;
+    public TokenFloat(Double _val, FloatSuffix _suffix, String _raw)
+        : base(TokenType.FLOAT) {
+        val = _val;
+        suffix = _suffix;
+        raw = _raw;
     }
-    public double val;
-    public string raw;
-    public FloatType float_type;
+    public readonly Double val;
+    public readonly String raw;
+    public readonly FloatSuffix suffix;
     public override string ToString() {
         string str = type.ToString();
-        switch (float_type) {
-        case FloatType.F:
+        switch (suffix) {
+        case FloatSuffix.F:
             str += "(float)";
             break;
-        case FloatType.LF:
+        case FloatSuffix.LF:
             str += "(long double)";
             break;
         default:
@@ -44,7 +42,7 @@ public class FSAFloat : FSA {
     Int64 frac_count;
     Int64 exp_part;
     bool exp_pos;
-    FloatType float_type;
+    FloatSuffix float_type;
 
     public enum FloatState {
         START,
@@ -69,7 +67,7 @@ public class FSAFloat : FSA {
         frac_part = 0;
         frac_count = 0;
         exp_part = 0;
-        float_type = FloatType.NONE;
+        float_type = FloatSuffix.NONE;
         exp_pos = true;
         raw = "";
     }
@@ -79,7 +77,7 @@ public class FSAFloat : FSA {
         frac_part = 0;
         frac_count = 0;
         exp_part = 0;
-        float_type = FloatType.NONE;
+        float_type = FloatSuffix.NONE;
         exp_pos = true;
         raw = "";
     }
@@ -98,16 +96,13 @@ public class FSAFloat : FSA {
     }
 
     public Token RetrieveToken() {
-        TokenFloat token = new TokenFloat();
-        token.type = TokenType.FLOAT;
+        Double val;
         if (exp_pos) {
-            token.val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, exp_part);
+            val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, exp_part);
         } else {
-            token.val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, -exp_part);
+            val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, -exp_part);
         }
-        token.float_type = float_type;
-        token.raw = raw.Substring(0, raw.Length - 1);
-        return token;
+        return new TokenFloat(val, float_type, raw.Substring(0, raw.Length - 1));
     }
 
     public void ReadChar(char ch) {
@@ -161,10 +156,10 @@ public class FSAFloat : FSA {
             } else if (ch == 'e' || ch == 'E') {
                 state = FloatState.DE;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatType.F;
+                float_type = FloatSuffix.F;
                 state = FloatState.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatType.LF;
+                float_type = FloatSuffix.LF;
                 state = FloatState.DPL;
             } else {
                 state = FloatState.END;
@@ -180,10 +175,10 @@ public class FSAFloat : FSA {
             } else if (ch == 'e' || ch == 'E') {
                 state = FloatState.DE;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatType.F;
+                float_type = FloatSuffix.F;
                 state = FloatState.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatType.LF;
+                float_type = FloatSuffix.LF;
                 state = FloatState.DPL;
             } else {
                 state = FloatState.END;
@@ -221,7 +216,7 @@ public class FSAFloat : FSA {
             //    state = FloatState.ERROR;
             //}
             //break;
-            float_type = FloatType.LF;
+            float_type = FloatSuffix.LF;
             state = FloatState.END;
             break;
 
@@ -231,10 +226,10 @@ public class FSAFloat : FSA {
                 exp_part += ch - '0';
                 state = FloatState.DED;
             } else if (ch == 'f' || ch == 'F') {
-                float_type = FloatType.F;
+                float_type = FloatSuffix.F;
                 state = FloatState.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                float_type = FloatType.LF;
+                float_type = FloatSuffix.LF;
                 state = FloatState.DPL;
             } else {
                 state = FloatState.END;

@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class LexTest {
     [TestMethod]
     public void test_lex() {
-        LexicalAnalysis lex = new LexicalAnalysis();
+        Scanner lex = new Scanner();
         lex.src = "int main() { return 0; }";
         lex.Lex();
         string output = lex.ToString();

@@ -43,10 +43,11 @@ public enum KeywordVal {
 }
 
 public class TokenKeyword : Token {
-    public TokenKeyword() {
-        type = TokenType.KEYWORD;
+    public TokenKeyword(KeywordVal _val)
+        : base(TokenType.KEYWORD) {
+        val = _val;
     }
-    public KeywordVal val;
+    public readonly KeywordVal val;
     public static Dictionary<string, KeywordVal> keywords = new Dictionary<string, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
         { "AUTO",        KeywordVal.AUTO      },
         { "DOUBLE",      KeywordVal.DOUBLE    },

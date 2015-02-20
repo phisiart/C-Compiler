@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 // identifier
 // ----------
 // if the identifier is found to be a keyword, then it will be a keyword
 public class TokenIdentifier : Token {
-    public TokenIdentifier() {
-        type = TokenType.IDENTIFIER;
+    public TokenIdentifier(String _val)
+        : base(TokenType.IDENTIFIER) {
+        val = _val;
     }
-    public string val;
+    public String val;
     public override string ToString() {
         return type.ToString() + ": " + val;
     }
@@ -52,16 +48,11 @@ public class FSAIdentifier : FSA {
     }
 
     public Token RetrieveToken() {
-        if (TokenKeyword.keywords.ContainsKey(str.Substring(0, str.Length - 1))) {
-            TokenKeyword token = new TokenKeyword();
-            token.type = TokenType.KEYWORD;
-            token.val = TokenKeyword.keywords[str.Substring(0, str.Length - 1)];
-            return token;
+        String name = str.Substring(0, str.Length - 1);
+        if (TokenKeyword.keywords.ContainsKey(name)) {
+            return new TokenKeyword(TokenKeyword.keywords[name]);
         } else {
-            TokenIdentifier token = new TokenIdentifier();
-            token.type = TokenType.IDENTIFIER;
-            token.val = str.Substring(0, str.Length - 1);
-            return token;
+            return new TokenIdentifier(name);
         }
     }
 

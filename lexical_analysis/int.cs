@@ -8,7 +8,7 @@ using System.IO;
 // int
 // ---
 // there are four types of integers: signed, unsigned, signed long, unsigned long
-public enum IntType {
+public enum IntSuffix {
     NONE,
     U,
     L,
@@ -16,20 +16,22 @@ public enum IntType {
 };
 
 public class TokenInt : Token {
-    public TokenInt() {
-        type = TokenType.INT;
-        int_type = IntType.NONE;
+    public TokenInt(Int64 _val, IntSuffix _suffix, String _raw)
+        : base(TokenType.INT) {
+        val = _val;
+        suffix = _suffix;
+        raw = _raw;
     }
     public override string ToString() {
         string str = type.ToString();
-        switch (int_type) {
-        case IntType.L:
+        switch (suffix) {
+        case IntSuffix.L:
             str += "(long)";
             break;
-        case IntType.U:
+        case IntSuffix.U:
             str += "(unsigned)";
             break;
-        case IntType.UL:
+        case IntSuffix.UL:
             str += "(unsigned long)";
             break;
         default:
@@ -38,15 +40,15 @@ public class TokenInt : Token {
         return str + ": " + val.ToString() + " \"" + raw + "\"";
     }
 
-    public Int64 val;
-    public string raw;
-    public IntType int_type;
+    public readonly Int64 val;
+    public readonly String raw;
+    public readonly IntSuffix suffix;
 }
 
 public class FSAInt : FSA {
     Int64 val;
     string raw;
-    IntType int_type;
+    IntSuffix int_type;
 
     public enum IntState {
         START,
@@ -66,14 +68,14 @@ public class FSAInt : FSA {
         state = IntState.START;
         val = 0;
         raw = "";
-        int_type = IntType.NONE;
+        int_type = IntSuffix.NONE;
     }
 
     public void Reset() {
         state = IntState.START;
         val = 0;
         raw = "";
-        int_type = IntType.NONE;
+        int_type = IntSuffix.NONE;
     }
 
     public FSAStatus GetStatus() {
@@ -91,13 +93,9 @@ public class FSAInt : FSA {
 
 
     public Token RetrieveToken() {
-        TokenInt token = new TokenInt();
-        token.type = TokenType.INT;
-        token.int_type = int_type;
-        token.raw = raw.Substring(0, raw.Length - 1);
-        token.val = val;
-        return token;
+        return new TokenInt(val, int_type, raw.Substring(0, raw.Length - 1));
     }
+
     public void ReadChar(char ch) {
         raw += ch;
         switch (state) {
@@ -132,10 +130,10 @@ public class FSAInt : FSA {
                 val += ch - '0';
                 state = IntState.D;
             } else if (ch == 'u' || ch == 'U') {
-                int_type = IntType.U;
+                int_type = IntSuffix.U;
                 state = IntState.U;
             } else if (ch == 'l' || ch == 'L') {
-                int_type = IntType.L;
+                int_type = IntSuffix.L;
                 state = IntState.L;
             } else {
                 state = IntState.END;
@@ -164,10 +162,10 @@ public class FSAInt : FSA {
                 val += ch - '0';
                 state = IntState.O;
             } else if (ch == 'u' || ch == 'U') {
-                int_type = IntType.U;
+                int_type = IntSuffix.U;
                 state = IntState.U;
             } else if (ch == 'l' || ch == 'L') {
-                int_type = IntType.L;
+                int_type = IntSuffix.L;
                 state = IntState.L;
             } else {
                 state = IntState.END;
@@ -175,7 +173,7 @@ public class FSAInt : FSA {
             break;
         case IntState.L:
             if (ch == 'u' || ch == 'U') {
-                int_type = IntType.UL;
+                int_type = IntSuffix.UL;
                 state = IntState.UL;
             } else {
                 state = IntState.END;
@@ -195,10 +193,10 @@ public class FSAInt : FSA {
                 }
                 state = IntState.H;
             } else if (ch == 'u' || ch == 'U') {
-                int_type = IntType.U;
+                int_type = IntSuffix.U;
                 state = IntState.U;
             } else if (ch == 'l' || ch == 'L') {
-                int_type = IntType.L;
+                int_type = IntSuffix.L;
                 state = IntState.L;
             } else {
                 state = IntState.END;
@@ -206,7 +204,7 @@ public class FSAInt : FSA {
             break;
         case IntState.U:
             if (ch == 'l' || ch == 'L') {
-                int_type = IntType.UL;
+                int_type = IntSuffix.UL;
                 state = IntState.UL;
             } else {
                 state = IntState.END;

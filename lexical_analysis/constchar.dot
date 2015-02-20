@@ -1,0 +1,17 @@
+digraph {
+    node [shape = circle, height = 0.8, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+    S; L; Q; QC;
+
+    node [style = filled];
+    QCQ;
+
+    S -> L [label = "L"];
+    S -> Q [label = "\\'"];
+    L -> Q [label = "\\'"];
+    Q -> QC [label = "<FSAChar succeed>"];
+    QC -> QCQ [label = "\\'"];
+
+}

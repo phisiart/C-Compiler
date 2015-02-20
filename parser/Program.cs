@@ -162,7 +162,7 @@ public class Parser {
     }
 
     public static List<Token> GetTokensFromString(String src) {
-        LexicalAnalysis lex = new LexicalAnalysis();
+        Scanner lex = new Scanner();
         lex.src = src;
         lex.Lex();
         return lex.tokens;
@@ -260,7 +260,7 @@ public class ParserEnvironment {
 
 public class Program {
     public static void Main(string[] args) {
-        LexicalAnalysis lex = new LexicalAnalysis();
+        Scanner lex = new Scanner();
         lex.OpenFile("../../../hello.c");
         lex.Lex();
         var src = lex.tokens;
