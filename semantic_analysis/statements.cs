@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Statement : PTNode {
     public virtual Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-        return null;
+        throw new NotImplementedException();
     }
 }
 
@@ -25,10 +25,17 @@ public class BreakStatement : Statement {}
 
 public class ReturnStatement : Statement {
     public ReturnStatement(Expression _expr) {
-        expr = _expr;
+        ret_expr = _expr;
     }
-    public Expression expr;
+    public Expression ret_expr;
 
+    public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+        Tuple<AST.Env, AST.Expr> r_expr = ret_expr.GetExpr(env);
+        env = r_expr.Item1;
+        AST.Expr expr = r_expr.Item2;
+        expr = AST.TypeCast.MakeCast(expr, env.GetCurrentFunction().ret_type);
+        return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
+    }
 }
 
 

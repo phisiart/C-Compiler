@@ -21,7 +21,7 @@ public class Expression : PTNode {
 
     // TODO : [finished] Expression.GetExpression(env) -> (env, expr)
     public virtual Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-        throw new Exception("Error: Expression.GetExpr not implemented.");
+        throw new NotImplementedException();
     }
 
     public delegate TValue ConstOperation<TValue>(TValue lhs, TValue rhs);
@@ -169,7 +169,7 @@ public class Expression : PTNode {
         Dictionary<AST.ExprType.EnumExprType, UnaryExprConstructor> constructors,
         Dictionary<AST.ExprType.EnumExprType, UnaryExprConstructor> const_constructors
     ) {
-        throw new Exception("NOT IMPLEMENTED");
+        throw new NotImplementedException();
     }
 }
 

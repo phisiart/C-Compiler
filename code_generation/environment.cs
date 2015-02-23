@@ -148,9 +148,14 @@ namespace AST {
             // ===========
             // set the current function
             public Scope SetCurrentFunction(TFunction type) {
-                Scope scope = new Scope(this);
-                scope.scope_curr_func = type;
-                return scope;
+                return new Scope(
+                    scope_stack_entries,
+                    scope_stack_offset,
+                    scope_global_entries,
+                    type,
+                    scope_typedef_entries,
+                    scope_enum_entries
+                );
             }
 
 
@@ -233,13 +238,12 @@ namespace AST {
             // ================================================================
             //  private members
             // ================================================================
-            private List<Utils.StoreEntry> scope_stack_entries;
-            private TFunction              scope_curr_func;
-            private List<Utils.StoreEntry> scope_global_entries;
-            private List<Utils.StoreEntry> scope_typedef_entries;
-            private List<Utils.StoreEntry> scope_enum_entries;
-
-            private int scope_stack_offset;
+            public readonly List<Utils.StoreEntry> scope_stack_entries;
+            public readonly TFunction              scope_curr_func;
+            public readonly List<Utils.StoreEntry> scope_global_entries;
+            public readonly List<Utils.StoreEntry> scope_typedef_entries;
+            public readonly List<Utils.StoreEntry> scope_enum_entries;
+            public int scope_stack_offset;
 
         }
 
@@ -267,7 +271,7 @@ namespace AST {
         // 
         public Env InScope() {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
-            scopes.Push(new Scope());
+            scopes.Push(scopes.Peek().InScope());
             return new Env(scopes);
         }
 
@@ -321,6 +325,26 @@ namespace AST {
             Scope top = scopes.Pop().SetCurrentFunction(type);
             scopes.Push(top);
             return new Env(scopes);
+        }
+
+        // GetCurrentFunction
+        // ==================
+        // input: void
+        // output: TFunction
+        // return the type of the current function
+        // 
+        public TFunction GetCurrentFunction() {
+            return env_scopes.Peek().scope_curr_func;
+        }
+
+        // GetStackOffset
+        // ==============
+        // input: void
+        // output: int
+        // return the current stack size
+        // 
+        public int GetStackOffset() {
+            return env_scopes.Peek().scope_stack_offset;
         }
 
         public Entry Find(String name) {

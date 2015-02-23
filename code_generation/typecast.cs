@@ -156,8 +156,7 @@ namespace AST {
                     }
 
                 default:
-                    Debug.Assert(false);
-                    return null;
+                    throw new Exception("Error: casting from " + from + " to " + to);
                 }
 
             default:

@@ -1,18 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BB1E5C0F-8BA8-466F-BA49-F41B6AEFA8C1}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{B56B25F1-A975-488F-9A67-4D8C5ECC5A17}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>semant2</RootNamespace>
-    <AssemblyName>semant2</AssemblyName>
+    <RootNamespace>driver</RootNamespace>
+    <AssemblyName>driver</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -39,15 +41,29 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="declarations.cs" />
-    <Compile Include="environment.cs" />
-    <Compile Include="expressions.cs" />
-    <Compile Include="external_declarations.cs" />
-    <Compile Include="statements.cs" />
-    <Compile Include="typecast.cs" />
-    <Compile Include="types.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="utils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\code_generation\code_generation.csproj">
+      <Project>{fdb12807-9737-4da3-b223-a4388c0db8ff}</Project>
+      <Name>code_generation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\lexical_analysis\lexical_analysis.csproj">
+      <Project>{61b4af5e-aff2-4293-a5de-e1997e06cabb}</Project>
+      <Name>lexical_analysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\parser\parser.csproj">
+      <Project>{c8a12f6d-30a8-40c9-b50b-577ef55f7683}</Project>
+      <Name>parser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\semantic_analysis\semantic_analysis.csproj">
+      <Project>{3afd99a3-370a-4643-9a21-77261916d14c}</Project>
+      <Name>semantic_analysis</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

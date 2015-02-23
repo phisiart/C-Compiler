@@ -27,6 +27,12 @@ namespace AST {
             return str;
         }
 
+        public void CGenExternDecln(Env env, CGenState state) {
+            state.CGenExpandStack(env.GetStackOffset(), ToString());
+        }
+
+        
+
         private readonly String     decln_name;
         private readonly EnumSCS    decln_scs;
         private readonly ExprType   decln_type;

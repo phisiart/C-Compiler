@@ -54,6 +54,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\code_generation\code_generation.csproj">
+      <Project>{fdb12807-9737-4da3-b223-a4388c0db8ff}</Project>
+      <Name>code_generation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\lexical_analysis\lexical_analysis.csproj">
       <Project>{61b4af5e-aff2-4293-a5de-e1997e06cabb}</Project>
       <Name>lexical_analysis</Name>
@@ -61,10 +65,6 @@
     <ProjectReference Include="..\parser\parser.csproj">
       <Project>{c8a12f6d-30a8-40c9-b50b-577ef55f7683}</Project>
       <Name>parser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\semant2\semant2.csproj">
-      <Project>{bb1e5c0f-8ba8-466f-ba49-f41b6aefa8c1}</Project>
-      <Name>semant2</Name>
     </ProjectReference>
     <ProjectReference Include="..\semantic_analysis\semantic_analysis.csproj">
       <Project>{3afd99a3-370a-4643-9a21-77261916d14c}</Project>

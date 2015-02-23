@@ -183,24 +183,20 @@ public class DeclnSpecs : PTNode {
                 type = new AST.TDouble(is_const, is_volatile);
                 break;
             default:
-                Log.SemantError("Error: can't match type specifier");
-                return null;
+                throw new Exception("Error: can't match type specifier");
             }
             return new Tuple<AST.Env, AST.ExprType>(env, type);
 
         } else if (nbasics > 0) {
             // partly basic specs, partly not
-            Log.SemantError("Error: can't match type specifier");
-            return null;
+            throw new Exception("Error: can't match type specifier");
 
         } else if (type_specifiers.Count != 1) {
             // now we can only match for struct, union, function...
-            Log.SemantError("Error: can't match type specifier");
-            return null;
+            throw new Exception("Error: can't match type specifier");
 
         } else {
             // now semant the only type spec
-
             return type_specifiers[0].GetExprType(env, is_const, is_volatile);
 
         }
@@ -426,7 +422,7 @@ public class TypeSpec : PTNode {
     // output: tuple<ExprType, Environment>
     // 
     public virtual Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
-        return null;
+        throw new NotImplementedException();
     }
 
     public BTypeSpec basic;
@@ -447,7 +443,7 @@ public class TypedefName : TypeSpec {
     // TODO : ** NOT FINISHED **
     // 
     public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
-        return null;
+        throw new NotImplementedException();
     }
 
 
@@ -474,7 +470,7 @@ public class TypeInfo : PTNode {
     }
 
     public virtual Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
-        return null;
+        throw new NotImplementedException();
     }
     public TypeInfoType type;
 }
