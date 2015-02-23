@@ -71,7 +71,7 @@ public class FSAIdentifier : FSA {
             }
             break;
         case State.ID:
-            if (Char.IsLetterOrDigit(ch) || ch == '-') {
+            if (Char.IsLetterOrDigit(ch) || ch == '_') {
                 state = State.ID;
             } else {
                 state = State.END;

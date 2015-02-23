@@ -47,7 +47,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="statements.cs" />
-    <Compile Include="TRet.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

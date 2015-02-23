@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace AST {
@@ -436,21 +432,31 @@ namespace AST {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
-            Debug.Assert(from == ExprType.EnumExprType.POINTER);
+            if (from != ExprType.EnumExprType.POINTER) {
+                throw new Exception("Error: expected a pointer.");
+            }
 
+            // if we are casting to another pointer, do a nop
             if (to == ExprType.EnumExprType.POINTER) {
-                // if we are casting to another pointer, do a nop
-                return new TypeCast(EnumTypeCast.NOP, expr, type);
+                if (expr.IsConstExpr()) {
+                    return new ConstPtr(((ConstPtr)expr).value, type);
+                } else {
+                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                }
             }
 
+            // if we are casting to an integral
             if (type.IsIntegral()) {
-                // if we are casting to an integral
                 // pointer -> ulong -> whatever integral
-                return UnsignedIntegralToArith(new TypeCast(EnumTypeCast.NOP, expr, new TULong(type.is_const, type.is_volatile)), type);
+                if (expr.IsConstExpr()) {
+                    expr = new ConstULong(((ConstPtr)expr).value);
+                } else {
+                    expr = new TypeCast(EnumTypeCast.NOP, expr, new TULong(type.is_const, type.is_volatile));
+                }
+                return UnsignedIntegralToArith(expr, type);
             }
 
-            Debug.Assert(false);
-            return null;
+            throw new Exception("Error: Casting from a pointer to an unsupported type.");
         }
 
         // ToPointer
@@ -467,21 +473,47 @@ namespace AST {
             ExprType.EnumExprType from = expr.type.expr_type;
             ExprType.EnumExprType to = type.expr_type;
 
-            Debug.Assert(to == ExprType.EnumExprType.POINTER);
+            if (to != ExprType.EnumExprType.POINTER) {
+                throw new Exception("Error: expected casting to pointer.");
+            }
 
             if (from == ExprType.EnumExprType.POINTER) {
-                // if we are casting from another pointer, do a nop
-                return new TypeCast(EnumTypeCast.NOP, expr, type);
+                if (expr.IsConstExpr()) {
+                    return new ConstPtr(((ConstPtr)expr).value, type);
+                } else {
+                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                }
             }
 
             if (expr.type.IsIntegral()) {
                 // if we are casting from an integral
-                // whatever integral -> ulong -> pointer
-                return new TypeCast(EnumTypeCast.NOP, UnsignedIntegralToArith(expr, new TULong(type.is_const, type.is_volatile)), type);
+
+                // whatever integral -> ulong
+                switch (expr.type.expr_type) {
+                case ExprType.EnumExprType.CHAR:
+                case ExprType.EnumExprType.SHORT:
+                case ExprType.EnumExprType.LONG:
+                    expr = SignedIntegralToArith(expr, new TULong(type.is_const, type.is_volatile));
+                    break;
+                case ExprType.EnumExprType.UCHAR:
+                case ExprType.EnumExprType.USHORT:
+                case ExprType.EnumExprType.ULONG:
+                    expr = expr = UnsignedIntegralToArith(expr, new TULong(type.is_const, type.is_volatile));
+                    break;
+                default:
+                    break;
+                }
+                
+                // ulong -> pointer
+                if (expr.IsConstExpr()) {
+                    return new ConstPtr(((ConstULong)expr).value, type);
+                } else {
+                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                }
+                
             }
 
-            Debug.Assert(false);
-            return null;
+            throw new Exception("Error: casting from an unsupported type to pointer.");
         }
 
         // MakeCast
@@ -494,8 +526,6 @@ namespace AST {
             
             // if two types are equal, return expr
             if (EqualType(expr.type, type)) {
-                //return new TypeCast(EnumTypeCast.NOP, expr, type);
-
                 return expr;
             }
 
@@ -528,17 +558,18 @@ namespace AST {
                 return FloatToArith(expr, type);
 
             default:
-                Debug.Assert(false);
-                return null;
+                throw new Exception("Error: expression type not supported for casting from.");
             }
 
         }
-        
+
         // UsualArithmeticConversion
         // =========================
         // input: e1, e2
         // output: tuple<e1', e2', enumexprtype>
         // performs the usual arithmetic conversion on e1 & e2
+        // 
+        // possible return type: double, float, ulong, long
         // 
         public static Tuple<Expr, Expr, ExprType.EnumExprType> UsualArithmeticConversion(Expr e1, Expr e2) {
             ExprType t1 = e1.type;
@@ -566,6 +597,24 @@ namespace AST {
             // 4. both are converted to long
             return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TLong(c1, v1)), MakeCast(e2, new TLong(c2, v2)), ExprType.EnumExprType.LONG);
 
+        }
+
+        // UsualScalarConversion
+        // =====================
+        // input: e1, e2
+        // output: tuple<e1', e2', enumexprtype>
+        // first, convert pointers to ulongs, then do usual arithmetic conversion
+        // 
+        // possible return type: double, float, ulong, long
+        // 
+        public static Tuple<Expr, Expr, ExprType.EnumExprType> UsualScalarConversion(Expr e1, Expr e2) {
+            if (e1.type.expr_type == ExprType.EnumExprType.POINTER) {
+                e1 = FromPointer(e1, new TULong(e1.type.is_const, e1.type.is_volatile));
+            }
+            if (e2.type.expr_type == ExprType.EnumExprType.POINTER) {
+                e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile));
+            }
+            return UsualArithmeticConversion(e1, e2);
         }
 
     }

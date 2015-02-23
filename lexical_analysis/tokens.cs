@@ -177,14 +177,6 @@ public class Scanner {
             new FSACharConst(),
             new FSAString(),
         };
-        //fsas.Add(new FSAFloat());
-        //fsas.Add(new FSAInt());
-        //fsas.Add(new FSAOperator());
-        //fsas.Add(new FSAIdentifier());
-        //fsas.Add(new FSASpace());
-        //fsas.Add(new FSANewLine());
-        //fsas.Add(new FSACharConst());
-        //fsas.Add(new FSAString());
     }
 
     public void OpenFile(String file_name) {

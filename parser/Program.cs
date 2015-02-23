@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 public class Parser {
     public static bool IsSizeof(Token token) {
@@ -168,9 +166,12 @@ public class Parser {
         return lex.tokens;
     }
 
+    // EatOperator : (src, ref current, val) -> bool
+    // =============================================
     // tries to eat an operator
     // if succeed, current++, return true
     // if fail, current remains the same, return false
+    // 
     public static bool EatOperator(List<Token> src, ref int current, OperatorVal val) {
         if (src[current].type != TokenType.OPERATOR) {
             return false;
@@ -185,6 +186,17 @@ public class Parser {
     }
 
     public delegate int FParse<TRet>(List<Token> src, int begin, out TRet node) where TRet : PTNode;
+
+    public static int ParseOptional<TRet>(List<Token> src, int begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : PTNode {
+        int current;
+        if ((current = Parse(src, begin, out node)) == -1) {
+            // if parsing fails: return default value
+            node = default_val;
+            return begin;
+        } else {
+            return current;
+        }
+    }
 
     public static int ParseList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
         int current = begin;

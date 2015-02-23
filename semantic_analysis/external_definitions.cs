@@ -7,14 +7,6 @@ public class TranslationUnit : PTNode {
         list = _list;
     }
 
-    //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-    //    scope = _scope;
-    //    foreach (ASTNode decl in list) {
-    //        scope = decl.Semant(scope);
-    //    }
-    //    return scope;
-    //}
-
     public Tuple<AST.Env, AST.TranslationUnit> GetTranslationUnit() {
         List<Tuple<AST.Env, AST.ExternDecln>> declns = new List<Tuple<AST.Env, AST.ExternDecln>>();
         AST.Env env = new AST.Env();

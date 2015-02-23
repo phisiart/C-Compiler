@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AST {
     /* From 3.1.2.5 Types (modified):
@@ -65,7 +63,6 @@ namespace AST {
             ERROR,
             VOID,
             CHAR,
-            //SCHAR,
             UCHAR,
             SHORT,
             USHORT,
@@ -79,7 +76,7 @@ namespace AST {
             FUNCTION,
         }
 
-        public ExprType(EnumExprType _expr_type = EnumExprType.ERROR, bool _is_const = false, bool _is_volatile = false) {
+        public ExprType(EnumExprType _expr_type = EnumExprType.ERROR, Boolean _is_const = false, Boolean _is_volatile = false) {
             is_const = _is_const;
             is_volatile = _is_volatile;
             expr_type = _expr_type;
@@ -88,9 +85,9 @@ namespace AST {
         }
 
         public readonly EnumExprType expr_type;
-        public virtual bool IsArith() { return false; }
-        public virtual bool IsIntegral() { return false; }
-        public virtual bool EqualType(ExprType other) { return false; }
+        public virtual Boolean IsArith() { return false; }
+        public virtual Boolean IsIntegral() { return false; }
+        public virtual Boolean EqualType(ExprType other) { return false; }
         public String DumpQualifiers() {
             String str = "";
             if (is_const) {
@@ -102,7 +99,7 @@ namespace AST {
             return str;
         }
 
-        public virtual ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public virtual ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return null;
         }
 
@@ -114,16 +111,16 @@ namespace AST {
         }
         protected int size_of;
         protected int alignment;
-        public readonly bool is_const;
-        public readonly bool is_volatile;
+        public readonly Boolean is_const;
+        public readonly Boolean is_volatile;
 
     }
     
     public class TVoid : ExprType {
-        public TVoid(bool _is_const = false, bool _is_volatile = false)
+        public TVoid(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.VOID, _is_const, _is_volatile) {
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TVoid(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -132,39 +129,39 @@ namespace AST {
     }
 
     public class ArithmeticType : ExprType {
-        public ArithmeticType(EnumExprType _expr_type = EnumExprType.ERROR, bool _is_const = false, bool _is_volatile = false)
+        public ArithmeticType(EnumExprType _expr_type = EnumExprType.ERROR, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(_expr_type, _is_const, _is_volatile) {
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new ArithmeticType(EnumExprType.ERROR, _is_const, _is_volatile);
         }
-        public override bool IsArith() {
+        public override Boolean IsArith() {
             return true;
         }
-        public override bool EqualType(ExprType other) {
+        public override Boolean EqualType(ExprType other) {
  	         return expr_type == other.expr_type;
         }
     }
 
     public class IntegralType : ArithmeticType {
-        public IntegralType(EnumExprType _expr_type = EnumExprType.ERROR, bool _is_const = false, bool _is_volatile = false)
+        public IntegralType(EnumExprType _expr_type = EnumExprType.ERROR, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(_expr_type, _is_const, _is_volatile) {
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new IntegralType(EnumExprType.ERROR, _is_const, _is_volatile);
         }
-        public override bool IsIntegral() {
+        public override Boolean IsIntegral() {
             return true;
         }
     }
 
     public class TChar : IntegralType {
-        public TChar(bool _is_const = false, bool _is_volatile = false)
+        public TChar(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.CHAR, _is_const, _is_volatile) {
             size_of = 1;
             alignment = 1;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TChar(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -172,18 +169,13 @@ namespace AST {
         }
     }
 
-    //public class TSChar : IntegralType {
-    //    public TSChar(bool _is_const = false, bool _is_volatile = false)
-    //        : base(EnumExprType.SCHAR, _is_const, _is_volatile) {}
-    //}
-    
     public class TUChar : IntegralType {
-        public TUChar(bool _is_const = false, bool _is_volatile = false)
+        public TUChar(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.UCHAR, _is_const, _is_volatile) {
             size_of = 1;
             alignment = 1;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUChar(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -192,12 +184,12 @@ namespace AST {
     }
 
     public class TShort : IntegralType {
-        public TShort(bool _is_const = false, bool _is_volatile = false)
+        public TShort(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.SHORT, _is_const, _is_volatile) {
             size_of = 2;
             alignment = 2;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TShort(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -206,12 +198,12 @@ namespace AST {
     }
 
     public class TUShort : IntegralType {
-        public TUShort(bool _is_const = false, bool _is_volatile = false)
+        public TUShort(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.USHORT, _is_const, _is_volatile) {
             size_of = 2;
             alignment = 2;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUShort(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -219,23 +211,13 @@ namespace AST {
         }
     }
 
-    //public class TInt : IntegralType {
-    //    public TInt(bool _is_const = false, bool _is_volatile = false)
-    //        : base(EnumExprType.INT, _is_const, _is_volatile) {}
-    //}
-
-    //public class TUInt : IntegralType {
-    //    public TUInt(bool _is_const = false, bool _is_volatile = false)
-    //        : base(EnumExprType.UINT, _is_const, _is_volatile) {}
-    //}
-
     public class TLong : IntegralType {
-        public TLong(bool _is_const = false, bool _is_volatile = false)
+        public TLong(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.LONG, _is_const, _is_volatile) {
             size_of = 4;
             alignment = 4;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TLong(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -244,12 +226,12 @@ namespace AST {
     }
 
     public class TULong : IntegralType {
-        public TULong(bool _is_const = false, bool _is_volatile = false)
+        public TULong(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.ULONG, _is_const, _is_volatile) {
             size_of = 4;
             alignment = 4;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TULong(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -258,12 +240,12 @@ namespace AST {
     }
 
     public class TFloat : ArithmeticType {
-        public TFloat(bool _is_const = false, bool _is_volatile = false)
+        public TFloat(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.FLOAT, _is_const, _is_volatile) {
             size_of = 4;
             alignment = 4;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TFloat(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -272,12 +254,12 @@ namespace AST {
     }
 
     public class TDouble : ArithmeticType {
-        public TDouble(bool _is_const = false, bool _is_volatile = false)
+        public TDouble(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.DOUBLE, _is_const, _is_volatile) {
             size_of = 8;
             alignment = 4;
         }
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TDouble(_is_const, _is_volatile);
         }
         public override string ToString() {
@@ -289,17 +271,17 @@ namespace AST {
     // ==============
     // 
     public class TPointer : ExprType {
-        public TPointer(ExprType _referenced_type, bool _is_const = false, bool _is_volatile = false)
+        public TPointer(ExprType _referenced_type, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.POINTER, _is_const, _is_volatile) {
             referenced_type = _referenced_type;
             size_of = 4;
             alignment = 4;
         }
         public readonly ExprType referenced_type;
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TPointer(referenced_type, _is_const, _is_volatile);
         }
-        public override bool EqualType(ExprType other) {
+        public override Boolean EqualType(ExprType other) {
             return other.expr_type == EnumExprType.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
         public override string ToString() {
@@ -307,21 +289,20 @@ namespace AST {
         }
     }
 
-
     // class TStruct
     // =============
     // represets the structure
     // stores the names, types, and offsets of attributes
     // 
     public class TStruct : ExprType {
-        private TStruct(List<Utils.StoreEntry> _attribs, int _size_of, int _alignment, bool _is_const, bool _is_volatile)
+        private TStruct(List<Utils.StoreEntry> _attribs, int _size_of, int _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(EnumExprType.STRUCT, _is_const, _is_volatile) {
             attribs = _attribs;
             size_of = _size_of;
             alignment = _alignment;
         }
 
-        public TStruct(List<Tuple<String, ExprType>> _attribs, bool _is_const = false, bool _is_volatile = false)
+        public TStruct(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.STRUCT, _is_const, _is_volatile) {
             
             attribs = new List<Utils.StoreEntry>();
@@ -342,7 +323,7 @@ namespace AST {
             alignment = max_align;
         }
 
-        public String Dump(bool dump_attribs) {
+        public String Dump(Boolean dump_attribs) {
             String str = "struct (size = " + SizeOf + ")";
             if (dump_attribs) {
                 str += "\n";
@@ -353,7 +334,7 @@ namespace AST {
             return str;
         }
 
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TStruct(attribs, size_of, alignment, _is_const, _is_volatile);
         }
 
@@ -376,7 +357,7 @@ namespace AST {
     // stores the names and types of attributes
     // 
     public class TUnion : ExprType {
-        public TUnion(List<Tuple<String, ExprType>> _attribs, bool _is_const = false, bool _is_volatile = false)
+        public TUnion(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(EnumExprType.UNION, _is_const, _is_volatile) {
             attribs = _attribs;
             if (attribs.Count != 0) {
@@ -387,11 +368,11 @@ namespace AST {
             alignment = size_of;
         }
 
-        public override ExprType GetQualifiedType(bool _is_const, bool _is_volatile) {
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUnion(attribs, _is_const, _is_volatile);
         }
 
-        public String Dump(bool dump_attribs) {
+        public String Dump(Boolean dump_attribs) {
             String str = "union (size = " + SizeOf + ")";
             if (dump_attribs) {
                 str += "\n";
@@ -441,7 +422,7 @@ namespace AST {
 
         }
 
-        public String Dump(bool dump_args = false) {
+        public String Dump(Boolean dump_args = false) {
             String str = "function";
             if (dump_args) {
                 str += "\n";
@@ -484,7 +465,7 @@ namespace AST {
         public Expr(ExprType _type) {
             type = _type;
         }
-        public virtual bool IsConstExpr() { return false; }
+        public virtual Boolean IsConstExpr() { return false; }
         public readonly ExprType type;
     }
 
@@ -505,32 +486,8 @@ namespace AST {
     public class Constant : Expr {
         public Constant(ExprType _type)
             : base(_type) {}
-        public override bool IsConstExpr() { return true; }
+        public override Boolean IsConstExpr() { return true; }
     }
-
-    //public class ConstChar : Constant {
-    //    public ConstChar(SByte _value)
-    //        : base(new TChar(true)) {
-    //        value = _value;
-    //    }
-    //    protected SByte value;
-    //}
-
-    //public class ConstInt : Constant {
-    //    public ConstInt(Int32 _value)
-    //        : base(new TInt()) {
-    //        value = _value;
-    //    }
-    //    protected Int32 value;
-    //}
-
-    //public class ConstUInt : Constant {
-    //    public ConstUInt(UInt32 _value)
-    //        : base(new TUInt()) {
-    //        value = _value;
-    //    }
-    //    protected UInt32 value;
-    //}
 
     public class ConstLong : Constant {
         public ConstLong(Int32 _value)
@@ -552,6 +509,18 @@ namespace AST {
 
         public override string ToString() {
             return "uint(" + value + ")";
+        }
+        public readonly UInt32 value;
+    }
+
+    public class ConstPtr : Constant {
+        public ConstPtr(UInt32 _value, ExprType _type)
+            : base(_type) {
+            value = _value;
+        }
+
+        public override String ToString() {
+            return this.type.ToString() + "(" + value + ")";
         }
         public readonly UInt32 value;
     }

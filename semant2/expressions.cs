@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AST {
     public class AssignmentList : Expr {
@@ -116,15 +113,56 @@ namespace AST {
         protected Expr expr;
     }
 
+    public class Equal : Expr {
+        public Equal(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
 
-    //public class TypeCast : Expression {
-    //    public TypeCast(Expression _expr, ExprType _type)
-    //        : base(_type) {
-    //        expr = _expr;
-    //    }
-    //    protected Expression expr;
-    //}
+    public class GEqual : Expr {
+        public GEqual(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
 
+    public class Greater : Expr {
+        public Greater(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class LEqual : Expr {
+        public LEqual(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class Less : Expr {
+        public Less(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+    
     public class Multiply : Expr {
         public Multiply(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
@@ -153,5 +191,93 @@ namespace AST {
         }
         protected Expr lhs;
         protected Expr rhs;
+    }
+
+    public class LShift : Expr {
+        public LShift(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class RShift : Expr {
+        public RShift(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class Xor : Expr {
+        public Xor(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class BitwiseOr : Expr {
+        public BitwiseOr(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class BitwiseAnd : Expr {
+        public BitwiseAnd(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class LogicalAnd : Expr {
+        public LogicalAnd(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class LogicalOr : Expr {
+        public LogicalOr(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public class NotEqual : Expr {
+        public NotEqual(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
     }
 }

@@ -98,7 +98,7 @@ namespace semant2_test {
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
-            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
         }
 
         [TestMethod]
@@ -108,7 +108,7 @@ namespace semant2_test {
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
-            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
         }
 
         [TestMethod]
@@ -118,7 +118,7 @@ namespace semant2_test {
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
-            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
         }
 
         [TestMethod]
@@ -128,9 +128,9 @@ namespace semant2_test {
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
-            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
-            env = t.Item2;
-            String log = t.Item2.Dump();
+            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
+            env = t.Item1;
+            String log = t.Item1.Dump();
             System.Diagnostics.Debug.WriteLine(log);
 
             src = "enum MyEnum";
@@ -148,7 +148,7 @@ namespace semant2_test {
             DeclnSpecs decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
-            Tuple<AST.ExprType, AST.Env> t = decln_specs.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
         }
     }
 
@@ -209,7 +209,7 @@ namespace semant2_test {
     public class StmtTest {
         [TestMethod]
         public void TestCompountStmt() {
-            string src = @"{ int a; int b; 3.0f; 3 + 5; }";
+            string src = "{ int a; int b; 3.0f; a % a; }";
             List<Token> tokens = Parser.GetTokensFromString(src);
             CompoundStatement stmt;
             int r = _compound_statement.Parse(tokens, 0, out stmt);
