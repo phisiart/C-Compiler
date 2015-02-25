@@ -11,20 +11,20 @@ public class PTNode {
 
 
 // the declaration of an object
-public class Decln : ExternalDeclaration {
-    public Decln(DeclnSpecs decl_specs_, List<InitDeclr> init_declrs_) {
+public class Declaration : ExternalDeclaration {
+    public Declaration(DeclarationSpecifiers decl_specs_, List<InitDeclr> init_declrs_) {
         decl_specs = decl_specs_;
         init_declrs = init_declrs_;
     }
-    public DeclnSpecs decl_specs;
+    public DeclarationSpecifiers decl_specs;
     public List<InitDeclr> init_declrs;
 
     public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
         List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
 
-        Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> r_specs = decl_specs.SemantDeclnSpecs(env);
+        Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = decl_specs.GetSCSType(env);
         env = r_specs.Item1;
-        AST.Decln.EnumSCS scs = r_specs.Item2;
+        AST.Decln.SCS scs = r_specs.Item2;
         AST.ExprType base_type = r_specs.Item3;
 
         foreach (InitDeclr init_declr in init_declrs) {
@@ -38,26 +38,25 @@ public class Decln : ExternalDeclaration {
             // TODO : [finished] add the newly declared object into the environment
             AST.Env.EntryLoc loc;
             switch (scs) {
-                case AST.Decln.EnumSCS.AUTO:
-                    if (env.IsGlobal()) {
-                        loc = AST.Env.EntryLoc.GLOBAL;
-                    }
-                    else {
-                        loc = AST.Env.EntryLoc.STACK;
-                    }
-                    break;
-                case AST.Decln.EnumSCS.EXTERN:
+            case AST.Decln.SCS.AUTO:
+                if (env.IsGlobal()) {
                     loc = AST.Env.EntryLoc.GLOBAL;
-                    break;
-                case AST.Decln.EnumSCS.STATIC:
-                    loc = AST.Env.EntryLoc.GLOBAL;
-                    break;
-                case AST.Decln.EnumSCS.TYPEDEF:
-                    loc = AST.Env.EntryLoc.TYPEDEF;
-                    break;
-                default:
-                    Log.SemantError("scs error");
-                    return null;
+                } else {
+                    loc = AST.Env.EntryLoc.STACK;
+                }
+                break;
+            case AST.Decln.SCS.EXTERN:
+                loc = AST.Env.EntryLoc.GLOBAL;
+                break;
+            case AST.Decln.SCS.STATIC:
+                loc = AST.Env.EntryLoc.GLOBAL;
+                break;
+            case AST.Decln.SCS.TYPEDEF:
+                loc = AST.Env.EntryLoc.TYPEDEF;
+                break;
+            default:
+                Log.SemantError("scs error");
+                return null;
             }
             env = env.PushEntry(loc, name, type);
 
@@ -89,9 +88,9 @@ public class Decln : ExternalDeclaration {
 //
 // in semant, use GetExprType(env) to get (type, env).
 // 
-public class DeclnSpecs : PTNode {
-    public DeclnSpecs(List<StorageClassSpecifier> _storage_class_specifiers,
-                                 List<TypeSpec> _type_specifiers,
+public class DeclarationSpecifiers : PTNode {
+    public DeclarationSpecifiers(List<StorageClassSpecifier> _storage_class_specifiers,
+                                 List<TypeSpecifier> _type_specifiers,
                                  List<TypeQualifier> _type_qualifiers) {
         storage_class_specifiers = _storage_class_specifiers;
         type_qualifiers = _type_qualifiers;
@@ -101,37 +100,37 @@ public class DeclnSpecs : PTNode {
     // after parsing
     // -------------
     public List<StorageClassSpecifier> storage_class_specifiers;
-    public List<TypeSpec> type_specifiers;
+    public List<TypeSpecifier> type_specifiers;
     public List<TypeQualifier> type_qualifiers;
 
     // TODO : [finished] DeclnSpecs.SemantDeclnSpecs(env) -> (env, scs, type)
-    public Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> SemantDeclnSpecs(AST.Env env) {
+    public Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> GetSCSType(AST.Env env) {
         Tuple<AST.Env, AST.ExprType> r_type = GetExprType(env);
         env = r_type.Item1;
         AST.ExprType type = r_type.Item2;
 
-        AST.Decln.EnumSCS scs;
+        AST.Decln.SCS scs;
         switch (GetStorageClass()) {
-            case StorageClassSpecifier.AUTO:
-            case StorageClassSpecifier.NULL:
-            case StorageClassSpecifier.REGISTER:
-                scs = AST.Decln.EnumSCS.AUTO;
-                break;
-            case StorageClassSpecifier.EXTERN:
-                scs = AST.Decln.EnumSCS.EXTERN;
-                break;
-            case StorageClassSpecifier.STATIC:
-                scs = AST.Decln.EnumSCS.STATIC;
-                break;
-            case StorageClassSpecifier.TYPEDEF:
-                scs = AST.Decln.EnumSCS.TYPEDEF;
-                break;
-            default:
-                Log.SemantError("scs error");
-                return null;
+        case StorageClassSpecifier.AUTO:
+        case StorageClassSpecifier.NULL:
+        case StorageClassSpecifier.REGISTER:
+            scs = AST.Decln.SCS.AUTO;
+            break;
+        case StorageClassSpecifier.EXTERN:
+            scs = AST.Decln.SCS.EXTERN;
+            break;
+        case StorageClassSpecifier.STATIC:
+            scs = AST.Decln.SCS.STATIC;
+            break;
+        case StorageClassSpecifier.TYPEDEF:
+            scs = AST.Decln.SCS.TYPEDEF;
+            break;
+        default:
+            Log.SemantError("scs error");
+            return null;
         }
 
-        return new Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType>(env, scs, type);
+        return new Tuple<AST.Env, AST.Decln.SCS, AST.ExprType>(env, scs, type);
     }
 
     // GetExprType : env -> (type, env)
@@ -150,7 +149,7 @@ public class DeclnSpecs : PTNode {
         int nbasics = type_specifiers.Count(spec => spec.basic != BTypeSpec.NULL);
         if (nbasics == type_specifiers.Count) {
             List<BTypeSpec> basic_specs = new List<BTypeSpec>();
-            foreach (TypeSpec spec in type_specifiers) {
+            foreach (TypeSpecifier spec in type_specifiers) {
                 basic_specs.Add(spec.basic);
             }
 
@@ -224,7 +223,7 @@ public class DeclnSpecs : PTNode {
             return StorageClassSpecifier.ERROR;
         }
     }
-    
+
     // GetBasicType
     // ============
     // input: specs
@@ -321,7 +320,7 @@ public class DeclnSpecs : PTNode {
         { new List<BTypeSpec> { BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
         { new List<BTypeSpec> { BTypeSpec.LONG, BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
 
-    };    
+    };
 
 }
 
@@ -332,26 +331,24 @@ public class DeclnSpecs : PTNode {
 // 
 public class InitDeclr : PTNode {
 
-    public InitDeclr(Declr _decl, Expression _init) {
+    public InitDeclr(Declarator _decl, Expression _init) {
         if (_decl != null) {
             declarator = _decl;
-        }
-        else {
+        } else {
             declarator = new NullDeclr();
         }
 
         if (_init != null) {
             init = _init;
-        }
-        else {
+        } else {
             init = new NullExpression();
         }
     }
 
-    public Declr declarator;
+    public Declarator declarator;
     public Expression init;
 
-    
+
     // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
     public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
 
@@ -408,11 +405,11 @@ public enum BTypeSpec {
 //                 |
 //                 +--- UnionSpec
 //
-public class TypeSpec : PTNode {
-    public TypeSpec() {
+public class TypeSpecifier : PTNode {
+    public TypeSpecifier() {
         basic = BTypeSpec.NULL;
     }
-    public TypeSpec(BTypeSpec spec) {
+    public TypeSpecifier(BTypeSpec spec) {
         basic = spec;
     }
 
@@ -430,7 +427,7 @@ public class TypeSpec : PTNode {
 
 
 // this is just temporary
-public class TypedefName : TypeSpec {
+public class TypedefName : TypeSpecifier {
     public TypedefName(String _name) {
         name = _name;
     }
@@ -523,8 +520,8 @@ public class PointerInfo : TypeInfo {
     public List<TypeQualifier> type_qualifiers;
 }
 
-public class Declr : PTNode {
-    public Declr(String _name) {
+public class Declarator : PTNode {
+    public Declarator(String _name) {
         type_infos = new List<TypeInfo>();
         name = _name;
     }
@@ -543,7 +540,7 @@ public class Declr : PTNode {
     }
 }
 
-public class NullDeclr : Declr {
+public class NullDeclr : Declarator {
     public NullDeclr() : base("") { }
 
     public override Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
@@ -586,7 +583,7 @@ public class ParamTypeList : PTNode {
 //   name      : String
 //   enum_list : List<Enumerator>
 // 
-public class EnumSpec : TypeSpec {
+public class EnumSpec : TypeSpecifier {
     public EnumSpec(String _name, List<Enumerator> _enum_list) {
         name = _name;
         enum_list = _enum_list;
@@ -600,8 +597,7 @@ public class EnumSpec : TypeSpec {
                 Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
                 return null;
             }
-        }
-        else {
+        } else {
             // so there are something in this enum type, we need to put this type into the environment
             int idx = 0;
             foreach (Enumerator elem in enum_list) {
@@ -613,7 +609,7 @@ public class EnumSpec : TypeSpec {
 
         return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
     }
-    
+
     public readonly String name;
     public readonly List<Enumerator> enum_list;
 
@@ -636,7 +632,7 @@ public class Enumerator : PTNode {
 // a base class of StructSpec and UnionSpec
 // not present in the semant phase
 // 
-public class StructOrUnionSpec : TypeSpec {
+public class StructOrUnionSpec : TypeSpecifier {
     public String name;
     public List<StructDecln> declns;
 }
@@ -734,12 +730,12 @@ public class StructOrUnion : PTNode {
 
 
 public class StructDecln : PTNode {
-    public StructDecln(DeclnSpecs _specs, List<Declr> _declrs) {
+    public StructDecln(DeclarationSpecifiers _specs, List<Declarator> _declrs) {
         specs = _specs;
         declrs = _declrs;
     }
-    public DeclnSpecs specs;
-    public List<Declr> declrs;
+    public DeclarationSpecifiers specs;
+    public List<Declarator> declrs;
 
     public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
         Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprType(env);
@@ -747,7 +743,7 @@ public class StructDecln : PTNode {
         AST.ExprType base_type = r_specs.Item2;
 
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
-        foreach (Declr declr in declrs) {
+        foreach (Declarator declr in declrs) {
             Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, base_type);
             env = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
@@ -761,25 +757,24 @@ public class StructDecln : PTNode {
 
 // Finished.
 public class ParamDecln : PTNode {
-    public ParamDecln(DeclnSpecs _specs, Declr _decl) {
+    public ParamDecln(DeclarationSpecifiers _specs, Declarator _decl) {
         specs = _specs;
 
         if (_decl != null) {
             decl = _decl;
-        }
-        else {
+        } else {
             decl = new NullDeclr();
         }
     }
 
-    public DeclnSpecs specs;
-    public Declr decl;
+    public DeclarationSpecifiers specs;
+    public Declarator decl;
 
     // TODO : [finished] ParamDecln.GetParamDecln(env) -> (env, name, type)
     public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
-        Tuple<AST.Env, AST.Decln.EnumSCS, AST.ExprType> r_specs = specs.SemantDeclnSpecs(env);
+        Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
         env = r_specs.Item1;
-        AST.Decln.EnumSCS scs = r_specs.Item2;
+        AST.Decln.SCS scs = r_specs.Item2;
         AST.ExprType type = r_specs.Item3;
 
         Tuple<AST.Env, AST.ExprType, String> r_declr = decl.WrapExprType(env, type);
@@ -802,13 +797,13 @@ public class InitrList : Expression {
 
 
 public class TypeName : PTNode {
-    public TypeName(DeclnSpecs _specs, Declr _decl) {
+    public TypeName(DeclarationSpecifiers _specs, Declarator _decl) {
         specs = _specs;
         decl = _decl;
     }
 
-    public DeclnSpecs specs;
-    public Declr decl;
+    public DeclarationSpecifiers specs;
+    public Declarator decl;
 
 }
 

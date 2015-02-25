@@ -7,12 +7,12 @@ using System.Collections.Generic;
 public class _declaration : ParseRule {
     public static bool Test() {
         List<Token> src = Parser.GetTokensFromString("static int a = 3, *b = 0, **c = 3;");
-        Decln decl;
+        Declaration decl;
         int current = Parse(src, 0, out decl);
         return current != -1;
     }
     
-    public static int Parse(List<Token> src, int pos, out Decln declaration) {
+    public static int Parse(List<Token> src, int pos, out Declaration declaration) {
 
         DeclarationSpecifiers decl_specs;
         int current = _declaration_specifiers.Parse(src, pos, out decl_specs);
@@ -34,7 +34,7 @@ public class _declaration : ParseRule {
             return -1;
         }
 
-        declaration = new Decln(decl_specs, init_declrs);
+        declaration = new Declaration(decl_specs, init_declrs);
 
         // add parser scope.
         if (decl_specs.IsTypedef()) {

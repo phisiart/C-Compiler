@@ -62,7 +62,7 @@ public class _external_declaration : ParseRule {
     }
 
     public static int Parse(List<Token> src, int pos, out ExternalDeclaration node) {
-        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Declaration>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 

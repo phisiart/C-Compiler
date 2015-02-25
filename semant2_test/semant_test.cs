@@ -109,7 +109,7 @@ namespace semant2_test {
         public void TestInt() {
             string src = "int a, *b, c(int haha, int), d[];";
             List<Token> tokens = Parser.GetTokensFromString(src);
-            Decln decln;
+            Declaration decln;
             int r = _declaration.Parse(tokens, 0, out decln);
 
             AST.Env env = new AST.Env();
@@ -122,7 +122,7 @@ namespace semant2_test {
         public void TestStruct() {
             string src = "struct MyStruct { int a; int b; } my_struct;";
             List<Token> tokens = Parser.GetTokensFromString(src);
-            Decln decln;
+            Declaration decln;
             int r = _declaration.Parse(tokens, 0, out decln);
 
             AST.Env env = new AST.Env();
@@ -133,7 +133,7 @@ namespace semant2_test {
         public void TestUnion() {
             string src = "union MyUnion { int a; int b; } my_union;";
             List<Token> tokens = Parser.GetTokensFromString(src);
-            Decln decln;
+            Declaration decln;
             int r = _declaration.Parse(tokens, 0, out decln);
 
             AST.Env env = new AST.Env();

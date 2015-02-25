@@ -116,11 +116,11 @@ public class _compound_statement : ParseRule {
         }
         int current = begin + 1;
 
-        List<Decln> decl_list;
+        List<Declaration> decl_list;
         int saved = current;
         current = _declaration_list.Parse(src, current, out decl_list);
         if (current == -1) {
-            decl_list = new List<Decln>();
+            decl_list = new List<Declaration>();
             current = saved;
         }
 
@@ -148,9 +148,9 @@ public class _compound_statement : ParseRule {
 // [ note: my solution ]
 // declaration_list: <declaration>+
 public class _declaration_list : ParseRule {
-    public static int Parse(List<Token> src, int begin, out List<Decln> decl_list) {
-        decl_list = new List<Decln>();
-        Decln decl;
+    public static int Parse(List<Token> src, int begin, out List<Declaration> decl_list) {
+        decl_list = new List<Declaration>();
+        Declaration decl;
         int current = _declaration.Parse(src, begin, out decl);
         if (current == -1) {
             return -1;

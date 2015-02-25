@@ -40,11 +40,11 @@ public class ReturnStatement : Statement {
 
 
 public class CompoundStatement : Statement {
-    public CompoundStatement(List<Decln> _decl_list, List<Statement> _stmt_list) {
+    public CompoundStatement(List<Declaration> _decl_list, List<Statement> _stmt_list) {
         stmt_declns = _decl_list;
         stmt_stmts = _stmt_list;
     }
-    List<Decln> stmt_declns;
+    List<Declaration> stmt_declns;
     List<Statement> stmt_stmts;
 
     public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
@@ -52,7 +52,7 @@ public class CompoundStatement : Statement {
         List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
         List<Tuple<AST.Env, AST.Stmt>> stmts = new List<Tuple<AST.Env, AST.Stmt>>();
 
-        foreach (Decln decln in stmt_declns) {
+        foreach (Declaration decln in stmt_declns) {
             Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
             env = r_decln.Item1;
             declns.AddRange(r_decln.Item2);
