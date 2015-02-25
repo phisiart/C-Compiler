@@ -39,7 +39,7 @@ public class _declaration : ParseRule {
         // add parser scope.
         if (decl_specs.IsTypedef()) {
             foreach (InitDeclr init_declarator in init_declrs) {
-                ScopeEnvironment.AddTypedefName(init_declarator.declarator.name);
+                ScopeEnvironment.AddTypedefName(init_declarator.declarator.declr_name);
             }
         }
 
@@ -501,24 +501,24 @@ public class _declarator : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Declarator decl) {
-        
+    public static int Parse(List<Token> src, int begin, out Declarator declr) {
         // try to match pointer
-        List<PointerInfo> pointer_infos;
+        List<PointerModifier> pointer_infos;
         int current = _pointer.Parse(src, begin, out pointer_infos);
         if (current == -1) {
             // if fail, just create an empty list
-            pointer_infos = new List<PointerInfo>();
+            pointer_infos = new List<PointerModifier>();
             current = begin;
         }
 
         // match direct_declarator
-        current = _direct_declarator.Parse(src, current, out decl);
-        if (current != -1) {
-            decl.type_infos.AddRange(pointer_infos);
+        if ((current = _direct_declarator.Parse(src, current, out declr)) != -1) {
+            String name = declr.declr_name;
+            List<TypeModifier> modifiers = new List<TypeModifier>(declr.declr_modifiers);
+            modifiers.AddRange(pointer_infos);
             return current;
         } else {
-            decl = null;
+            declr = null;
             return -1;
         }
     }
@@ -533,7 +533,7 @@ public class _declarator : ParseRule {
 public class _pointer : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("* const * volatile const *");
-        List<PointerInfo> infos;
+        List<PointerModifier> infos;
         int current = Parse(src, 0, out infos);
         if (current == -1) {
             return false;
@@ -541,7 +541,7 @@ public class _pointer : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out List<PointerInfo> infos) {
+    public static int Parse(List<Token> src, int begin, out List<PointerModifier> infos) {
         // match '*'
         if (!Parser.IsOperator(src[begin], OperatorVal.MULT)) {
             infos = null;
@@ -557,12 +557,12 @@ public class _pointer : ParseRule {
             current = saved;
             type_qualifiers = new List<TypeQualifier>();
         }
-        PointerInfo info = new PointerInfo(type_qualifiers);
+        PointerModifier info = new PointerModifier(type_qualifiers);
 
         saved = current;
         current = _pointer.Parse(src, current, out infos);
         if (current == -1) {
-            infos = new List<PointerInfo>();
+            infos = new List<PointerModifier>();
             infos.Add(info);
             return saved;
         } else {
@@ -711,136 +711,130 @@ public class _direct_declarator : ParseRule {
 
         return true;
     }
-    
-    public static int ParseDeclarator(List<Token> src, int begin, out Declarator decl) {
-        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
-            decl = null;
-            return -1;
-        }
-        begin++;
 
-        begin = _declarator.Parse(src, begin, out decl);
-        if (begin == -1) {
-            decl = null;
+    // '(' declarator ')'
+    // 
+    public static int ParseDeclarator(List<Token> src, int begin, out Declarator declr) {
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
+            declr = null;
             return -1;
         }
 
-        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
-            decl = null;
+        if ((begin = _declarator.Parse(src, begin, out declr)) == -1) {
+            declr = null;
             return -1;
         }
-        begin++;
+
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.RPAREN)) {
+            declr = null;
+            return -1;
+        }
 
         return begin;
     }
 
-    public static int ParseArrayInfo(List<Token> src, int begin, out ArrayModifier info) {
+    // '[' constant_expression ']'
+    // 
+    public static int ParseArrayModifier(List<Token> src, int begin, out ArrayModifier modifier) {
         // match '['
-        if (!Parser.IsOperator(src[begin], OperatorVal.LBRACKET)) {
-            info = null;
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.LBRACKET)) {
+            modifier = null;
             return -1;
         }
-        begin++;
-        
+
         // match constant_expression, if fail, just put null
         Expression nelems;
         int saved = begin;
-        begin = _constant_expression.Parse(src, begin, out nelems);
-        if (begin == -1) {
+        if ((begin = _constant_expression.Parse(src, begin, out nelems)) == -1) {
             nelems = null;
             begin = saved;
         }
 
         // match ']'
-        if (!Parser.IsOperator(src[begin], OperatorVal.RBRACKET)) {
-            info = null;
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.RBRACKET)) {
+            modifier = null;
             return -1;
         }
-        begin++;
 
-        info = new ArrayModifier(nelems);
+        modifier = new ArrayModifier(nelems);
         return begin;
     }
 
-    public static int ParseFunctionInfo(List<Token> src, int begin, out FunctionModifier info) {
+    // '(' parameter_type_list ')'
+    // 
+    public static int ParseFunctionModifier(List<Token> src, int begin, out FunctionModifier modifier) {
         // match '('
-        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
-            info = null;
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
+            modifier = null;
             return -1;
         }
-        begin++;
 
-        // match constant_expression, if fail, just put null
+        // match constant_expression, if fail, just assume no parameter
         ParamTypeList param_type_list;
         int saved = begin;
-        begin = _parameter_type_list.Parse(src, begin, out param_type_list);
-        if (begin == -1) {
-            param_type_list = null;
+        if ((begin = _parameter_type_list.Parse(src, begin, out param_type_list)) == -1) {
+            param_type_list = new ParamTypeList(new List<ParameterDeclaration>());
             begin = saved;
         }
 
         // match ')'
-        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
-            info = null;
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.RPAREN)) {
+            modifier = null;
             return -1;
         }
-        begin++;
 
-        info = new FunctionModifier(param_type_list);
+        modifier = new FunctionModifier(param_type_list);
         return begin;
     }
 
-    public static int ParseTypeInfo(List<Token> src, int begin, out TypeModifier info) {
-        ArrayModifier array_info;
-        int current = ParseArrayInfo(src, begin, out array_info);
+    // array modifier or function modifier
+    // 
+    public static int ParseSuffixModifier(List<Token> src, int begin, out TypeModifier modifier) {
+        ArrayModifier array_modifier;
+        int current = ParseArrayModifier(src, begin, out array_modifier);
         if (current != -1) {
-            info = array_info;
+            modifier = array_modifier;
             return current;
         }
 
         FunctionModifier function_info;
-        current = ParseFunctionInfo(src, begin, out function_info);
-        if (current != -1) {
-            info = function_info;
+        if ((current = ParseFunctionModifier(src, begin, out function_info)) != -1) {
+            modifier = function_info;
             return current;
         }
 
-        info = null;
+        modifier = null;
         return -1;
     }
     
-    public static int Parse(List<Token> src, int begin, out Declarator decl) {
+    // Parse direct declarator
+    // 
+    public static int Parse(List<Token> src, int begin, out Declarator declr) {
+        String name;
+        List<TypeModifier> modifiers = new List<TypeModifier>();
 
-        // 1. match id | '(' declarator ')'
-        // 1.1. try '(' declarator ')'
-        int current = ParseDeclarator(src, begin, out decl);
-        if (current == -1) {
+        // 1. match: id | '(' declarator ')'
+        // 1.1. try: '(' declarator ')'
+        int current;
+        if ((current = ParseDeclarator(src, begin, out declr)) != -1) {
+            name = declr.declr_name;
+            modifiers = new List<TypeModifier>(declr.declr_modifiers);
+        } else {
             // if fail, 1.2. try id
-            if (src[begin].type != TokenType.IDENTIFIER) {
-                decl = null;
+            name = Parser.GetIdentifierValue(src[begin]);
+            if (name == null) {
+                declr = null;
                 return -1;
             }
-            String name = ((TokenIdentifier)src[begin]).val;
             current = begin + 1;
-            
-            decl = new Declarator(name);
-            //decl.name = name;
         }
 
-        // now match infos
-        int saved;
-        while (true) {
-            TypeModifier info;
-            saved = current;
-            current = ParseTypeInfo(src, current, out info);
-            if (current != -1) {
-                decl.type_infos.Add(info);
-                continue;
-            }
+        List<TypeModifier> more_modifiers;
+        current = Parser.ParseList(src, current, out more_modifiers, ParseSuffixModifier);
+        modifiers.AddRange(more_modifiers);
 
-            current = saved;
-            return current;
-        }
+        declr = new Declarator(name, modifiers);
+        return current;
     }
 
 }
@@ -1274,35 +1268,31 @@ public class _parameter_declaration : ParseRule {
 // [ note: this is for anonymous declarator ]
 // [ note: there couldn't be any typename in an abstract_declarator ]
 public class _abstract_declarator : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Declarator decl) {
-        List<PointerInfo> infos;
-        int current = _pointer.Parse(src, begin, out infos);
+    public static int Parse(List<Token> src, int begin, out Declarator declr) {
+        List<PointerModifier> pointer_modifiers;
+        int current = _pointer.Parse(src, begin, out pointer_modifiers);
         if (current == -1) {
-            return _direct_abstract_declarator.Parse(src, begin, out decl);
+            return _direct_abstract_declarator.Parse(src, begin, out declr);
         }
 
+        String name;
+        List<TypeModifier> modifiers;
         int saved = current;
-        current = _direct_abstract_declarator.Parse(src, current, out decl);
-        if (current != -1) {
-            decl.type_infos.AddRange(infos);
-            return current;
+        if ((current = _direct_abstract_declarator.Parse(src, current, out declr)) == -1) {
+            name = "";
+            modifiers = new List<TypeModifier>(pointer_modifiers);
+            current = saved;
+        } else {
+            name = declr.declr_name;
+            modifiers = new List<TypeModifier>(declr.declr_modifiers);
+            modifiers.AddRange(pointer_modifiers);
+            
         }
 
-        decl = new Declarator("");
-        decl.type_infos.AddRange(infos);
-        return saved;
-
+        declr = new Declarator(name, modifiers);
+        return current;
     }
 }
-
-/*
-//public class AbstractDeclarator : ASTNode {
-//    public AbstractDeclarator() {
-//        type_infos = new List<TypeInfo>();
-//    }
-//    public List<TypeInfo> type_infos;
-//}
-*/
 
 // direct_abstract_declarator : '(' abstract_declarator ')'
 //                            | [direct_abstract_declarator]? '[' [constant_expression]? ']'
@@ -1328,6 +1318,7 @@ public class _direct_abstract_declarator : ParseRule {
     }
 
     // '(' abstract_declarator ')'
+    // 
     public static int ParseAbstractDeclarator(List<Token> src, int begin, out Declarator decl) {
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
             decl = null;
@@ -1347,38 +1338,31 @@ public class _direct_abstract_declarator : ParseRule {
         return begin;
     }
 
-    public static int Parse(List<Token> src, int begin, out Declarator decl) {
-        // 1. match typeinfo | '(' abstract_declarator ')'
+    public static int Parse(List<Token> src, int begin, out Declarator declr) {
+        List<TypeModifier> modifiers;
+
+        // 1. match modifier | '(' abstract_declarator ')'
         // 1.1 try '(' abstract_declarator ')'
-        int current = ParseAbstractDeclarator(src, begin, out decl);
-        if (current == -1) {
-            // if fail, 1.2. try typeinfo
-            TypeModifier info;
-            current = _direct_declarator.ParseTypeInfo(src, begin, out info);
-            if (current == -1) {
-                decl = null;
+        int current = ParseAbstractDeclarator(src, begin, out declr);
+        if (current != -1) {
+            modifiers = new List<TypeModifier>(declr.declr_modifiers);
+        } else {
+            // if fail, 1.2. try modifier
+            TypeModifier modifier;
+            if ((current = _direct_declarator.ParseSuffixModifier(src, begin, out modifier)) == -1) {
+                declr = null;
                 return -1;
             }
-
-            decl = new Declarator("");
-            decl.type_infos.Add(info);
+            modifiers = new List<TypeModifier> { modifier };
         }
 
-        // now match infos
-        int saved;
-        while (true) {
-            TypeModifier info;
-            saved = current;
-            current = _direct_declarator.ParseTypeInfo(src, current, out info);
-            if (current != -1) {
-                decl.type_infos.Add(info);
-                continue;
-            }
+        // now match modifiers
+        List<TypeModifier> more_modifiers;
+        current = Parser.ParseList(src, current, out more_modifiers, _direct_declarator.ParseSuffixModifier);
+        modifiers.AddRange(more_modifiers);
 
-            current = saved;
-            return current;
-        }
-        
+        declr = new Declarator("", modifiers);
+        return current;
     }
 
 }

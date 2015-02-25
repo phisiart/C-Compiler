@@ -215,7 +215,7 @@ public class Parser {
     }
 
     public static int ParseNonEmptyList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
-        begin = ParseList<TRet>(src, begin, out list, Parse);
+        begin = ParseList(src, begin, out list, Parse);
         if (list.Any()) {
             return begin;
         } else {

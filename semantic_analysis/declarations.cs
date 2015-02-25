@@ -503,43 +503,48 @@ public class ArrayModifier : TypeModifier {
     public readonly Expression array_nelems;
 }
 
-public class PointerInfo : TypeModifier {
-    public PointerInfo(List<TypeQualifier> _type_qualifiers)
+public class PointerModifier : TypeModifier {
+    public PointerModifier(List<TypeQualifier> _type_qualifiers)
         : base(TypeModifierKind.POINTER) {
         type_qualifiers = _type_qualifiers;
     }
 
-    // TODO : [finished] PointerInfo.WrapType(env, type) -> (env, type)
+    // Modify Type : (env, type) => (env, type)
+    // ========================================
+    // 
     public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
-        bool is_const = type_qualifiers.Any(x => x == TypeQualifier.CONST);
-        bool is_volatile = type_qualifiers.Any(x => x == TypeQualifier.VOLATILE);
+        Boolean is_const = type_qualifiers.Any(x => x == TypeQualifier.CONST);
+        Boolean is_volatile = type_qualifiers.Any(x => x == TypeQualifier.VOLATILE);
         return new Tuple<AST.Env, AST.ExprType>(env, new AST.TPointer(type, is_const, is_volatile));
     }
-    public List<TypeQualifier> type_qualifiers;
+    public readonly List<TypeQualifier> type_qualifiers;
 }
 
 public class Declarator : PTNode {
-    public Declarator(String _name) {
-        type_infos = new List<TypeModifier>();
-        name = _name;
+    public Declarator(String _name, List<TypeModifier> _declr_modifiers) {
+        inner_declr_modifiers = _declr_modifiers;
+        declr_name = _name;
     }
 
-    public List<TypeModifier> type_infos;
-    public String name;
+    public IReadOnlyList<TypeModifier> declr_modifiers {
+        get { return inner_declr_modifiers; }
+    }
+    private readonly List<TypeModifier> inner_declr_modifiers;
+    public readonly String declr_name;
 
     // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
     public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
-        type_infos.ForEach(info => {
+        inner_declr_modifiers.ForEach(info => {
             Tuple<AST.Env, AST.ExprType> r = info.ModifyType(env, type);
             env = r.Item1;
             type = r.Item2;
         });
-        return new Tuple<AST.Env, AST.ExprType, string>(env, type, name);
+        return new Tuple<AST.Env, AST.ExprType, String>(env, type, declr_name);
     }
 }
 
 public class NullDeclr : Declarator {
-    public NullDeclr() : base("") { }
+    public NullDeclr() : base("", new List<TypeModifier>()) { }
 
     public override Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
         return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
