@@ -89,19 +89,17 @@ public class Declaration : ExternalDeclaration {
 // in semant, use GetExprType(env) to get (type, env).
 // 
 public class DeclarationSpecifiers : PTNode {
-    public DeclarationSpecifiers(List<StorageClassSpecifier> _storage_class_specifiers,
-                                 List<TypeSpecifier> _type_specifiers,
-                                 List<TypeQualifier> _type_qualifiers) {
-        storage_class_specifiers = _storage_class_specifiers;
-        type_qualifiers = _type_qualifiers;
-        type_specifiers = _type_specifiers;
+    public DeclarationSpecifiers(List<StorageClassSpecifier> _scs,
+                                 List<TypeSpecifier> _typespecs,
+                                 List<TypeQualifier> _typequals) {
+        specs_scs = _scs;
+        specs_typequals = _typequals;
+        specs_typespecs = _typespecs;
     }
 
-    // after parsing
-    // -------------
-    public List<StorageClassSpecifier> storage_class_specifiers;
-    public List<TypeSpecifier> type_specifiers;
-    public List<TypeQualifier> type_qualifiers;
+    public readonly List<StorageClassSpecifier> specs_scs;
+    public readonly List<TypeSpecifier>         specs_typespecs;
+    public readonly List<TypeQualifier>         specs_typequals;
 
     // TODO : [finished] DeclnSpecs.SemantDeclnSpecs(env) -> (env, scs, type)
     public Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> GetSCSType(AST.Env env) {
@@ -126,77 +124,63 @@ public class DeclarationSpecifiers : PTNode {
             scs = AST.Decln.SCS.TYPEDEF;
             break;
         default:
-            Log.SemantError("scs error");
-            return null;
+            throw new InvalidOperationException("Error: invalid storage class");
         }
 
         return new Tuple<AST.Env, AST.Decln.SCS, AST.ExprType>(env, scs, type);
     }
 
-    // GetExprType : env -> (type, env)
+    // Get Expression Type : env -> (env, type)
+    // ========================================
     // 
     public Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env) {
 
-        bool is_const = type_qualifiers.Exists(qual => qual == TypeQualifier.CONST);
-        bool is_volatile = type_qualifiers.Exists(qual => qual == TypeQualifier.VOLATILE);
+        bool is_const = specs_typequals.Exists(qual => qual == TypeQualifier.CONST);
+        bool is_volatile = specs_typequals.Exists(qual => qual == TypeQualifier.VOLATILE);
 
         // 1. if no type specifier => int
-        if (type_specifiers.Count == 0) {
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong());
+        if (specs_typespecs.Count == 0) {
+            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
         }
 
         // 2. now let's analyse type specs
-        int nbasics = type_specifiers.Count(spec => spec.basic != BTypeSpec.NULL);
-        if (nbasics == type_specifiers.Count) {
-            List<BTypeSpec> basic_specs = new List<BTypeSpec>();
-            foreach (TypeSpecifier spec in type_specifiers) {
-                basic_specs.Add(spec.basic);
-            }
-
-            // this might fail and cause the program to exit.
-            AST.ExprType.EnumExprType enum_type = GetBasicType(basic_specs);
-            AST.ExprType type = null;
-            switch (enum_type) {
+        if (specs_typespecs.All(spec => spec.basic != BTypeSpec.NULL)) {
+            List<BTypeSpec> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
+            switch (GetBasicType(basic_specs)) {
             case AST.ExprType.EnumExprType.CHAR:
-                type = new AST.TChar(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.UCHAR:
-                type = new AST.TUChar(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUChar(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.SHORT:
-                type = new AST.TShort(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TShort(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.USHORT:
-                type = new AST.TUShort(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUShort(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.LONG:
-                type = new AST.TLong(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.ULONG:
-                type = new AST.TULong(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TULong(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.FLOAT:
-                type = new AST.TFloat(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFloat(is_const, is_volatile));
+
             case AST.ExprType.EnumExprType.DOUBLE:
-                type = new AST.TDouble(is_const, is_volatile);
-                break;
+                return new Tuple<AST.Env, AST.ExprType>(env, new AST.TDouble(is_const, is_volatile));
+
             default:
                 throw new Exception("Error: can't match type specifier");
             }
-            return new Tuple<AST.Env, AST.ExprType>(env, type);
 
-        } else if (nbasics > 0) {
-            // partly basic specs, partly not
-            throw new Exception("Error: can't match type specifier");
-
-        } else if (type_specifiers.Count != 1) {
+        } else if (specs_typespecs.Count == 1) {
             // now we can only match for struct, union, function...
-            throw new Exception("Error: can't match type specifier");
+            return specs_typespecs[0].GetExprType(env, is_const, is_volatile);
 
         } else {
-            // now semant the only type spec
-            return type_specifiers[0].GetExprType(env, is_const, is_volatile);
+            throw new InvalidOperationException("Error: can't match type specifier");
 
         }
     }
@@ -206,7 +190,7 @@ public class DeclarationSpecifiers : PTNode {
     // Used by the parser
     // 
     public bool IsTypedef() {
-        return storage_class_specifiers.FindIndex(x => x == StorageClassSpecifier.TYPEDEF) != -1;
+        return specs_scs.FindIndex(x => x == StorageClassSpecifier.TYPEDEF) != -1;
     }
 
     // GetStorageClass
@@ -214,10 +198,10 @@ public class DeclarationSpecifiers : PTNode {
     // Infer the storage class
     // 
     public StorageClassSpecifier GetStorageClass() {
-        if (storage_class_specifiers.Count == 0) {
+        if (specs_scs.Count == 0) {
             return StorageClassSpecifier.NULL;
-        } else if (storage_class_specifiers.Count == 1) {
-            return storage_class_specifiers[0];
+        } else if (specs_scs.Count == 1) {
+            return specs_scs[0];
         } else {
             Log.SemantError("Error: multiple storage class specifiers.");
             return StorageClassSpecifier.ERROR;
@@ -246,16 +230,8 @@ public class DeclarationSpecifiers : PTNode {
     // private
     // Test whether the basic type specs matches the key
     // 
-    private static bool MatchSpecs(List<BTypeSpec> specs, List<BTypeSpec> key) {
-        if (specs.Count != key.Count) {
-            return false;
-        }
-        foreach (BTypeSpec spec in key) {
-            if (specs.FindIndex(x => x == spec) == -1) {
-                return false;
-            }
-        }
-        return true;
+    private static bool MatchSpecs(List<BTypeSpec> lhs, List<BTypeSpec> rhs) {
+        return lhs.Count == rhs.Count && rhs.All(item => lhs.Contains(item));
     }
 
     // bspecs2enumtype
