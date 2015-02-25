@@ -381,39 +381,39 @@ public class _type_specifier : ParseRule {
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.VOID:
-            spec = new TypeSpecifier(BTypeSpec.VOID);
+            spec = new TypeSpecifier(BasicTypeSpecifier.VOID);
             return begin + 1;
 
         case KeywordVal.CHAR:
-            spec = new TypeSpecifier(BTypeSpec.CHAR);
+            spec = new TypeSpecifier(BasicTypeSpecifier.CHAR);
             return begin + 1;
 
         case KeywordVal.SHORT:
-            spec = new TypeSpecifier(BTypeSpec.SHORT);
+            spec = new TypeSpecifier(BasicTypeSpecifier.SHORT);
             return begin + 1;
 
         case KeywordVal.INT:
-            spec = new TypeSpecifier(BTypeSpec.INT);
+            spec = new TypeSpecifier(BasicTypeSpecifier.INT);
             return begin + 1;
 
         case KeywordVal.LONG:
-            spec = new TypeSpecifier(BTypeSpec.LONG);
+            spec = new TypeSpecifier(BasicTypeSpecifier.LONG);
             return begin + 1;
 
         case KeywordVal.FLOAT:
-            spec = new TypeSpecifier(BTypeSpec.FLOAT);
+            spec = new TypeSpecifier(BasicTypeSpecifier.FLOAT);
             return begin + 1;
 
         case KeywordVal.DOUBLE:
-            spec = new TypeSpecifier(BTypeSpec.DOUBLE);
+            spec = new TypeSpecifier(BasicTypeSpecifier.DOUBLE);
             return begin + 1;
 
         case KeywordVal.SIGNED:
-            spec = new TypeSpecifier(BTypeSpec.SIGNED);
+            spec = new TypeSpecifier(BasicTypeSpecifier.SIGNED);
             return begin + 1;
 
         case KeywordVal.UNSIGNED:
-            spec = new TypeSpecifier(BTypeSpec.UNSIGNED);
+            spec = new TypeSpecifier(BasicTypeSpecifier.UNSIGNED);
             return begin + 1;
 
         default:
@@ -579,28 +579,26 @@ public class _pointer : ParseRule {
 // parameter_type_list : parameter_list < , ... >?
 public class _parameter_type_list : ParseRule {
     public static int Parse(List<Token> src, int begin, out ParamTypeList param_type_list) {
-        param_type_list = null;
-
-        List<ParamDecln> param_list;
+        List<ParameterDeclaration> param_list;
         int current = _parameter_list.Parse(src, begin, out param_list);
         if (current == -1) {
+            param_type_list = null;
             return -1;
         }
 
-        param_type_list = new ParamTypeList(param_list);
-
-        if (Parser.IsCOMMA(src[current])) {
+        if (Parser.IsOperator(src[current], OperatorVal.COMMA)) {
             int saved = current;
             current++;
             if (Parser.IsEllipsis(src, current)) {
                 current += 3;
-                param_type_list.IsVarArgs = true;
+                param_type_list = new ParamTypeList(param_list, true);
                 return current;
             } else {
                 current = saved;
             }
         }
 
+        param_type_list = new ParamTypeList(param_list, false);
         return current;
     }
 }
@@ -612,15 +610,15 @@ public class _parameter_type_list : ParseRule {
 // parameter_list : parameter_declaration < , parameter_declaration >*
 // [ note: it's okay to have a lonely ',', just leave it alone ]
 public class _parameter_list : ParseRule {
-    public static int Parse(List<Token> src, int begin, out List<ParamDecln> param_list) {
-        ParamDecln decl;
+    public static int Parse(List<Token> src, int begin, out List<ParameterDeclaration> param_list) {
+        ParameterDeclaration decl;
         int current = _parameter_declaration.Parse(src, begin, out decl);
         if (current == -1) {
             param_list = null;
             return -1;
         }
 
-        param_list = new List<ParamDecln>();
+        param_list = new List<ParameterDeclaration>();
         param_list.Add(decl);
 
         int saved;
@@ -736,7 +734,7 @@ public class _direct_declarator : ParseRule {
         return begin;
     }
 
-    public static int ParseArrayInfo(List<Token> src, int begin, out ArrayInfo info) {
+    public static int ParseArrayInfo(List<Token> src, int begin, out ArrayModifier info) {
         // match '['
         if (!Parser.IsOperator(src[begin], OperatorVal.LBRACKET)) {
             info = null;
@@ -760,11 +758,11 @@ public class _direct_declarator : ParseRule {
         }
         begin++;
 
-        info = new ArrayInfo(nelems);
+        info = new ArrayModifier(nelems);
         return begin;
     }
 
-    public static int ParseFunctionInfo(List<Token> src, int begin, out FunctionInfo info) {
+    public static int ParseFunctionInfo(List<Token> src, int begin, out FunctionModifier info) {
         // match '('
         if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
             info = null;
@@ -788,19 +786,19 @@ public class _direct_declarator : ParseRule {
         }
         begin++;
 
-        info = new FunctionInfo(param_type_list);
+        info = new FunctionModifier(param_type_list);
         return begin;
     }
 
-    public static int ParseTypeInfo(List<Token> src, int begin, out TypeInfo info) {
-        ArrayInfo array_info;
+    public static int ParseTypeInfo(List<Token> src, int begin, out TypeModifier info) {
+        ArrayModifier array_info;
         int current = ParseArrayInfo(src, begin, out array_info);
         if (current != -1) {
             info = array_info;
             return current;
         }
 
-        FunctionInfo function_info;
+        FunctionModifier function_info;
         current = ParseFunctionInfo(src, begin, out function_info);
         if (current != -1) {
             info = function_info;
@@ -832,7 +830,7 @@ public class _direct_declarator : ParseRule {
         // now match infos
         int saved;
         while (true) {
-            TypeInfo info;
+            TypeModifier info;
             saved = current;
             current = ParseTypeInfo(src, current, out info);
             if (current != -1) {
@@ -1229,7 +1227,7 @@ public class _struct_declarator : ParseRule {
 public class _parameter_declaration : ParseRule {
     public static bool Test() {
         var src = Parser.GetTokensFromString("int *a[]");
-        ParamDecln decl;
+        ParameterDeclaration decl;
         int current = Parse(src, 0, out decl);
         if (current == -1) {
             return false;
@@ -1237,7 +1235,7 @@ public class _parameter_declaration : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out ParamDecln decl) {
+    public static int Parse(List<Token> src, int begin, out ParameterDeclaration decl) {
         // step 1. match declaration_specifiers
         DeclarationSpecifiers specs;
         if ((begin = _declaration_specifiers.Parse(src, begin, out specs)) == -1) {
@@ -1249,7 +1247,7 @@ public class _parameter_declaration : ParseRule {
         int saved = begin;
         Declarator declarator;
         if ((begin = _declarator.Parse(src, begin, out declarator)) != -1) {
-            decl = new ParamDecln(specs, declarator);
+            decl = new ParameterDeclaration(specs, declarator);
             return begin;
         }
 
@@ -1257,12 +1255,12 @@ public class _parameter_declaration : ParseRule {
         begin = saved;
         //AbstractDeclarator abstract_declarator;
         if ((begin = _abstract_declarator.Parse(src, begin, out declarator)) != -1) {
-            decl = new ParamDecln(specs, declarator);
+            decl = new ParameterDeclaration(specs, declarator);
             return begin;
         }
 
         // if fail, never mind, just return specifiers
-        decl = new ParamDecln(specs, null);
+        decl = new ParameterDeclaration(specs, null);
         return saved;
 
     }
@@ -1355,7 +1353,7 @@ public class _direct_abstract_declarator : ParseRule {
         int current = ParseAbstractDeclarator(src, begin, out decl);
         if (current == -1) {
             // if fail, 1.2. try typeinfo
-            TypeInfo info;
+            TypeModifier info;
             current = _direct_declarator.ParseTypeInfo(src, begin, out info);
             if (current == -1) {
                 decl = null;
@@ -1369,7 +1367,7 @@ public class _direct_abstract_declarator : ParseRule {
         // now match infos
         int saved;
         while (true) {
-            TypeInfo info;
+            TypeModifier info;
             saved = current;
             current = _direct_declarator.ParseTypeInfo(src, current, out info);
             if (current != -1) {

@@ -74,6 +74,7 @@ namespace AST {
             STRUCT,
             UNION,
             FUNCTION,
+            ARRAY,
         }
 
         public ExprType(EnumExprType _expr_type = EnumExprType.ERROR, Boolean _is_const = false, Boolean _is_volatile = false) {
@@ -289,6 +290,30 @@ namespace AST {
         }
     }
 
+    public class TArray : ExprType {
+        public TArray(ExprType _elem_type, Int32 _nelems, Boolean _is_const = false, Boolean _is_volatile = false)
+            : base(EnumExprType.ARRAY, _is_const, _is_volatile) {
+            array_elem_type = _elem_type;
+            array_nelems = _nelems;
+        }
+
+        public readonly ExprType array_elem_type;
+        public readonly Int32    array_nelems;
+
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
+            return new TArray(array_elem_type, array_nelems, _is_const, _is_volatile);
+        }
+
+        public override Boolean EqualType(ExprType other) {
+            return other.expr_type == EnumExprType.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
+        }
+
+        public override String ToString() {
+            return array_elem_type.ToString() + "[" + array_nelems + "]";
+        }
+
+    }
+    
     // class TStruct
     // =============
     // represets the structure
@@ -405,8 +430,9 @@ namespace AST {
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
     public class TFunction : ExprType {
-        public TFunction(ExprType _ret_type, List<Tuple<String, ExprType>> _args)
+        public TFunction(ExprType _ret_type, List<Tuple<String, ExprType>> _args, Boolean _varargs)
             : base(EnumExprType.FUNCTION, true, false) {
+            varargs = _varargs;
             ret_type = _ret_type;
 
             args = new List<Utils.StoreEntry>();
@@ -451,6 +477,7 @@ namespace AST {
             return str + " -> " + ret_type;
         }
 
+        public readonly Boolean varargs;
         public readonly ExprType ret_type;
         public readonly List<Utils.StoreEntry> args;
     }
@@ -460,7 +487,7 @@ namespace AST {
     // defines an empty function: no arguments, returns void
     // 
     public class TEmptyFunction : TFunction {
-        public TEmptyFunction() : base(new TVoid(), new List<Tuple<string, ExprType>>()) {
+        public TEmptyFunction() : base(new TVoid(), new List<Tuple<string, ExprType>>(), false) {
         }
     }
 

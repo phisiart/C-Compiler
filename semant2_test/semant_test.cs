@@ -21,7 +21,7 @@ namespace semant2_test {
             args.Add(new Tuple<string, AST.ExprType>("some_double", new AST.TDouble()));
             args.Add(new Tuple<string, AST.ExprType>("another_double", new AST.TDouble()));
             args.Add(new Tuple<string, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args);
+            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args, false);
             AST.Env env2 = env.SetCurrentFunction(func);
 
             String log = env.Dump();
@@ -60,7 +60,7 @@ namespace semant2_test {
             args.Add(new Tuple<string, AST.ExprType>("some_double", new AST.TDouble()));
             args.Add(new Tuple<string, AST.ExprType>("another_double", new AST.TDouble()));
             args.Add(new Tuple<string, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args);
+            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args, false);
             String log = func.Dump(true);
             System.Diagnostics.Debug.WriteLine(log);
         }

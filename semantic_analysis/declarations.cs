@@ -144,8 +144,8 @@ public class DeclarationSpecifiers : PTNode {
         }
 
         // 2. now let's analyse type specs
-        if (specs_typespecs.All(spec => spec.basic != BTypeSpec.NULL)) {
-            List<BTypeSpec> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
+        if (specs_typespecs.All(spec => spec.basic != BasicTypeSpecifier.NULL)) {
+            List<BasicTypeSpecifier> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
             switch (GetBasicType(basic_specs)) {
             case AST.ExprType.EnumExprType.CHAR:
                 return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
@@ -190,7 +190,7 @@ public class DeclarationSpecifiers : PTNode {
     // Used by the parser
     // 
     public bool IsTypedef() {
-        return specs_scs.FindIndex(x => x == StorageClassSpecifier.TYPEDEF) != -1;
+        return specs_scs.Exists(scs => scs == StorageClassSpecifier.TYPEDEF);
     }
 
     // GetStorageClass
@@ -203,8 +203,7 @@ public class DeclarationSpecifiers : PTNode {
         } else if (specs_scs.Count == 1) {
             return specs_scs[0];
         } else {
-            Log.SemantError("Error: multiple storage class specifiers.");
-            return StorageClassSpecifier.ERROR;
+            throw new InvalidOperationException("Error: multiple storage class specifiers.");
         }
     }
 
@@ -214,8 +213,8 @@ public class DeclarationSpecifiers : PTNode {
     // output: EnumExprType
     // returns a type from a list of type specifiers
     // 
-    private static AST.ExprType.EnumExprType GetBasicType(List<BTypeSpec> specs) {
-        foreach (KeyValuePair<List<BTypeSpec>, AST.ExprType.EnumExprType> pair in bspecs2enumtype) {
+    private static AST.ExprType.EnumExprType GetBasicType(List<BasicTypeSpecifier> specs) {
+        foreach (KeyValuePair<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> pair in bspecs2enumtype) {
             if (MatchSpecs(specs, pair.Key)) {
                 return pair.Value;
             }
@@ -230,39 +229,39 @@ public class DeclarationSpecifiers : PTNode {
     // private
     // Test whether the basic type specs matches the key
     // 
-    private static bool MatchSpecs(List<BTypeSpec> lhs, List<BTypeSpec> rhs) {
+    private static bool MatchSpecs(List<BasicTypeSpecifier> lhs, List<BasicTypeSpecifier> rhs) {
         return lhs.Count == rhs.Count && rhs.All(item => lhs.Contains(item));
     }
 
     // bspecs2enumtype
     // ===============
     // 
-    private static Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> bspecs2enumtype = new Dictionary<List<BTypeSpec>, AST.ExprType.EnumExprType> {
+    private static Dictionary<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> bspecs2enumtype = new Dictionary<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> {
 
         // void : { void }
-        { new List<BTypeSpec> { BTypeSpec.VOID }, AST.ExprType.EnumExprType.VOID },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.VOID }, AST.ExprType.EnumExprType.VOID },
 
         // char : { char }
         //      | { signed char }
-        { new List<BTypeSpec> { BTypeSpec.CHAR }, AST.ExprType.EnumExprType.CHAR },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.CHAR}, AST.ExprType.EnumExprType.CHAR },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.CHAR }, AST.ExprType.EnumExprType.CHAR },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.EnumExprType.CHAR },
 
         // uchar : { unsigned char }
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.CHAR}, AST.ExprType.EnumExprType.UCHAR },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.EnumExprType.UCHAR },
 
         // short : { short }
         //       | { signed short }
         //       | { short int }
         //       | { signed short int }
-        { new List<BTypeSpec> { BTypeSpec.SHORT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.SHORT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BTypeSpec> { BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
 
         // ushort : { unsigned short }
         //        | { unsigned short int }
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.SHORT }, AST.ExprType.EnumExprType.USHORT },
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.SHORT, BTypeSpec.INT }, AST.ExprType.EnumExprType.USHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.USHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.USHORT },
 
         // long : { int }
         //      | { signed }
@@ -271,30 +270,30 @@ public class DeclarationSpecifiers : PTNode {
         //      | { signed long }
         //      | { long int }
         //      | { signed long int }
-        { new List<BTypeSpec> { BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.LONG }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.LONG }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BTypeSpec> { BTypeSpec.SIGNED, BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
 
         // ulong : { unsigned }
         //       | { unsigned int }
         //       | { unsigned long }
         //       | { unsigned long int }
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.INT }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.LONG }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BTypeSpec> { BTypeSpec.UNSIGNED, BTypeSpec.LONG, BTypeSpec.INT }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.ULONG },
 
         // float : { float }
-        { new List<BTypeSpec> { BTypeSpec.FLOAT }, AST.ExprType.EnumExprType.FLOAT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.FLOAT }, AST.ExprType.EnumExprType.FLOAT },
 
         // double : { double }
         //        | { long double }
-        { new List<BTypeSpec> { BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
-        { new List<BTypeSpec> { BTypeSpec.LONG, BTypeSpec.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
 
     };
 
@@ -354,7 +353,7 @@ public enum StorageClassSpecifier {
 }
 
 
-public enum BTypeSpec {
+public enum BasicTypeSpecifier {
     NULL,
     VOID,
     CHAR,
@@ -383,9 +382,9 @@ public enum BTypeSpec {
 //
 public class TypeSpecifier : PTNode {
     public TypeSpecifier() {
-        basic = BTypeSpec.NULL;
+        basic = BasicTypeSpecifier.NULL;
     }
-    public TypeSpecifier(BTypeSpec spec) {
+    public TypeSpecifier(BasicTypeSpecifier spec) {
         basic = spec;
     }
 
@@ -398,7 +397,7 @@ public class TypeSpecifier : PTNode {
         throw new NotImplementedException();
     }
 
-    public BTypeSpec basic;
+    public readonly BasicTypeSpecifier basic;
 }
 
 
@@ -420,7 +419,7 @@ public class TypedefName : TypeSpecifier {
     }
 
 
-    public String name;
+    public readonly String name;
 }
 
 
@@ -431,64 +430,87 @@ public enum TypeQualifier {
 }
 
 
-// TypeInfo
-// ========
-// a base class of FunctionInfo, ArrayInfo, and PointerInfo
+
+// Type Modifier
+// =============
+// Modify a type into a function, array, or pointer
 // 
-public class TypeInfo : PTNode {
-    public enum TypeInfoType {
+public abstract class TypeModifier : PTNode {
+    public enum TypeModifierKind {
         FUNCTION,
         ARRAY,
         POINTER
     }
 
-    public virtual Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
-        throw new NotImplementedException();
+    public TypeModifier(TypeModifierKind _kind) {
+        modifier_kind = _kind;
     }
-    public TypeInfoType type;
+
+    // Modify Type : (env, type) -> (env, type)
+    // ========================================
+    // 
+    public abstract Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type);
+
+    public readonly TypeModifierKind modifier_kind;
 }
 
-public class FunctionInfo : TypeInfo {
-    public FunctionInfo(ParamTypeList _param_type_list) {
+public class FunctionModifier : TypeModifier {
+    public FunctionModifier(ParamTypeList _param_type_list)
+        : base(TypeModifierKind.FUNCTION) {
         param_type_list = _param_type_list;
-        type = TypeInfoType.FUNCTION;
     }
     public ParamTypeList param_type_list;
 
-    // TODO : [finished] FunctionInfo.Wrap(env, type) -> (env, type)
-    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
-        List<Tuple<AST.Env, String, AST.ExprType>> r_params = param_type_list.GetParamTypes(env);
-        List<Tuple<String, AST.ExprType>> args = new List<Tuple<String, AST.ExprType>>();
-        foreach (Tuple<AST.Env, String, AST.ExprType> r_param in r_params) {
-            env = r_param.Item1;
-            args.Add(new Tuple<string, AST.ExprType>(r_param.Item2, r_param.Item3));
+    // Modify Type : (env, type) -> (env, type)
+    // ========================================
+    // 
+    public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType ret_type) {
+        Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> r_params = param_type_list.GetParamTypes(env);
+        Boolean varargs = r_params.Item1;
+        List<Tuple<AST.Env, String, AST.ExprType>> param_types = r_params.Item2;
+
+        List<Tuple<String, AST.ExprType>> args = param_types.ConvertAll(arg => {
+            env = arg.Item1;
+            return Tuple.Create(arg.Item2, arg.Item3);
+        });
+
+        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFunction(ret_type, args, varargs));
+    }
+}
+
+public class ArrayModifier : TypeModifier {
+    public ArrayModifier(Expression _nelems)
+        : base(TypeModifierKind.ARRAY) {
+        array_nelems = _nelems;
+    }
+
+    // Modify Type : (env, type) => (env, type)
+    // ========================================
+    // 
+    public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
+        Tuple<AST.Env, AST.Expr> r_nelems = array_nelems.GetExpr(env);
+        env = r_nelems.Item1;
+        AST.Expr expr_nelems = AST.TypeCast.MakeCast(r_nelems.Item2, new AST.TLong());
+
+        if (!expr_nelems.IsConstExpr()) {
+            throw new InvalidOperationException("Error: size of the array is not a constant.");
         }
-        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFunction(type, args));
+
+        Int32 nelems = ((AST.ConstLong)expr_nelems).value;
+        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TArray(type, nelems));
     }
+
+    public readonly Expression array_nelems;
 }
 
-public class ArrayInfo : TypeInfo {
-    public ArrayInfo(Expression _nelems) {
-        nelems = _nelems;
-        type = TypeInfoType.ARRAY;
-    }
-
-    // TODO : ArrayInfo.WrapType(env, type) -> (env, type)
-    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
-        return new Tuple<AST.Env, AST.ExprType>(env, type);
-    }
-    public Expression nelems;
-    public int __nelems;
-}
-
-public class PointerInfo : TypeInfo {
-    public PointerInfo(List<TypeQualifier> _type_qualifiers) {
+public class PointerInfo : TypeModifier {
+    public PointerInfo(List<TypeQualifier> _type_qualifiers)
+        : base(TypeModifierKind.POINTER) {
         type_qualifiers = _type_qualifiers;
-        type = TypeInfoType.POINTER;
     }
 
     // TODO : [finished] PointerInfo.WrapType(env, type) -> (env, type)
-    public override Tuple<AST.Env, AST.ExprType> WrapType(AST.Env env, AST.ExprType type) {
+    public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
         bool is_const = type_qualifiers.Any(x => x == TypeQualifier.CONST);
         bool is_volatile = type_qualifiers.Any(x => x == TypeQualifier.VOLATILE);
         return new Tuple<AST.Env, AST.ExprType>(env, new AST.TPointer(type, is_const, is_volatile));
@@ -498,17 +520,17 @@ public class PointerInfo : TypeInfo {
 
 public class Declarator : PTNode {
     public Declarator(String _name) {
-        type_infos = new List<TypeInfo>();
+        type_infos = new List<TypeModifier>();
         name = _name;
     }
 
-    public List<TypeInfo> type_infos;
+    public List<TypeModifier> type_infos;
     public String name;
 
     // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
     public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
         type_infos.ForEach(info => {
-            Tuple<AST.Env, AST.ExprType> r = info.WrapType(env, type);
+            Tuple<AST.Env, AST.ExprType> r = info.ModifyType(env, type);
             env = r.Item1;
             type = r.Item2;
         });
@@ -526,22 +548,31 @@ public class NullDeclr : Declarator {
 
 // Finished
 public class ParamTypeList : PTNode {
-    public ParamTypeList(List<ParamDecln> _param_list) {
-        IsVarArgs = false;
-        param_list = _param_list;
+    public ParamTypeList(List<ParameterDeclaration> _param_list, Boolean _varargs) {
+        params_varargs = _varargs;
+        params_declns = _param_list;
     }
 
-    public bool IsVarArgs;
-    public List<ParamDecln> param_list;
+    public ParamTypeList(List<ParameterDeclaration> _param_list) {
+        params_varargs = false;
+        params_declns = _param_list;
+    }
 
-    // TODO : [finished] ParamTypeList.GetParamTypes(env) -> (env, type)[]
-    public List<Tuple<AST.Env, String, AST.ExprType>> GetParamTypes(AST.Env env) {
-        List<Tuple<AST.Env, String, AST.ExprType>> param_types = new List<Tuple<AST.Env, String, AST.ExprType>>();
-        foreach (ParamDecln decln in param_list) {
-            Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDecln(env);
-            param_types.Add(r_decln);
-        }
-        return param_types;
+    public readonly Boolean params_varargs;
+    public readonly List<ParameterDeclaration> params_declns;
+
+    // Get Parameter Types
+    // ===================
+    // 
+    public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypes(AST.Env env) {
+        return Tuple.Create(
+            params_varargs,
+            params_declns.ConvertAll(decln => {
+                Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDecln(env);
+                env = r_decln.Item1;
+                return r_decln;
+            })
+        );
     }
 
 }
@@ -732,8 +763,8 @@ public class StructDecln : PTNode {
 }
 
 // Finished.
-public class ParamDecln : PTNode {
-    public ParamDecln(DeclarationSpecifiers _specs, Declarator _decl) {
+public class ParameterDeclaration : PTNode {
+    public ParameterDeclaration(DeclarationSpecifiers _specs, Declarator _decl) {
         specs = _specs;
 
         if (_decl != null) {
