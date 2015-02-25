@@ -506,7 +506,7 @@ public class FunctionCall : Expression {
             args[iarg] = AST.TypeCast.MakeCast(args[iarg], func_type.args[iarg].entry_type);
         }
 
-        return new Tuple<AST.Env, AST.Expr>(env, new AST.FunctionCall(func, args, func_type.ret_type));
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.FunctionCall(func, func_type, args, func_type.ret_type));
 
     }
 

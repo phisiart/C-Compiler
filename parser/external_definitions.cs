@@ -107,15 +107,15 @@ public class _function_definition : ParseRule {
     
     public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
         // try to match declaration_specifiers, if not found, create an empty one.
-        DeclnSpecs specs;
+        DeclarationSpecifiers specs;
         int current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclnSpecs(new List<StorageClassSpecifier>(), new List<TypeSpec>(), new List<TypeQualifier>());
+            specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
             current = begin;
         }
 
         // match declarator
-        Declr decl;
+        Declarator decl;
         current = _declarator.Parse(src, current, out decl);
         if (current == -1) {
             def = null;

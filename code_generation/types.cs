@@ -401,6 +401,9 @@ namespace AST {
     // represents the function type
     // stores the names, types, and offsets of arguments
     // 
+    // calling convention:
+    // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
+    // 
     public class TFunction : ExprType {
         public TFunction(ExprType _ret_type, List<Tuple<String, ExprType>> _args)
             : base(EnumExprType.FUNCTION, true, false) {
@@ -419,6 +422,7 @@ namespace AST {
                 alignment = Math.Max(regsz, arg.Item2.Alignment);
                 offset = (offset + alignment - 1) & ~(alignment - 1);
             }
+            size_of = offset;
 
         }
 
@@ -454,105 +458,10 @@ namespace AST {
     // class TEmptyFunction
     // ====================
     // defines an empty function: no arguments, returns void
+    // 
     public class TEmptyFunction : TFunction {
         public TEmptyFunction() : base(new TVoid(), new List<Tuple<string, ExprType>>()) {
         }
-    }
-
-    // public class 
-    // ========================================================================
-    public class Expr {
-        public Expr(ExprType _type) {
-            type = _type;
-        }
-        public virtual Boolean IsConstExpr() { return false; }
-        public readonly ExprType type;
-    }
-
-    public class NullExpr : Expr {
-
-        // TODO : AST.NullExpr.type = ??
-        public NullExpr() : base(null) {}
-    }
-
-    public class Variable : Expr {
-        public Variable(ExprType _type, String _name)
-            : base(_type) {
-            name = _name;
-        }
-        protected String name;
-    }
-
-    public class Constant : Expr {
-        public Constant(ExprType _type)
-            : base(_type) {}
-        public override Boolean IsConstExpr() { return true; }
-    }
-
-    public class ConstLong : Constant {
-        public ConstLong(Int32 _value)
-            : base(new TLong(true)) {
-            value = _value;
-        }
-
-        public override string ToString() {
-            return "int(" + value + ")";
-        }
-        public readonly Int32 value;
-    }
-
-    public class ConstULong : Constant {
-        public ConstULong(UInt32 _value)
-            : base(new TULong(true)) {
-            value = _value;
-        }
-
-        public override string ToString() {
-            return "uint(" + value + ")";
-        }
-        public readonly UInt32 value;
-    }
-
-    public class ConstPtr : Constant {
-        public ConstPtr(UInt32 _value, ExprType _type)
-            : base(_type) {
-            value = _value;
-        }
-
-        public override String ToString() {
-            return this.type.ToString() + "(" + value + ")";
-        }
-        public readonly UInt32 value;
-    }
-
-    public class ConstFloat : Constant {
-        public ConstFloat(Single _value)
-            : base(new TFloat(true)) {
-            value = _value;
-        }
-        public override string ToString() {
-            return "float(" + value + ")";
-        }
-        public readonly Single value;
-    }
-
-    public class ConstDouble : Constant {
-        public ConstDouble(Double _value)
-            : base(new TDouble(true)) {
-            value = _value;
-        }
-        public override string ToString() {
-            return "double(" + value + ")";
-        }
-        public readonly Double value;
-    }
-
-    public class ConstStringLiteral : Constant {
-        public ConstStringLiteral(String _value)
-            : base(new TPointer(new TChar(true), true)) {
-            value=_value;
-        }
-        public readonly String value;
     }
 
 }

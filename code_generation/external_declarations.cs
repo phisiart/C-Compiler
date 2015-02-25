@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 
 namespace AST {
-    public class TranslationUnit {
-        public TranslationUnit(List<Tuple<Env, ExternDecln>> _declns) {
+    public class TranslnUnit {
+        public TranslnUnit(List<Tuple<Env, ExternDecln>> _declns) {
             declns = _declns;
         }
         public readonly List<Tuple<Env, ExternDecln>> declns;
@@ -21,8 +21,9 @@ namespace AST {
     }
 
     public class FuncDef : ExternDecln {
-        public FuncDef(String _name, TFunction _type, Stmt _stmt) {
+        public FuncDef(String _name, Decln.SCS _scs, TFunction _type, Stmt _stmt) {
             func_name = _name;
+            func_scs  = _scs;
             func_type = _type;
             func_stmt = _stmt;
         }
@@ -33,7 +34,7 @@ namespace AST {
 
         public void CGenExternDecln(Env env, CGenState state) {
             //     .text
-            //     .globl <func>
+            //     [.globl <func>]
             // <func>:
             //     pushl %ebp
             //     movl %esp, %ebp
@@ -42,15 +43,20 @@ namespace AST {
             Env.Entry entry = env.Find(func_name);
             switch (entry.entry_loc) {
             case Env.EntryLoc.GLOBAL:
-                state.GLOBL(func_name);
+                switch (func_scs) {
+                case Decln.SCS.AUTO:
+                case Decln.SCS.EXTERN:
+                    state.GLOBL(func_name);
+                    break;
+                case Decln.SCS.STATIC:
+                    // static definition
+                    break;
+                default:
+                    throw new InvalidOperationException();
+                }
                 break;
-            case Env.EntryLoc.ENUM:
-            case Env.EntryLoc.FRAME:
-            case Env.EntryLoc.NOT_FOUND:
-            case Env.EntryLoc.STACK:
-            case Env.EntryLoc.TYPEDEF:
             default:
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
             state.CGenFuncName(func_name);
             state.PUSHL(Reg.EBP);
@@ -65,8 +71,9 @@ namespace AST {
             state.NEWLINE();
         }
 
-        public readonly String    func_name;
-        public readonly TFunction func_type;
-        public readonly Stmt      func_stmt;
+        public readonly String        func_name;
+        public readonly Decln.SCS func_scs;
+        public readonly TFunction     func_type;
+        public readonly Stmt          func_stmt;
     }
 }

@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public static class Reg {
-    public static readonly String EAX = "%eax";
-    public static readonly String ECX = "%ecx";
-    public static readonly String EDX = "%edx";
-    public static readonly String EBX = "%ebx";
+public enum Reg {
+    EAX,
+    ECX,
+    EDX,
+    EBX,
 
-    public static readonly String EBP = "%ebp";
-    public static readonly String ESP = "%esp";
+    EBP,
+    ESP,
 }
 
 public class CGenState {
@@ -20,7 +20,20 @@ public class CGenState {
         TEXT,
         DATA,
     }
-    
+
+    public static Dictionary<Reg, String> reg_strs = new Dictionary<Reg, string>() {
+        { Reg.EAX, "%eax" },
+        { Reg.ECX, "%ecx" },
+        { Reg.EDX, "%edx" },
+        { Reg.EBX, "%ebx" },
+        { Reg.EBP, "%ebp" },
+        { Reg.ESP, "%esp" },
+    };
+
+    public static String StrReg(Reg reg) {
+        return reg_strs[reg];
+    }
+
     public CGenState() {
         os = new System.IO.StringWriter();
         status = Status.NONE;
@@ -42,27 +55,105 @@ public class CGenState {
         stack_size = 0;
     }
 
+    // PUSHL
+    // =====
     public void PUSHL(String reg) {
-        os.WriteLine("    push " + reg);
+        os.WriteLine("    pushl " + reg);
     }
 
+    public void PUSHL(Reg reg) {
+        PUSHL(StrReg(reg));
+    }
+
+    public void PUSHL(int imm) {
+        PUSHL("$" + imm.ToString());
+    }
+
+    //public void PUSHL(int offset, Reg reg) {
+    //    PUSHL(offset.ToString() + "(" + StrReg(reg) + ")");
+    //}
+
+    // POPL
+    // ====
+    public void POPL(String addr) {
+        os.WriteLine("    popl " + addr);
+    }
+
+    public void POPL(Reg reg) {
+        POPL(StrReg(reg));
+    }
+
+    // MOVL
+    // ====
     public void MOVL(String from, String to) {
         os.WriteLine("    movl " + from + ", " + to);
     }
 
+    public void MOVL(Int32 imm, String to) {
+        MOVL("$" + imm.ToString(), to);
+    }
+
+    public void MOVL(Int32 imm, Reg to) {
+        MOVL("$" + imm.ToString(), StrReg(to));
+    }
+
+    public void MOVL(Reg from, Reg to) {
+        MOVL(StrReg(from), StrReg(to));
+    }
+
+    public void STORE(Reg from, Reg to) {
+        MOVL(StrReg(from), "(" + StrReg(to) + ")");
+    }
+
+    // movl from, offset(to)
+    public void STORE(Reg from, int offset, Reg to) {
+        MOVL(StrReg(from), offset.ToString() + "(" + StrReg(to) + ")");
+    }
+
+    // movl offset(from), to
+    public void LOAD(int offset, Reg from, Reg to) {
+        MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
+    }
+
+    // LEA
+    // ===
+    // 
+    public void LEA(String addr) {
+        os.WriteLine("    lea " + addr);
+    }
+
+    // CALL
+    // ====
+    // 
+    public void CALL(String addr) {
+        os.WriteLine("    call " + addr);
+    }
+
+    // CGenExpandStack
+    // ===============
+    // 
     public void CGenExpandStack(int size, String comment = "") {
         if (size > stack_size) {
-            SUBL(size - stack_size, Reg.ESP, comment);
+            SUBL(size - stack_size, StrReg(Reg.ESP), comment);
             stack_size = size;
         }
     }
 
+    public void CGenAssignment(AST.Env env, AST.Expr lhs, AST.Expr rhs) {
+        rhs.CGenValue(env, this);
+        PUSHL(Reg.EAX);
+        lhs.CGenAddress(env, this);
+        POPL(Reg.EBX);
+        STORE(Reg.EAX, Reg.EBX);
+    }
     public void LEAVE() {
-        os.WriteLine("    leave # pop the whole frame and restore %ebp");
+        //os.WriteLine("    leave # pop frame, restore %ebp");
+        os.WriteLine("    leave");
     }
 
     public void RET() {
-        os.WriteLine("    ret # pop the old %eip and return");
+        //os.WriteLine("    ret # pop old %eip, jump");
+        os.WriteLine("    ret");
     }
 
     public void NEWLINE() {
@@ -73,13 +164,24 @@ public class CGenState {
         os.WriteLine("    # " + comment);
     }
 
-    public void SUBL(int suber, String subee, String comment = "") {
-        os.Write("    subl $" + suber + ", " + subee);
+    // SUBL
+    // ====
+    // 
+    public void SUBL(String er, String ee, String comment = "") {
+        os.Write("    subl " + er + ", " + ee);
         if (comment == "") {
             os.WriteLine();
         } else {
             os.WriteLine(" # " + comment);
         }
+    }
+
+    public void SUBL(int er, String ee, String comment = "") {
+        SUBL(er.ToString(), ee, comment);
+    }
+
+    public void SUBL(Reg er, Reg ee, String comment = "") {
+        SUBL(StrReg(er), StrReg(ee), comment);
     }
 
     public override String ToString() {

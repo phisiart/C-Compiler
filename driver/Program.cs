@@ -15,7 +15,7 @@ namespace driver {
             TranslationUnit unit;
             int r = _translation_unit.Parse(tokens, 0, out unit);
 
-            Tuple<AST.Env, AST.TranslationUnit> ast = unit.GetTranslationUnit();
+            Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
 
             CGenState state = new CGenState();
             ast.Item2.CodeGenerate(state);

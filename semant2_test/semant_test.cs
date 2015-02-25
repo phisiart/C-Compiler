@@ -92,60 +92,11 @@ namespace semant2_test {
         }
 
         [TestMethod]
-        public void TestDeclnSpecs() {
-            String src = "int long unsigned";
-            List<Token> tokens = Parser.GetTokensFromString(src);
-            DeclnSpecs decln_specs;
-            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Env env = new AST.Env();
-            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
-        }
-
-        [TestMethod]
-        public void TestDeclnSpecsStruct() {
-            String src = "struct MyStruct { int a; int b; }";
-            List<Token> tokens = Parser.GetTokensFromString(src);
-            DeclnSpecs decln_specs;
-            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Env env = new AST.Env();
-            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
-        }
-
-        [TestMethod]
-        public void TestDeclnSpecsUnion() {
-            String src = "union MyUnion { int a; int b; }";
-            List<Token> tokens = Parser.GetTokensFromString(src);
-            DeclnSpecs decln_specs;
-            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Env env = new AST.Env();
-            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
-        }
-
-        [TestMethod]
-        public void TestEnum() {
-            String src = "enum MyEnum { VAL1, VAL2, VAL3 }";
-            List<Token> tokens = Parser.GetTokensFromString(src);
-            DeclnSpecs decln_specs;
-            int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            AST.Env env = new AST.Env();
-            Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
-            env = t.Item1;
-            String log = t.Item1.Dump();
-            System.Diagnostics.Debug.WriteLine(log);
-
-            src = "enum MyEnum";
-            tokens = Parser.GetTokensFromString(src);
-            r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
-            t = decln_specs.GetExprType(env);
-
-        }
-
-        [TestMethod]
         // This test should not pass!
         public void TestEnum2() {
             String src = "enum MyEnum";
             List<Token> tokens = Parser.GetTokensFromString(src);
-            DeclnSpecs decln_specs;
+            DeclarationSpecifiers decln_specs;
             int r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
             Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
@@ -239,7 +190,7 @@ namespace semant2_test {
             TranslationUnit unit;
             int r = _translation_unit.Parse(tokens, 0, out unit);
             
-            Tuple<AST.Env, AST.TranslationUnit> r_unit = unit.GetTranslationUnit();
+            Tuple<AST.Env, AST.TranslnUnit> r_unit = unit.GetTranslationUnit();
 
         }
 
