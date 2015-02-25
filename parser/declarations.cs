@@ -909,28 +909,7 @@ public class _enum_specifier : ParseRule {
 // enumerator_list : enumerator < , enumerator >*
 public class _enumerator_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<Enumerator> enum_list) {
-        Enumerator enumerator;
-        enum_list = new List<Enumerator>();
-        Int32 current = _enumerator.Parse(src, begin, out enumerator);
-        if (current == -1) {
-            return -1;
-        }
-        enum_list.Add(enumerator);
-        Int32 saved;
-
-        while (true) {
-            if (Parser.IsCOMMA(src[current])) {
-                saved = current;
-                current++;
-                current = _enumerator.Parse(src, current, out enumerator);
-                if (current == -1) {
-                    return saved;
-                }
-                enum_list.Add(enumerator);
-            } else {
-                return current;
-            }
-        }
+        return Parser.ParseNonEmptyListWithSep(src, begin, out enum_list, _enumerator.Parse, OperatorVal.COMMA);
     }
 }
 
@@ -941,36 +920,37 @@ public class _enumerator_list : ParseRule {
 // enumerator : enumeration_constant < = constant_expression >?
 public class _enumerator : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Enumerator enumerator) {
-        Int32 current = _enumeration_constant.Parse(src, begin, out enumerator);
+        String name;
+        Int32 current = _enumeration_constant.Parse(src, begin, out name);
         if (current == -1) {
+            enumerator = null;
             return -1;
         }
 
-        if (Parser.IsAssignment(src[current])) {
-            current++;
-            Expression init;
-            current = _constant_expression.Parse(src, current, out init);
-            if (current == -1) {
+        Expression init;
+        if (Parser.EatOperator(src, ref current, OperatorVal.ASSIGN)) {
+            if ((current = _constant_expression.Parse(src, current, out init)) == -1) {
+                enumerator = null;
                 return -1;
             }
-
-            enumerator.init = init;
-            return current;
+        } else {
+            init = null;
         }
 
+        enumerator = new Enumerator(name, init);
         return current;
     }
 }
 
 // enumeration_constant : identifier
 public class _enumeration_constant : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Enumerator enumerator) {
-        if (src[begin].type == TokenType.IDENTIFIER) {
-            enumerator = new Enumerator(((TokenIdentifier)src[begin]).val, null);
+    public static Int32 Parse(List<Token> src, Int32 begin, out String name) {
+        name = Parser.GetIdentifierValue(src[begin]);
+        if (name == null) {
+            return -1;
+        } else {
             return begin + 1;
         }
-        enumerator = null;
-        return -1;
     }
 }
 
