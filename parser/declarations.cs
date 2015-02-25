@@ -22,10 +22,10 @@ public class _declaration : ParseRule {
         }
 
         Int32 saved = current;
-        List<InitDeclr> init_declrs;
+        List<InitializationDeclarator> init_declrs;
         current = _init_declarator_list.Parse(src, current, out init_declrs);
         if (current == -1) {
-            init_declrs = new List<InitDeclr>();
+            init_declrs = new List<InitializationDeclarator>();
             current = saved;
         }
 
@@ -38,7 +38,7 @@ public class _declaration : ParseRule {
 
         // add parser scope.
         if (decl_specs.IsTypedef()) {
-            foreach (InitDeclr init_declarator in init_declrs) {
+            foreach (InitializationDeclarator init_declarator in init_declrs) {
                 ScopeEnvironment.AddTypedefName(init_declarator.declarator.declr_name);
             }
         }
@@ -166,7 +166,7 @@ public class _declaration_specifiers : ParseRule {
 // [ return: List<InitDeclarator> ]
 // [ if fail, return empty List<InitDeclarator> ]
 public class _init_declarator_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<InitDeclr> init_declarators) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<InitializationDeclarator> init_declarators) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out init_declarators, _init_declarator.Parse, OperatorVal.COMMA);
     }
 }
@@ -181,7 +181,7 @@ public class _init_declarator_list : ParseRule {
 public class _init_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a = 3 + 4");
-        InitDeclr decl;
+        InitializationDeclarator decl;
         Int32 current = Parse(src, 0, out decl);
         if (current == -1) {
             return false;
@@ -197,7 +197,7 @@ public class _init_declarator : ParseRule {
         return _initializer.Parse(src, begin, out init);
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out InitDeclr init_declarator) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out InitializationDeclarator init_declarator) {
         // step 1. match declarator
         Declarator declarator;
         Int32 current = _declarator.Parse(src, begin, out declarator);
@@ -214,7 +214,7 @@ public class _init_declarator : ParseRule {
             init = null;
         }
 
-        init_declarator = new InitDeclr(declarator, init);
+        init_declarator = new InitializationDeclarator(declarator, init);
         return current;
     }
 }
@@ -347,7 +347,7 @@ public class _type_specifier : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out TypeSpecifier spec) {
 
         // 1. match struct or union
-        StructOrUnionSpec struct_or_union_specifier;
+        StructOrUnionSpecifier struct_or_union_specifier;
         Int32 current = _struct_or_union_specifier.Parse(src, begin, out struct_or_union_specifier);
         if (current != -1) {
             spec = struct_or_union_specifier;
@@ -979,7 +979,7 @@ public class _enumeration_constant : ParseRule {
 //                           | struct_or_union identifier
 // [ note: need some treatment ]
 public class _struct_or_union_specifier : ParseRule {
-    public static Int32 ParseDeclarationList(List<Token> src, Int32 begin, out List<StructDecln> decl_list) {
+    public static Int32 ParseDeclarationList(List<Token> src, Int32 begin, out List<StructDeclaration> decl_list) {
         decl_list = null;
 
         if (!Parser.IsLCURL(src[begin])) {
@@ -999,11 +999,11 @@ public class _struct_or_union_specifier : ParseRule {
 
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnionSpec spec) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnionSpecifier spec) {
         spec = null;
 
         StructOrUnion struct_or_union;
-        List<StructDecln> decl_list;
+        List<StructDeclaration> decl_list;
 
         Int32 current = _struct_or_union.Parse(src, begin, out struct_or_union);
         if (current == -1) {
@@ -1016,9 +1016,9 @@ public class _struct_or_union_specifier : ParseRule {
 
             String name = ((TokenIdentifier)src[current]).val;
             if (struct_or_union.is_union) {
-                spec = new UnionSpec(name, null);
+                spec = new UnionSpecifier(name, null);
             } else {
-                spec = new StructSpec(name, null);
+                spec = new StructSpecifier(name, null);
             }
             current++;
             Int32 saved = current;
@@ -1040,9 +1040,9 @@ public class _struct_or_union_specifier : ParseRule {
             }
 
             if (struct_or_union.is_union) {
-                spec = new UnionSpec("", decl_list);
+                spec = new UnionSpecifier("", decl_list);
             } else {
-                spec = new StructSpec("", decl_list);
+                spec = new StructSpecifier("", decl_list);
             }
 
             return current;
@@ -1076,7 +1076,7 @@ public class _struct_or_union : ParseRule {
 // [ note: my solution ]
 // struct_declaration_list : <struct_declaration>+
 public class _struct_declaration_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<StructDecln> decl_list) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<StructDeclaration> decl_list) {
         return Parser.ParseNonEmptyList(src, begin, out decl_list, _struct_declaration.Parse);
     }
 }
@@ -1084,7 +1084,7 @@ public class _struct_declaration_list : ParseRule {
 
 // struct_declaration : specifier_qualifier_list struct_declarator_list ;
 public class _struct_declaration : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out StructDecln decl) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StructDeclaration decl) {
         decl = null;
 
         DeclarationSpecifiers specs;
@@ -1102,7 +1102,7 @@ public class _struct_declaration : ParseRule {
         }
 
         current++;
-        decl = new StructDecln(specs, decl_list);
+        decl = new StructDeclaration(specs, decl_list);
         return current;
     }
 }

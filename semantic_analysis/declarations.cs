@@ -12,12 +12,16 @@ public class PTNode {
 
 // the declaration of an object
 public class Declaration : ExternalDeclaration {
-    public Declaration(DeclarationSpecifiers decl_specs_, List<InitDeclr> init_declrs_) {
+    public Declaration(DeclarationSpecifiers decl_specs_, List<InitializationDeclarator> init_declrs_) {
         decl_specs = decl_specs_;
-        init_declrs = init_declrs_;
+        inner_init_declrs = init_declrs_;
     }
-    public DeclarationSpecifiers decl_specs;
-    public List<InitDeclr> init_declrs;
+
+    public readonly DeclarationSpecifiers decl_specs;
+    public IReadOnlyList<InitializationDeclarator> init_declrs {
+        get { return inner_init_declrs; }
+    }
+    private readonly List<InitializationDeclarator> inner_init_declrs;
 
     public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
         List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
@@ -27,7 +31,7 @@ public class Declaration : ExternalDeclaration {
         AST.Decln.SCS scs = r_specs.Item2;
         AST.ExprType base_type = r_specs.Item3;
 
-        foreach (InitDeclr init_declr in init_declrs) {
+        foreach (InitializationDeclarator init_declr in init_declrs) {
             Tuple<AST.Env, AST.ExprType, AST.Expr, String> r_declr = init_declr.GetInitDeclr(env, base_type);
 
             env = r_declr.Item1;
@@ -304,13 +308,13 @@ public class DeclarationSpecifiers : PTNode {
 // =========
 // initialization declarator: a normal declarator + an initialization expression
 // 
-public class InitDeclr : PTNode {
+public class InitializationDeclarator : PTNode {
 
-    public InitDeclr(Declarator _decl, Expression _init) {
+    public InitializationDeclarator(Declarator _decl, Expression _init) {
         if (_decl != null) {
             declarator = _decl;
         } else {
-            declarator = new NullDeclr();
+            declarator = new NullDeclarator();
         }
 
         if (_init != null) {
@@ -543,8 +547,8 @@ public class Declarator : PTNode {
     }
 }
 
-public class NullDeclr : Declarator {
-    public NullDeclr() : base("", new List<TypeModifier>()) { }
+public class NullDeclarator : Declarator {
+    public NullDeclarator() : base("", new List<TypeModifier>()) { }
 
     public override Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
         return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
@@ -647,17 +651,17 @@ public class Enumerator : PTNode {
 // a base class of StructSpec and UnionSpec
 // not present in the semant phase
 // 
-public class StructOrUnionSpec : TypeSpecifier {
+public class StructOrUnionSpecifier : TypeSpecifier {
     public String name;
-    public List<StructDecln> declns;
+    public List<StructDeclaration> declns;
 }
 
 
 // StructSpec
 // ==========
 // 
-public class StructSpec : StructOrUnionSpec {
-    public StructSpec(String _name, List<StructDecln> _declns) {
+public class StructSpecifier : StructOrUnionSpecifier {
+    public StructSpecifier(String _name, List<StructDeclaration> _declns) {
         name = _name;
         declns = _declns;
     }
@@ -678,7 +682,7 @@ public class StructSpec : StructOrUnionSpec {
         }
 
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-        foreach (StructDecln decln in declns) {
+        foreach (StructDeclaration decln in declns) {
             Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
             env = r_decln.Item1;
             attribs.AddRange(r_decln.Item2);
@@ -699,8 +703,8 @@ public class StructSpec : StructOrUnionSpec {
 // UnionSpec
 // =========
 // 
-public class UnionSpec : StructOrUnionSpec {
-    public UnionSpec(String _name, List<StructDecln> _decl_list) {
+public class UnionSpecifier : StructOrUnionSpecifier {
+    public UnionSpecifier(String _name, List<StructDeclaration> _decl_list) {
         name = _name;
         declns = _decl_list;
     }
@@ -714,7 +718,7 @@ public class UnionSpec : StructOrUnionSpec {
     // 
     public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
         List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-        foreach (StructDecln decln in declns) {
+        foreach (StructDeclaration decln in declns) {
             Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
             env = r_decln.Item1;
             attribs.AddRange(r_decln.Item2);
@@ -744,8 +748,8 @@ public class StructOrUnion : PTNode {
 }
 
 
-public class StructDecln : PTNode {
-    public StructDecln(DeclarationSpecifiers _specs, List<Declarator> _declrs) {
+public class StructDeclaration : PTNode {
+    public StructDeclaration(DeclarationSpecifiers _specs, List<Declarator> _declrs) {
         specs = _specs;
         declrs = _declrs;
     }
@@ -783,14 +787,16 @@ public class ParameterDeclaration : PTNode {
         if (_decl != null) {
             decl = _decl;
         } else {
-            decl = new NullDeclr();
+            decl = new NullDeclarator();
         }
     }
 
-    public DeclarationSpecifiers specs;
-    public Declarator decl;
+    public readonly DeclarationSpecifiers specs;
+    public readonly Declarator decl;
 
     // Get Parameter Declaration : env -> (env, name, type)
+    // ====================================================
+    // 
     public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
         Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
         env = r_specs.Item1;
@@ -813,17 +819,24 @@ public class InitializerList : Expression {
         exprs = _exprs;
     }
     public List<Expression> exprs;
+
+    
 }
 
 
 public class TypeName : PTNode {
     public TypeName(DeclarationSpecifiers _specs, Declarator _decl) {
-        specs = _specs;
-        decl = _decl;
+        typename_specs = _specs;
+        typename_declr = _decl;
     }
 
-    public DeclarationSpecifiers specs;
-    public Declarator decl;
+    public readonly DeclarationSpecifiers typename_specs;
+    public readonly Declarator            typename_declr;
 
+    public Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env) {
+        Tuple<AST.Env, AST.ExprType> r_specs = typename_specs.GetExprType(env);
+        Tuple<AST.Env, AST.ExprType, String> r_declr = typename_declr.WrapExprType(r_specs.Item1, r_specs.Item2);
+        return Tuple.Create(r_declr.Item1, r_declr.Item2);
+    }
 }
 
