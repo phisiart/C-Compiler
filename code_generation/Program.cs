@@ -21,7 +21,7 @@ public class CGenState {
         DATA,
     }
 
-    public static Dictionary<Reg, String> reg_strs = new Dictionary<Reg, string>() {
+    public static Dictionary<Reg, String> reg_strs = new Dictionary<Reg, String>() {
         { Reg.EAX, "%eax" },
         { Reg.ECX, "%ecx" },
         { Reg.EDX, "%edx" },
@@ -65,11 +65,11 @@ public class CGenState {
         PUSHL(StrReg(reg));
     }
 
-    public void PUSHL(int imm) {
+    public void PUSHL(Int32 imm) {
         PUSHL("$" + imm.ToString());
     }
 
-    //public void PUSHL(int offset, Reg reg) {
+    //public void PUSHL(Int32 offset, Reg reg) {
     //    PUSHL(offset.ToString() + "(" + StrReg(reg) + ")");
     //}
 
@@ -106,12 +106,12 @@ public class CGenState {
     }
 
     // movl from, offset(to)
-    public void STORE(Reg from, int offset, Reg to) {
+    public void STORE(Reg from, Int32 offset, Reg to) {
         MOVL(StrReg(from), offset.ToString() + "(" + StrReg(to) + ")");
     }
 
     // movl offset(from), to
-    public void LOAD(int offset, Reg from, Reg to) {
+    public void LOAD(Int32 offset, Reg from, Reg to) {
         MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
     }
 
@@ -132,7 +132,7 @@ public class CGenState {
     // CGenExpandStack
     // ===============
     // 
-    public void CGenExpandStack(int size, String comment = "") {
+    public void CGenExpandStack(Int32 size, String comment = "") {
         if (size > stack_size) {
             SUBL(size - stack_size, StrReg(Reg.ESP), comment);
             stack_size = size;
@@ -176,7 +176,7 @@ public class CGenState {
         }
     }
 
-    public void SUBL(int er, String ee, String comment = "") {
+    public void SUBL(Int32 er, String ee, String comment = "") {
         SUBL(er.ToString(), ee, comment);
     }
 
@@ -191,13 +191,13 @@ public class CGenState {
 
     private System.IO.StringWriter os;
     private Status status;
-    private int stack_size;
+    private Int32 stack_size;
     
 }
 
 namespace code_generation {
     class Program {
-        static void Main(string[] args) {
+        static void Main(String[] args) {
 
         }
     }

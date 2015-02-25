@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace semantic_analysis {
     class Program {
-        static void Main(string[] args) {
+        static void Main(String[] args) {
 
         }
     }

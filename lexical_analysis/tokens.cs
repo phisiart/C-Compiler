@@ -188,15 +188,15 @@ public class Scanner {
     }
 
     public void Lex() {
-        int pos = 0;
+        Int32 pos = 0;
         tokens = new List<Token>();
-        for (int i = 0; i < src.Length; ++i) {
+        for (Int32 i = 0; i < src.Length; ++i) {
 
             fsas.ForEach(fsa => fsa.ReadChar(src[i]));
 
             // if no running
             if (fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.RUN) == -1) {
-                int idx = fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
+                Int32 idx = fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
                 if (idx != -1) {
                     // Console.WriteLine("> " + src.Substring(pos, i - pos));
                     Token token = fsas[idx].RetrieveToken();
@@ -215,7 +215,7 @@ public class Scanner {
 
         fsas.ForEach(fsa => fsa.ReadEOF());
         // find END
-        int idx2 = fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
+        Int32 idx2 = fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
         if (idx2 != -1) {
             Token token = fsas[idx2].RetrieveToken();
             if (token.type != TokenType.NONE) {

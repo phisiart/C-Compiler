@@ -7,14 +7,14 @@ using System.Collections.Generic;
  * Otherwise, if either operand has type float, the other operand is converted to float.
  * Otherwise, the integral promotions are performed on both operands.
  * Then the following rules are applied:
- * If either operand has type unsigned long int, the other operand is converted to unsigned long int.
- * Otherwise, if one operand has type long int and the other has type unsigned int, if a long int can represent all values of an unsigned int, the operand of type unsigned int is converted to long int;
- * if a long int cannot represent all the values of an unsigned int, both operands are converted to unsigned long int. Otherwise, if either operand has type long int, the other operand is converted to long int.
- * Otherwise, if either operand has type unsigned int, the other operand is converted to unsigned int.
- * Otherwise, both operands have type int.*/
+ * If either operand has type unsigned long Int32, the other operand is converted to unsigned long Int32.
+ * Otherwise, if one operand has type long Int32 and the other has type unsigned Int32, if a long Int32 can represent all values of an unsigned Int32, the operand of type unsigned Int32 is converted to long Int32;
+ * if a long Int32 cannot represent all the values of an unsigned Int32, both operands are converted to unsigned long Int32. Otherwise, if either operand has type long Int32, the other operand is converted to long Int32.
+ * Otherwise, if either operand has type unsigned Int32, the other operand is converted to unsigned Int32.
+ * Otherwise, both operands have type Int32.*/
 
 // My simplification:
-// I let long = int, long double = double
+// I let long = Int32, long double = double
 
 public class Expression : PTNode {
     // public TType type;
@@ -52,12 +52,12 @@ public class Expression : PTNode {
         Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
         lhs = r_cast.Item1;
         rhs = r_cast.Item2;
-        bool c1 = lhs.type.is_const;
-        bool c2 = rhs.type.is_const;
-        bool v1 = lhs.type.is_volatile;
-        bool v2 = rhs.type.is_volatile;
-        bool is_const = c1 || c2;
-        bool is_volatile = v1 || v2;
+        Boolean c1 = lhs.type.is_const;
+        Boolean c2 = rhs.type.is_const;
+        Boolean v1 = lhs.type.is_volatile;
+        Boolean v2 = rhs.type.is_volatile;
+        Boolean is_const = c1 || c2;
+        Boolean is_volatile = v1 || v2;
 
         AST.ExprType.EnumExprType enum_type = r_cast.Item3;
 
@@ -117,12 +117,12 @@ public class Expression : PTNode {
 
         lhs = r_cast.Item1;
         rhs = r_cast.Item2;
-        bool c1 = lhs.type.is_const;
-        bool c2 = rhs.type.is_const;
-        bool v1 = lhs.type.is_volatile;
-        bool v2 = rhs.type.is_volatile;
-        bool is_const = c1 || c2;
-        bool is_volatile = v1 || v2;
+        Boolean c1 = lhs.type.is_const;
+        Boolean c2 = rhs.type.is_const;
+        Boolean v1 = lhs.type.is_volatile;
+        Boolean v2 = rhs.type.is_volatile;
+        Boolean is_const = c1 || c2;
+        Boolean is_volatile = v1 || v2;
 
         AST.ExprType.EnumExprType enum_type = r_cast.Item3;
 
@@ -237,7 +237,7 @@ public class ConstFloat : Constant {
 
 // ConstInt
 // ========
-// TODO : [finished] const int
+// TODO : [finished] const Int32
 public class ConstInt : Constant {
     public ConstInt(long _val, IntSuffix _int_type) {
         val = _val;
@@ -253,7 +253,7 @@ public class ConstInt : Constant {
         case IntSuffix.UL:
             return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
         default:
-            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((int)val));
+            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((Int32)val));
         }
     }
 
@@ -263,7 +263,7 @@ public class ConstInt : Constant {
 
 // StringLiteral
 // =============
-// TODO : [finished] string literal
+// TODO : [finished] String literal
 // 
 public class StringLiteral : Expression {
     public StringLiteral(String _val) {
@@ -502,7 +502,7 @@ public class FunctionCall : Expression {
             throw new Exception("Error: number of arguments mismatch.");
         }
 
-        for (int iarg = 0; iarg < args.Count; ++iarg) {
+        for (Int32 iarg = 0; iarg < args.Count; ++iarg) {
             args[iarg] = AST.TypeCast.MakeCast(args[iarg], func_type.args[iarg].entry_type);
         }
 
@@ -769,7 +769,7 @@ public class Not : Expression {
         }
 
         if (expr.IsConstExpr()) {
-            bool value = false;
+            Boolean value = false;
             switch (expr.type.expr_type) {
             case AST.ExprType.EnumExprType.LONG:
                 AST.ConstLong long_expr = (AST.ConstLong)expr;
@@ -838,12 +838,12 @@ public class Multiplication : Expression {
         Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
         lhs = r_cast.Item1;
         rhs = r_cast.Item2;
-        bool c1 = lhs.type.is_const;
-        bool c2 = rhs.type.is_const;
-        bool v1 = lhs.type.is_volatile;
-        bool v2 = rhs.type.is_volatile;
-        bool is_const = c1 || c2;
-        bool is_volatile = v1 || v2;
+        Boolean c1 = lhs.type.is_const;
+        Boolean c2 = rhs.type.is_const;
+        Boolean v1 = lhs.type.is_volatile;
+        Boolean v2 = rhs.type.is_volatile;
+        Boolean is_const = c1 || c2;
+        Boolean is_volatile = v1 || v2;
 
         AST.ExprType.EnumExprType enum_type = r_cast.Item3;
 
@@ -914,12 +914,12 @@ public class Division : Expression {
         Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
         lhs = r_cast.Item1;
         rhs = r_cast.Item2;
-        bool c1 = lhs.type.is_const;
-        bool c2 = rhs.type.is_const;
-        bool v1 = lhs.type.is_volatile;
-        bool v2 = rhs.type.is_volatile;
-        bool is_const = c1 || c2;
-        bool is_volatile = v1 || v2;
+        Boolean c1 = lhs.type.is_const;
+        Boolean c2 = rhs.type.is_const;
+        Boolean v1 = lhs.type.is_volatile;
+        Boolean v2 = rhs.type.is_volatile;
+        Boolean is_const = c1 || c2;
+        Boolean is_volatile = v1 || v2;
 
         AST.ExprType.EnumExprType enum_type = r_cast.Item3;
 

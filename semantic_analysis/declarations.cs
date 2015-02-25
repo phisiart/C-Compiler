@@ -135,10 +135,10 @@ public class DeclarationSpecifiers : PTNode {
     // 
     public Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env) {
 
-        bool is_const = specs_typequals.Exists(qual => qual == TypeQualifier.CONST);
-        bool is_volatile = specs_typequals.Exists(qual => qual == TypeQualifier.VOLATILE);
+        Boolean is_const = specs_typequals.Exists(qual => qual == TypeQualifier.CONST);
+        Boolean is_volatile = specs_typequals.Exists(qual => qual == TypeQualifier.VOLATILE);
 
-        // 1. if no type specifier => int
+        // 1. if no type specifier => Int32
         if (specs_typespecs.Count == 0) {
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
         }
@@ -189,7 +189,7 @@ public class DeclarationSpecifiers : PTNode {
     // ========
     // Used by the parser
     // 
-    public bool IsTypedef() {
+    public Boolean IsTypedef() {
         return specs_scs.Exists(scs => scs == StorageClassSpecifier.TYPEDEF);
     }
 
@@ -229,7 +229,7 @@ public class DeclarationSpecifiers : PTNode {
     // private
     // Test whether the basic type specs matches the key
     // 
-    private static bool MatchSpecs(List<BasicTypeSpecifier> lhs, List<BasicTypeSpecifier> rhs) {
+    private static Boolean MatchSpecs(List<BasicTypeSpecifier> lhs, List<BasicTypeSpecifier> rhs) {
         return lhs.Count == rhs.Count && rhs.All(item => lhs.Contains(item));
     }
 
@@ -251,25 +251,25 @@ public class DeclarationSpecifiers : PTNode {
 
         // short : { short }
         //       | { signed short }
-        //       | { short int }
-        //       | { signed short int }
+        //       | { short Int32 }
+        //       | { signed short Int32 }
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
 
         // ushort : { unsigned short }
-        //        | { unsigned short int }
+        //        | { unsigned short Int32 }
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.USHORT },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.USHORT },
 
-        // long : { int }
+        // long : { Int32 }
         //      | { signed }
-        //      | { signed int }
+        //      | { signed Int32 }
         //      | { long }
         //      | { signed long }
-        //      | { long int }
-        //      | { signed long int }
+        //      | { long Int32 }
+        //      | { signed long Int32 }
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED }, AST.ExprType.EnumExprType.LONG },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
@@ -279,9 +279,9 @@ public class DeclarationSpecifiers : PTNode {
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
 
         // ulong : { unsigned }
-        //       | { unsigned int }
+        //       | { unsigned Int32 }
         //       | { unsigned long }
-        //       | { unsigned long int }
+        //       | { unsigned long Int32 }
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED }, AST.ExprType.EnumExprType.ULONG },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.ULONG },
         { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.ULONG },
@@ -393,7 +393,7 @@ public class TypeSpecifier : PTNode {
     // input: env
     // output: tuple<ExprType, Environment>
     // 
-    public virtual Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
+    public virtual Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
         throw new NotImplementedException();
     }
 
@@ -414,7 +414,7 @@ public class TypedefName : TypeSpecifier {
     // 
     // TODO : ** NOT FINISHED **
     // 
-    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
         throw new NotImplementedException();
     }
 
@@ -604,7 +604,7 @@ public class EnumSpecifier : TypeSpecifier {
         spec_enums = _enum_list;
     }
 
-    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
         if (spec_enums == null) {
             // if there is no content in this enum type, we must find it's definition in the environment
             AST.Env.Entry entry = env.Find("enum " + spec_name);
@@ -614,7 +614,7 @@ public class EnumSpecifier : TypeSpecifier {
             }
         } else {
             // so there are something in this enum type, we need to put this type into the environment
-            int idx = 0;
+            Int32 idx = 0;
             foreach (Enumerator elem in spec_enums) {
                 env = env.PushEnum(elem.name, new AST.TLong(), idx);
                 idx++;
@@ -669,7 +669,7 @@ public class StructSpec : StructOrUnionSpec {
     // 
     // TODO : StructSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
     // 
-    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
+    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
 
         // TODO : non-complete type
         if (name != "") {
@@ -677,7 +677,7 @@ public class StructSpec : StructOrUnionSpec {
             // env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, null);
         }
 
-        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
         foreach (StructDecln decln in declns) {
             Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
             env = r_decln.Item1;
@@ -712,8 +712,8 @@ public class UnionSpec : StructOrUnionSpec {
     // 
     // TODO : UnionSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
     // 
-    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
-        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+    public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
         foreach (StructDecln decln in declns) {
             Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
             env = r_decln.Item1;
@@ -760,15 +760,15 @@ public class StructDecln : PTNode {
         env = r_specs.Item1;
         AST.ExprType base_type = r_specs.Item2;
 
-        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+        List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
         foreach (Declarator declr in declrs) {
             Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, base_type);
             env = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
             String name = r_declr.Item3;
-            attribs.Add(new Tuple<string, AST.ExprType>(name, type));
+            attribs.Add(new Tuple<String, AST.ExprType>(name, type));
         }
-        return new Tuple<AST.Env, List<Tuple<string, AST.ExprType>>>(env, attribs);
+        return new Tuple<AST.Env, List<Tuple<String, AST.ExprType>>>(env, attribs);
     }
 
 }
@@ -802,7 +802,7 @@ public class ParameterDeclaration : PTNode {
         type = r_declr.Item2;
         String name = r_declr.Item3;
 
-        return new Tuple<AST.Env, string, AST.ExprType>(env, name, type);
+        return new Tuple<AST.Env, String, AST.ExprType>(env, name, type);
     }
 
 }

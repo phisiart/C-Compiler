@@ -19,14 +19,14 @@ using System.Collections.Generic;
 // 1. This grammar is LL(1)
 // 2. identifier shouldn't be previously defined as a typedef_name
 //    this is to resolve the ambiguity of something like a * b
-// 3. first set : id, const, string, '('
+// 3. first set : id, const, String, '('
 //
 public class _primary_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         Expression expr;
 
         var src = Parser.GetTokensFromString("test_id");
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -49,7 +49,7 @@ public class _primary_expression : ParseRule {
             return false;
         }
 
-        src = Parser.GetTokensFromString("\"string\"");
+        src = Parser.GetTokensFromString("\"String\"");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -64,7 +64,7 @@ public class _primary_expression : ParseRule {
         return true;
     }
 
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
 
         // 1. match identifier
         String var_name = Parser.GetIdentifierValue(src[begin]);
@@ -82,7 +82,7 @@ public class _primary_expression : ParseRule {
         // 2.1. match char
         if (src[begin].type == TokenType.CHAR) {
             // expr = new ConstChar(((TokenChar)src[begin]).val);
-            // NOTE : there is no const char in C, there is only const int ...
+            // NOTE : there is no const char in C, there is only const Int32 ...
             expr = new ConstInt(((TokenCharConst)src[begin]).val, IntSuffix.NONE);
             return begin + 1;
         }
@@ -93,13 +93,13 @@ public class _primary_expression : ParseRule {
             return begin + 1;
         }
 
-        // 2.3. match int
+        // 2.3. match Int32
         if (src[begin].type == TokenType.INT) {
             expr = new ConstInt(((TokenInt)src[begin]).val, ((TokenInt)src[begin]).suffix);
             return begin + 1;
         }
 
-        // 3. match string literal
+        // 3. match String literal
         if (src[begin].type == TokenType.STRING) {
             expr = new StringLiteral(((TokenString)src[begin]).val);
             return begin + 1;
@@ -134,16 +134,16 @@ public class _primary_expression : ParseRule {
 // expression: assignment_expression < , assignment_expression >*
 // [ note: it's okay if there is a lonely ',', just leave it be ]
 public class _expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
         node = null;
         Expression expr;
         List<Expression> exprs = new List<Expression>();
-        int current = _assignment_expression.Parse(src, begin, out expr);
+        Int32 current = _assignment_expression.Parse(src, begin, out expr);
         if (current == -1) {
             return -1;
         }
         exprs.Add(expr);
-        int saved;
+        Int32 saved;
 
         while (true) {
             if (Parser.IsCOMMA(src[current])) {
@@ -166,7 +166,7 @@ public class _expression : ParseRule {
 // constant_expression: conditional_expression
 // [ note: when declaring an array, the size should be a const ]
 public class _constant_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
         return _conditional_expression.Parse(src, begin, out node);
     }
 }
@@ -174,8 +174,8 @@ public class _constant_expression : ParseRule {
 
 // conditional_expression: logical_or_expression < ? expression : conditional_expression >?
 public class _conditional_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _logical_or_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _logical_or_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -215,11 +215,11 @@ public class _conditional_expression : ParseRule {
 // [ note: first try unary ]
 // first(conditional_expression) = first(cast_expression)
 public class _assignment_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
         node = null;
         Expression lvalue;
         Expression rvalue;
-        int current = _unary_expression.Parse(src, begin, out lvalue);
+        Int32 current = _unary_expression.Parse(src, begin, out lvalue);
         if (current != -1) {
             if (src[current].type == TokenType.OPERATOR) {
                 OperatorVal val = ((TokenOperator)src[current]).val;
@@ -355,10 +355,10 @@ public class _assignment_expression : ParseRule {
 // postfix_expression: primary_expression [ one of these postfixes ]*
 //
 public class _postfix_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -408,10 +408,10 @@ public class _postfix_expression : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
 
         // step 1. match primary_expression
-        int current = _primary_expression.Parse(src, begin, out expr);
+        Int32 current = _primary_expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
             return -1;
@@ -456,7 +456,7 @@ public class _postfix_expression : ParseRule {
 
                 // 1. match arglist, if no match, assume empty arglist
                 List<Expression> args;
-                int saved = current;
+                Int32 saved = current;
                 current = _argument_expression_list.Parse(src, current, out args);
                 if (current == -1) {
                     args = new List<Expression>();
@@ -536,16 +536,16 @@ public class _postfix_expression : ParseRule {
 
 // argument_expression_list: assignment_expression < , assignment_expression >*
 public class _argument_expression_list : ParseRule {
-    public static int Parse(List<Token> src, int begin, out List<Expression> node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Expression> node) {
         node = null;
         Expression expr;
         List<Expression> exprs = new List<Expression>();
-        int current = _assignment_expression.Parse(src, begin, out expr);
+        Int32 current = _assignment_expression.Parse(src, begin, out expr);
         if (current == -1) {
             return -1;
         }
         exprs.Add(expr);
-        int saved;
+        Int32 saved;
 
         while (true) {
             if (Parser.IsCOMMA(src[current])) {
@@ -590,13 +590,13 @@ public class _argument_expression_list : ParseRule {
 //
 // first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
 //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = { id const string ( ++ -- & * + - ~ ! sizeof }
+//           = { id const String ( ++ -- & * + - ~ ! sizeof }
 //
 public class _unary_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -607,7 +607,7 @@ public class _unary_expression : ParseRule {
             return false;
         }
         
-        src = Parser.GetTokensFromString("sizeof(int)");
+        src = Parser.GetTokensFromString("sizeof(Int32)");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -670,7 +670,7 @@ public class _unary_expression : ParseRule {
     }
     
     // match '(' type_name ')'
-    public static int ParseTypeName(List<Token> src, int begin, out TypeName type_name) {
+    public static Int32 ParseTypeName(List<Token> src, Int32 begin, out TypeName type_name) {
         // step 1. match '('
         if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
             type_name = null;
@@ -696,11 +696,11 @@ public class _unary_expression : ParseRule {
         return begin;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
         //expr = null;
 
-        int current;
-        int saved;
+        Int32 current;
+        Int32 saved;
         
 
         if (Parser.IsKeyword(src[begin], KeywordVal.SIZEOF)) {
@@ -871,21 +871,21 @@ public class _unary_expression : ParseRule {
 // this is right-recursive, which is totally fine
 //
 public class _cast_expression : Expression {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("(int)a");
+        src = Parser.GetTokensFromString("(Int32)a");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("(int)(float)a");
+        src = Parser.GetTokensFromString("(Int32)(float)a");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -894,11 +894,11 @@ public class _cast_expression : Expression {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
 
         // 1. try to match '(' type_name ')'
         TypeName type_name;
-        int current = _unary_expression.ParseTypeName(src, begin, out type_name);
+        Int32 current = _unary_expression.ParseTypeName(src, begin, out type_name);
         if (current != -1) {
             // successful match '(' type_name ')'
             
@@ -935,10 +935,10 @@ public class _cast_expression : Expression {
 // multiplicative_Expression: cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
 //
 public class _multiplicative_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -952,10 +952,10 @@ public class _multiplicative_expression : ParseRule {
         return true;
     }
 
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
 
         // 1. match the leftmost cast_expression
-        int current = _cast_expression.Parse(src, begin, out expr);
+        Int32 current = _cast_expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
             return -1;
@@ -1029,10 +1029,10 @@ public class _multiplicative_expression : ParseRule {
 // additive_expression: multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
 //
 public class _additive_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -1046,10 +1046,10 @@ public class _additive_expression : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
 
         // match the first multiplicative_expression
-        int current = _multiplicative_expression.Parse(src, begin, out expr);
+        Int32 current = _multiplicative_expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
             return -1;
@@ -1110,10 +1110,10 @@ public class _additive_expression : ParseRule {
 // shift_expression: additive_expression [ [ '<<' | '>>' ] additive_expression ]*
 //
 public class _shift_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c << 3");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -1127,10 +1127,10 @@ public class _shift_expression : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
         
         // match the leftmost additive_expression
-        int current = _additive_expression.Parse(src, begin, out expr);
+        Int32 current = _additive_expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
             return -1;
@@ -1193,10 +1193,10 @@ public class _shift_expression : ParseRule {
 // relational_expression: shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
 //
 public class _relational_expression : ParseRule {
-    public static bool Test() {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("3 < 4");
         Expression expr;
-        int current = Parse(src, 0, out expr);
+        Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
@@ -1210,10 +1210,10 @@ public class _relational_expression : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
         
         // match the first shift_expression
-        int current = _shift_expression.Parse(src, begin, out expr);
+        Int32 current = _shift_expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
             return -1;
@@ -1292,8 +1292,8 @@ public class _relational_expression : ParseRule {
 // [ note: my solution ]
 // equality_expression: relational_expression < < == | != > relational_expression >*
 public class _equality_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _relational_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _relational_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -1335,8 +1335,8 @@ public class _equality_expression : ParseRule {
 // [ note: my solution ]
 // and_expression: equality_expression < & equality_expression >*
 public class _and_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _equality_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _equality_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -1368,8 +1368,8 @@ public class _and_expression : ParseRule {
 // [ note: my solution ]
 // exclusive_or_expression: and_expression < ^ and_expression >*
 public class _exclusive_or_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _and_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _and_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -1401,8 +1401,8 @@ public class _exclusive_or_expression : ParseRule {
 // [ note: my solution ]
 // inclusive_or_expression: exclulsive_or_expression < | exclulsive_or_expression >*
 public class _inclusive_or_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _exclusive_or_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _exclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -1434,8 +1434,8 @@ public class _inclusive_or_expression : ParseRule {
 // [ note: my solution ]
 // logical_and_expression: inclusive_or_expression < && inclusive_or_expression >*
 public class _logical_and_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _inclusive_or_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _inclusive_or_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }
@@ -1468,8 +1468,8 @@ public class _logical_and_expression : ParseRule {
 // logical_or_expression: logical_and_expression < || logical_and_expression >*
 
 public class _logical_or_expression : ParseRule {
-    public static int Parse(List<Token> src, int begin, out Expression node) {
-        int current = _logical_and_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+        Int32 current = _logical_and_expression.Parse(src, begin, out node);
         if (current == -1) {
             return -1;
         }

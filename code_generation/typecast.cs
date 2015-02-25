@@ -37,7 +37,7 @@ namespace AST {
             cast = _cast;
         }
 
-        public static bool EqualType(ExprType t1, ExprType t2) {
+        public static Boolean EqualType(ExprType t1, ExprType t2) {
             return t1.EqualType(t2);
         }
         
@@ -574,10 +574,10 @@ namespace AST {
             ExprType t1 = e1.type;
             ExprType t2 = e2.type;
 
-            bool c1 = t1.is_const;
-            bool v1 = t1.is_volatile;
-            bool c2 = t2.is_const;
-            bool v2 = t2.is_volatile;
+            Boolean c1 = t1.is_const;
+            Boolean v1 = t1.is_volatile;
+            Boolean c2 = t2.is_const;
+            Boolean v2 = t2.is_volatile;
             // 1. if either expr is double: both are converted to double
             if (t1.expr_type == ExprType.EnumExprType.DOUBLE || t2.expr_type == ExprType.EnumExprType.DOUBLE) {
                 return new Tuple<Expr, Expr, ExprType.EnumExprType>(MakeCast(e1, new TDouble(c1, v1)), MakeCast(e2, new TDouble(c2, v2)), ExprType.EnumExprType.DOUBLE);

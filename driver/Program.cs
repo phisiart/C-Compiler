@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace driver {
     class Program {
-        static void Main(string[] args) {
+        static void Main(String[] args) {
             Scanner scanner = new Scanner();
             scanner.OpenFile("hello.c");
             scanner.Lex();
             List<Token> tokens = scanner.tokens;
 
             TranslationUnit unit;
-            int r = _translation_unit.Parse(tokens, 0, out unit);
+            Int32 r = _translation_unit.Parse(tokens, 0, out unit);
 
             Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
 

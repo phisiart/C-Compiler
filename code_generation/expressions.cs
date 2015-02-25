@@ -161,8 +161,8 @@ namespace AST {
             value = _value;
         }
 
-        public override string ToString() {
-            return "int(" + value + ")";
+        public override String ToString() {
+            return "Int32(" + value + ")";
         }
         public readonly Int32 value;
 
@@ -182,7 +182,7 @@ namespace AST {
             value = _value;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return "uint(" + value + ")";
         }
         public readonly UInt32 value;
@@ -205,7 +205,7 @@ namespace AST {
             : base(new TFloat(true)) {
             value = _value;
         }
-        public override string ToString() {
+        public override String ToString() {
             return "float(" + value + ")";
         }
         public readonly Single value;
@@ -216,7 +216,7 @@ namespace AST {
             : base(new TDouble(true)) {
             value = _value;
         }
-        public override string ToString() {
+        public override String ToString() {
             return "double(" + value + ")";
         }
         public readonly Double value;
@@ -267,7 +267,7 @@ namespace AST {
         public override Reg CGenValue(Env env, CGenState state) {
             
             // Push the arguments onto the stack in reverse order
-            for (int i = call_args.Count; i --> 0;) {
+            for (Int32 i = call_args.Count; i --> 0;) {
                 Expr arg = call_args[i];
                 arg.CGenPush(env, state);
             }

@@ -11,7 +11,7 @@ public class TokenString : Token {
     }
     public readonly String raw;
     public readonly String val;
-    public readonly int idx;
+    public readonly Int32 idx;
 
     public override String ToString() {
         return type.ToString() + ": " + "\"" + raw + "\"" + "\n\"" + val + "\"";
@@ -60,7 +60,7 @@ public class FSAString : FSA {
     }
 
     public override sealed Token RetrieveToken() {
-        int idx;
+        Int32 idx;
         if ((idx = StringTable.entrys.FindIndex(x => x == raw)) == -1) {
             StringTable.entrys.Add(raw);
             idx = StringTable.entrys.Count - 1;

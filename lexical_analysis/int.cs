@@ -1,6 +1,6 @@
 ﻿using System;
 
-// int
+// Int32
 // ---
 // there are four types of integers: signed, unsigned, signed long, unsigned long
 public enum IntSuffix {

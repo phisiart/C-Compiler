@@ -35,14 +35,14 @@ namespace AST {
         //              GLOBAL: N/A
         // 
         public class Entry {
-            public Entry(EntryLoc loc, ExprType type, int offset) {
+            public Entry(EntryLoc loc, ExprType type, Int32 offset) {
                 entry_loc = loc;
                 entry_type = type;
                 entry_offset = offset;
             }
             public readonly EntryLoc entry_loc;
             public readonly ExprType entry_type;
-            public readonly int      entry_offset;
+            public readonly Int32      entry_offset;
         }
 
         private class Scope {
@@ -51,7 +51,7 @@ namespace AST {
             // ===================
             // 
             private Scope(List<Utils.StoreEntry> stack_entries,
-                          int stack_offset,
+                          Int32 stack_offset,
                           List<Utils.StoreEntry> global_entries,
                           TFunction curr_func,
                           List<Utils.StoreEntry> typedef_entries,
@@ -137,7 +137,7 @@ namespace AST {
             // output: Environment
             // return a new environment which adds a enum value
             // 
-            public Scope PushEnum(String name, ExprType type, int value) {
+            public Scope PushEnum(String name, ExprType type, Int32 value) {
                 Scope scope = new Scope(this);
                 scope.scope_enum_entries.Add(new Utils.StoreEntry(name, type, value));
                 return scope;
@@ -203,7 +203,7 @@ namespace AST {
             // output: String
             // dumps the content in this level
             // 
-            public String Dump(int depth, String single_indent) {
+            public String Dump(Int32 depth, String single_indent) {
                 String indent = "";
                 for (; depth > 0; depth--) {
                     indent += single_indent;
@@ -243,7 +243,7 @@ namespace AST {
             public readonly List<Utils.StoreEntry> scope_global_entries;
             public readonly List<Utils.StoreEntry> scope_typedef_entries;
             public readonly List<Utils.StoreEntry> scope_enum_entries;
-            public int scope_stack_offset;
+            public Int32 scope_stack_offset;
 
         }
 
@@ -307,7 +307,7 @@ namespace AST {
         // output: Environment
         // return a new environment which adds a enum value
         // 
-        public Env PushEnum(String name, ExprType type, int value) {
+        public Env PushEnum(String name, ExprType type, Int32 value) {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEnum(name, type, value);
             scopes.Push(top);
@@ -340,10 +340,10 @@ namespace AST {
         // GetStackOffset
         // ==============
         // input: void
-        // output: int
+        // output: Int32
         // return the current stack size
         // 
-        public int GetStackOffset() {
+        public Int32 GetStackOffset() {
             return env_scopes.Peek().scope_stack_offset;
         }
 
@@ -361,13 +361,13 @@ namespace AST {
             return env_scopes.Peek().Find(name);
         }
 
-        public bool IsGlobal() {
+        public Boolean IsGlobal() {
             return env_scopes.Count == 1;
         }
 
         public String Dump() {
             String str = "";
-            int depth = 0;
+            Int32 depth = 0;
             foreach (Scope scope in env_scopes) {
                 str += scope.Dump(depth, "  ");
                 depth++;

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 public class Scope {
     public Scope() {
         vars = new List<String>();
-        typedef_names = new List<string>();
+        typedef_names = new List<String>();
     }
 
-    public bool HasTypedefName(String type) {
+    public Boolean HasTypedefName(String type) {
         return typedef_names.FindIndex(x => x == type) != -1;
     }
 
@@ -35,7 +35,7 @@ public static class ScopeEnvironment {
         scopes.Pop();
     }
 
-    public static bool HasTypedefName(String type) {
+    public static Boolean HasTypedefName(String type) {
         return scopes.Peek().HasTypedefName(type);
     }
 

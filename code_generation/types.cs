@@ -14,11 +14,11 @@ namespace AST {
        An ANSI character is positive.
 
      * There are 4 signed integer types:
-       [signed char] < [short int] < [int] < [long int].
+       [signed char] < [short Int32] < [Int32] < [long Int32].
 
      * [signed char] occupies the same amount of storage as a "plain" char object.
      
-     * [int] has the natural size suggested by the architecture of the execution environment.
+     * [Int32] has the natural size suggested by the architecture of the execution environment.
 
      * For each of the signed integer types, there is a corresponding (but different) unsigned integer type (designated with the keyword unsigned) that uses the same amount of storage (including sign information) and has the same alignment requirements. The range of nonnegative values of a signed integer type is a subrange of the corresponding unsigned integer type, and the representation of the same value in each type is the same. A computation involving unsigned operands can never overflow, because a result that cannot be represented by the resulting unsigned integer type is reduced modulo the number that is one greater than the largest value that can be represented by the resulting unsigned integer type.
 
@@ -104,14 +104,14 @@ namespace AST {
             return null;
         }
 
-        public int SizeOf {
+        public Int32 SizeOf {
             get { return size_of; }
         }
-        public int Alignment {
+        public Int32 Alignment {
             get { return alignment; }
         }
-        protected int size_of;
-        protected int alignment;
+        protected Int32 size_of;
+        protected Int32 alignment;
         public readonly Boolean is_const;
         public readonly Boolean is_volatile;
 
@@ -124,7 +124,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TVoid(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "void";
         }
     }
@@ -165,7 +165,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TChar(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "char";
         }
     }
@@ -179,7 +179,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUChar(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned char";
         }
     }
@@ -193,7 +193,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TShort(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "short";
         }
     }
@@ -207,7 +207,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUShort(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned short";
         }
     }
@@ -221,7 +221,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TLong(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "long";
         }
     }
@@ -235,7 +235,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TULong(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned long";
         }
     }
@@ -249,7 +249,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TFloat(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "float";
         }
     }
@@ -263,7 +263,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TDouble(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "double";
         }
     }
@@ -285,7 +285,7 @@ namespace AST {
         public override Boolean EqualType(ExprType other) {
             return other.expr_type == EnumExprType.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
-        public override string ToString() {
+        public override String ToString() {
             return "ptr<" + referenced_type.ToString() + ">";
         }
     }
@@ -320,7 +320,7 @@ namespace AST {
     // stores the names, types, and offsets of attributes
     // 
     public class TStruct : ExprType {
-        private TStruct(List<Utils.StoreEntry> _attribs, int _size_of, int _alignment, Boolean _is_const, Boolean _is_volatile)
+        private TStruct(List<Utils.StoreEntry> _attribs, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(EnumExprType.STRUCT, _is_const, _is_volatile) {
             attribs = _attribs;
             size_of = _size_of;
@@ -331,9 +331,9 @@ namespace AST {
             : base(EnumExprType.STRUCT, _is_const, _is_volatile) {
             
             attribs = new List<Utils.StoreEntry>();
-            int offset = 0;
-            int align;
-            int max_align = 0;
+            Int32 offset = 0;
+            Int32 align;
+            Int32 max_align = 0;
             foreach (Tuple<String, ExprType> _attrib in _attribs) {
                 align = _attrib.Item2.Alignment;
                 if (align > max_align) {
@@ -363,7 +363,7 @@ namespace AST {
             return new TStruct(attribs, size_of, alignment, _is_const, _is_volatile);
         }
 
-        public override string ToString() {
+        public override String ToString() {
             String str = DumpQualifiers() + "struct { ";
             foreach (Utils.StoreEntry attrib in attribs) {
                 str += attrib.entry_name + " : " + attrib.entry_type.ToString() + "; ";
@@ -408,7 +408,7 @@ namespace AST {
             return str;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             String str = DumpQualifiers() + "union { ";
             foreach (Tuple<String, ExprType> attrib in attribs) {
                 str += attrib.Item1 + " : " + attrib.Item2.ToString() + "; ";
@@ -436,10 +436,10 @@ namespace AST {
             ret_type = _ret_type;
 
             args = new List<Utils.StoreEntry>();
-            int regsz = (new TLong()).SizeOf; // 32bit machine: int = 4 bytes
-            int offset = 2 * regsz; // first parameter should be at %ebp + 8
+            Int32 regsz = (new TLong()).SizeOf; // 32bit machine: Int32 = 4 bytes
+            Int32 offset = 2 * regsz; // first parameter should be at %ebp + 8
 
-            int alignment;
+            Int32 alignment;
             foreach (Tuple<String, ExprType> arg in _args) {
                 args.Add(new Utils.StoreEntry(arg.Item1, arg.Item2, offset));
                 offset += arg.Item2.SizeOf;
@@ -463,9 +463,9 @@ namespace AST {
             return str;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             String str = "";
-            for (int i = 0; i < args.Count; ++i) {
+            for (Int32 i = 0; i < args.Count; ++i) {
                 if (i != 0) {
                     str += ", ";
                 }
@@ -487,7 +487,7 @@ namespace AST {
     // defines an empty function: no arguments, returns void
     // 
     public class TEmptyFunction : TFunction {
-        public TEmptyFunction() : base(new TVoid(), new List<Tuple<string, ExprType>>(), false) {
+        public TEmptyFunction() : base(new TVoid(), new List<Tuple<String, ExprType>>(), false) {
         }
     }
 

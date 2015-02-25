@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class Parser {
-    public static bool IsSizeof(Token token) {
+    public static Boolean IsSizeof(Token token) {
         if (token.type == TokenType.KEYWORD) {
             if (((TokenKeyword)token).val == KeywordVal.SIZEOF) {
                 return true;
@@ -12,7 +12,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsLPAREN(Token token) {
+    public static Boolean IsLPAREN(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.LPAREN) {
                 return true;
@@ -21,7 +21,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsRPAREN(Token token) {
+    public static Boolean IsRPAREN(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.RPAREN) {
                 return true;
@@ -30,7 +30,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsCOLON(Token token) {
+    public static Boolean IsCOLON(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.COLON) {
                 return true;
@@ -39,7 +39,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsQuestionMark(Token token) {
+    public static Boolean IsQuestionMark(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.QUESTION) {
                 return true;
@@ -48,7 +48,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsAssignment(Token token) {
+    public static Boolean IsAssignment(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.ASSIGN) {
                 return true;
@@ -57,7 +57,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsCOMMA(Token token) {
+    public static Boolean IsCOMMA(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.COMMA) {
                 return true;
@@ -66,7 +66,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsLCURL(Token token) {
+    public static Boolean IsLCURL(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.LCURL) {
                 return true;
@@ -75,7 +75,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsRCURL(Token token) {
+    public static Boolean IsRCURL(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.RCURL) {
                 return true;
@@ -84,7 +84,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsLBRACKET(Token token) {
+    public static Boolean IsLBRACKET(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.LBRACKET) {
                 return true;
@@ -93,7 +93,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsRBRACKET(Token token) {
+    public static Boolean IsRBRACKET(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.RBRACKET) {
                 return true;
@@ -102,7 +102,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsPERIOD(Token token) {
+    public static Boolean IsPERIOD(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.PERIOD) {
                 return true;
@@ -111,7 +111,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsEllipsis(List<Token> src, int begin) {
+    public static Boolean IsEllipsis(List<Token> src, Int32 begin) {
         if (Parser.IsPERIOD(src[begin])) {
             begin++;
             if (Parser.IsPERIOD(src[begin])) {
@@ -124,7 +124,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsSEMICOLON(Token token) {
+    public static Boolean IsSEMICOLON(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.SEMICOLON) {
                 return true;
@@ -133,7 +133,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsKeyword(Token token, KeywordVal val) {
+    public static Boolean IsKeyword(Token token, KeywordVal val) {
         if (token.type == TokenType.KEYWORD) {
             if (((TokenKeyword)token).val == val) {
                 return true;
@@ -142,7 +142,7 @@ public class Parser {
         return false;
     }
 
-    public static bool IsOperator(Token token, OperatorVal val) {
+    public static Boolean IsOperator(Token token, OperatorVal val) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == val) {
                 return true;
@@ -166,13 +166,13 @@ public class Parser {
         return lex.tokens;
     }
 
-    // EatOperator : (src, ref current, val) -> bool
+    // EatOperator : (src, ref current, val) -> Boolean
     // =============================================
     // tries to eat an operator
     // if succeed, current++, return true
     // if fail, current remains the same, return false
     // 
-    public static bool EatOperator(List<Token> src, ref int current, OperatorVal val) {
+    public static Boolean EatOperator(List<Token> src, ref Int32 current, OperatorVal val) {
         if (src[current].type != TokenType.OPERATOR) {
             return false;
         }
@@ -185,10 +185,10 @@ public class Parser {
         return true;
     }
 
-    public delegate int FParse<TRet>(List<Token> src, int begin, out TRet node) where TRet : PTNode;
+    public delegate Int32 FParse<TRet>(List<Token> src, Int32 begin, out TRet node) where TRet : PTNode;
 
-    public static int ParseOptional<TRet>(List<Token> src, int begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : PTNode {
-        int current;
+    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : PTNode {
+        Int32 current;
         if ((current = Parse(src, begin, out node)) == -1) {
             // if parsing fails: return default value
             node = default_val;
@@ -198,14 +198,14 @@ public class Parser {
         }
     }
 
-    public static int ParseList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
-        int current = begin;
+    public static Int32 ParseList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
+        Int32 current = begin;
 
         list = new List<TRet>();
         TRet item;
 
         while (true) {
-            int saved = current;
+            Int32 saved = current;
             if ((current = Parse(src, current, out item)) == -1) {
                 return saved;
             }
@@ -214,7 +214,7 @@ public class Parser {
 
     }
 
-    public static int ParseNonEmptyList<TRet>(List<Token> src, int begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
+    public static Int32 ParseNonEmptyList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
         begin = ParseList(src, begin, out list, Parse);
         if (list.Any()) {
             return begin;
@@ -223,11 +223,11 @@ public class Parser {
         }
     }
     
-    public static int Parse2Choices<TRet, T1, T2>(List<Token> src, int begin, out TRet node, FParse<T1> Parse1, FParse<T2> Parse2)
+    public static Int32 Parse2Choices<TRet, T1, T2>(List<Token> src, Int32 begin, out TRet node, FParse<T1> Parse1, FParse<T2> Parse2)
         where T1 : TRet
         where T2 : TRet
         where TRet : PTNode {
-        int ret;
+        Int32 ret;
 
         T1 node1;
         if ((ret = Parse1(src, begin, out node1)) != -1) {
@@ -245,7 +245,7 @@ public class Parser {
         return -1;
     }
 
-    public static int ParseNonEmptyListWithSep<TRet>(List<Token> src, int pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : PTNode {
+    public static Int32 ParseNonEmptyListWithSep<TRet>(List<Token> src, Int32 pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : PTNode {
         list = new List<TRet>();
         TRet item;
 
@@ -254,7 +254,7 @@ public class Parser {
         list.Add(item);
 
         while (true) {
-            int saved = pos;
+            Int32 saved = pos;
             if (!Parser.EatOperator(src, ref pos, op))
                 return saved;
             if ((pos = Parse(src, pos, out item)) == -1)
@@ -266,17 +266,17 @@ public class Parser {
 }
 
 public class ParserEnvironment {
-    public static bool debug = false;
+    public static Boolean debug = false;
 }
 
 
 public class Program {
-    public static void Main(string[] args) {
+    public static void Main(String[] args) {
         Scanner lex = new Scanner();
         lex.OpenFile("../../../hello.c");
         lex.Lex();
         var src = lex.tokens;
         TranslationUnit root;
-        int current = _translation_unit.Parse(src, 0, out root);
+        Int32 current = _translation_unit.Parse(src, 0, out root);
     }
 }

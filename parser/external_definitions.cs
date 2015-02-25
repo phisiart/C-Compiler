@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 // translation_unit : [external_declaration]+
 public class _translation_unit : ParseRule {
-    public static bool Test() {
-        var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
+    public static Boolean Test() {
+        var src = Parser.GetTokensFromString("Int32 a; Int32 b() { return 1; }");
         TranslationUnit unit;
-        int current = Parse(src, 0, out unit);
+        Int32 current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("int a() { return 1; } int b;");
+        src = Parser.GetTokensFromString("Int32 a() { return 1; } Int32 b;");
         current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("int a");
+        src = Parser.GetTokensFromString("Int32 a");
         current = Parse(src, 0, out unit);
         if (current != -1) {
             return false;
@@ -29,9 +29,9 @@ public class _translation_unit : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int pos, out TranslationUnit unit) {
+    public static Int32 Parse(List<Token> src, Int32 pos, out TranslationUnit unit) {
         List<ExternalDeclaration> list;
-        int current;
+        Int32 current;
         if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
             unit = new TranslationUnit(list);
             return current;
@@ -44,15 +44,15 @@ public class _translation_unit : ParseRule {
 }
 // external_declaration: function_definition | declaration
 public class _external_declaration : ParseRule {
-    public static bool Test() {
-        var src = Parser.GetTokensFromString("int a;");
+    public static Boolean Test() {
+        var src = Parser.GetTokensFromString("Int32 a;");
         ExternalDeclaration node;
-        int current = Parse(src, 0, out node);
+        Int32 current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("int a() { return 1; }");
+        src = Parser.GetTokensFromString("Int32 a() { return 1; }");
         current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
@@ -61,7 +61,7 @@ public class _external_declaration : ParseRule {
         return true;
     }
 
-    public static int Parse(List<Token> src, int pos, out ExternalDeclaration node) {
+    public static Int32 Parse(List<Token> src, Int32 pos, out ExternalDeclaration node) {
         return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Declaration>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
@@ -71,8 +71,8 @@ public class _external_declaration : ParseRule {
 //
 // NOTE: the optional declaration_list is for the **old-style** function prototype like this:
 // +-------------------------------+
-// |    int foo(param1, param2)    |
-// |    int param1;                |
+// |    Int32 foo(param1, param2)    |
+// |    Int32 param1;                |
 // |    char param2;               |
 // |    {                          |
 // |        ....                   |
@@ -81,7 +81,7 @@ public class _external_declaration : ParseRule {
 //
 // i'm **not** going to support this style. function prototypes should always be like this:
 // +------------------------------------------+
-// |    int foo(int param1, char param2) {    |
+// |    Int32 foo(Int32 param1, char param2) {    |
 // |        ....                              |
 // |    }                                     |
 // +------------------------------------------+
@@ -94,10 +94,10 @@ public class _external_declaration : ParseRule {
 // FAIL: null
 //
 public class _function_definition : ParseRule {
-    public static bool Test() {
-        var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
+    public static Boolean Test() {
+        var src = Parser.GetTokensFromString("Int32 add(Int32 a, Int32 b) { return a + b; }");
         FunctionDefinition def;
-        int current = Parse(src, 0, out def);
+        Int32 current = Parse(src, 0, out def);
         if (current == -1) {
             return false;
         }
@@ -105,10 +105,10 @@ public class _function_definition : ParseRule {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out FunctionDefinition def) {
         // try to match declaration_specifiers, if not found, create an empty one.
         DeclarationSpecifiers specs;
-        int current = _declaration_specifiers.Parse(src, begin, out specs);
+        Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
             specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
             current = begin;
