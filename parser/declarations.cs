@@ -355,7 +355,7 @@ public class _type_specifier : ParseRule {
         }
 
         // 2. match enum
-        EnumSpec enum_specifier;
+        EnumSpecifier enum_specifier;
         current = _enum_specifier.Parse(src, begin, out enum_specifier);
         if (current != -1) {
             spec = enum_specifier;
@@ -578,7 +578,7 @@ public class _pointer : ParseRule {
 // [ note: my solution ]
 // parameter_type_list : parameter_list < , ... >?
 public class _parameter_type_list : ParseRule {
-    public static int Parse(List<Token> src, int begin, out ParamTypeList param_type_list) {
+    public static int Parse(List<Token> src, int begin, out ParameterTypeList param_type_list) {
         List<ParameterDeclaration> param_list;
         int current = _parameter_list.Parse(src, begin, out param_list);
         if (current == -1) {
@@ -591,14 +591,14 @@ public class _parameter_type_list : ParseRule {
             current++;
             if (Parser.IsEllipsis(src, current)) {
                 current += 3;
-                param_type_list = new ParamTypeList(param_list, true);
+                param_type_list = new ParameterTypeList(param_list, true);
                 return current;
             } else {
                 current = saved;
             }
         }
 
-        param_type_list = new ParamTypeList(param_list, false);
+        param_type_list = new ParameterTypeList(param_list, false);
         return current;
     }
 }
@@ -770,10 +770,10 @@ public class _direct_declarator : ParseRule {
         }
 
         // match constant_expression, if fail, just assume no parameter
-        ParamTypeList param_type_list;
+        ParameterTypeList param_type_list;
         int saved = begin;
         if ((begin = _parameter_type_list.Parse(src, begin, out param_type_list)) == -1) {
-            param_type_list = new ParamTypeList(new List<ParameterDeclaration>());
+            param_type_list = new ParameterTypeList(new List<ParameterDeclaration>());
             begin = saved;
         }
 
@@ -862,7 +862,7 @@ public class _enum_specifier : ParseRule {
         return current;
     }
 
-    public static int Parse(List<Token> src, int begin, out EnumSpec enum_spec) {
+    public static int Parse(List<Token> src, int begin, out EnumSpecifier enum_spec) {
         
 
         if (src[begin].type != TokenType.KEYWORD) {
@@ -882,10 +882,10 @@ public class _enum_specifier : ParseRule {
 
             int saved = current;
             if ((current = ParseEnumList(src, current, out enum_list)) == -1) {
-                enum_spec = new EnumSpec(name, new List<Enumerator>());
+                enum_spec = new EnumSpecifier(name, new List<Enumerator>());
                 return saved;
             } else {
-                enum_spec = new EnumSpec(name, enum_list);
+                enum_spec = new EnumSpecifier(name, enum_list);
                 return current;
             }
 
@@ -895,7 +895,7 @@ public class _enum_specifier : ParseRule {
                 enum_spec = null;
                 return -1;
             }
-            enum_spec = new EnumSpec("", enum_list);
+            enum_spec = new EnumSpecifier("", enum_list);
             return current;
 
         }
@@ -1445,7 +1445,7 @@ public class _initializer_list : ParseRule {
             return -1;
         }
 
-        expr = new InitrList(exprs);
+        expr = new InitializerList(exprs);
         return begin;
 
     }

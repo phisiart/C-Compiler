@@ -455,11 +455,11 @@ public abstract class TypeModifier : PTNode {
 }
 
 public class FunctionModifier : TypeModifier {
-    public FunctionModifier(ParamTypeList _param_type_list)
+    public FunctionModifier(ParameterTypeList _param_type_list)
         : base(TypeModifierKind.FUNCTION) {
         param_type_list = _param_type_list;
     }
-    public ParamTypeList param_type_list;
+    public ParameterTypeList param_type_list;
 
     // Modify Type : (env, type) -> (env, type)
     // ========================================
@@ -551,20 +551,23 @@ public class NullDeclr : Declarator {
     }
 }
 
-// Finished
-public class ParamTypeList : PTNode {
-    public ParamTypeList(List<ParameterDeclaration> _param_list, Boolean _varargs) {
+// Parameter Type List
+// ===================
+// 
+public class ParameterTypeList : PTNode {
+    public ParameterTypeList(List<ParameterDeclaration> _param_list, Boolean _varargs) {
         params_varargs = _varargs;
-        params_declns = _param_list;
+        params_inner_declns = _param_list;
     }
 
-    public ParamTypeList(List<ParameterDeclaration> _param_list) {
-        params_varargs = false;
-        params_declns = _param_list;
-    }
+    public ParameterTypeList(List<ParameterDeclaration> _param_list)
+        : this(_param_list, false) {}
 
     public readonly Boolean params_varargs;
-    public readonly List<ParameterDeclaration> params_declns;
+    public IReadOnlyList<ParameterDeclaration> params_declns {
+        get { return params_inner_declns; }
+    }
+    public readonly List<ParameterDeclaration> params_inner_declns;
 
     // Get Parameter Types
     // ===================
@@ -572,7 +575,7 @@ public class ParamTypeList : PTNode {
     public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypes(AST.Env env) {
         return Tuple.Create(
             params_varargs,
-            params_declns.ConvertAll(decln => {
+            params_inner_declns.ConvertAll(decln => {
                 Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDecln(env);
                 env = r_decln.Item1;
                 return r_decln;
@@ -595,35 +598,35 @@ public class ParamTypeList : PTNode {
 //   name      : String
 //   enum_list : List<Enumerator>
 // 
-public class EnumSpec : TypeSpecifier {
-    public EnumSpec(String _name, List<Enumerator> _enum_list) {
-        name = _name;
-        enum_list = _enum_list;
+public class EnumSpecifier : TypeSpecifier {
+    public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
+        spec_name = _name;
+        spec_enums = _enum_list;
     }
 
     public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, bool is_const, bool is_volatile) {
-        if (enum_list == null) {
+        if (spec_enums == null) {
             // if there is no content in this enum type, we must find it's definition in the environment
-            AST.Env.Entry entry = env.Find("enum " + name);
+            AST.Env.Entry entry = env.Find("enum " + spec_name);
             if (entry == null || entry.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
-                Log.SemantError("Error: type 'enum " + name + " ' has not been defined.");
+                Log.SemantError("Error: type 'enum " + spec_name + " ' has not been defined.");
                 return null;
             }
         } else {
             // so there are something in this enum type, we need to put this type into the environment
             int idx = 0;
-            foreach (Enumerator elem in enum_list) {
+            foreach (Enumerator elem in spec_enums) {
                 env = env.PushEnum(elem.name, new AST.TLong(), idx);
                 idx++;
             }
-            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "enum " + name, new AST.TLong());
+            env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "enum " + spec_name, new AST.TLong());
         }
 
         return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
     }
 
-    public readonly String name;
-    public readonly List<Enumerator> enum_list;
+    public readonly String spec_name;
+    public readonly List<Enumerator> spec_enums;
 
 }
 
@@ -734,10 +737,10 @@ public class UnionSpec : StructOrUnionSpec {
 // only used in parsing phase
 // 
 public class StructOrUnion : PTNode {
-    public StructOrUnion(bool _is_union) {
+    public StructOrUnion(Boolean _is_union) {
         is_union = _is_union;
     }
-    public bool is_union;
+    public Boolean is_union;
 }
 
 
@@ -749,6 +752,9 @@ public class StructDecln : PTNode {
     public DeclarationSpecifiers specs;
     public List<Declarator> declrs;
 
+    // Get Declarations : env -> (env, (name, type)[])
+    // ===============================================
+    // 
     public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
         Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprType(env);
         env = r_specs.Item1;
@@ -767,7 +773,9 @@ public class StructDecln : PTNode {
 
 }
 
-// Finished.
+// Parameter Declaration
+// =====================
+// 
 public class ParameterDeclaration : PTNode {
     public ParameterDeclaration(DeclarationSpecifiers _specs, Declarator _decl) {
         specs = _specs;
@@ -782,7 +790,7 @@ public class ParameterDeclaration : PTNode {
     public DeclarationSpecifiers specs;
     public Declarator decl;
 
-    // TODO : [finished] ParamDecln.GetParamDecln(env) -> (env, name, type)
+    // Get Parameter Declaration : env -> (env, name, type)
     public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
         Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
         env = r_specs.Item1;
@@ -800,8 +808,8 @@ public class ParameterDeclaration : PTNode {
 }
 
 
-public class InitrList : Expression {
-    public InitrList(List<Expression> _exprs) {
+public class InitializerList : Expression {
+    public InitializerList(List<Expression> _exprs) {
         exprs = _exprs;
     }
     public List<Expression> exprs;
