@@ -185,7 +185,7 @@ namespace semant2_test {
     public class FullTest {
         [TestMethod]
         public void TestFunctionDef() {
-            String src = "Int32 main(Int32 argc, char **argv) { 0; 1; 3.0f; }";
+            String src = "int main(int argc, char **argv) { 0; 1; 3.0f; }";
             List<Token> tokens = Parser.GetTokensFromString(src);
             TranslationUnit unit;
             Int32 r = _translation_unit.Parse(tokens, 0, out unit);
