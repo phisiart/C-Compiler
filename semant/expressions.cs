@@ -174,10 +174,12 @@ public class Expression : PTNode {
 }
 
 
-public class NullExpression : Expression {
+public class EmptyExpression : Expression {
+    public EmptyExpression() { }
+
     // TODO : [finished] NullExpression.GetExpression(env) -> (env, expr)
     public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-        return new Tuple<AST.Env, AST.Expr>(env, new AST.NullExpr());
+        return new Tuple<AST.Env, AST.Expr>(env, new AST.EmptyExpr());
     }
 }
 

@@ -10,10 +10,11 @@ public class Declaration : ExternalDeclaration {
         inner_init_declrs = init_declrs_;
     }
 
-    public readonly DeclarationSpecifiers decl_specs;
+    public readonly DeclarationSpecifiers          decl_specs;
     public IReadOnlyList<InitializationDeclarator> init_declrs {
         get { return inner_init_declrs; }
     }
+
     private readonly List<InitializationDeclarator> inner_init_declrs;
 
     public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
@@ -313,7 +314,7 @@ public class InitializationDeclarator : PTNode {
         if (_init != null) {
             init = _init;
         } else {
-            init = new NullExpression();
+            init = new EmptyExpression();
         }
     }
 
@@ -471,7 +472,7 @@ public class FunctionModifier : TypeModifier {
             return Tuple.Create(arg.Item2, arg.Item3);
         });
 
-        return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFunction(ret_type, args, varargs));
+        return new Tuple<AST.Env, AST.ExprType>(env, AST.TFunction.Create(ret_type, args, varargs));
     }
 }
 
@@ -487,6 +488,8 @@ public class ArrayModifier : TypeModifier {
     public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
         Tuple<AST.Env, AST.Expr> r_nelems = array_nelems.GetExpr(env);
         env = r_nelems.Item1;
+
+        // Try to cast the 'nelems' expression to a long int.
         AST.Expr expr_nelems = AST.TypeCast.MakeCast(r_nelems.Item2, new AST.TLong());
 
         if (!expr_nelems.IsConstExpr()) {
@@ -681,7 +684,7 @@ public class StructSpecifier : StructOrUnionSpecifier {
             attribs.AddRange(r_decln.Item2);
         }
 
-        AST.TStruct type = new AST.TStruct(attribs, is_const, is_volatile);
+        AST.TStruct type = AST.TStruct.Create(attribs, is_const, is_volatile);
 
         if (name != "") {
             env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, type);
@@ -717,7 +720,7 @@ public class UnionSpecifier : StructOrUnionSpecifier {
             attribs.AddRange(r_decln.Item2);
         }
 
-        AST.TUnion type = new AST.TUnion(attribs, is_const, is_volatile);
+        AST.TUnion type = AST.TUnion.Create(attribs, is_const, is_volatile);
 
         if (name != "") {
             env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, type);
@@ -811,6 +814,11 @@ public class ParameterDeclaration : PTNode {
 // ================
 // used to initialize arrays and structs, etc
 // 
+// C language standard:
+// 1. scalar types
+//    
+// 2. aggregate types
+// 3. strings
 public class InitializerList : Expression {
     public InitializerList(List<Expression> _exprs) {
         initlist_exprs = _exprs;
@@ -825,7 +833,7 @@ public class InitializerList : Expression {
         });
         return Tuple.Create(env, new AST.InitList(exprs));
     }
-    
+
 }
 
 

@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace semant2_test {
@@ -21,7 +18,7 @@ namespace semant2_test {
             args.Add(new Tuple<String, AST.ExprType>("some_double", new AST.TDouble()));
             args.Add(new Tuple<String, AST.ExprType>("another_double", new AST.TDouble()));
             args.Add(new Tuple<String, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args, false);
+            AST.TFunction func = AST.TFunction.Create(new AST.TVoid(), args, false);
             AST.Env env2 = env.SetCurrentFunction(func);
 
             String log = env.Dump();
@@ -60,7 +57,7 @@ namespace semant2_test {
             args.Add(new Tuple<String, AST.ExprType>("some_double", new AST.TDouble()));
             args.Add(new Tuple<String, AST.ExprType>("another_double", new AST.TDouble()));
             args.Add(new Tuple<String, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TFunction func = new AST.TFunction(new AST.TVoid(), args, false);
+            AST.TFunction func = AST.TFunction.Create(new AST.TVoid(), args, false);
             String log = func.Dump(true);
             System.Diagnostics.Debug.WriteLine(log);
         }
@@ -73,7 +70,7 @@ namespace semant2_test {
             attribs.Add(new Tuple<String, AST.ExprType>("some_double", new AST.TDouble()));
             attribs.Add(new Tuple<String, AST.ExprType>("another_double", new AST.TDouble()));
             attribs.Add(new Tuple<String, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TStruct struct_ = new AST.TStruct(attribs);
+            AST.TStruct struct_ = AST.TStruct.Create(attribs);
             String log = struct_.Dump(true);
             System.Diagnostics.Debug.WriteLine(log);
         }
@@ -86,7 +83,7 @@ namespace semant2_test {
             attribs.Add(new Tuple<String, AST.ExprType>("some_double", new AST.TDouble()));
             attribs.Add(new Tuple<String, AST.ExprType>("another_double", new AST.TDouble()));
             attribs.Add(new Tuple<String, AST.ExprType>("some_int", new AST.TLong()));
-            AST.TUnion union_ = new AST.TUnion(attribs);
+            AST.TUnion union_ = AST.TUnion.Create(attribs);
             String log = union_.Dump(true);
             System.Diagnostics.Debug.WriteLine(log);
         }
@@ -100,6 +97,16 @@ namespace semant2_test {
             Int32 r = _declaration_specifiers.Parse(tokens, 0, out decln_specs);
             AST.Env env = new AST.Env();
             Tuple<AST.Env, AST.ExprType> t = decln_specs.GetExprType(env);
+        }
+
+        [TestMethod]
+        public void TestArray() {
+            String src = "int a[] = 3;";
+            List<Token> tokens = Parser.GetTokensFromString(src);
+            Declaration decln;
+            Int32 r = _declaration.Parse(tokens, 0, out decln);
+            AST.Env env = new AST.Env();
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> t = decln.GetDeclns(env);
         }
     }
 

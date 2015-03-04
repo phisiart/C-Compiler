@@ -717,7 +717,7 @@ public class _direct_declarator : ParseRule {
         Expression nelems;
         Int32 saved = begin;
         if ((begin = _constant_expression.Parse(src, begin, out nelems)) == -1) {
-            nelems = null;
+            nelems = new EmptyExpression();
             begin = saved;
         }
 

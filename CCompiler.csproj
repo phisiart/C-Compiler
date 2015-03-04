@@ -65,6 +65,7 @@
     <Compile Include="scanner\int.cs" />
     <Compile Include="scanner\keyword.cs" />
     <Compile Include="scanner\operator.cs" />
+    <Compile Include="scanner\scanner.cs" />
     <Compile Include="scanner\string.cs" />
     <Compile Include="scanner\strtable.cs" />
     <Compile Include="scanner\tokens.cs" />

@@ -66,7 +66,7 @@ namespace AST {
 
     public class InitList : Expr {
         public InitList(List<Expr> _exprs) :
-            base(new TVoid()) {
+            base(ExprType.CreateInitList()) {
             initlist_exprs = _exprs;
         }
         public readonly List<Expr> initlist_exprs;

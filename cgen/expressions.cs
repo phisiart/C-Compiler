@@ -21,8 +21,8 @@ namespace AST {
         public readonly ExprType type;
     }
 
-    public class NullExpr : Expr {
-        public NullExpr() : base(new TVoid()) { }
+    public class EmptyExpr : Expr {
+        public EmptyExpr() : base(new TVoid()) { }
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL(0, Reg.EAX);
             return Reg.EAX;
