@@ -222,23 +222,6 @@ public class _expression_statement : ParseRule {
 //                    | do statement while ( expression ) ;
 //                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
 public class _iteration_statement : ParseRule {
-    private static Int32 ParseExpression(List<Token> src, Int32 begin, out Expression expr) {
-        expr = null;
-        if (!Parser.IsLPAREN(src[begin])) {
-            return -1;
-        }
-        Int32 current = begin + 1;
-        current = _expression.Parse(src, current, out expr);
-        if (current == -1) {
-            return -1;
-        }
-        if (!Parser.IsRPAREN(src[current])) {
-            return -1;
-        }
-        current++;
-        return current;
-    }
-
     public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
         stmt = null;
         Int32 current;
@@ -247,7 +230,7 @@ public class _iteration_statement : ParseRule {
             current = begin + 1;
 
             Expression cond;
-            current = ParseExpression(src, current, out cond);
+            current = Parser.ParseParenExpr(src, current, out cond);
             if (current == -1) {
                 return -1;
             }
@@ -272,7 +255,7 @@ public class _iteration_statement : ParseRule {
             }
 
             Expression cond;
-            current = ParseExpression(src, current, out cond);
+            current = Parser.ParseParenExpr(src, current, out cond);
             if (current == -1) {
                 return -1;
             }
@@ -285,10 +268,9 @@ public class _iteration_statement : ParseRule {
             current = begin + 1;
 
             // match '('
-            if (!Parser.IsLPAREN(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.LPAREN)) {
                 return -1;
             }
-            current++;
 
             // match init
             Expression init;
@@ -300,10 +282,9 @@ public class _iteration_statement : ParseRule {
             }
 
             // match ';'
-            if (!Parser.IsSEMICOLON(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.SEMICOLON)) {
                 return -1;
             }
-            current++;
 
             // match cond
             Expression cond;
@@ -315,10 +296,9 @@ public class _iteration_statement : ParseRule {
             }
 
             // match ';'
-            if (!Parser.IsSEMICOLON(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.SEMICOLON)) {
                 return -1;
             }
-            current++;
 
             // match loop
             Expression loop;
@@ -330,10 +310,9 @@ public class _iteration_statement : ParseRule {
             }
 
             // match ')'
-            if (!Parser.IsRPAREN(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.RPAREN)) {
                 return -1;
             }
-            current++;
 
             Statement body;
             current = _statement.Parse(src, current, out body);
@@ -355,22 +334,6 @@ public class _iteration_statement : ParseRule {
 //                    | if ( expression ) statement else statement
 //                    | switch ( expression ) statement
 public class _selection_statement : ParseRule {
-    private static Int32 ParseExpression(List<Token> src, Int32 begin, out Expression expr) {
-        expr = null;
-        if (!Parser.IsLPAREN(src[begin])) {
-            return -1;
-        }
-        Int32 current = begin + 1;
-        current = _expression.Parse(src, current, out expr);
-        if (current == -1) {
-            return -1;
-        }
-        if (!Parser.IsRPAREN(src[current])) {
-            return -1;
-        }
-        current++;
-        return current;
-    }
 
     public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
         stmt = null;
@@ -380,7 +343,7 @@ public class _selection_statement : ParseRule {
         if (Parser.IsKeyword(src[begin], KeywordVal.SWITCH)) {
             // switch
             current = begin + 1;
-            current = ParseExpression(src, current, out expr);
+            current = Parser.ParseParenExpr(src, current, out expr);
             if (current == -1) {
                 return -1;
             }
@@ -396,7 +359,7 @@ public class _selection_statement : ParseRule {
         } else if (Parser.IsKeyword(src[begin], KeywordVal.IF)) {
             // if
             current = begin + 1;
-            current = ParseExpression(src, current, out expr);
+            current = Parser.ParseParenExpr(src, current, out expr);
             if (current == -1) {
                 return -1;
             }
@@ -437,10 +400,9 @@ public class _labeled_statement : ParseRule {
             current = begin + 1;
 
             // match ':'
-            if (!Parser.IsCOLON(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
                 return -1;
             }
-            current++;
 
             // match statement
             current = _statement.Parse(src, current, out stmt);
@@ -462,10 +424,9 @@ public class _labeled_statement : ParseRule {
             }
 
             // match ':'
-            if (!Parser.IsCOLON(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
                 return -1;
             }
-            current++;
 
             // match statement
             current = _statement.Parse(src, current, out stmt);
@@ -481,10 +442,9 @@ public class _labeled_statement : ParseRule {
             current = begin + 1;
 
             // match ':'
-            if (!Parser.IsCOLON(src[current])) {
+            if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
                 return -1;
             }
-            current++;
 
             // match statement
             current = _statement.Parse(src, current, out stmt);

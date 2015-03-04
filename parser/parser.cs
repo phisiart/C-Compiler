@@ -2,55 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 
+public interface ParseRule {
+}
+
+public class PTNode {
+}
+
+
 public class Parser {
-    public static Boolean IsSizeof(Token token) {
-        if (token.type == TokenType.KEYWORD) {
-            if (((TokenKeyword)token).val == KeywordVal.SIZEOF) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsLPAREN(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.LPAREN) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsRPAREN(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.RPAREN) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsCOLON(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.COLON) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static Boolean IsQuestionMark(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.QUESTION) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsAssignment(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.ASSIGN) {
                 return true;
             }
         }
@@ -78,24 +40,6 @@ public class Parser {
     public static Boolean IsRCURL(Token token) {
         if (token.type == TokenType.OPERATOR) {
             if (((TokenOperator)token).val == OperatorVal.RCURL) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsLBRACKET(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.LBRACKET) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Boolean IsRBRACKET(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.RBRACKET) {
                 return true;
             }
         }
@@ -185,9 +129,9 @@ public class Parser {
         return true;
     }
 
-    public delegate Int32 FParse<TRet>(List<Token> src, Int32 begin, out TRet node) where TRet : PTNode;
+    public delegate Int32 FParse<TRet>(List<Token> src, Int32 begin, out TRet node);
 
-    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : PTNode {
+    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) {
         Int32 current;
         if ((current = Parse(src, begin, out node)) == -1) {
             // if parsing fails: return default value
@@ -263,20 +207,27 @@ public class Parser {
         }
 
     }
+
+    public static Int32 ParseParenExpr(List<Token> src, Int32 begin, out Expression expr) {
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
+            expr = null;
+            return -1;
+        }
+
+        if ((begin = _expression.Parse(src, begin, out expr)) == -1) {
+            expr = null;
+            return -1;
+        }
+
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.RPAREN)) {
+            expr = null;
+            return -1;
+        }
+
+        return begin;
+    }
 }
 
 public class ParserEnvironment {
     public static Boolean debug = false;
-}
-
-
-public class Program {
-    public static void Main(String[] args) {
-        Scanner lex = new Scanner();
-        lex.OpenFile("../../../hello.c");
-        lex.Lex();
-        var src = lex.tokens;
-        TranslationUnit root;
-        Int32 current = _translation_unit.Parse(src, 0, out root);
-    }
 }

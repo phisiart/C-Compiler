@@ -107,7 +107,7 @@ namespace semant2_test {
     public class DeclnTest {
         [TestMethod]
         public void TestInt() {
-            String src = "Int32 a, *b, c(Int32 haha, Int32), d[];";
+            String src = "int a, *b, c(int haha, int), d[];";
             List<Token> tokens = Parser.GetTokensFromString(src);
             Declaration decln;
             Int32 r = _declaration.Parse(tokens, 0, out decln);
@@ -120,7 +120,7 @@ namespace semant2_test {
 
         [TestMethod]
         public void TestStruct() {
-            String src = "struct MyStruct { Int32 a; Int32 b; } my_struct;";
+            String src = "struct MyStruct { int a; int b; } my_struct;";
             List<Token> tokens = Parser.GetTokensFromString(src);
             Declaration decln;
             Int32 r = _declaration.Parse(tokens, 0, out decln);
@@ -131,7 +131,7 @@ namespace semant2_test {
 
         [TestMethod]
         public void TestUnion() {
-            String src = "union MyUnion { Int32 a; Int32 b; } my_union;";
+            String src = "union MyUnion { int a; int b; } my_union;";
             List<Token> tokens = Parser.GetTokensFromString(src);
             Declaration decln;
             Int32 r = _declaration.Parse(tokens, 0, out decln);
@@ -160,7 +160,7 @@ namespace semant2_test {
     public class StmtTest {
         [TestMethod]
         public void TestCompountStmt() {
-            String src = "{ Int32 a; Int32 b; 3.0f; a % a; }";
+            String src = "{ int a; int b; 3.0f; a % a; }";
             List<Token> tokens = Parser.GetTokensFromString(src);
             CompoundStatement stmt;
             Int32 r = _compound_statement.Parse(tokens, 0, out stmt);
@@ -172,7 +172,7 @@ namespace semant2_test {
 
         [TestMethod]
         public void TestVariable() {
-            String src = "{Int32 *a; a; }";
+            String src = "{int *a; a; }";
             List<Token> tokens = Parser.GetTokensFromString(src);
             CompoundStatement stmt;
             Int32 r = _compound_statement.Parse(tokens, 0, out stmt);

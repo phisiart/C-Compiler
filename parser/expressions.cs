@@ -174,35 +174,31 @@ public class _constant_expression : ParseRule {
 
 // conditional_expression: logical_or_expression < ? expression : conditional_expression >?
 public class _conditional_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _logical_or_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+        Int32 current = _logical_or_expression.Parse(src, begin, out expr);
         if (current == -1) {
             return -1;
         }
 
-        if (!Parser.IsQuestionMark(src[current])) {
+        if (!Parser.EatOperator(src, ref current, OperatorVal.QUESTION)) {
             return current;
         }
-        current++;
 
         Expression true_expr;
-        current = _expression.Parse(src, current, out true_expr);
-        if (current == -1) {
+        if ((current = _expression.Parse(src, current, out true_expr)) == -1) {
             return -1;
         }
 
-        if (!Parser.IsCOLON(src[current])) {
+        if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
             return -1;
         }
-        current++;
 
         Expression false_expr;
-        current = _conditional_expression.Parse(src, current, out false_expr);
-        if (current == -1) {
+        if ((current = Parse(src, current, out false_expr)) == -1) {
             return -1;
         }
 
-        node = new ConditionalExpression(node, true_expr, false_expr);
+        expr = new ConditionalExpression(expr, true_expr, false_expr);
         return current;
     }
 }
@@ -879,13 +875,13 @@ public class _cast_expression : Expression {
             return false;
         }
 
-        src = Parser.GetTokensFromString("(Int32)a");
+        src = Parser.GetTokensFromString("(int)a");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("(Int32)(float)a");
+        src = Parser.GetTokensFromString("(int)(float)a");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;

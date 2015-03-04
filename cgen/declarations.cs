@@ -59,8 +59,16 @@ namespace AST {
         }
 
         private readonly String     decln_name;
-        private readonly SCS    decln_scs;
+        private readonly SCS        decln_scs;
         private readonly ExprType   decln_type;
         private readonly Expr       decln_init;
+    }
+
+    public class InitList : Expr {
+        public InitList(List<Expr> _exprs) :
+            base(new TVoid()) {
+            initlist_exprs = _exprs;
+        }
+        public readonly List<Expr> initlist_exprs;
     }
 }

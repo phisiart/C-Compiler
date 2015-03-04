@@ -7,20 +7,20 @@ using System.Threading.Tasks;
 // translation_unit : [external_declaration]+
 public class _translation_unit : ParseRule {
     public static Boolean Test() {
-        var src = Parser.GetTokensFromString("Int32 a; Int32 b() { return 1; }");
+        var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
         TranslationUnit unit;
         Int32 current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("Int32 a() { return 1; } Int32 b;");
+        src = Parser.GetTokensFromString("int a() { return 1; } int b;");
         current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("Int32 a");
+        src = Parser.GetTokensFromString("int a");
         current = Parse(src, 0, out unit);
         if (current != -1) {
             return false;
@@ -45,14 +45,14 @@ public class _translation_unit : ParseRule {
 // external_declaration: function_definition | declaration
 public class _external_declaration : ParseRule {
     public static Boolean Test() {
-        var src = Parser.GetTokensFromString("Int32 a;");
+        var src = Parser.GetTokensFromString("int a;");
         ExternalDeclaration node;
         Int32 current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
         }
 
-        src = Parser.GetTokensFromString("Int32 a() { return 1; }");
+        src = Parser.GetTokensFromString("int a() { return 1; }");
         current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
@@ -95,7 +95,7 @@ public class _external_declaration : ParseRule {
 //
 public class _function_definition : ParseRule {
     public static Boolean Test() {
-        var src = Parser.GetTokensFromString("Int32 add(Int32 a, Int32 b) { return a + b; }");
+        var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
         FunctionDefinition def;
         Int32 current = Parse(src, 0, out def);
         if (current == -1) {

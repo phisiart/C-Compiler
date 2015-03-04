@@ -194,11 +194,3 @@ public class CGenState {
     private Int32 stack_size;
     
 }
-
-namespace code_generation {
-    class Program {
-        static void Main(String[] args) {
-
-        }
-    }
-}

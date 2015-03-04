@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-public interface ParseRule {
-}
-
-public class PTNode {
-}
-
-
 // the declaration of an object
 public class Declaration : ExternalDeclaration {
     public Declaration(DeclarationSpecifiers decl_specs_, List<InitializationDeclarator> init_declrs_) {
@@ -310,11 +303,11 @@ public class DeclarationSpecifiers : PTNode {
 // 
 public class InitializationDeclarator : PTNode {
 
-    public InitializationDeclarator(Declarator _decl, Expression _init) {
-        if (_decl != null) {
-            declarator = _decl;
+    public InitializationDeclarator(Declarator _declr, Expression _init) {
+        if (_declr != null) {
+            declr = _declr;
         } else {
-            declarator = new NullDeclarator();
+            declr = new NullDeclarator();
         }
 
         if (_init != null) {
@@ -324,7 +317,7 @@ public class InitializationDeclarator : PTNode {
         }
     }
 
-    public Declarator declarator;
+    public Declarator declr;
     public Expression init;
 
 
@@ -335,7 +328,7 @@ public class InitializationDeclarator : PTNode {
         env = r_init.Item1;
         AST.Expr ast_init = r_init.Item2;
 
-        Tuple<AST.Env, AST.ExprType, String> r_declr = declarator.WrapExprType(env, type);
+        Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, type);
         env = r_declr.Item1;
         type = r_declr.Item2;
         String name = r_declr.Item3;
@@ -814,16 +807,32 @@ public class ParameterDeclaration : PTNode {
 }
 
 
+// Initializer List
+// ================
+// used to initialize arrays and structs, etc
+// 
 public class InitializerList : Expression {
     public InitializerList(List<Expression> _exprs) {
-        exprs = _exprs;
+        initlist_exprs = _exprs;
     }
-    public List<Expression> exprs;
+    public List<Expression> initlist_exprs;
 
+    public Tuple<AST.Env, AST.InitList> GetInitList(AST.Env env) {
+        List<AST.Expr> exprs = initlist_exprs.ConvertAll(expr => {
+            Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+            env = r_expr.Item1;
+            return r_expr.Item2;
+        });
+        return Tuple.Create(env, new AST.InitList(exprs));
+    }
     
 }
 
 
+// Type Name
+// =========
+// describes a qualified type
+// 
 public class TypeName : PTNode {
     public TypeName(DeclarationSpecifiers _specs, Declarator _decl) {
         typename_specs = _specs;

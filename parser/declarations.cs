@@ -6,40 +6,35 @@ using System.Collections.Generic;
 // 
 public class _declaration : ParseRule {
     public static Boolean Test() {
-        List<Token> src = Parser.GetTokensFromString("static Int32 a = 3, *b = 0, **c = 3;");
+        List<Token> src = Parser.GetTokensFromString("static int a = 3, *b = 0, **c = 3;");
         Declaration decl;
         Int32 current = Parse(src, 0, out decl);
         return current != -1;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 pos, out Declaration declaration) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declaration declaration) {
 
-        DeclarationSpecifiers decl_specs;
-        Int32 current = _declaration_specifiers.Parse(src, pos, out decl_specs);
+        DeclarationSpecifiers decln_specs;
+        Int32 current = _declaration_specifiers.Parse(src, begin, out decln_specs);
         if (current == -1) {
             declaration = null;
             return -1;
         }
 
-        Int32 saved = current;
         List<InitializationDeclarator> init_declrs;
-        current = _init_declarator_list.Parse(src, current, out init_declrs);
-        if (current == -1) {
-            init_declrs = new List<InitializationDeclarator>();
-            current = saved;
-        }
+        current = Parser.ParseOptional(src, current, new List<InitializationDeclarator>(), out init_declrs, _init_declarator_list.Parse);
 
         if (!Parser.EatOperator(src, ref current, OperatorVal.SEMICOLON)) {
             declaration = null;
             return -1;
         }
 
-        declaration = new Declaration(decl_specs, init_declrs);
+        declaration = new Declaration(decln_specs, init_declrs);
 
         // add parser scope.
-        if (decl_specs.IsTypedef()) {
-            foreach (InitializationDeclarator init_declarator in init_declrs) {
-                ScopeEnvironment.AddTypedefName(init_declarator.declarator.declr_name);
+        if (decln_specs.IsTypedef()) {
+            foreach (InitializationDeclarator init_declr in init_declrs) {
+                ScopeEnvironment.AddTypedefName(init_declr.declr.declr_name);
             }
         }
 
@@ -320,8 +315,8 @@ public class _type_specifier : ParseRule {
         TypeSpecifier spec;
 
         List<String> codes = new List<String> {
-            "union { Int32 a; }", "void", "char", "short", "Int32", "long", "float", "double", "signed", "unsigned",
-            "struct { Int32 a; }"
+            "union { int a; }", "void", "char", "short", "int", "long", "float", "double", "signed", "unsigned",
+            "struct { int a; }"
         };
 
         ScopeEnvironment.InScope();
@@ -608,33 +603,9 @@ public class _parameter_type_list : ParseRule {
 //                | parameter_list, parameter_declaration
 // [ note: my solution ]
 // parameter_list : parameter_declaration < , parameter_declaration >*
-// [ note: it's okay to have a lonely ',', just leave it alone ]
 public class _parameter_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<ParameterDeclaration> param_list) {
-        ParameterDeclaration decl;
-        Int32 current = _parameter_declaration.Parse(src, begin, out decl);
-        if (current == -1) {
-            param_list = null;
-            return -1;
-        }
-
-        param_list = new List<ParameterDeclaration>();
-        param_list.Add(decl);
-
-        Int32 saved;
-        while (true) {
-            if (Parser.IsCOMMA(src[current])) {
-                saved = current;
-                current++;
-                current = _parameter_declaration.Parse(src, current, out decl);
-                if (current == -1) {
-                    return saved;
-                }
-                param_list.Add(decl);
-            } else {
-                return current;
-            }
-        }
+        return Parser.ParseNonEmptyListWithSep(src, begin, out param_list, _parameter_declaration.Parse, OperatorVal.COMMA);
     }
 }
 
@@ -1099,7 +1070,7 @@ public class _struct_declaration : ParseRule {
 //
 public class _specifier_qualifier_list : ParseRule {
     public static Boolean Test() {
-        var src = Parser.GetTokensFromString("Int32 long const");
+        var src = Parser.GetTokensFromString("int long const");
         DeclarationSpecifiers specs;
         Int32 current = Parse(src, 0, out specs);
         if (current == -1) {
@@ -1200,7 +1171,7 @@ public class _struct_declarator : ParseRule {
 //
 public class _parameter_declaration : ParseRule {
     public static Boolean Test() {
-        var src = Parser.GetTokensFromString("Int32 *a[]");
+        var src = Parser.GetTokensFromString("int *a[]");
         ParameterDeclaration decl;
         Int32 current = Parse(src, 0, out decl);
         if (current == -1) {
