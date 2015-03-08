@@ -8,8 +8,22 @@ namespace driver {
     class Program {
         static void Main(String[] args) {
             Scanner scanner = new Scanner();
-            scanner.OpenFile("hello.c");
+            scanner.src =
+                @"
+int main(int argc, char **argv) {
+    int local_variable_1;
+    float local_variable_2;
+}
+                ";
             scanner.Lex();
+            Console.WriteLine("Source code:");
+            Console.WriteLine("======================");
+            Console.WriteLine(scanner.src);
+
+            Console.WriteLine("Tokens:");
+            Console.WriteLine("======================");
+            Console.WriteLine(scanner);
+
             List<Token> tokens = scanner.tokens;
 
             TranslationUnit unit;
@@ -20,6 +34,8 @@ namespace driver {
             CGenState state = new CGenState();
             ast.Item2.CodeGenerate(state);
 
+            Console.WriteLine("x86 Assembly:");
+            Console.WriteLine("======================");
             Console.WriteLine(state);
         }
     }

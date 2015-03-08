@@ -507,10 +507,12 @@ public class _declarator : ParseRule {
         }
 
         // match direct_declarator
-        if ((current = _direct_declarator.Parse(src, current, out declr)) != -1) {
-            String name = declr.declr_name;
-            List<TypeModifier> modifiers = new List<TypeModifier>(declr.declr_modifiers);
+        Declarator direct_declr;
+        if ((current = _direct_declarator.Parse(src, current, out direct_declr)) != -1) {
+            String name = direct_declr.declr_name;
+            List<TypeModifier> modifiers = new List<TypeModifier>(direct_declr.declr_modifiers);
             modifiers.AddRange(pointer_infos);
+            declr = new Declarator(name, modifiers);
             return current;
         } else {
             declr = null;

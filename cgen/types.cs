@@ -450,6 +450,7 @@ namespace AST {
     public class TFunction : ExprType {
         public TFunction(ExprType _ret_type, List<Utils.StoreEntry> _args, Int32 _size_of, Int32 _alignment, Boolean _varargs)
             : base(EnumExprType.FUNCTION, _size_of, _alignment, true, false) {
+            args = _args;
             ret_type = _ret_type;
             varargs = _varargs;
         }
