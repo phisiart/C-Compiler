@@ -77,7 +77,7 @@ public class _declaration : ParseRule {
 //     struct-or-union specifier
 //     enum-specifier
 //     typedef-name
-//   note that typing 'Int32' twice isn't allowed
+//   note that typing 'int' twice isn't allowed
 // 2. you can only have **one** storage-class specifier
 // 3. you can have many type qualifiers though, because it doesn't cause ambiguity
 //
@@ -90,10 +90,6 @@ public class _declaration_specifiers : ParseRule {
         if (current == -1) {
             return false;
         }
-
-        //TType type = DeclnSpecs.GetNonQualifiedType(decl_specs.type_specifiers);
-        //StorageClassSpecifier storage = DeclnSpecs.GetStorageClass(decl_specs.storage_class_specifiers);
-
         src = Parser.GetTokensFromString("typedef typedef typedef const const");
         current = Parse(src, 0, out decl_specs);
         return current != -1;
@@ -153,13 +149,13 @@ public class _declaration_specifiers : ParseRule {
     
 }
 
-// init_declarator_list : init_declarator
-//                      | init_declarator_list , init_declarator
-// [ note: my solution ]
-// init_declarator_list : init_declarator [, init_declarator]*
-//
-// [ return: List<InitDeclarator> ]
-// [ if fail, return empty List<InitDeclarator> ]
+
+/// <summary>
+/// init_declarator_list
+///   : init_declarator [ ',' init_declarator ]*
+/// 
+/// a non-empty list of init_declarators separated by ','
+/// </summary>
 public class _init_declarator_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<InitializationDeclarator> init_declarators) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out init_declarators, _init_declarator.Parse, OperatorVal.COMMA);
@@ -1150,13 +1146,6 @@ public class _struct_declarator : ParseRule {
 }
 
 
-// parameter_declaration : declaration_specifiers declarator
-//                       | declaration_specifiers [abstract_declarator]?
-//
-// RETURN: ParameterDeclaration
-//
-// FAIL: null
-//
 /// <summary>
 /// parameter_declaration
 ///   : declaration_specifiers [ declarator | abstract_declarator ]?

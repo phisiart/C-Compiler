@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class Scope {
-    public Scope() {
+public class ParserScope {
+    public ParserScope() {
         vars = new List<String>();
         typedef_names = new List<String>();
     }
@@ -23,12 +23,12 @@ public class Scope {
 
 public static class ParserEnvironment {
     static ParserEnvironment() {
-        scopes = new Stack<Scope>();
-        scopes.Push(new Scope());
+        scopes = new Stack<ParserScope>();
+        scopes.Push(new ParserScope());
     }
 
     public static void InScope() {
-        scopes.Push(new Scope());
+        scopes.Push(new ParserScope());
     }
 
     public static void OutScope() {
@@ -43,7 +43,7 @@ public static class ParserEnvironment {
         scopes.Peek().AddTypedefName(type);
     }
 
-    public static Stack<Scope> scopes;
+    public static Stack<ParserScope> scopes;
 }
 
 
