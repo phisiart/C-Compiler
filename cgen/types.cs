@@ -282,7 +282,7 @@ namespace AST {
             return other.expr_type == EnumExprType.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
         public override String ToString() {
-            return "ptr<" + referenced_type.ToString() + ">";
+            return DumpQualifiers() + "ptr<" + referenced_type.ToString() + ">";
         }
     }
 
@@ -329,7 +329,7 @@ namespace AST {
         }
 
         public override String ToString() {
-            return array_elem_type.ToString() + "[" + array_nelems + "]";
+            return "arr<" + array_nelems + ", " + array_elem_type.ToString() + ">";
         }
 
     }

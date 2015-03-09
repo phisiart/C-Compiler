@@ -13,6 +13,7 @@ namespace driver {
 int main(int argc, char **argv) {
     int local_variable_1;
     float local_variable_2;
+    const int * const * volatile a[3][4];
 }
                 ";
             scanner.Lex();
@@ -26,7 +27,7 @@ int main(int argc, char **argv) {
 
             List<Token> tokens = scanner.tokens;
 
-            TranslationUnit unit;
+            SyntaxTree.TranslationUnit unit;
             Int32 r = _translation_unit.Parse(tokens, 0, out unit);
 
             Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using SyntaxTree;
+using System.Linq;
 
 // declaration : declaration_specifiers [init_declarator_list]? ;
 // [ return: Declaration ]
@@ -14,6 +16,7 @@ public class _declaration : ParseRule {
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Declaration declaration) {
 
+        // parse declaration specifiers
         DeclarationSpecifiers decln_specs;
         Int32 current = _declaration_specifiers.Parse(src, begin, out decln_specs);
         if (current == -1) {
@@ -34,7 +37,7 @@ public class _declaration : ParseRule {
         // add parser scope.
         if (decln_specs.IsTypedef()) {
             foreach (InitializationDeclarator init_declr in init_declrs) {
-                ScopeEnvironment.AddTypedefName(init_declr.declr.declr_name);
+                ParserEnvironment.AddTypedefName(init_declr.declr.declr_name);
             }
         }
 
@@ -42,9 +45,6 @@ public class _declaration : ParseRule {
 
     }
 }
-
-
-
 
 // declaration_specifiers : storage_class_specifier [declaration_specifiers]?
 //                        | type_specifier [declaration_specifiers]?
@@ -319,14 +319,14 @@ public class _type_specifier : ParseRule {
             "struct { int a; }"
         };
 
-        ScopeEnvironment.InScope();
-        ScopeEnvironment.AddTypedefName("Mytype");
+        ParserEnvironment.InScope();
+        ParserEnvironment.AddTypedefName("Mytype");
         var src = Parser.GetTokensFromString("Mytype");
         Int32 current = Parse(src, 0, out spec);
         if (current == -1) {
             return false;
         }
-        ScopeEnvironment.OutScope();
+        ParserEnvironment.OutScope();
 
         foreach (var code in codes) {
             src = Parser.GetTokensFromString(code);
@@ -527,6 +527,11 @@ public class _declarator : ParseRule {
 //
 // FAIL: null
 //
+
+/// <summary>
+/// pointer
+///   : [ '*' [type_qualifier_list]? ]+
+/// </summary>
 public class _pointer : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("* const * volatile const *");
@@ -539,72 +544,66 @@ public class _pointer : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out List<PointerModifier> infos) {
-        // match '*'
-        if (!Parser.IsOperator(src[begin], OperatorVal.MULT)) {
-            infos = null;
+        Int32 r = Parser.ParseNonEmptyList(src, begin, out infos,                                 // [
+            Parser.GetSequenceParser(
+                Parser.GetOperatorParser(OperatorVal.MULT),                                       //   '*'
+                Parser.GetOptionalParser(new List<TypeQualifier>(), _type_qualifier_list.Parse),  //   [type_qualifier_list]?
+                (Boolean _, List<TypeQualifier> type_quals) => new PointerModifier(type_quals)
+            )
+        );                                                                                        // ]+
+
+        // reverse the pointer modifiers
+        if (r == -1) {
             return -1;
-        }
-        Int32 current = begin + 1;
-
-        // try to match type_qualifier_list, if fail, just create an empty list
-        List<TypeQualifier> type_qualifiers;
-        Int32 saved = current;
-        current = _type_qualifier_list.Parse(src, current, out type_qualifiers);
-        if (current == -1) {
-            current = saved;
-            type_qualifiers = new List<TypeQualifier>();
-        }
-        PointerModifier info = new PointerModifier(type_qualifiers);
-
-        saved = current;
-        current = _pointer.Parse(src, current, out infos);
-        if (current == -1) {
-            infos = new List<PointerModifier>();
-            infos.Add(info);
-            return saved;
         } else {
-            infos.Add(info);
-            return current;
+            infos.Reverse();
+            return r;
         }
     }
 }
 
-
-// parameter_type_list : parameter_list
-//                     | parameter_list , ...
-// [ note: my solution ]
-// parameter_type_list : parameter_list < , ... >?
+/// <summary>
+/// parameter_type_list
+///   : parameter_list [ ',' '...' ]?
+/// 
+/// a parameter list and an optional vararg signature
+/// used in function declarations
+/// </summary>
 public class _parameter_type_list : ParseRule {
+
+    /// <summary>
+    /// parse optional ', ...'
+    /// </summary>
+    public static Int32 ParseOptionalVarArgs(List<Token> src, Int32 begin, out Boolean is_varargs) {
+        if (is_varargs = (
+               Parser.IsOperator(src[begin], OperatorVal.COMMA)
+            && Parser.IsOperator(src[begin + 1], OperatorVal.PERIOD)
+            && Parser.IsOperator(src[begin + 2], OperatorVal.PERIOD)
+            && Parser.IsOperator(src[begin + 3], OperatorVal.PERIOD)
+        )) {
+            return begin + 4;
+        } else {
+            return begin;
+        }
+    }
+
     public static Int32 Parse(List<Token> src, Int32 begin, out ParameterTypeList param_type_list) {
-        List<ParameterDeclaration> param_list;
-        Int32 current = _parameter_list.Parse(src, begin, out param_list);
-        if (current == -1) {
-            param_type_list = null;
-            return -1;
-        }
-
-        if (Parser.IsOperator(src[current], OperatorVal.COMMA)) {
-            Int32 saved = current;
-            current++;
-            if (Parser.IsEllipsis(src, current)) {
-                current += 3;
-                param_type_list = new ParameterTypeList(param_list, true);
-                return current;
-            } else {
-                current = saved;
-            }
-        }
-
-        param_type_list = new ParameterTypeList(param_list, false);
-        return current;
+        return Parser.ParseSequence(src, begin, out param_type_list,
+            _parameter_list.Parse,
+            ParseOptionalVarArgs,
+            (List<ParameterDeclaration> param_list, Boolean is_varargs) => new ParameterTypeList(param_list, is_varargs)
+        );
     }
 }
 
 
-// parameter_list : parameter_declaration
-//                | parameter_list, parameter_declaration
-// [ note: my solution ]
-// parameter_list : parameter_declaration < , parameter_declaration >*
+/// <summary>
+/// parameter_list
+///   : parameter_declaration [ ',' parameter_declaration ]*
+/// 
+/// a non-empty list of parameters separated by ','
+/// used in a function signature
+/// </summary>
 public class _parameter_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<ParameterDeclaration> param_list) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out param_list, _parameter_declaration.Parse, OperatorVal.COMMA);
@@ -612,28 +611,15 @@ public class _parameter_list : ParseRule {
 }
 
 
-// type_qualifier_list : [type_qualifier]+
-// [ return: List<TypeQualifier> ]
-// [ if fail, return empty List<TypeQualifier> ]
+/// <summary>
+/// type_qualifier_list
+///   : [type_qualifier]+
+/// 
+/// a non-empty list of type qualifiers
+/// </summary>
 public class _type_qualifier_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<TypeQualifier> type_qualifiers) {
-        type_qualifiers = new List<TypeQualifier>();
-
-        TypeQualifier type_qualifier;
-        Int32 current = _type_qualifier.Parse(src, begin, out type_qualifier);
-        if (current == -1) {
-            return -1;
-        }
-
-        Int32 saved = current;
-        current = _type_qualifier_list.Parse(src, current, out type_qualifiers);
-        type_qualifiers.Insert(0, type_qualifier);
-        if (current != -1) {
-            return current;
-        } else {
-            return saved;
-        }
-
+        return Parser.ParseNonEmptyList(src, begin, out type_qualifiers, _type_qualifier.Parse);
     }
 }
 
@@ -1171,6 +1157,10 @@ public class _struct_declarator : ParseRule {
 //
 // FAIL: null
 //
+/// <summary>
+/// parameter_declaration
+///   : declaration_specifiers [ declarator | abstract_declarator ]?
+/// </summary>
 public class _parameter_declaration : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("int *a[]");
@@ -1181,83 +1171,62 @@ public class _parameter_declaration : ParseRule {
         }
         return true;
     }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out ParameterDeclaration decl) {
-        // step 1. match declaration_specifiers
-        DeclarationSpecifiers specs;
-        if ((begin = _declaration_specifiers.Parse(src, begin, out specs)) == -1) {
-            decl = null;
-            return -1;
-        }
 
-        // step 2. try to match declarator
-        Int32 saved = begin;
-        Declarator declarator;
-        if ((begin = _declarator.Parse(src, begin, out declarator)) != -1) {
-            decl = new ParameterDeclaration(specs, declarator);
-            return begin;
-        }
-
-        // if fail, step 3. try to match abstract_declarator
-        begin = saved;
-        //AbstractDeclarator abstract_declarator;
-        if ((begin = _abstract_declarator.Parse(src, begin, out declarator)) != -1) {
-            decl = new ParameterDeclaration(specs, declarator);
-            return begin;
-        }
-
-        // if fail, never mind, just return specifiers
-        decl = new ParameterDeclaration(specs, null);
-        return saved;
-
+    public static Int32 Parse(List<Token> src, Int32 begin, out ParameterDeclaration decln) {
+        return Parser.ParseSequence(
+            src, begin, out decln,
+            _declaration_specifiers.Parse,                                                                                      // declaration_specifiers
+            Parser.GetOptionalParser(                                                                                           // [ 
+                new Declarator("", new List<TypeModifier>()),
+                Parser.GetChoicesParser(new List<Parser.FParse<Declarator>> { _declarator.Parse, _abstract_declarator.Parse })  //   declarator | abstract_declarator
+            ),                                                                                                                  // ]?
+            (DeclarationSpecifiers specs, Declarator declr) => new ParameterDeclaration(specs, declr)
+        );
     }
 }
 
 // identifier_list : /* old style, i'm deleting this */
 
 
-// abstract_declarator : pointer
-//                     | <pointer>? direct_abstract_declarator
-// [ note: this is for anonymous declarator ]
-// [ note: there couldn't be any typename in an abstract_declarator ]
+/// <summary>
+/// abstract_declarator
+///   : pointer
+///   | [pointer]? direct_abstract_declarator
+/// 
+/// an abstract declarator is a non-empty list of (pointer, function, or array) type modifiers
+/// </summary>
 public class _abstract_declarator : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
-        List<PointerModifier> pointer_modifiers;
-        Int32 current = _pointer.Parse(src, begin, out pointer_modifiers);
-        if (current == -1) {
-            return _direct_abstract_declarator.Parse(src, begin, out declr);
-        }
-
-        String name;
         List<TypeModifier> modifiers;
-        Int32 saved = current;
-        if ((current = _direct_abstract_declarator.Parse(src, current, out declr)) == -1) {
-            name = "";
-            modifiers = new List<TypeModifier>(pointer_modifiers);
-            current = saved;
-        } else {
-            name = declr.declr_name;
-            modifiers = new List<TypeModifier>(declr.declr_modifiers);
-            modifiers.AddRange(pointer_modifiers);
-            
-        }
+        begin = Parser.ParseSequence(src, begin, out modifiers,
+            Parser.GetOptionalParser(new List<PointerModifier>(), _pointer.Parse),                                                      // [pointer]?
+            Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),                  // [direct_abstract_declarator]?
+            (List<PointerModifier> ptr_modifiers, Declarator abst_declr) => abst_declr.declr_modifiers.Concat(ptr_modifiers).ToList()
+        );
 
-        declr = new Declarator(name, modifiers);
-        return current;
+        // make sure the list is non-empty
+        if (begin != -1 && modifiers.Any()) {
+            declr = new Declarator("", modifiers);
+            return begin;
+        } else {
+            declr = null;
+            return -1;
+        }
     }
 }
 
-// direct_abstract_declarator : '(' abstract_declarator ')'
-//                            | [direct_abstract_declarator]? '[' [constant_expression]? ']'
-//                            | [direct_abstract_declarator]? '(' [parameter_type_list]? ')'
-//
-// NOTE: this grammar is left-recursive, so i'm turning it to:
-// direct_abstract_declarator : [ '(' abstract_declarator ')' | '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
-//
-// RETURN: AbstratDeclarator
-//
-// FAIL: null
-//
+
+/// <summary>
+/// direct_abstract_declarator
+///   : [
+///         '(' abstract_declarator ')'
+///       | '[' [constant_expression]? ']'  // array modifier
+///       | '(' [parameter_type_list]? ')'  // function modifier
+///     ] [
+///         '[' [constant_expression]? ']'  // array modifier
+///       | '(' [parameter_type_list]? ')'  // function modifier
+///     ]*
+/// </summary>
 public class _direct_abstract_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("(*)[3][5 + 7][]");
@@ -1442,7 +1411,7 @@ public class _typedef_name : ParseRule {
             return false;
         }
 
-        if (!ScopeEnvironment.HasTypedefName(((TokenIdentifier)src[pos]).val)) {
+        if (!ParserEnvironment.HasTypedefName(((TokenIdentifier)src[pos]).val)) {
             name = null;
             return false;
         }

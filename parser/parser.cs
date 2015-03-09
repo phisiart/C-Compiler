@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using SyntaxTree;
+
 public interface ParseRule {
 }
 
@@ -131,18 +133,40 @@ public class Parser {
 
     public delegate Int32 FParse<TRet>(List<Token> src, Int32 begin, out TRet node);
 
-    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) {
-        Int32 current;
-        if ((current = Parse(src, begin, out node)) == -1) {
-            // if parsing fails: return default value
-            node = default_val;
-            return begin;
-        } else {
-            return current;
-        }
+    public static FParse<Boolean> GetOperatorParser(OperatorVal val) {
+        return delegate (List<Token> src, Int32 begin, out Boolean succeeded) {
+            if (succeeded = (
+                src[begin].type == TokenType.OPERATOR && ((TokenOperator)src[begin]).val == val
+            )) {
+                return begin + 1;
+            } else {
+                return -1;
+            }
+        };
     }
 
-    public static Int32 ParseList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
+    /// <summary>
+    /// turn a parsing function into an optional parsing function
+    /// if parsing fails, return the default value
+    /// </summary>
+    public static FParse<TRet> GetOptionalParser<TRet>(TRet default_val, FParse<TRet> Parse) {
+        return delegate (List<Token> src, Int32 begin, out TRet node) {
+            Int32 current;
+            if ((current = Parse(src, begin, out node)) == -1) {
+                // if parsing fails: return default value
+                node = default_val;
+                return begin;
+            } else {
+                return current;
+            }
+        };
+    }
+
+    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : class {
+        return GetOptionalParser(default_val, Parse)(src, begin, out node);
+    }
+
+    public static Int32 ParseList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) {
         Int32 current = begin;
 
         list = new List<TRet>();
@@ -158,7 +182,7 @@ public class Parser {
 
     }
 
-    public static Int32 ParseNonEmptyList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) where TRet : PTNode {
+    public static Int32 ParseNonEmptyList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) {
         begin = ParseList(src, begin, out list, Parse);
         if (list.Any()) {
             return begin;
@@ -187,6 +211,23 @@ public class Parser {
         
         node = null;
         return -1;
+    }
+
+    public static FParse<TRet> GetChoicesParser<TRet>(List<FParse<TRet>> ParseFuncs) where TRet : class {
+        return delegate (List<Token> src, Int32 begin, out TRet node) {
+            Int32 r;
+            foreach (FParse<TRet> Parse in ParseFuncs) {
+                if ((r = Parse(src, begin, out node)) != -1) {
+                    return r;
+                }
+            }
+            node = null;
+            return -1;
+        };
+    }
+
+    public static Int32 ParseChoices<TRet>(List<Token> src, Int32 begin, out TRet node, List<FParse<TRet>> ParseFuncs) where TRet : class {
+        return GetChoicesParser(ParseFuncs)(src, begin, out node);
     }
 
     public static Int32 ParseNonEmptyListWithSep<TRet>(List<Token> src, Int32 pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : PTNode {
@@ -226,8 +267,47 @@ public class Parser {
 
         return begin;
     }
+
+    public delegate TRet FBinaryCombine<TRet, TRet1, TRet2>(TRet1 obj1, TRet2 obj2);
+
+    /// <summary>
+    /// Pass in two parsing functions, and a combining function,
+    /// Return a parsing function
+    /// </summary>
+    public static FParse<TRet> GetSequenceParser<TRet, TRet1, TRet2>(
+        FParse<TRet1> ParseFirstNode,
+        FParse<TRet2> ParseSecondNode,
+        FBinaryCombine<TRet, TRet1, TRet2> Combine
+    ) where TRet : class {
+        return delegate (List<Token> src, Int32 begin, out TRet node) {
+            TRet1 node1;
+            if ((begin = ParseFirstNode(src, begin, out node1)) == -1) {
+                node = null;
+                return -1;
+            }
+            TRet2 node2;
+            if ((begin = ParseSecondNode(src, begin, out node2)) == -1) {
+                node = null;
+                return -1;
+            }
+            node = Combine(node1, node2);
+            return begin;
+        };
+    }
+
+    /// <summary>
+    /// Parse a sequence
+    /// </summary>
+    public static Int32 ParseSequence<TRet, TRet1, TRet2>(
+        List<Token> src,
+        Int32 begin,
+        out TRet node,
+        FParse<TRet1> ParseFirstNode,
+        FParse<TRet2> ParseSecondNode,
+        FBinaryCombine<TRet, TRet1, TRet2> Combine
+    ) where TRet : class {
+        return GetSequenceParser(ParseFirstNode, ParseSecondNode, Combine)(src, begin, out node);
+    }
+
 }
 
-public class ParserEnvironment {
-    public static Boolean debug = false;
-}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SyntaxTree;
 
 // primary_expression: identifier           /* Variable : Expression */
 //
@@ -69,7 +70,7 @@ public class _primary_expression : ParseRule {
         // 1. match identifier
         String var_name = Parser.GetIdentifierValue(src[begin]);
         if (var_name != null) {
-            if (!ScopeEnvironment.HasTypedefName(var_name)) {
+            if (!ParserEnvironment.HasTypedefName(var_name)) {
                 expr = new Variable(var_name);
                 return begin + 1;
             } else {
@@ -483,7 +484,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new Attribute(expr, new Variable(attrib));
+                expr = new SyntaxTree.Attribute(expr, new Variable(attrib));
                 break;
 
             case OperatorVal.RARROW:
@@ -497,7 +498,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new Attribute(new Dereference(expr), new Variable(pattrib));
+                expr = new SyntaxTree.Attribute(new Dereference(expr), new Variable(pattrib));
                 // expr = new PointerAttribute(expr, new Variable(pattrib));
                 break;
 

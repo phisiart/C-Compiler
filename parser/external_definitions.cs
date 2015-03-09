@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SyntaxTree;
 
 // translation_unit : [external_declaration]+
 public class _translation_unit : ParseRule {

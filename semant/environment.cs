@@ -21,8 +21,8 @@ public class Scope {
 
 }
 
-public static class ScopeEnvironment {
-    static ScopeEnvironment() {
+public static class ParserEnvironment {
+    static ParserEnvironment() {
         scopes = new Stack<Scope>();
         scopes.Push(new Scope());
     }
