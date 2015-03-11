@@ -105,6 +105,16 @@ public class Parser {
         }
     }
 
+    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out String id) {
+        if (src[begin].type == TokenType.IDENTIFIER) {
+            id = ((TokenIdentifier)src[begin]).val;
+            return begin + 1;
+        } else {
+            id = null;
+            return -1;
+        }
+    }
+
     public static List<Token> GetTokensFromString(String src) {
         Scanner lex = new Scanner();
         lex.src = src;
@@ -155,6 +165,19 @@ public class Parser {
             if ((current = Parse(src, begin, out node)) == -1) {
                 // if parsing fails: return default value
                 node = default_val;
+                return begin;
+            } else {
+                return current;
+            }
+        };
+    }
+
+    public static FParse<TRet> GetOptionalParser<TRet>(FParse<TRet> Parse) {
+        return delegate (List<Token> src, Int32 begin, out TRet node) {
+            Int32 current;
+            if ((current = Parse(src, begin, out node)) == -1) {
+                // if parsing fails: return default value
+                node = default(TRet);
                 return begin;
             } else {
                 return current;
@@ -270,6 +293,8 @@ public class Parser {
 
     public delegate TRet FBinaryCombine<TRet, TRet1, TRet2>(TRet1 obj1, TRet2 obj2);
 
+    public delegate TRet FTernaryCombine<TRet, TRet1, TRet2, TRet3>(TRet1 obj1, TRet2 obj2, TRet3 obj3);
+
     /// <summary>
     /// Pass in two parsing functions, and a combining function,
     /// Return a parsing function
@@ -296,6 +321,37 @@ public class Parser {
     }
 
     /// <summary>
+    /// Pass in two parsing functions, and a combining function,
+    /// Return a parsing function
+    /// </summary>
+    public static FParse<TRet> GetSequenceParser<TRet, TRet1, TRet2, TRet3>(
+        FParse<TRet1> ParseFirstNode,
+        FParse<TRet2> ParseSecondNode,
+        FParse<TRet3> ParseThirdNode,
+        FTernaryCombine<TRet, TRet1, TRet2, TRet3> Combine
+    ) where TRet : class {
+        return delegate (List<Token> src, Int32 begin, out TRet node) {
+            TRet1 node1;
+            if ((begin = ParseFirstNode(src, begin, out node1)) == -1) {
+                node = null;
+                return -1;
+            }
+            TRet2 node2;
+            if ((begin = ParseSecondNode(src, begin, out node2)) == -1) {
+                node = null;
+                return -1;
+            }
+            TRet3 node3;
+            if ((begin = ParseThirdNode(src, begin, out node3)) == -1) {
+                node = null;
+                return -1;
+            }
+            node = Combine(node1, node2, node3);
+            return begin;
+        };
+    }
+
+    /// <summary>
     /// Parse a sequence
     /// </summary>
     public static Int32 ParseSequence<TRet, TRet1, TRet2>(
@@ -307,6 +363,21 @@ public class Parser {
         FBinaryCombine<TRet, TRet1, TRet2> Combine
     ) where TRet : class {
         return GetSequenceParser(ParseFirstNode, ParseSecondNode, Combine)(src, begin, out node);
+    }
+
+    /// <summary>
+    /// Parse a sequence
+    /// </summary>
+    public static Int32 ParseSequence<TRet, TRet1, TRet2, TRet3>(
+        List<Token> src,
+        Int32 begin,
+        out TRet node,
+        FParse<TRet1> ParseFirstNode,
+        FParse<TRet2> ParseSecondNode,
+        FParse<TRet3> ParseThirdNode,
+        FTernaryCombine<TRet, TRet1, TRet2, TRet3> Combine
+    ) where TRet : class {
+        return GetSequenceParser(ParseFirstNode, ParseSecondNode, ParseThirdNode, Combine)(src, begin, out node);
     }
 
 }

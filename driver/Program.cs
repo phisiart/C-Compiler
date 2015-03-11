@@ -4,6 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+class TestingClass {
+    public TestingClass() {
+        Console.WriteLine("constructor");
+    }
+}
+
 namespace driver {
     class Program {
         static void Main(String[] args) {
@@ -38,6 +44,7 @@ int main(int argc, char **argv) {
             Console.WriteLine("x86 Assembly:");
             Console.WriteLine("======================");
             Console.WriteLine(state);
+
         }
     }
 }

@@ -46,9 +46,30 @@ namespace AST {
 
      * These methods of constructing derived types can be applied recursively.
 
-     * The type char, the signed and unsigned integer types, and the enumerated types are collectively called integral types.
+     * <integral>   : [char], [signed/unsigned short/int/long], [enum]
+     * <arithmetic> : <integral>, [float], [double]
+     * <scalar>     : <arithmetic>, <pointer>
+     * <aggregate> : <array>, <struct>, <union>
 
-     * Integral and floating types are collectively called arithmetic types. Arithmetic types and pointer types are collectively called scalar types. Array and structure types are collectively called aggregate types.
+       scalar
+         |
+         +--- pointer
+         |
+         +--- arithmetic
+                  |
+                  +--- double
+                  |
+                  +--- float
+                  |
+                  +--- integral
+                          |
+                          +--- enum
+                          |
+                          +--- [signed/unsigned] long
+                          |
+                          +--- [signed/unsigned] short
+                          |
+                          +--- [signed/unsigned] char
 
      * A pointer to void shall have the same representation and alignment requirements as a pointer to a character type. Other pointer types need not have the same representation or alignment requirements.
 
@@ -110,6 +131,7 @@ namespace AST {
         public readonly EnumExprType expr_type;
         public virtual Boolean IsArith() { return false; }
         public virtual Boolean IsIntegral() { return false; }
+        public virtual Boolean IsScalar() { return false; }
         public virtual Boolean EqualType(ExprType other) { return false; }
         public String DumpQualifiers() {
             String str = "";
@@ -151,28 +173,28 @@ namespace AST {
         }
     }
 
-    public class ArithmeticType : ExprType {
+    public abstract class ScalarType : ExprType {
+        public ScalarType(EnumExprType _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
+            : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
+        public override Boolean IsScalar() {
+            return true;
+        }
+    }
+
+    public abstract class ArithmeticType : ScalarType {
         public ArithmeticType(EnumExprType _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
-            : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) {
-        }
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new ArithmeticType(EnumExprType.ERROR, size_of, alignment, _is_const, _is_volatile);
-        }
+            : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
         public override Boolean IsArith() {
             return true;
         }
         public override Boolean EqualType(ExprType other) {
- 	         return expr_type == other.expr_type;
+            return expr_type == other.expr_type;
         }
     }
 
-    public class IntegralType : ArithmeticType {
+    public abstract class IntegralType : ArithmeticType {
         public IntegralType(EnumExprType _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
-            : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) {
-        }
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new IntegralType(EnumExprType.ERROR, size_of, alignment, _is_const, _is_volatile);
-        }
+            : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
         public override Boolean IsIntegral() {
             return true;
         }
@@ -269,9 +291,9 @@ namespace AST {
     // class TPointer
     // ==============
     // 
-    public class TPointer : ExprType {
+    public class TPointer : ScalarType {
         public TPointer(ExprType _referenced_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(EnumExprType.POINTER, SIZEOF_POINTER, ALIGN_POINTER,_is_const, _is_volatile) {
+            : base(EnumExprType.POINTER, SIZEOF_POINTER, ALIGN_POINTER, _is_const, _is_volatile) {
             referenced_type = _referenced_type;
         }
         public readonly ExprType referenced_type;

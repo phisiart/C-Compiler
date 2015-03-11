@@ -1029,17 +1029,17 @@ namespace SyntaxTree {
     // 
     public class LeftShift : Expression {
         public LeftShift(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            shift_lhs = _lhs;
+            shift_rhs = _rhs;
         }
-        public Expression lhs;
-        public Expression rhs;
+        public Expression shift_lhs;
+        public Expression shift_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return Expression.GetIntegralBinOpExpr(
                 env,
-                lhs,
-                rhs,
+                shift_lhs,
+                shift_rhs,
                 (x, y) => (UInt32)((Int32)x << (Int32)y),
                 (x, y) => x << y,
                 (lhs, rhs, type) => new AST.LShift(lhs, rhs, type)
@@ -1053,17 +1053,17 @@ namespace SyntaxTree {
     // 
     public class RightShift : Expression {
         public RightShift(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            shift_lhs = _lhs;
+            shift_rhs = _rhs;
         }
-        public Expression lhs;
-        public Expression rhs;
+        public Expression shift_lhs;
+        public Expression shift_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return Expression.GetIntegralBinOpExpr(
                 env,
-                lhs,
-                rhs,
+                shift_lhs,
+                shift_rhs,
                 (x, y) => (UInt32)((Int32)x >> (Int32)y),
                 (x, y) => x >> y,
                 (lhs, rhs, type) => new AST.RShift(lhs, rhs, type)
@@ -1232,18 +1232,18 @@ namespace SyntaxTree {
     // 
     public class BitwiseAnd : Expression {
         public BitwiseAnd(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            and_lhs = _lhs;
+            and_rhs = _rhs;
         }
 
-        public Expression lhs;
-        public Expression rhs;
+        public Expression and_lhs;
+        public Expression and_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return GetIntegralBinOpExpr(
                 env,
-                lhs,
-                rhs,
+                and_lhs,
+                and_rhs,
                 (x, y) => x & y,
                 (x, y) => x & y,
                 (lhs, rhs, type) => new AST.BitwiseAnd(lhs, rhs, type)
@@ -1257,17 +1257,17 @@ namespace SyntaxTree {
     // 
     public class Xor : Expression {
         public Xor(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            or_lhs = _lhs;
+            or_rhs = _rhs;
         }
-        public Expression lhs;
-        public Expression rhs;
+        public Expression or_lhs;
+        public Expression or_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return GetIntegralBinOpExpr(
                 env,
-                lhs,
-                rhs,
+                or_lhs,
+                or_rhs,
                 (x, y) => x ^ y,
                 (x, y) => x ^ y,
                 (lhs, rhs, type) => new AST.Xor(lhs, rhs, type)
@@ -1281,17 +1281,17 @@ namespace SyntaxTree {
     // 
     public class BitwiseOr : Expression {
         public BitwiseOr(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            or_lhs = _lhs;
+            or_rhs = _rhs;
         }
-        public Expression lhs;
-        public Expression rhs;
+        public Expression or_lhs;
+        public Expression or_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return GetIntegralBinOpExpr(
                 env,
-                lhs,
-                rhs,
+                or_lhs,
+                or_rhs,
                 (x, y) => x | y,
                 (x, y) => x | y,
                 (lhs, rhs, type) => new AST.BitwiseOr(lhs, rhs, type)

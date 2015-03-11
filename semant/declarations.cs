@@ -78,9 +78,8 @@ namespace SyntaxTree {
     }
 
 
-    // DeclnSpecs
-    // ==========
     // Declaration specifiers
+    // ======================
     // includes storage class specifiers
     //          type specifiers,
     //          type qualifiers
@@ -100,7 +99,7 @@ namespace SyntaxTree {
         public readonly List<TypeSpecifier> specs_typespecs;
         public readonly List<TypeQualifier> specs_typequals;
 
-        // TODO : [finished] DeclnSpecs.SemantDeclnSpecs(env) -> (env, scs, type)
+        // DeclnSpecs.SemantDeclnSpecs(env) -> (env, scs, type)
         public Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> GetSCSType(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> r_type = GetExprType(env);
             env = r_type.Item1;
@@ -526,6 +525,9 @@ namespace SyntaxTree {
             inner_declr_modifiers = _declr_modifiers;
             declr_name = _name;
         }
+
+        public Declarator()
+            : this("", new List<TypeModifier>()) { }
 
         public IReadOnlyList<TypeModifier> declr_modifiers {
             get { return inner_declr_modifiers; }

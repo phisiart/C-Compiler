@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SyntaxTree {
 
@@ -93,42 +94,126 @@ namespace SyntaxTree {
     }
 
 
-    // loops:
-
-
+    /// <summary>
+    /// while (cond) {
+    ///     body
+    /// }
+    /// 
+    /// cond must be of scalar type
+    /// </summary>
     public class WhileStatement : Statement {
         public WhileStatement(Expression _cond, Statement _body) {
-            cond = _cond;
-            body = _body;
+            while_cond = _cond;
+            while_body = _body;
         }
-        public Expression cond;
-        public Statement body;
+        public readonly Expression while_cond;
+        public readonly Statement while_body;
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Expr cond;
+            AST.Stmt body;
+
+            Tuple<AST.Env, AST.Expr> r_cond = while_cond.GetExpr(env);
+            env = r_cond.Item1;
+            cond = r_cond.Item2;
+
+            if (!cond.type.IsScalar()) {
+                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+            }
+
+            Tuple<AST.Env, AST.Stmt> r_body = while_body.GetStmt(env);
+            env = r_body.Item1;
+            body = r_body.Item2;
+
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.WhileStmt(cond, body));
+        }
 
     }
 
-    // Finished.
+
+    /// <summary>
+    /// do {
+    ///     body
+    /// } while (cond);
+    /// 
+    /// cond must be of scalar type
+    /// </summary>
     public class DoWhileStatement : Statement {
         public DoWhileStatement(Statement _body, Expression _cond) {
-            body = _body;
-            cond = _cond;
+            do_body = _body;
+            do_cond = _cond;
         }
-        public Statement body;
-        public Expression cond;
+        public readonly Statement do_body;
+        public readonly Expression do_cond;
 
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Stmt body;
+            AST.Expr cond;
+
+            Tuple<AST.Env, AST.Stmt> r_body = do_body.GetStmt(env);
+            env = r_body.Item1;
+            body = r_body.Item2;
+
+            Tuple<AST.Env, AST.Expr> r_cond = do_cond.GetExpr(env);
+            env = r_cond.Item1;
+            cond = r_cond.Item2;
+
+            if (!cond.type.IsScalar()) {
+                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+            }
+
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.DoWhileStmt(body, cond));
+        }
     }
 
-    // Finished.
+
+    /// <summary>
+    /// for (init; cond; loop) {
+    ///     body
+    /// }
+    /// 
+    /// cond must be of scalar type
+    /// </summary>
     public class ForStatement : Statement {
         public ForStatement(Expression _init, Expression _cond, Expression _loop, Statement _body) {
-            init = _init;
-            cond = _cond;
-            loop = _loop;
-            body = _body;
+            for_init = _init;
+            for_cond = _cond;
+            for_loop = _loop;
+            for_body = _body;
         }
-        public Expression init;
-        public Expression cond;
-        public Expression loop;
-        public Statement body;
+        public readonly Expression for_init;
+        public readonly Expression for_cond;
+        public readonly Expression for_loop;
+        public readonly Statement for_body;
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Expr init;
+            AST.Expr cond;
+            AST.Expr loop;
+            AST.Stmt body;
+
+            Tuple<AST.Env, AST.Expr> r_init = for_init.GetExpr(env);
+            env = r_init.Item1;
+            init = r_init.Item2;
+
+            Tuple<AST.Env, AST.Expr> r_cond = for_cond.GetExpr(env);
+            env = r_cond.Item1;
+            cond = r_cond.Item2;
+
+            if (!cond.type.IsScalar()) {
+                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+            }
+
+            Tuple<AST.Env, AST.Expr> r_loop = for_loop.GetExpr(env);
+            env = r_loop.Item1;
+            loop = r_loop.Item2;
+
+            Tuple<AST.Env, AST.Stmt> r_body = for_body.GetStmt(env);
+            env = r_body.Item1;
+            body = r_body.Item2;
+
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.ForStmt(init, cond, loop, body));
+        }
 
     }
 
