@@ -291,6 +291,41 @@ public class Parser {
         return begin;
     }
 
+	public static FParse<TRet> GetBraceSurroundedParser<TRet>(FParse<TRet> Parse) where TRet : class {
+		return delegate (List<Token> src, Int32 begin, out TRet node) {
+			if (!Parser.EatOperator(src, ref begin, OperatorVal.LCURL)) {
+				node = null;
+				return -1;
+			}
+
+			if ((begin = Parse(src, begin, out node)) == -1) {
+				node = null;
+				return -1;
+			}
+
+			if (!Parser.EatOperator(src, ref begin, OperatorVal.RCURL)) {
+				node = null;
+				return -1;
+			}
+
+			return begin;
+		};
+	}
+
+	public delegate TAfter FModifier<TAfter, TBefore>(TBefore before);
+	public static FParse<TAfter> GetModifiedParser<TAfter, TBefore>(FParse<TBefore> Parse, FModifier<TAfter, TBefore> ModifierFunc) where TAfter : class {
+		return delegate (List<Token> src, Int32 begin, out TAfter node) {
+			TBefore before;
+			if ((begin = Parse(src, begin, out before)) == -1) {
+				node = null;
+				return -1;
+			}
+
+			node = ModifierFunc(before);
+			return begin;
+		};
+	}
+
     public delegate TRet FBinaryCombine<TRet, TRet1, TRet2>(TRet1 obj1, TRet2 obj2);
 
     public delegate TRet FTernaryCombine<TRet, TRet1, TRet2, TRet3>(TRet1 obj1, TRet2 obj2, TRet3 obj3);

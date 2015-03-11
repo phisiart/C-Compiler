@@ -497,7 +497,7 @@ namespace AST {
                 case ExprType.EnumExprType.UCHAR:
                 case ExprType.EnumExprType.USHORT:
                 case ExprType.EnumExprType.ULONG:
-                    expr = expr = UnsignedIntegralToArith(expr, new TULong(type.is_const, type.is_volatile));
+                    expr = UnsignedIntegralToArith(expr, new TULong(type.is_const, type.is_volatile));
                     break;
                 default:
                     break;

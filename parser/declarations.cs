@@ -28,7 +28,7 @@ public class _declaration : ParseRule {
             // ';'
             Parser.GetOperatorParser(OperatorVal.SEMICOLON),
 
-
+			// # if this declaration is a typeof, then add the name into the environment
             (DeclarationSpecifiers decln_specs, List<InitializationDeclarator> init_declrs, Boolean _) => {
                 if (decln_specs.IsTypedef()) {
                     foreach (InitializationDeclarator init_declr in init_declrs) {
@@ -845,10 +845,10 @@ public class _enum_specifier : ParseRule {
 }
 
 
-// enumerator_list : enumerator
-//                 | enumerator_list, enumerator
-// [ note: my solution ]
-// enumerator_list : enumerator < , enumerator >*
+/// <summary>
+/// enumerator_list
+///   : enumerator [ ',' enumerator ]*
+/// </summary>
 public class _enumerator_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<Enumerator> enum_list) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out enum_list, _enumerator.Parse, OperatorVal.COMMA);
@@ -856,31 +856,34 @@ public class _enumerator_list : ParseRule {
 }
 
 
-// enumerator : enumeration_constant
-//            | enumeration_constant = constant_expression
-// [ note: my solution ]
-// enumerator : enumeration_constant < = constant_expression >?
+/// <summary>
+/// enumerator
+///   : enumeration [ '=' constant_expression ]?
+/// </summary>
 public class _enumerator : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Enumerator enumerator) {
-        String name;
-        Int32 current = _enumeration_constant.Parse(src, begin, out name);
-        if (current == -1) {
-            enumerator = null;
-            return -1;
-        }
+		return Parser.ParseSequence(src, begin, out enumerator,
 
-        Expression init;
-        if (Parser.EatOperator(src, ref current, OperatorVal.ASSIGN)) {
-            if ((current = _constant_expression.Parse(src, current, out init)) == -1) {
-                enumerator = null;
-                return -1;
-            }
-        } else {
-            init = null;
-        }
+			// enumeration
+			_enumeration_constant.Parse,
 
-        enumerator = new Enumerator(name, init);
-        return current;
+			// [
+			Parser.GetOptionalParser(
+				null,
+				Parser.GetSequenceParser(
+					// '='
+					Parser.GetOperatorParser(OperatorVal.EQ),
+
+					// constant_expression
+					_constant_expression.Parse,
+					(Boolean _, Expression expr) => expr
+				)
+			),
+			// ]?
+
+			(String name, Expression expr) => new Enumerator(name, expr)
+
+		);
     }
 }
 
@@ -896,79 +899,58 @@ public class _enumeration_constant : ParseRule {
 }
 
 
-// struct_or_union_specifier : struct_or_union <identifier>? { struct_declaration_list }
-//                           | struct_or_union identifier
-// [ note: need some treatment ]
+/// <summary>
+/// struct_or_union_specifier
+///   : struct_or_union [identifier]? { struct_declaration_list }
+///   | struct_or_union identifier
+/// 
+/// <remarks>
+/// Note: if no struct_declaration_list given, the type is considered incomplete.
+/// </remarks>
+/// </summary>
 public class _struct_or_union_specifier : ParseRule {
-    public static Int32 ParseDeclarationList(List<Token> src, Int32 begin, out List<StructDeclaration> decl_list) {
-        decl_list = null;
-
-        if (!Parser.IsLCURL(src[begin])) {
-            return -1;
-        }
-        Int32 current = begin + 1;
-        current = _struct_declaration_list.Parse(src, current, out decl_list);
-        if (current == -1) {
-            return -1;
-        }
-
-        if (!Parser.IsRCURL(src[current])) {
-            return -1;
-        }
-        current++;
-        return current;
-
-    }
-
     public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnionSpecifier spec) {
-        spec = null;
+		return Parser.ParseSequence(src, begin, out spec,
 
-        StructOrUnion struct_or_union;
-        List<StructDeclaration> decl_list;
+			// struct_or_union
+			_struct_or_union.Parse,
 
-        Int32 current = _struct_or_union.Parse(src, begin, out struct_or_union);
-        if (current == -1) {
-            return -1;
-        }
-        //current++;
+			// [
+			Parser.GetChoicesParser (new List<Parser.FParse<Tuple<String, List<StructDeclaration>>>> {
 
-        if (src[current].type == TokenType.IDENTIFIER) {
-            // named struct or union
+				// [
+				Parser.GetSequenceParser(
 
-            String name = ((TokenIdentifier)src[current]).val;
-            if (struct_or_union.is_union) {
-                spec = new UnionSpecifier(name, null);
-            } else {
-                spec = new StructSpecifier(name, null);
-            }
-            current++;
-            Int32 saved = current;
+					// [identifier]?
+					Parser.GetOptionalParser("", Parser.ParseIdentifier),
 
-            current = ParseDeclarationList(src, current, out decl_list);
-            if (current != -1) {
-                spec.declns = decl_list;
-                return current;
-            }
+					// { struct_declaration_list }
+					Parser.GetBraceSurroundedParser<List<StructDeclaration>>(_struct_declaration_list.Parse),
 
-            return current;
+					(String id, List<StructDeclaration> declns) => Tuple.Create(id, declns)
+				),
+				// ]
 
-        } else {
-            // anonymous struct or union
+				// |
 
-            current = ParseDeclarationList(src, current, out decl_list);
-            if (current == -1) {
-                return -1;
-            }
+				// identifier
+				Parser.GetModifiedParser(
+					Parser.ParseIdentifier,
+					(String id) => new Tuple<String, List<StructDeclaration>>(id, null)
+				)
+			}),
+			// ]
 
-            if (struct_or_union.is_union) {
-                spec = new UnionSpecifier("", decl_list);
-            } else {
-                spec = new StructSpecifier("", decl_list);
-            }
+			(StructOrUnion struct_or_union, Tuple<String, List<StructDeclaration>> declns) => {
+				if (struct_or_union.is_union) {
+					return new UnionSpecifier(declns.Item1, declns.Item2);
+				} else {
+					return new StructSpecifier(declns.Item1, declns.Item2);
+				}
+			}
 
-            return current;
+		);
 
-        }
     }
 }
 
@@ -1167,8 +1149,13 @@ public class _abstract_declarator : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
         List<TypeModifier> modifiers;
         begin = Parser.ParseSequence(src, begin, out modifiers,
-            Parser.GetOptionalParser(new List<PointerModifier>(), _pointer.Parse),                                                      // [pointer]?
-            Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),                  // [direct_abstract_declarator]?
+
+			// [pointer]?
+            Parser.GetOptionalParser(new List<PointerModifier>(), _pointer.Parse),
+
+			// [direct_abstract_declarator]?
+            Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),
+
             (List<PointerModifier> ptr_modifiers, Declarator abst_declr) => abst_declr.declr_modifiers.Concat(ptr_modifiers).ToList()
         );
 
@@ -1355,7 +1342,6 @@ public class _type_name : ParseRule {
             // [abstract_declarator]?
             Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _abstract_declarator.Parse),
 
-
             (DeclarationSpecifiers specs, Declarator declr) => new TypeName(specs, declr)
         );
     }
@@ -1369,15 +1355,15 @@ public class _type_name : ParseRule {
 /// We need to look it up in the parser environment.
 /// </summary>
 public class _typedef_name : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 pos, out String name) {
-        if ((pos = (Parser.ParseIdentifier(src, pos, out name))) == -1) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out String name) {
+        if ((begin = (Parser.ParseIdentifier(src, begin, out name))) == -1) {
             return -1;
         }
         if (!ParserEnvironment.HasTypedefName(name)) {
             return -1;
         }
 
-        return pos;
+        return begin;
     }
 }
 
