@@ -1257,17 +1257,17 @@ namespace SyntaxTree {
     // 
     public class Xor : Expression {
         public Xor(Expression _lhs, Expression _rhs) {
-            or_lhs = _lhs;
-            or_rhs = _rhs;
+            xor_lhs = _lhs;
+            xor_rhs = _rhs;
         }
-        public Expression or_lhs;
-        public Expression or_rhs;
+        public Expression xor_lhs;
+        public Expression xor_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return GetIntegralBinOpExpr(
                 env,
-                or_lhs,
-                or_rhs,
+                xor_lhs,
+                xor_rhs,
                 (x, y) => x ^ y,
                 (x, y) => x ^ y,
                 (lhs, rhs, type) => new AST.Xor(lhs, rhs, type)
