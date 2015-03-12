@@ -78,6 +78,7 @@
     <Compile Include="semant\statements.cs" />
     <Compile Include="semant\const_expressions.cs" />
     <Compile Include="semant\binary_operation_expressions.cs" />
+    <Compile Include="semant\assignment_operation_expressions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

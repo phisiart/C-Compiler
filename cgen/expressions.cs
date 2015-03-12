@@ -456,7 +456,7 @@ namespace AST {
 				(x, y) => x * y,
 				(x, y) => x * y,
 				(x, y) => x * y,
-				(_lhs, _rhs, _type) => new AST.Multiply(_lhs, _rhs, _type)
+				(_lhs, _rhs, _type) => new Multiply(_lhs, _rhs, _type)
 			);
 		}
     }
@@ -479,20 +479,30 @@ namespace AST {
 				(x, y) => x / y,
 				(x, y) => x / y,
 				(x, y) => x / y,
-				(_lhs, _rhs, _type) => new AST.Divide(lhs, rhs, _type)
+				(_lhs, _rhs, _type) => new Divide(lhs, rhs, _type)
 			);
 		}
-
     }
 
     public class Modulo : Expr {
         public Modulo(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            mod_lhs = _lhs;
+            mod_rhs = _rhs;
         }
-        protected Expr lhs;
-        protected Expr rhs;
+		public readonly Expr mod_lhs;
+		public readonly Expr mod_rhs;
+
+		public static Tuple<Env, Expr> MakeModulo(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x % y,
+				(x, y) => x % y,
+				(_lhs, _rhs, _type) => new Modulo(_lhs, _rhs, _type)
+			);
+		}
     }
 
     public class LShift : Expr {
@@ -501,53 +511,82 @@ namespace AST {
             lshift_lhs = _lhs;
             lshift_rhs = _rhs;
         }
+		public readonly Expr lshift_lhs;
+		public readonly Expr lshift_rhs;
 
-		public static Tuple<Env, Expr> MakeLShift(AST.Env env, Expr lhs, Expr rhs) {
+		public static Tuple<Env, Expr> MakeLShift(Env env, Expr lhs, Expr rhs) {
 			return SyntaxTree.Expression.GetIntegralBinOpExpr(
 				env,
 				lhs,
 				rhs,
 				(x, y) => (UInt32)((Int32)x << (Int32)y),
 				(x, y) => x << y,
-				(_lhs, _rhs, type) => new AST.LShift(lhs, rhs, type)
+				(_lhs, _rhs, type) => new LShift(lhs, rhs, type)
 			);
 		}
-
-        public readonly Expr lshift_lhs;
-        public readonly Expr lshift_rhs;
     }
 
     public class RShift : Expr {
         public RShift(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            rshift_lhs = _lhs;
+            rshift_rhs = _rhs;
         }
+        public readonly Expr rshift_lhs;
+        public readonly Expr rshift_rhs;
 
-        public readonly Expr lhs;
-        public readonly Expr rhs;
+		public static Tuple<Env, Expr> MakeRShift(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => (UInt32)((Int32)x >> (Int32)y),
+				(x, y) => x >> y,
+				(_lhs, _rhs, _type) => new RShift(_lhs, _rhs, _type)
+			);
+		}
     }
 
     public class Xor : Expr {
         public Xor(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            xor_lhs = _lhs;
+            xor_rhs = _rhs;
         }
+        public readonly Expr xor_lhs;
+        public readonly Expr xor_rhs;
 
-        public readonly Expr lhs;
-        public readonly Expr rhs;
+		public static Tuple<Env, Expr> MakeXor(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x ^ y,
+				(x, y) => x ^ y,
+				(_lhs, _rhs, _type) => new Xor(_lhs, _rhs, _type)
+			);
+		}
     }
 
     public class BitwiseOr : Expr {
         public BitwiseOr(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            or_lhs = _lhs;
+            or_rhs = _rhs;
         }
+        public readonly Expr or_lhs;
+        public readonly Expr or_rhs;
 
-        public readonly Expr lhs;
-        public readonly Expr rhs;
+		public static Tuple<Env, Expr> MakeOr(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x | y,
+				(x, y) => x | y,
+				(_lhs, _rhs, _type) => new AST.BitwiseOr(_lhs, _rhs, _type)
+			);
+		}
     }
 
     public class BitwiseAnd : Expr {
@@ -559,6 +598,17 @@ namespace AST {
 
         public readonly Expr lhs;
         public readonly Expr rhs;
+
+		public static Tuple<Env, Expr> MakeBitwiseAnd(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x & y,
+				(x, y) => x & y,
+				(_lhs, _rhs, _type) => new BitwiseAnd(lhs, rhs, type)
+			);
+		}
     }
 
     public class LogicalAnd : Expr {
