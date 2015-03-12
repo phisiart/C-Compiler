@@ -413,6 +413,16 @@ namespace AST {
         public readonly Expr rhs;
     }
     
+	public class Add : Expr {
+		public Add(Expr _lhs, Expr _rhs, ExprType _type)
+			: base(_type) {
+			lhs = _lhs;
+			rhs = _rhs;
+		}
+		public readonly Expr lhs;
+		public readonly Expr rhs;
+	}
+
     public class Multiply : Expr {
         public Multiply(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {

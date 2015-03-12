@@ -96,6 +96,97 @@ namespace SyntaxTree {
         }
 
 
+		public static Tuple<AST.Env, AST.Expr> GetArithmeticBinOpExpr<TRet>(
+			AST.Env env,
+			AST.Expr lhs,
+			AST.Expr rhs,
+			ConstOperation<Double> double_op,
+			ConstOperation<Single> float_op,
+			ConstOperation<UInt32> uint32_op,
+			ConstOperation<Int32>  int32_op,
+			BinExprConstructor<TRet> construct
+		) where TRet : AST.Expr {
+
+			Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+			lhs = r_cast.Item1;
+			rhs = r_cast.Item2;
+
+			Boolean c1 = lhs.type.is_const;
+			Boolean c2 = rhs.type.is_const;
+			Boolean v1 = lhs.type.is_volatile;
+			Boolean v2 = rhs.type.is_volatile;
+			Boolean is_const = c1 || c2;
+			Boolean is_volatile = v1 || v2;
+
+			AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+
+			AST.Expr expr;
+			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+				switch (enum_type) {
+				case AST.ExprType.EnumExprType.DOUBLE:
+					expr = new AST.ConstDouble(double_op(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
+					break;
+				case AST.ExprType.EnumExprType.FLOAT:
+					expr = new AST.ConstFloat(float_op(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
+					break;
+				case AST.ExprType.EnumExprType.ULONG:
+					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+					break;
+				case AST.ExprType.EnumExprType.LONG:
+					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+					break;
+				default:
+					throw new InvalidOperationException("Error: usual arithmetic conversion returns invalid type.");
+				}
+
+			} else {
+				switch (enum_type) {
+				case AST.ExprType.EnumExprType.DOUBLE:
+					expr = construct(lhs, rhs, new AST.TDouble(is_const, is_volatile));
+					break;
+				case AST.ExprType.EnumExprType.FLOAT:
+					expr = construct(lhs, rhs, new AST.TFloat(is_const, is_volatile));
+					break;
+				case AST.ExprType.EnumExprType.ULONG:
+					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
+					break;
+				case AST.ExprType.EnumExprType.LONG:
+					expr = construct(lhs, rhs, new AST.TLong(is_const, is_volatile));
+					break;
+				default:
+					throw new InvalidOperationException("Error: usual arithmetic conversion returns invalid type.");
+				}
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, expr);
+		}
+
+
+		public static Tuple<AST.Env, AST.Expr> GetArithmeticBinOpExpr<TRet>(
+			AST.Env env,
+			Expression expr_lhs,
+			Expression expr_rhs,
+			ConstOperation<Double> double_op,
+			ConstOperation<Single> float_op,
+			ConstOperation<UInt32> uint32_op,
+			ConstOperation<Int32>  int32_op,
+			BinExprConstructor<TRet> construct
+		) where TRet : AST.Expr {
+
+			AST.Expr lhs;
+			AST.Expr rhs;
+
+			Tuple<AST.Env, AST.Expr> r_lhs = expr_lhs.GetExpr(env);
+			env = r_lhs.Item1;
+			lhs = r_lhs.Item2;
+
+			Tuple<AST.Env, AST.Expr> r_rhs = expr_rhs.GetExpr(env);
+			env = r_rhs.Item1;
+			rhs = r_rhs.Item2;
+
+			return GetArithmeticBinOpExpr(env, lhs, rhs, double_op, float_op, uint32_op, int32_op, construct);
+		}
+
         public static Tuple<AST.Env, AST.Expr> GetScalarBinLogicalOpExpr<TRet>(
             AST.Env env,
             Expression expr_lhs,
@@ -311,34 +402,10 @@ namespace SyntaxTree {
             true_expr = _true_expr;
             false_expr = _false_expr;
         }
-        public Expression cond;
-        public Expression true_expr;
-        public Expression false_expr;
-
-        //public override ScopeSandbox Semant(ScopeSandbox _scope) {
-        //    scope = _scope;
-        //    scope = cond.Semant(scope);
-        //    scope = true_expr.Semant(scope);
-        //    scope = false_expr.Semant(scope);
-
-        //    if (!cond.type.IsArith()) {
-        //        Log.SemantError("Error: expected arithmetic type.");
-        //    }
-
-        //    if (true_expr.type.IsArith() || false_expr.type.IsArith()) {
-        //        SemantUsualArithmeticConversion(ref true_expr, ref false_expr);
-        //    } else if ((true_expr.type.kind == TType.Kind.STRUCT && false_expr.type.kind == TType.Kind.STRUCT)
-        //        || (true_expr.type.kind == TType.Kind.UNION && false_expr.type.kind == TType.Kind.UNION)
-        //        || (true_expr.type.kind == TType.Kind.POINTER && false_expr.type.kind == TType.Kind.POINTER)) {
-        //        Log.SemantError("Not implemented.");
-        //    } else if (true_expr.type.kind == TType.Kind.VOID && false_expr.type.kind == TType.Kind.VOID) {
-        //        type = new TVoid();
-        //    } else {
-        //        Log.SemantError("Error: conditional expression types not match.");
-        //    }
-
-        //    return scope;
-        //}
+        public readonly Expression cond;
+        public readonly Expression true_expr;
+        public readonly Expression false_expr;
+        
     }
 
     public class Assignment : Expression {
@@ -822,6 +889,11 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Multiplication
+	/// 
+	/// Perform usual arithmetic conversion.
+	/// </summary>
     public class Multiplication : Expression {
         public Multiplication(Expression _lhs, Expression _rhs) {
             mult_lhs = _lhs;
@@ -831,73 +903,26 @@ namespace SyntaxTree {
         public Expression mult_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            Tuple<AST.Env, AST.Expr> r_lhs = mult_lhs.GetExpr(env);
-            env = r_lhs.Item1;
-            AST.Expr lhs = r_lhs.Item2;
-
-            Tuple<AST.Env, AST.Expr> r_rhs = mult_rhs.GetExpr(env);
-            env = r_rhs.Item1;
-            AST.Expr rhs = r_rhs.Item2;
-
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            Boolean c1 = lhs.type.is_const;
-            Boolean c2 = rhs.type.is_const;
-            Boolean v1 = lhs.type.is_volatile;
-            Boolean v2 = rhs.type.is_volatile;
-            Boolean is_const = c1 || c2;
-            Boolean is_volatile = v1 || v2;
-
-            AST.ExprType.EnumExprType enum_type = r_cast.Item3;
-
-            AST.Expr expr;
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
-                    expr = new AST.ConstDouble(((AST.ConstDouble)lhs).value * ((AST.ConstDouble)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.FLOAT:
-                    expr = new AST.ConstFloat(((AST.ConstFloat)lhs).value * ((AST.ConstFloat)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = new AST.ConstULong(((AST.ConstULong)lhs).value * ((AST.ConstULong)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = new AST.ConstLong(((AST.ConstLong)lhs).value * ((AST.ConstLong)rhs).value);
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-
-            } else {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
-                    expr = new AST.Multiply(lhs, rhs, new AST.TDouble(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.FLOAT:
-                    expr = new AST.Multiply(lhs, rhs, new AST.TFloat(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = new AST.Multiply(lhs, rhs, new AST.TULong(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = new AST.Multiply(lhs, rhs, new AST.TLong(is_const, is_volatile));
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-            }
-
-            return new Tuple<AST.Env, AST.Expr>(env, expr);
-
+			return GetArithmeticBinOpExpr(
+				env,
+				mult_lhs,
+				mult_rhs,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(lhs, rhs, type) => new AST.Multiply(lhs, rhs, type)
+			);
         }
 
     }
 
 
+	/// <summary>
+	/// Division
+	/// 
+	/// Perform usual arithmetic conversion.
+	/// </summary>
     public class Division : Expression {
         public Division(Expression _lhs, Expression _rhs) {
             div_lhs = _lhs;
@@ -907,70 +932,17 @@ namespace SyntaxTree {
         public Expression div_rhs;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            Tuple<AST.Env, AST.Expr> r_lhs = div_lhs.GetExpr(env);
-            env = r_lhs.Item1;
-            AST.Expr lhs = r_lhs.Item2;
-
-            Tuple<AST.Env, AST.Expr> r_rhs = div_rhs.GetExpr(env);
-            env = r_rhs.Item1;
-            AST.Expr rhs = r_rhs.Item2;
-
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            Boolean c1 = lhs.type.is_const;
-            Boolean c2 = rhs.type.is_const;
-            Boolean v1 = lhs.type.is_volatile;
-            Boolean v2 = rhs.type.is_volatile;
-            Boolean is_const = c1 || c2;
-            Boolean is_volatile = v1 || v2;
-
-            AST.ExprType.EnumExprType enum_type = r_cast.Item3;
-
-            AST.Expr expr;
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
-                    expr = new AST.ConstDouble(((AST.ConstDouble)lhs).value / ((AST.ConstDouble)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.FLOAT:
-                    expr = new AST.ConstFloat(((AST.ConstFloat)lhs).value / ((AST.ConstFloat)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = new AST.ConstULong(((AST.ConstULong)lhs).value / ((AST.ConstULong)rhs).value);
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = new AST.ConstLong(((AST.ConstLong)lhs).value / ((AST.ConstLong)rhs).value);
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-
-            } else {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
-                    expr = new AST.Divide(lhs, rhs, new AST.TDouble(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.FLOAT:
-                    expr = new AST.Divide(lhs, rhs, new AST.TFloat(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = new AST.Divide(lhs, rhs, new AST.TULong(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = new AST.Divide(lhs, rhs, new AST.TLong(is_const, is_volatile));
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-            }
-
-            return new Tuple<AST.Env, AST.Expr>(env, expr);
-
+			return GetArithmeticBinOpExpr(
+				env,
+				div_lhs,
+				div_rhs,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(lhs, rhs, type) => new AST.Divide(lhs, rhs, type)
+			);
         }
-
     }
 
 
@@ -1000,14 +972,93 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Addition
+	/// 
+	/// There are two kinds of addition:
+	/// 1. both operands are of arithmetic type
+	/// 2. one operand is a pointer, and the other is an integral
+	/// 
+	/// </summary>
     public class Addition : Expression {
         public Addition(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
+            add_lhs = _lhs;
+            add_rhs = _rhs;
         }
 
-        public Expression lhs;
-        public Expression rhs;
+		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
+			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+				throw new InvalidOperationException("Error: expect a pointer");
+			}
+			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
+				throw new InvalidOperationException("Error: expect an integer");
+			}
+
+			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
+				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
+				Int32 _offset = ((AST.ConstLong)offset).value;
+				return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
+			}
+
+			return new AST.Add(
+				AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+				new AST.Multiply(
+					offset,
+					new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
+					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+				),
+				ptr.type
+			);
+
+		}
+
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr lhs;
+			AST.Expr rhs;
+
+			Tuple<AST.Env, AST.Expr> r_lhs = add_lhs.GetExpr(env);
+			env = r_lhs.Item1;
+			lhs = r_lhs.Item2;
+
+			Tuple<AST.Env, AST.Expr> r_rhs = add_rhs.GetExpr(env);
+			env = r_rhs.Item1;
+			rhs = r_rhs.Item2;
+
+			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+				if (!rhs.type.IsIntegral()) {
+					throw new InvalidOperationException("Error: must add an integral to a pointer");
+				}
+				rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
+
+				// lhs = base, rhs = offset
+				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
+
+			} else if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+				if (!lhs.type.IsIntegral()) {
+					throw new InvalidOperationException("Error: must add an integral to a pointer");
+				}
+				lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
+
+				// rhs = base, lhs = offset
+				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
+
+			} else {
+				return Expression.GetArithmeticBinOpExpr(
+					env,
+					lhs,
+					rhs,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
+				);
+			}
+		}
+
+        public readonly Expression add_lhs;
+        public readonly Expression add_rhs;
 
     }
 
@@ -1023,10 +1074,11 @@ namespace SyntaxTree {
     }
 
 
-    // LeftShift
-    // =========
-    // requires integral type
-    // 
+	/// <summary>
+	/// Left Shift
+	/// 
+	/// Returns an integer from two integrals.
+	/// </summary>
     public class LeftShift : Expression {
         public LeftShift(Expression _lhs, Expression _rhs) {
             shift_lhs = _lhs;
@@ -1047,10 +1099,12 @@ namespace SyntaxTree {
         }
     }
 
-    // RightShift
-    // ==========
-    // requires integral type
-    // 
+
+	/// <summary>
+	/// Right Shift
+	/// 
+	/// Returns an integer from two integrals.
+	/// </summary>
     public class RightShift : Expression {
         public RightShift(Expression _lhs, Expression _rhs) {
             shift_lhs = _lhs;
@@ -1073,6 +1127,11 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Less than
+	/// 
+	/// Returns an integer.
+	/// </summary>
     public class LessThan : Expression {
         public LessThan(Expression _lhs, Expression _rhs) {
             lt_lhs = _lhs;
@@ -1096,6 +1155,11 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Less or Equal than
+	/// 
+	/// Returns an integer.
+	/// </summary>
     public class LessEqualThan : Expression {
         public LessEqualThan(Expression _lhs, Expression _rhs) {
             leq_lhs = _lhs;
@@ -1121,6 +1185,11 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Greater than
+	/// 
+	/// Returns an integer.
+	/// </summary>
     public class GreaterThan : Expression {
         public GreaterThan(Expression _lhs, Expression _rhs) {
             gt_lhs = _lhs;
@@ -1135,20 +1204,21 @@ namespace SyntaxTree {
                 env,
                 gt_lhs,
                 gt_rhs,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
+                (x, y) => x > y ? 1 : 0,
+                (x, y) => x > y ? 1 : 0,
+                (x, y) => x > y ? 1 : 0,
+                (x, y) => x > y ? 1 : 0,
                 (lhs, rhs, type) => new AST.Greater(lhs, rhs, type)
             );
         }
     }
 
 
-    // Equal
-    // =====
-    // requires arithmetic or pointer type
-    // 
+	/// <summary>
+	/// Greater or Equal than
+	/// 
+	/// Returns an integer.
+	/// </summary>
     public class GreaterEqualThan : Expression {
         public GreaterEqualThan(Expression _lhs, Expression _rhs) {
             geq_lhs = _lhs;
@@ -1226,10 +1296,11 @@ namespace SyntaxTree {
         }
     }
 
-    // BitwiseAnd
-    // ==========
-    // requires integral type
-    // 
+	/// <summary>
+	/// Bitwise And
+	/// 
+	/// Returns an integer.
+	/// </summary>
     public class BitwiseAnd : Expression {
         public BitwiseAnd(Expression _lhs, Expression _rhs) {
             and_lhs = _lhs;
