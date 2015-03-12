@@ -34,7 +34,10 @@ int main(int argc, char **argv) {
             List<Token> tokens = scanner.tokens;
 
             SyntaxTree.TranslationUnit unit;
-            Int32 r = _translation_unit.Parse(tokens, 0, out unit);
+			if (_translation_unit.Parse(tokens, 0, out unit) != tokens.Count - 1) {
+				throw new InvalidOperationException("Error: not finished parsing");
+			}
+
 
             Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
 

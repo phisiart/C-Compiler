@@ -399,21 +399,27 @@ namespace SyntaxTree {
     }
 
 
-    // this is just temporary
+    /// <summary>
+    /// Typedef Name
+	/// 
+	/// Represents a name that has been previously defined as a typedef.
+    /// </summary>
     public class TypedefName : TypeSpecifier {
         public TypedefName(String _name) {
             name = _name;
         }
 
-        // GetExprType
-        // ===========
-        // input: env, is_const, is_volatile
-        // output: tuple<ExprType, Environment>
-        // 
-        // TODO : ** NOT FINISHED **
-        // 
         public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            throw new NotImplementedException();
+			AST.Env.Entry r_find = env.Find(name);
+			if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+				throw new InvalidOperationException("Error: cannot find name \"" + name + "\"");
+			}
+
+			if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+				throw new InvalidOperationException("Error: \"" + name + "\" is not a typedef name");
+			}
+
+			return Tuple.Create(env, r_find.entry_type.GetQualifiedType(is_const, is_volatile));
         }
 
 
@@ -603,6 +609,11 @@ namespace SyntaxTree {
     //   name      : String
     //   enum_list : List<Enumerator>
     // 
+
+	/// <summary>
+	/// Enum Specifier
+	/// 
+	/// </summary>
     public class EnumSpecifier : TypeSpecifier {
         public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
             spec_name = _name;
@@ -658,14 +669,40 @@ namespace SyntaxTree {
     }
 
 
-    // StructSpec
-    // ==========
-    // 
+	/// <summary>
+	/// Struct Specifier
+	/// 
+	/// Specifies a struct type.
+	/// 
+	/// if name == "", then
+	///     the parser ensures that declns != null,
+	///     and this specifier does not change the environment
+	/// if name != "", then
+	///     if declns == null
+	///        this means that this specifier is just mentioning a struct, not defining one, so
+	///        if the current environment doesn't have this struct type, then add an **incomplete** struct
+	///     if declns != null
+	///        this means that this specifier is defining a struct, so we need to perform the following steps:
+	///        1. make sure that the current environment doesn't have a **complete** struct of this name
+	///        2. immediately add an **incomplete** struct into the environment
+ 	///        3. iterate over the declns
+	///        4. finish forming a complete struct and add it into the environment
+	/// </summary>
     public class StructSpecifier : StructOrUnionSpecifier {
         public StructSpecifier(String _name, List<StructDeclaration> _declns) {
             name = _name;
             declns = _declns;
         }
+
+		public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
+			List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+			foreach (StructDeclaration decln in declns) {
+				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+				env = r_decln.Item1;
+				attribs.AddRange(r_decln.Item2);
+			}
+			return Tuple.Create(env, attribs);
+		}
 
         // GetExprType
         // ===========
@@ -676,26 +713,72 @@ namespace SyntaxTree {
         // 
         public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
 
-            // TODO : non-complete type
-            if (name != "") {
-                // add a non-complete type
-                // env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, null);
-            }
+			if (name == "") {
+				// if no name supplied
 
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDeclaration decln in declns) {
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                attribs.AddRange(r_decln.Item2);
-            }
+				if (declns == null) {
+					throw new ArgumentNullException("Error: parser should ensure declns != null");
+				}
 
-            AST.TStruct type = AST.TStruct.Create(attribs, is_const, is_volatile);
+				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+				env = r_attribs.Item1;
 
-            if (name != "") {
-                env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, type);
-            }
+				return new Tuple<AST.Env, AST.ExprType>(env, AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile));
 
-            return new Tuple<AST.Env, AST.ExprType>(env, type);
+			} else {
+				// name supplied
+
+				if (declns == null) {
+					// if no declns supplied, then we are mentioning a struct
+
+					AST.Env.Entry r_find = env.Find("struct " + name);
+
+					// if the struct is not in the current environment
+					if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+
+						// add an incomplete struct into the environment
+						AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(is_const, is_volatile);
+						env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
+
+						return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
+					}
+
+					if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+						throw new InvalidOperationException("Error: find struct " + name + " not a type. This should be my fault.");
+					}
+
+					return Tuple.Create(env, r_find.entry_type);
+
+				} else {
+					// declns supplied
+
+					// 1. make sure there is no complete struct in the current environment
+					if (env.Find("struct " + name).entry_type.expr_type == AST.ExprType.EnumExprType.STRUCT) {
+						throw new InvalidOperationException("Error: re-defining a struct");
+					}
+
+					// 2. add an incomplete struct into the environment
+					AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(is_const, is_volatile);
+					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
+
+
+					// 3. iterate over the attribs
+					Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+					env = r_attribs.Item1;
+
+					// 4. create the type
+					AST.TStruct type = AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile);
+
+					// 5. add into the environment
+					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, type);
+
+					return new Tuple<AST.Env, AST.ExprType>(env, type);
+
+				}
+
+
+			}
+
         }
 
     }

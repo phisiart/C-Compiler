@@ -354,7 +354,7 @@ namespace AST {
                     return entry;
                 }
             }
-            return entry;
+			return new Entry(EntryLoc.NOT_FOUND, new TVoid(), 0);
         }
 
         public Entry FindInCurrentScope(String name) {

@@ -25,7 +25,6 @@ public class Scanner {
     }
 
     public void Lex() {
-        Int32 pos = 0;
         tokens = new List<Token>();
         for (Int32 i = 0; i < src.Length; ++i) {
 
@@ -41,7 +40,6 @@ public class Scanner {
                         tokens.Add(token);
                     }
                     //Console.WriteLine(fsas[idx].RetrieveToken());
-                    pos = i;
                     i--;
                     fsas.ForEach(fsa => fsa.Reset());
                 } else {

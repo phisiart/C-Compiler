@@ -356,6 +356,11 @@ namespace AST {
 
     }
     
+	public class TIncompleteStruct : ExprType {
+		public TIncompleteStruct(Boolean _is_const = false, Boolean _is_volatile = false)
+			: base(EnumExprType.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) { }
+	}
+
     // class TStruct
     // =============
     // represets the structure

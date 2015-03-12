@@ -158,12 +158,10 @@ public class _init_declarator_list : ParseRule {
 }
 
 
-// init_declarator : declarator [= initializer]?
-//
-// RETURN: InitDeclarator
-//
-// FAIL: null
-//
+/// <summary>
+/// init_declarator
+///   : declarator [ '=' initializer ]?
+/// </summary>
 public class _init_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a = 3 + 4");
@@ -184,24 +182,16 @@ public class _init_declarator : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out InitializationDeclarator init_declarator) {
-        // step 1. match declarator
-        Declarator declarator;
-        Int32 current = _declarator.Parse(src, begin, out declarator);
-        if (current == -1) {
-            init_declarator = null;
-            return -1;
-        }
+		return Parser.ParseSequence(src, begin, out init_declarator,
 
-        // step 2. match initializer
-        Int32 saved = current;
-        Expression init;
-        if ((current = ParseInitializer(src, current, out init)) == -1) {
-            current = saved;
-            init = null;
-        }
+			// declarator
+			_declarator.Parse,
 
-        init_declarator = new InitializationDeclarator(declarator, init);
-        return current;
+			// [ '=' initializer ]?
+			Parser.GetOptionalParser<Expression>(null, ParseInitializer),
+
+			(Declarator declr, Expression init) => new InitializationDeclarator(declr, init)
+		);
     }
 }
 
@@ -277,7 +267,7 @@ public class _storage_class_specifier : ParseRule {
 // type_specifier : void                        /* VoidSpecifier : PrimitiveTypeSpecifier */
 //                | char                        /* CharSpecifier : PrimitiveTypeSpecifier */
 //                | short                       /* ShortSpecifier : PrimitiveTypeSpecifier */
-//                | Int32                         /* IntSpecifier : PrimitiveTypeSpecifier */
+//                | int                         /* IntSpecifier : PrimitiveTypeSpecifier */
 //                | long                        /* LongSpecifier : PrimitiveTypeSpecifier */
 //                | float                       /* FloatSpecifier : PrimitiveTypeSpecifier */
 //                | double                      /* DoubleSpecifier : PrimitiveTypeSpecifier */
@@ -504,12 +494,6 @@ public class _declarator : ParseRule {
     }
 }
 
-// pointer : '*' [type_qualifier_list]? [pointer]?
-//
-// RETURN: List<PointerInfo>
-//
-// FAIL: null
-//
 
 /// <summary>
 /// pointer
@@ -527,13 +511,21 @@ public class _pointer : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out List<PointerModifier> infos) {
-        Int32 r = Parser.ParseNonEmptyList(src, begin, out infos,                                 // [
+
+		// [
+        Int32 r = Parser.ParseNonEmptyList(src, begin, out infos,
             Parser.GetSequenceParser(
-                Parser.GetOperatorParser(OperatorVal.MULT),                                       //   '*'
-                Parser.GetOptionalParser(new List<TypeQualifier>(), _type_qualifier_list.Parse),  //   [type_qualifier_list]?
+
+				// '*'
+                Parser.GetOperatorParser(OperatorVal.MULT),
+
+				// [type_qualifier_list]?
+                Parser.GetOptionalParser(new List<TypeQualifier>(), _type_qualifier_list.Parse),
+
                 (Boolean _, List<TypeQualifier> type_quals) => new PointerModifier(type_quals)
             )
-        );                                                                                        // ]+
+        );
+		// ]+
 
         // reverse the pointer modifiers
         if (r == -1) {
