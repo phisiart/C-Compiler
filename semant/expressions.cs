@@ -16,11 +16,9 @@ namespace SyntaxTree {
      * Otherwise, both operands have type Int32.*/
 
     // My simplification:
-    // I let long = Int32, long double = double
+    // I let long = int, long double = double
 
     public class Expression : PTNode {
-        // public TType type;
-
         // TODO : [finished] Expression.GetExpression(env) -> (env, expr)
         public virtual Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             throw new NotImplementedException();
@@ -34,6 +32,59 @@ namespace SyntaxTree {
 
         public delegate AST.Expr UnaryExprConstructor(AST.Expr expr);
 
+		public static Tuple<AST.Env, AST.Expr> GetIntegralBinOpExpr<TRet>(
+			AST.Env env,
+			AST.Expr lhs,
+			AST.Expr rhs,
+			ConstOperation<UInt32> uint32_op,
+			ConstOperation<Int32> int32_op,
+			BinExprConstructor<TRet> construct
+		) where TRet : AST.Expr {
+
+			Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+			lhs = r_cast.Item1;
+			rhs = r_cast.Item2;
+
+			Boolean c1 = lhs.type.is_const;
+			Boolean c2 = rhs.type.is_const;
+			Boolean v1 = lhs.type.is_volatile;
+			Boolean v2 = rhs.type.is_volatile;
+			Boolean is_const = c1 || c2;
+			Boolean is_volatile = v1 || v2;
+
+			AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+
+			AST.Expr expr;
+			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+				switch (enum_type) {
+				case AST.ExprType.EnumExprType.ULONG:
+					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+					break;
+				case AST.ExprType.EnumExprType.LONG:
+					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+					break;
+				default:
+					Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+					return null;
+				}
+
+			} else {
+				switch (enum_type) {
+				case AST.ExprType.EnumExprType.ULONG:
+					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
+					break;
+				case AST.ExprType.EnumExprType.LONG:
+					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
+					break;
+				default:
+					Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
+					return null;
+				}
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, expr);
+		}
+
         public static Tuple<AST.Env, AST.Expr> GetIntegralBinOpExpr<TRet>(
             AST.Env env,
             Expression expr_lhs,
@@ -43,59 +94,33 @@ namespace SyntaxTree {
             BinExprConstructor<TRet> construct
         ) where TRet : AST.Expr {
 
+			AST.Expr lhs;
+			AST.Expr rhs;
+
             Tuple<AST.Env, AST.Expr> r_lhs = expr_lhs.GetExpr(env);
             env = r_lhs.Item1;
-            AST.Expr lhs = r_lhs.Item2;
+            lhs = r_lhs.Item2;
 
             Tuple<AST.Env, AST.Expr> r_rhs = expr_rhs.GetExpr(env);
             env = r_rhs.Item1;
-            AST.Expr rhs = r_rhs.Item2;
+            rhs = r_rhs.Item2;
 
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            Boolean c1 = lhs.type.is_const;
-            Boolean c2 = rhs.type.is_const;
-            Boolean v1 = lhs.type.is_volatile;
-            Boolean v2 = rhs.type.is_volatile;
-            Boolean is_const = c1 || c2;
-            Boolean is_volatile = v1 || v2;
-
-            AST.ExprType.EnumExprType enum_type = r_cast.Item3;
-
-            AST.Expr expr;
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-
-            } else {
-                switch (enum_type) {
-                case AST.ExprType.EnumExprType.ULONG:
-                    expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
-                    break;
-                case AST.ExprType.EnumExprType.LONG:
-                    expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
-                    break;
-                default:
-                    Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-                    return null;
-                }
-            }
-
-            return new Tuple<AST.Env, AST.Expr>(env, expr);
+			return GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				uint32_op,
+				int32_op,
+				construct
+			);
 
         }
 
 
+		/// <summary>
+		/// Gets an arithmetic binary operation expression
+		/// from two **semanted** expressions.
+		/// </summary>
 		public static Tuple<AST.Env, AST.Expr> GetArithmeticBinOpExpr<TRet>(
 			AST.Env env,
 			AST.Expr lhs,
@@ -162,6 +187,10 @@ namespace SyntaxTree {
 		}
 
 
+		/// <summary>
+		/// Gets an arithmetic binary operation expression
+		/// from two **unsemanted** expressions.
+		/// </summary>
 		public static Tuple<AST.Env, AST.Expr> GetArithmeticBinOpExpr<TRet>(
 			AST.Env env,
 			Expression expr_lhs,
@@ -184,7 +213,16 @@ namespace SyntaxTree {
 			env = r_rhs.Item1;
 			rhs = r_rhs.Item2;
 
-			return GetArithmeticBinOpExpr(env, lhs, rhs, double_op, float_op, uint32_op, int32_op, construct);
+			return GetArithmeticBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				double_op,
+				float_op,
+				uint32_op,
+				int32_op,
+				construct
+			);
 		}
 
         public static Tuple<AST.Env, AST.Expr> GetScalarBinLogicalOpExpr<TRet>(
@@ -256,7 +294,78 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, AST.Expr>(env, expr);
         }
 
-        public static Tuple<AST.Env, AST.Expr> GetUnaryOpExpr(
+		public delegate Tuple<AST.Env, AST.Expr> BinOpExprMaker(AST.Env env, AST.Expr lvalue, AST.Expr rvalue);
+
+		public static Tuple<AST.Env, AST.Expr> GetBinaryAssignOperation(
+			AST.Env env,
+			AST.Expr lvalue,
+			AST.Expr rvalue,
+			BinOpExprMaker Maker
+		) {
+			AST.Expr ans;
+
+			Tuple<AST.Env, AST.Expr> r_ans = Maker(env, lvalue, rvalue);
+			env = r_ans.Item1;
+			ans = r_ans.Item2;
+
+			ans = AST.TypeCast.MakeCast(ans, lvalue.type);
+
+			return new Tuple<AST.Env, AST.Expr>(
+				env,
+				new AST.Assignment(
+					lvalue,
+					ans,
+					lvalue.type
+				)
+			);
+		}
+
+		public static Tuple<AST.Env, AST.Expr> GetBinaryOperation(
+			AST.Env env,
+			Expression expr_lvalue,
+			Expression expr_rvalue,
+			BinOpExprMaker Maker
+		) {
+			AST.Expr lvalue;
+			AST.Expr rvalue;
+
+			Tuple<AST.Env, AST.Expr> r_lvalue = expr_lvalue.GetExpr(env);
+			env = r_lvalue.Item1;
+			lvalue = r_lvalue.Item2;
+
+			Tuple<AST.Env, AST.Expr> r_rvalue = expr_rvalue.GetExpr(env);
+			env = r_rvalue.Item1;
+			rvalue = r_rvalue.Item2;
+
+			return Maker(env, lvalue, rvalue);
+		}
+
+		public static Tuple<AST.Env, AST.Expr> GetBinaryAssignOperation(
+			AST.Env env,
+			Expression expr_lvalue,
+			Expression expr_rvalue,
+			BinOpExprMaker Maker
+		) {
+			AST.Expr lhs;
+			AST.Expr rhs;
+
+			Tuple<AST.Env, AST.Expr> r_lvalue = expr_lvalue.GetExpr(env);
+			env = r_lvalue.Item1;
+			lhs = r_lvalue.Item2;
+
+			Tuple<AST.Env, AST.Expr> r_rvalue = expr_rvalue.GetExpr(env);
+			env = r_rvalue.Item1;
+			rhs = r_rvalue.Item2;
+
+			return GetBinaryAssignOperation(
+				env,
+				lhs,
+				rhs,
+				Maker
+			);
+		}
+        
+		public static Tuple<AST.Env, AST.Expr> GetUnaryOpExpr(
             AST.Env env,
             Expression expr,
             Dictionary<AST.ExprType.EnumExprType, UnaryExprConstructor> constructors,
@@ -301,99 +410,24 @@ namespace SyntaxTree {
         public String name;
     }
 
+	public class AssignmentList : Expression {
+		public AssignmentList(List<Expression> _exprs) {
+			assign_exprs = _exprs;
+		}
+		public List<Expression> assign_exprs;
 
-    public class Constant : Expression {
-    }
-
-
-    // ConstFloat
-    // ==========
-    // TODO : [finished] const float
-    public class ConstFloat : Constant {
-        public ConstFloat(Double _val, FloatSuffix _suffix) {
-            val = _val;
-            suffix = _suffix;
-        }
-
-        // GetExpr
-        // =======
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            switch (suffix) {
-            case FloatSuffix.F:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstFloat((Single)val));
-            default:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstDouble(val));
-            }
-        }
-
-        public FloatSuffix suffix;
-        public Double val;
-    }
-
-    // ConstInt
-    // ========
-    // TODO : [finished] const Int32
-    public class ConstInt : Constant {
-        public ConstInt(long _val, IntSuffix _int_type) {
-            val = _val;
-            int_type = _int_type;
-        }
-
-        // GetExpr
-        // =======
-        // 
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            switch (int_type) {
-            case IntSuffix.U:
-            case IntSuffix.UL:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((uint)val));
-            default:
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong((Int32)val));
-            }
-        }
-
-        public IntSuffix int_type;
-        public long val;
-    }
-
-    // StringLiteral
-    // =============
-    // TODO : [finished] String literal
-    // 
-    public class StringLiteral : Expression {
-        public StringLiteral(String _val) {
-            val = _val;
-        }
-
-        // GetExpr
-        // =======
-        // 
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstStringLiteral(val));
-        }
-
-        public String val;
-    }
-
-
-    public class AssignmentList : Expression {
-        public AssignmentList(List<Expression> _exprs) {
-            assign_exprs = _exprs;
-        }
-        public List<Expression> assign_exprs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            List<AST.Expr> exprs = new List<AST.Expr>();
-            AST.ExprType type = new AST.TVoid();
-            foreach (Expression expr in assign_exprs) {
-                Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
-                env = r_expr.Item1;
-                type = r_expr.Item2.type;
-                exprs.Add(r_expr.Item2);
-            }
-            return new Tuple<AST.Env, AST.Expr>(env, new AST.AssignmentList(exprs, type));
-        }
-    }
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			List<AST.Expr> exprs = new List<AST.Expr>();
+			AST.ExprType type = new AST.TVoid();
+			foreach (Expression expr in assign_exprs) {
+				Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+				env = r_expr.Item1;
+				type = r_expr.Item2.type;
+				exprs.Add(r_expr.Item2);
+			}
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.AssignmentList(exprs, type));
+		}
+	}
 
     // Finished.
     public class ConditionalExpression : Expression {
@@ -435,12 +469,20 @@ namespace SyntaxTree {
 
     public class MultAssign : Expression {
         public MultAssign(Expression _lvalue, Expression _rvalue) {
-            lvalue = _lvalue;
-            rvalue = _rvalue;
+            mult_lvalue = _lvalue;
+            mult_rvalue = _rvalue;
         }
-        public Expression lvalue;
-        public Expression rvalue;
+        public readonly Expression mult_lvalue;
+        public readonly Expression mult_rvalue;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			return GetBinaryAssignOperation(
+				env,
+				mult_lvalue,
+				mult_rvalue,
+				AST.Multiply.MakeMultiply
+			);
+		}
     }
 
 
@@ -490,12 +532,26 @@ namespace SyntaxTree {
 
     public class LeftShiftAssign : Expression {
         public LeftShiftAssign(Expression _lvalue, Expression _rvalue) {
-            lvalue = _lvalue;
-            rvalue = _rvalue;
+            lshift_lvalue = _lvalue;
+            lshift_rvalue = _rvalue;
         }
-        public Expression lvalue;
-        public Expression rvalue;
+        public readonly Expression lshift_lvalue;
+        public readonly Expression lshift_rvalue;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+//			AST.Expr lvalue;
+//			AST.Expr rvalue;
+//
+//			Tuple<AST.Env, AST.Expr> r_lvalue = lshift_lvalue.GetExpr(env);
+//			env = r_lvalue.Item1;
+//			lvalue = r_lvalue.Item2;
+//
+//			Tuple<AST.Env, AST.Expr> r_rvalue = lshift_rvalue.GetExpr(env);
+//			env = r_rvalue.Item1;
+//			rvalue = r_rvalue.Item2;
+//
+			throw new NotImplementedException();
+		}
     }
 
 
@@ -877,549 +933,38 @@ namespace SyntaxTree {
     }
 
 
+	/// <summary>
+	/// Type Cast
+	/// 
+	/// The user specifies the type.
+	/// </summary>
     public class TypeCast : Expression {
         public TypeCast(TypeName _type_name, Expression _expr) {
-            type_name = _type_name;
-            expr = _expr;
+            cast_typename = _type_name;
+            cast_expr = _expr;
         }
 
-        public TypeName type_name;
-        public Expression expr;
-
-    }
-
-
-	/// <summary>
-	/// Multiplication
-	/// 
-	/// Perform usual arithmetic conversion.
-	/// </summary>
-    public class Multiplication : Expression {
-        public Multiplication(Expression _lhs, Expression _rhs) {
-            mult_lhs = _lhs;
-            mult_rhs = _rhs;
-        }
-        public Expression mult_lhs;
-        public Expression mult_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-			return GetArithmeticBinOpExpr(
-				env,
-				mult_lhs,
-				mult_rhs,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(lhs, rhs, type) => new AST.Multiply(lhs, rhs, type)
-			);
-        }
-
-    }
-
-
-	/// <summary>
-	/// Division
-	/// 
-	/// Perform usual arithmetic conversion.
-	/// </summary>
-    public class Division : Expression {
-        public Division(Expression _lhs, Expression _rhs) {
-            div_lhs = _lhs;
-            div_rhs = _rhs;
-        }
-        public Expression div_lhs;
-        public Expression div_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-			return GetArithmeticBinOpExpr(
-				env,
-				div_lhs,
-				div_rhs,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(lhs, rhs, type) => new AST.Divide(lhs, rhs, type)
-			);
-        }
-    }
-
-
-    // Modulo
-    // ======
-    // requires integral type
-    // 
-    public class Modulo : Expression {
-        public Modulo(Expression _lhs, Expression _rhs) {
-            mod_lhs = _lhs;
-            mod_rhs = _rhs;
-        }
-        public Expression mod_lhs;
-        public Expression mod_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return Expression.GetIntegralBinOpExpr(
-                env,
-                mod_lhs,
-                mod_rhs,
-                (x, y) => x % y,
-                (x, y) => x % y,
-                (lhs, rhs, type) => new AST.Modulo(lhs, rhs, type)
-            );
-        }
-
-    }
-
-
-	/// <summary>
-	/// Addition
-	/// 
-	/// There are two kinds of addition:
-	/// 1. both operands are of arithmetic type
-	/// 2. one operand is a pointer, and the other is an integral
-	/// 
-	/// </summary>
-    public class Addition : Expression {
-        public Addition(Expression _lhs, Expression _rhs) {
-            add_lhs = _lhs;
-            add_rhs = _rhs;
-        }
-
-		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
-				throw new InvalidOperationException("Error: expect a pointer");
-			}
-			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
-				throw new InvalidOperationException("Error: expect an integer");
-			}
-
-			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
-				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
-				Int32 _offset = ((AST.ConstLong)offset).value;
-				return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
-			}
-
-			return new AST.Add(
-				AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
-				new AST.Multiply(
-					offset,
-					new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
-					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-				),
-				ptr.type
-			);
-
-		}
+        public readonly TypeName cast_typename;
+        public readonly Expression cast_expr;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-			AST.Expr lhs;
-			AST.Expr rhs;
+			AST.ExprType type;
+			AST.Expr expr;
 
-			Tuple<AST.Env, AST.Expr> r_lhs = add_lhs.GetExpr(env);
-			env = r_lhs.Item1;
-			lhs = r_lhs.Item2;
+			Tuple<AST.Env, AST.ExprType> r_typename = cast_typename.GetExprType(env);
+			env = r_typename.Item1;
+			type = r_typename.Item2;
 
-			Tuple<AST.Env, AST.Expr> r_rhs = add_rhs.GetExpr(env);
-			env = r_rhs.Item1;
-			rhs = r_rhs.Item2;
+			Tuple<AST.Env, AST.Expr> r_expr = cast_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
 
-			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (!rhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
+			return new Tuple<AST.Env, AST.Expr>(env, AST.TypeCast.MakeCast(expr, type));
 
-				// lhs = base, rhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
-
-			} else if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (!lhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
-
-				// rhs = base, lhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
-
-			} else {
-				return Expression.GetArithmeticBinOpExpr(
-					env,
-					lhs,
-					rhs,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
-				);
-			}
 		}
 
-        public readonly Expression add_lhs;
-        public readonly Expression add_rhs;
-
     }
 
 
-    public class Subtraction : Expression {
-        public Subtraction(Expression _lhs, Expression _rhs) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-
-        public Expression lhs;
-        public Expression rhs;
-    }
-
-
-	/// <summary>
-	/// Left Shift
-	/// 
-	/// Returns an integer from two integrals.
-	/// </summary>
-    public class LeftShift : Expression {
-        public LeftShift(Expression _lhs, Expression _rhs) {
-            shift_lhs = _lhs;
-            shift_rhs = _rhs;
-        }
-        public Expression shift_lhs;
-        public Expression shift_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return Expression.GetIntegralBinOpExpr(
-                env,
-                shift_lhs,
-                shift_rhs,
-                (x, y) => (UInt32)((Int32)x << (Int32)y),
-                (x, y) => x << y,
-                (lhs, rhs, type) => new AST.LShift(lhs, rhs, type)
-            );
-        }
-    }
-
-
-	/// <summary>
-	/// Right Shift
-	/// 
-	/// Returns an integer from two integrals.
-	/// </summary>
-    public class RightShift : Expression {
-        public RightShift(Expression _lhs, Expression _rhs) {
-            shift_lhs = _lhs;
-            shift_rhs = _rhs;
-        }
-        public Expression shift_lhs;
-        public Expression shift_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return Expression.GetIntegralBinOpExpr(
-                env,
-                shift_lhs,
-                shift_rhs,
-                (x, y) => (UInt32)((Int32)x >> (Int32)y),
-                (x, y) => x >> y,
-                (lhs, rhs, type) => new AST.RShift(lhs, rhs, type)
-            );
-        }
-
-    }
-
-
-	/// <summary>
-	/// Less than
-	/// 
-	/// Returns an integer.
-	/// </summary>
-    public class LessThan : Expression {
-        public LessThan(Expression _lhs, Expression _rhs) {
-            lt_lhs = _lhs;
-            lt_rhs = _rhs;
-        }
-        public Expression lt_lhs;
-        public Expression lt_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                lt_lhs,
-                lt_rhs,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
-                (x, y) => x < y ? 1 : 0,
-                (lhs, rhs, type) => new AST.Less(lhs, rhs, type)
-            );
-        }
-    }
-
-
-	/// <summary>
-	/// Less or Equal than
-	/// 
-	/// Returns an integer.
-	/// </summary>
-    public class LessEqualThan : Expression {
-        public LessEqualThan(Expression _lhs, Expression _rhs) {
-            leq_lhs = _lhs;
-            leq_rhs = _rhs;
-        }
-
-        public Expression leq_lhs;
-        public Expression leq_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                leq_lhs,
-                leq_rhs,
-                (x, y) => x <= y ? 1 : 0,
-                (x, y) => x <= y ? 1 : 0,
-                (x, y) => x <= y ? 1 : 0,
-                (x, y) => x <= y ? 1 : 0,
-                (lhs, rhs, type) => new AST.LEqual(lhs, rhs, type)
-            );
-        }
-
-    }
-
-
-	/// <summary>
-	/// Greater than
-	/// 
-	/// Returns an integer.
-	/// </summary>
-    public class GreaterThan : Expression {
-        public GreaterThan(Expression _lhs, Expression _rhs) {
-            gt_lhs = _lhs;
-            gt_rhs = _rhs;
-        }
-
-        public Expression gt_lhs;
-        public Expression gt_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                gt_lhs,
-                gt_rhs,
-                (x, y) => x > y ? 1 : 0,
-                (x, y) => x > y ? 1 : 0,
-                (x, y) => x > y ? 1 : 0,
-                (x, y) => x > y ? 1 : 0,
-                (lhs, rhs, type) => new AST.Greater(lhs, rhs, type)
-            );
-        }
-    }
-
-
-	/// <summary>
-	/// Greater or Equal than
-	/// 
-	/// Returns an integer.
-	/// </summary>
-    public class GreaterEqualThan : Expression {
-        public GreaterEqualThan(Expression _lhs, Expression _rhs) {
-            geq_lhs = _lhs;
-            geq_rhs = _rhs;
-        }
-
-        public Expression geq_lhs;
-        public Expression geq_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                geq_lhs,
-                geq_rhs,
-                (x, y) => x >= y ? 1 : 0,
-                (x, y) => x >= y ? 1 : 0,
-                (x, y) => x >= y ? 1 : 0,
-                (x, y) => x >= y ? 1 : 0,
-                (lhs, rhs, type) => new AST.GEqual(lhs, rhs, type)
-            );
-        }
-    }
-
-    // Equal
-    // =====
-    // requires arithmetic or pointer type
-    // 
-    public class Equal : Expression {
-        public Equal(Expression _lhs, Expression _rhs) {
-            eq_lhs = _lhs;
-            eq_rhs = _rhs;
-        }
-
-        public Expression eq_lhs;
-        public Expression eq_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                eq_lhs,
-                eq_rhs,
-                (x, y) => x == y ? 1 : 0,
-                (x, y) => x == y ? 1 : 0,
-                (x, y) => x == y ? 1 : 0,
-                (x, y) => x == y ? 1 : 0,
-                (lhs, rhs, type) => new AST.Equal(lhs, rhs, type)
-            );
-        }
-    }
-
-    // NotEqual
-    // ========
-    // requires arithmetic or pointer type
-    // 
-    public class NotEqual : Expression {
-        public NotEqual(Expression _lhs, Expression _rhs) {
-            neq_lhs = _lhs;
-            neq_rhs = _rhs;
-        }
-
-        public Expression neq_lhs;
-        public Expression neq_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                neq_lhs,
-                neq_rhs,
-                (x, y) => x != y ? 1 : 0,
-                (x, y) => x != y ? 1 : 0,
-                (x, y) => x != y ? 1 : 0,
-                (x, y) => x != y ? 1 : 0,
-                (lhs, rhs, type) => new AST.NotEqual(lhs, rhs, type)
-            );
-        }
-    }
-
-	/// <summary>
-	/// Bitwise And
-	/// 
-	/// Returns an integer.
-	/// </summary>
-    public class BitwiseAnd : Expression {
-        public BitwiseAnd(Expression _lhs, Expression _rhs) {
-            and_lhs = _lhs;
-            and_rhs = _rhs;
-        }
-
-        public Expression and_lhs;
-        public Expression and_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetIntegralBinOpExpr(
-                env,
-                and_lhs,
-                and_rhs,
-                (x, y) => x & y,
-                (x, y) => x & y,
-                (lhs, rhs, type) => new AST.BitwiseAnd(lhs, rhs, type)
-            );
-        }
-    }
-
-    // Xor
-    // ===
-    // requires integral type
-    // 
-    public class Xor : Expression {
-        public Xor(Expression _lhs, Expression _rhs) {
-            xor_lhs = _lhs;
-            xor_rhs = _rhs;
-        }
-        public Expression xor_lhs;
-        public Expression xor_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetIntegralBinOpExpr(
-                env,
-                xor_lhs,
-                xor_rhs,
-                (x, y) => x ^ y,
-                (x, y) => x ^ y,
-                (lhs, rhs, type) => new AST.Xor(lhs, rhs, type)
-            );
-        }
-    }
-
-    // BitwiseOr
-    // =========
-    // requires integral type
-    // 
-    public class BitwiseOr : Expression {
-        public BitwiseOr(Expression _lhs, Expression _rhs) {
-            or_lhs = _lhs;
-            or_rhs = _rhs;
-        }
-        public Expression or_lhs;
-        public Expression or_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetIntegralBinOpExpr(
-                env,
-                or_lhs,
-                or_rhs,
-                (x, y) => x | y,
-                (x, y) => x | y,
-                (lhs, rhs, type) => new AST.BitwiseOr(lhs, rhs, type)
-            );
-        }
-    }
-
-    // LogicalAnd
-    // ==========
-    // requires arithmetic or pointer type
-    // 
-    public class LogicalAnd : Expression {
-        public LogicalAnd(Expression _lhs, Expression _rhs) {
-            and_lhs = _lhs;
-            and_rhs = _rhs;
-        }
-        public Expression and_lhs;
-        public Expression and_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                and_lhs,
-                and_rhs,
-                (x, y) => x != 0 && y != 0 ? 1 : 0,
-                (x, y) => x != 0 && y != 0 ? 1 : 0,
-                (x, y) => x != 0 && y != 0 ? 1 : 0,
-                (x, y) => x != 0 && y != 0 ? 1 : 0,
-                (lhs, rhs, type) => new AST.LogicalAnd(lhs, rhs, type)
-            );
-        }
-    }
-
-    // LogicalOr
-    // =========
-    // requires arithmetic or pointer type
-    // 
-    public class LogicalOr : Expression {
-        public LogicalOr(Expression _lhs, Expression _rhs) {
-            or_lhs = _lhs;
-            or_rhs = _rhs;
-        }
-        public Expression or_lhs;
-        public Expression or_rhs;
-
-        public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            return GetScalarBinLogicalOpExpr(
-                env,
-                or_lhs,
-                or_rhs,
-                (x, y) => x != 0 || y != 0 ? 1 : 0,
-                (x, y) => x != 0 || y != 0 ? 1 : 0,
-                (x, y) => x != 0 || y != 0 ? 1 : 0,
-                (x, y) => x != 0 || y != 0 ? 1 : 0,
-                (lhs, rhs, type) => new AST.LogicalOr(lhs, rhs, type)
-            );
-        }
-    }
 
 }

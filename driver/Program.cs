@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
     int local_variable_1;
     float local_variable_2;
     const int * const * volatile a[3][4];
+	3 * 4;
 }
                 ";
             scanner.Lex();

@@ -419,6 +419,21 @@ namespace AST {
 			lhs = _lhs;
 			rhs = _rhs;
 		}
+
+		public Add MakeAdd(Expr _lhs, Expr _rhs) {
+			throw new NotImplementedException();
+		}
+
+		public readonly Expr lhs;
+		public readonly Expr rhs;
+	}
+
+	public class Sub : Expr {
+		public Sub(Expr _lhs, Expr _rhs, ExprType _type)
+			: base(_type) {
+			lhs = _lhs;
+			rhs = _rhs;
+		}
 		public readonly Expr lhs;
 		public readonly Expr rhs;
 	}
@@ -426,21 +441,48 @@ namespace AST {
     public class Multiply : Expr {
         public Multiply(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            mult_lhs = _lhs;
+            mult_rhs = _rhs;
         }
-        protected Expr lhs;
-        protected Expr rhs;
+        public readonly Expr mult_lhs;
+		public readonly Expr mult_rhs;
+
+		public static Tuple<Env, Expr> MakeMultiply(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(x, y) => x * y,
+				(_lhs, _rhs, _type) => new AST.Multiply(_lhs, _rhs, _type)
+			);
+		}
     }
 
     public class Divide : Expr {
         public Divide(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+			div_lhs = _lhs;
+			div_rhs = _rhs;
         }
-        protected Expr lhs;
-        protected Expr rhs;
+		public readonly Expr div_lhs;
+        public readonly Expr div_rhs;
+
+		public static Tuple<Env, Expr> MakeDivide(Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(x, y) => x / y,
+				(_lhs, _rhs, _type) => new AST.Divide(lhs, rhs, _type)
+			);
+		}
+
     }
 
     public class Modulo : Expr {
@@ -456,12 +498,23 @@ namespace AST {
     public class LShift : Expr {
         public LShift(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
+            lshift_lhs = _lhs;
+            lshift_rhs = _rhs;
         }
 
-        public readonly Expr lhs;
-        public readonly Expr rhs;
+		public static Tuple<Env, Expr> MakeLShift(AST.Env env, Expr lhs, Expr rhs) {
+			return SyntaxTree.Expression.GetIntegralBinOpExpr(
+				env,
+				lhs,
+				rhs,
+				(x, y) => (UInt32)((Int32)x << (Int32)y),
+				(x, y) => x << y,
+				(_lhs, _rhs, type) => new AST.LShift(lhs, rhs, type)
+			);
+		}
+
+        public readonly Expr lshift_lhs;
+        public readonly Expr lshift_rhs;
     }
 
     public class RShift : Expr {
