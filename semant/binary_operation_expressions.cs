@@ -88,84 +88,17 @@ namespace SyntaxTree {
 			add_lhs = _lhs;
 			add_rhs = _rhs;
 		}
-
-		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
-				throw new InvalidOperationException("Error: expect a pointer");
-			}
-			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
-				throw new InvalidOperationException("Error: expect an integer");
-			}
-
-			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
-				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
-				Int32 _offset = ((AST.ConstLong)offset).value;
-				return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
-			}
-
-			return AST.TypeCast.ToPointer(
-				new AST.Add(
-					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
-					new AST.Multiply(
-						offset,
-						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
-						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-					),
-					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-				),
-				ptr.type
-			);
-
-		}
-
-		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-			AST.Expr lhs;
-			AST.Expr rhs;
-
-			Tuple<AST.Env, AST.Expr> r_lhs = add_lhs.GetExpr(env);
-			env = r_lhs.Item1;
-			lhs = r_lhs.Item2;
-
-			Tuple<AST.Env, AST.Expr> r_rhs = add_rhs.GetExpr(env);
-			env = r_rhs.Item1;
-			rhs = r_rhs.Item2;
-
-			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (!rhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
-
-				// lhs = base, rhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
-
-			} else if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (!lhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
-
-				// rhs = base, lhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
-
-			} else {
-				return Expression.GetArithmeticBinOpExpr(
-					env,
-					lhs,
-					rhs,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
-				);
-			}
-		}
-
 		public readonly Expression add_lhs;
 		public readonly Expression add_rhs;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			return GetBinaryOperation(
+				env,
+				add_lhs,
+				add_rhs,
+				AST.Add.MakeAdd
+			);
+		}
 	}
 
 
@@ -182,117 +115,16 @@ namespace SyntaxTree {
 			sub_lhs = _lhs;
 			sub_rhs = _rhs;
 		}
-
 		public readonly Expression sub_lhs;
 		public readonly Expression sub_rhs;
 
-		public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
-				throw new InvalidOperationException("Error: expect a pointer");
-			}
-			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
-				throw new InvalidOperationException("Error: expect an integer");
-			}
-
-			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
-				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
-				Int32 _offset = ((AST.ConstLong)offset).value;
-				return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
-			}
-
-			return AST.TypeCast.ToPointer(
-				new AST.Sub(
-					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
-					new AST.Multiply(
-						offset,
-						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
-						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-					),
-					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-				),
-				ptr.type
-			);
-
-		}
-
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-			AST.Expr lhs;
-			AST.Expr rhs;
-
-			Tuple<AST.Env, AST.Expr> r_lhs = sub_lhs.GetExpr(env);
-			env = r_lhs.Item1;
-			lhs = r_lhs.Item2;
-
-			Tuple<AST.Env, AST.Expr> r_rhs = sub_rhs.GetExpr(env);
-			env = r_rhs.Item1;
-			rhs = r_rhs.Item2;
-
-			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-					// both operands are pointers
-
-					AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
-					AST.TPointer rhs_type = (AST.TPointer)(rhs.type);
-					if (!lhs_type.referenced_type.EqualType(rhs_type.referenced_type)) {
-						throw new InvalidOperationException("Error: the two pointers points to different types");
-					}
-
-					Int32 scale = lhs_type.referenced_type.SizeOf;
-
-					if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-						return new Tuple<AST.Env, AST.Expr>(
-							env,
-							new AST.ConstLong(
-								(Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale
-							)
-						);
-
-					} else {
-						return new Tuple<AST.Env, AST.Expr>(
-							env,
-							new AST.Divide(
-								// long(lhs) - long(rhs)
-								new AST.Sub(
-									AST.TypeCast.MakeCast(lhs, new AST.TLong()),
-									AST.TypeCast.MakeCast(rhs, new AST.TLong()),
-									new AST.TLong()
-								),
-								// / scale
-								new AST.ConstLong(scale),
-								new AST.TLong()
-							)
-						);
-					}
-
-				} else {
-					// pointer - integral
-
-					if (!rhs.type.IsIntegral()) {
-						throw new InvalidOperationException("Error: expected an integral");
-					}
-
-					rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
-
-					return new Tuple<AST.Env, AST.Expr>(env, GetPointerSubtraction(lhs, rhs));
-				}
-
-			} else {
-				// lhs is not a pointer.
-
-				// we need usual arithmetic cast
-				return GetArithmeticBinOpExpr(
-					env,
-					lhs,
-					rhs,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(_lhs, _rhs, _type) => new AST.Sub(_lhs, _rhs, _type)
-				);
-
-			}
+			return GetBinaryOperation(
+				env,
+				sub_lhs,
+				sub_rhs,
+				AST.Sub.MakeSub
+			);
 		}
 	}
 
@@ -355,8 +187,8 @@ namespace SyntaxTree {
 			lt_lhs = _lhs;
 			lt_rhs = _rhs;
 		}
-		public Expression lt_lhs;
-		public Expression lt_rhs;
+		public readonly Expression lt_lhs;
+		public readonly Expression lt_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -384,8 +216,8 @@ namespace SyntaxTree {
 			leq_rhs = _rhs;
 		}
 
-		public Expression leq_lhs;
-		public Expression leq_rhs;
+		public readonly Expression leq_lhs;
+		public readonly Expression leq_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -414,8 +246,8 @@ namespace SyntaxTree {
 			gt_rhs = _rhs;
 		}
 
-		public Expression gt_lhs;
-		public Expression gt_rhs;
+		public readonly Expression gt_lhs;
+		public readonly Expression gt_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -443,8 +275,8 @@ namespace SyntaxTree {
 			geq_rhs = _rhs;
 		}
 
-		public Expression geq_lhs;
-		public Expression geq_rhs;
+		public readonly Expression geq_lhs;
+		public readonly Expression geq_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -470,8 +302,8 @@ namespace SyntaxTree {
 			eq_rhs = _rhs;
 		}
 
-		public Expression eq_lhs;
-		public Expression eq_rhs;
+		public readonly Expression eq_lhs;
+		public readonly Expression eq_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -497,8 +329,8 @@ namespace SyntaxTree {
 			neq_rhs = _rhs;
 		}
 
-		public Expression neq_lhs;
-		public Expression neq_rhs;
+		public readonly Expression neq_lhs;
+		public readonly Expression neq_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -592,8 +424,8 @@ namespace SyntaxTree {
 			and_lhs = _lhs;
 			and_rhs = _rhs;
 		}
-		public Expression and_lhs;
-		public Expression and_rhs;
+		public readonly Expression and_lhs;
+		public readonly Expression and_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(
@@ -618,8 +450,8 @@ namespace SyntaxTree {
 			or_lhs = _lhs;
 			or_rhs = _rhs;
 		}
-		public Expression or_lhs;
-		public Expression or_rhs;
+		public readonly Expression or_lhs;
+		public readonly Expression or_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
 			return GetScalarBinLogicalOpExpr(

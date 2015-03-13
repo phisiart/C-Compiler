@@ -13,6 +13,10 @@ namespace AST {
             stmt_expr = expr;
         }
         public readonly Expr stmt_expr;
+
+		public override void CGenStmt(Env env, CGenState state) {
+			stmt_expr.CGenValue(env, state);
+		}
     }
 
     public class CompoundStmt : Stmt {

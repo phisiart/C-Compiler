@@ -704,13 +704,6 @@ namespace SyntaxTree {
 			return Tuple.Create(env, attribs);
 		}
 
-        // GetExprType
-        // ===========
-        // input: env, is_const, is_volatile
-        // output: tuple<ExprType, Environment>
-        // 
-        // TODO : StructSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
-        // 
         public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
 
 			if (name == "") {
@@ -737,7 +730,7 @@ namespace SyntaxTree {
 					if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
 
 						// add an incomplete struct into the environment
-						AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(is_const, is_volatile);
+						AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
 						env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
 
 						return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
@@ -758,7 +751,7 @@ namespace SyntaxTree {
 					}
 
 					// 2. add an incomplete struct into the environment
-					AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(is_const, is_volatile);
+					AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
 					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
 
 

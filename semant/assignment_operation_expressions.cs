@@ -7,17 +7,20 @@ namespace SyntaxTree {
 			assign_lvalue = _lvalue;
 			assign_rvalue = _rvalue;
 		}
-		public Expression assign_lvalue;
-		public Expression assign_rvalue;
+		public readonly Expression assign_lvalue;
+		public readonly Expression assign_rvalue;
 
 		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr lvalue;
+			AST.Expr rvalue;
+
 			Tuple<AST.Env, AST.Expr> r_lhs = assign_lvalue.GetExpr(env);
 			env = r_lhs.Item1;
-			AST.Expr lvalue = r_lhs.Item2;
+			lvalue = r_lhs.Item2;
 
 			Tuple<AST.Env, AST.Expr> r_rhs = assign_rvalue.GetExpr(env);
 			env = r_rhs.Item1;
-			AST.Expr rvalue = r_rhs.Item2;
+			rvalue = r_rhs.Item2;
 
 			rvalue = AST.TypeCast.MakeCast(rvalue, lvalue.type);
 
@@ -92,17 +95,33 @@ namespace SyntaxTree {
 		public readonly Expression add_lvalue;
 		public readonly Expression add_rvalue;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			return GetBinaryAssignOperation(
+				env,
+				add_lvalue,
+				add_rvalue,
+				AST.Add.MakeAdd
+			);
+		}
 	}
 
 
 	public class SubAssign : Expression {
 		public SubAssign(Expression _lvalue, Expression _rvalue) {
-			lvalue = _lvalue;
-			rvalue = _rvalue;
+			sub_lvalue = _lvalue;
+			sub_rvalue = _rvalue;
 		}
-		public Expression lvalue;
-		public Expression rvalue;
+		public readonly Expression sub_lvalue;
+		public readonly Expression sub_rvalue;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			return GetBinaryAssignOperation(
+				env,
+				sub_lvalue,
+				sub_rvalue,
+				AST.Sub.MakeSub
+			);
+		}
 	}
 
 

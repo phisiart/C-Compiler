@@ -14,11 +14,11 @@ namespace AST {
        An ANSI character is positive.
 
      * There are 4 signed integer types:
-       [signed char] < [short Int32] < [Int32] < [long Int32].
+       [signed char] < [short int] < [int] < [long int].
 
      * [signed char] occupies the same amount of storage as a "plain" char object.
      
-     * [Int32] has the natural size suggested by the architecture of the execution environment.
+     * [int] has the natural size suggested by the architecture of the execution environment.
 
      * For each of the signed integer types, there is a corresponding (but different) unsigned integer type (designated with the keyword unsigned) that uses the same amount of storage (including sign information) and has the same alignment requirements. The range of nonnegative values of a signed integer type is a subrange of the corresponding unsigned integer type, and the representation of the same value in each type is the same. A computation involving unsigned operands can never overflow, because a result that cannot be represented by the resulting unsigned integer type is reduced modulo the number that is one greater than the largest value that can be represented by the resulting unsigned integer type.
 
@@ -357,8 +357,11 @@ namespace AST {
     }
     
 	public class TIncompleteStruct : ExprType {
-		public TIncompleteStruct(Boolean _is_const = false, Boolean _is_volatile = false)
-			: base(EnumExprType.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) { }
+		public TIncompleteStruct(String _name, Boolean _is_const = false, Boolean _is_volatile = false)
+			: base(EnumExprType.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) {
+			struct_name = _name;
+		}
+		public readonly String struct_name;
 	}
 
     // class TStruct

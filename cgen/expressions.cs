@@ -249,6 +249,18 @@ namespace AST {
         protected Expr rvalue;
     }
 
+	public class ConditionalExpr : Expr {
+		public ConditionalExpr(Expr _cond, Expr _true_expr, Expr _false_expr, ExprType _type)
+			: base(_type) {
+			cond_cond = _cond;
+			cond_true_expr = _true_expr;
+			cond_false_expr = _false_expr;
+		}
+		public readonly Expr cond_cond;
+		public readonly Expr cond_true_expr;
+		public readonly Expr cond_false_expr;
+	}
+
     public class FunctionCall : Expr {
         public FunctionCall(Expr _function, TFunction _func_type, List<Expr> _arguments, ExprType _type)
             : base(_type) {
@@ -416,26 +428,180 @@ namespace AST {
 	public class Add : Expr {
 		public Add(Expr _lhs, Expr _rhs, ExprType _type)
 			: base(_type) {
-			lhs = _lhs;
-			rhs = _rhs;
+			add_lhs = _lhs;
+			add_rhs = _rhs;
+		}
+		public readonly Expr add_lhs;
+		public readonly Expr add_rhs;
+
+		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
+			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+				throw new InvalidOperationException("Error: expect a pointer");
+			}
+			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
+				throw new InvalidOperationException("Error: expect an integer");
+			}
+
+			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
+				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
+				Int32 _offset = ((AST.ConstLong)offset).value;
+				return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
+			}
+
+			return AST.TypeCast.ToPointer(
+				new AST.Add(
+					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+					new AST.Multiply(
+						offset,
+						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
+						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+					),
+					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+				),
+				ptr.type
+			);
 		}
 
-		public Add MakeAdd(Expr _lhs, Expr _rhs) {
-			throw new NotImplementedException();
-		}
+		public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
+			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+				if (!rhs.type.IsIntegral()) {
+					throw new InvalidOperationException("Error: must add an integral to a pointer");
+				}
+				rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
 
-		public readonly Expr lhs;
-		public readonly Expr rhs;
+				// lhs = base, rhs = offset
+				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
+
+			} else if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+				if (!lhs.type.IsIntegral()) {
+					throw new InvalidOperationException("Error: must add an integral to a pointer");
+				}
+				lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
+
+				// rhs = base, lhs = offset
+				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
+
+			} else {
+				return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+					env,
+					lhs,
+					rhs,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(x, y) => x + y,
+					(_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
+				);
+			}
+		}
 	}
 
 	public class Sub : Expr {
 		public Sub(Expr _lhs, Expr _rhs, ExprType _type)
 			: base(_type) {
-			lhs = _lhs;
-			rhs = _rhs;
+			sub_lhs = _lhs;
+			sub_rhs = _rhs;
 		}
-		public readonly Expr lhs;
-		public readonly Expr rhs;
+		public readonly Expr sub_lhs;
+		public readonly Expr sub_rhs;
+
+		public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
+			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+				throw new InvalidOperationException("Error: expect a pointer");
+			}
+			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
+				throw new InvalidOperationException("Error: expect an integer");
+			}
+
+			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
+				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
+				Int32 _offset = ((AST.ConstLong)offset).value;
+				return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
+			}
+
+			return AST.TypeCast.ToPointer(
+				new AST.Sub(
+					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+					new AST.Multiply(
+						offset,
+						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
+						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+					),
+					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+				),
+				ptr.type
+			);
+		}
+
+		public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
+			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+				if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+					// both operands are pointers
+
+					AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
+					AST.TPointer rhs_type = (AST.TPointer)(rhs.type);
+					if (!lhs_type.referenced_type.EqualType(rhs_type.referenced_type)) {
+						throw new InvalidOperationException("Error: the two pointers points to different types");
+					}
+
+					Int32 scale = lhs_type.referenced_type.SizeOf;
+
+					if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+						return new Tuple<AST.Env, AST.Expr>(
+							env,
+							new AST.ConstLong(
+								(Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale
+							)
+						);
+
+					} else {
+						return new Tuple<AST.Env, AST.Expr>(
+							env,
+							new AST.Divide(
+								// long(lhs) - long(rhs)
+								new AST.Sub(
+									AST.TypeCast.MakeCast(lhs, new AST.TLong()),
+									AST.TypeCast.MakeCast(rhs, new AST.TLong()),
+									new AST.TLong()
+								),
+								// / scale
+								new AST.ConstLong(scale),
+								new AST.TLong()
+							)
+						);
+					}
+
+				} else {
+					// pointer - integral
+
+					if (!rhs.type.IsIntegral()) {
+						throw new InvalidOperationException("Error: expected an integral");
+					}
+
+					rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
+
+					return new Tuple<AST.Env, AST.Expr>(env, GetPointerSubtraction(lhs, rhs));
+				}
+
+			} else {
+				// lhs is not a pointer.
+
+				// we need usual arithmetic cast
+				return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+					env,
+					lhs,
+					rhs,
+					(x, y) => x - y,
+					(x, y) => x - y,
+					(x, y) => x - y,
+					(x, y) => x - y,
+					(_lhs, _rhs, _type) => new AST.Sub(_lhs, _rhs, _type)
+				);
+
+			}
+		}
 	}
 
     public class Multiply : Expr {
@@ -606,7 +772,7 @@ namespace AST {
 				rhs,
 				(x, y) => x & y,
 				(x, y) => x & y,
-				(_lhs, _rhs, _type) => new BitwiseAnd(lhs, rhs, type)
+				(_lhs, _rhs, _type) => new BitwiseAnd(_lhs, _rhs, _type)
 			);
 		}
     }

@@ -378,8 +378,6 @@ namespace SyntaxTree {
 
     public class EmptyExpression : Expression {
         public EmptyExpression() { }
-
-        // TODO : [finished] NullExpression.GetExpression(env) -> (env, expr)
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             return new Tuple<AST.Env, AST.Expr>(env, new AST.EmptyExpr());
         }
@@ -387,13 +385,14 @@ namespace SyntaxTree {
 
     public class Variable : Expression {
         public Variable(String _name) {
-            name = _name;
+            var_name = _name;
         }
+		public readonly String var_name;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
-            AST.Env.Entry entry = env.Find(name);
+            AST.Env.Entry entry = env.Find(var_name);
             if (entry == null) {
-                Log.SemantError("Error: cannot find variable '" + name + "'");
+                Log.SemantError("Error: cannot find variable '" + var_name + "'");
                 return null;
             }
             if (entry.entry_loc == AST.Env.EntryLoc.TYPEDEF) {
@@ -403,11 +402,11 @@ namespace SyntaxTree {
             if (entry.entry_loc == AST.Env.EntryLoc.ENUM) {
                 return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstLong(entry.entry_offset));
             } else {
-                return new Tuple<AST.Env, AST.Expr>(env, new AST.Variable(entry.entry_type, name));
+                return new Tuple<AST.Env, AST.Expr>(env, new AST.Variable(entry.entry_type, var_name));
             }
         }
 
-        public String name;
+        
     }
 
 	public class AssignmentList : Expression {
@@ -429,21 +428,100 @@ namespace SyntaxTree {
 		}
 	}
 
-    // Finished.
+	/// <summary>
+	/// Conditional Expression
+	/// 
+	/// cond ? true_expr : false_expr
+	/// 
+	/// cond must be of scalar type
+	/// 
+	/// 1. if both true_expr and false_expr have arithmetic types
+	///    perform usual arithmetic conversion
+	/// 2. 
+	/// </summary>
+	// TODO : What if const???
     public class ConditionalExpression : Expression {
         public ConditionalExpression(Expression _cond, Expression _true_expr, Expression _false_expr) {
-            cond = _cond;
-            true_expr = _true_expr;
-            false_expr = _false_expr;
+            cond_cond = _cond;
+            cond_true_expr = _true_expr;
+            cond_false_expr = _false_expr;
         }
-        public readonly Expression cond;
-        public readonly Expression true_expr;
-        public readonly Expression false_expr;
+        public readonly Expression cond_cond;
+        public readonly Expression cond_true_expr;
+        public readonly Expression cond_false_expr;
         
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr cond;
+			AST.Expr true_expr;
+			AST.Expr false_expr;
+
+			Tuple<AST.Env, AST.Expr> r_cond = cond_cond.GetExpr(env);
+			env = r_cond.Item1;
+			cond = r_cond.Item2;
+
+			if (!cond.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected a scalar");
+			}
+
+			Tuple<AST.Env, AST.Expr> r_true_expr = cond_true_expr.GetExpr(env);
+			env = r_true_expr.Item1;
+			true_expr = r_true_expr.Item2;
+
+			Tuple<AST.Env, AST.Expr> r_false_expr = cond_false_expr.GetExpr(env);
+			env = r_false_expr.Item1;
+			false_expr = r_false_expr.Item2;
+
+			// 1. if both true_expr and false_expr have arithmetic types
+			//    perform usual arithmetic conversion
+			if (true_expr.type.IsArith() && false_expr.type.IsArith()) {
+				Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(true_expr, false_expr);
+				true_expr = r_cast.Item1;
+				false_expr = r_cast.Item2;
+				return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
+			}
+
+
+			if (true_expr.type.expr_type == false_expr.type.expr_type) {
+				switch (true_expr.type.expr_type) {
+
+				// 2. if both true_expr and false_expr have struct or union type
+				//    make sure they are compatible
+				case AST.ExprType.EnumExprType.STRUCT:
+					if (!true_expr.type.EqualType(false_expr.type)) {
+						throw new InvalidOperationException("Error: expected same struct");
+					}
+					return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
+				
+				case AST.ExprType.EnumExprType.UNION:
+					if (!true_expr.type.EqualType(false_expr.type)) {
+						throw new InvalidOperationException("Error: expected same union");
+					}
+					return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
+				
+				// 3. if both true_expr and false_expr have void type
+				//    return void
+				case AST.ExprType.EnumExprType.VOID:
+					return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
+
+				// 4. if both true_expr and false_expr have pointer type
+				case AST.ExprType.EnumExprType.POINTER:
+
+					// if either points to void, convert to void *
+					if (((AST.TPointer)true_expr.type).referenced_type.expr_type == AST.ExprType.EnumExprType.VOID
+					    || ((AST.TPointer)false_expr.type).referenced_type.expr_type == AST.ExprType.EnumExprType.VOID) {
+						return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid())));
+					}
+
+					break;
+
+				default:
+					break;
+				}
+			}
+
+			throw new InvalidOperationException("Error: invalid types");
+		}
     }
-
-    
-
 
     public class FunctionCall : Expression {
         public FunctionCall(Expression _func, List<Expression> _args) {
@@ -487,81 +565,204 @@ namespace SyntaxTree {
 
     public class Attribute : Expression {
         public Attribute(Expression _expr, Variable _attrib) {
-            expr = _expr;
-            attrib = _attrib;
+            attrib_expr = _expr;
+            attrib_attrib = _attrib;
         }
-        public Expression expr;
-        public Variable attrib;
+        public readonly Expression attrib_expr;
+        public readonly Variable attrib_attrib;
+
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
+			String attrib;
+
+			Tuple<AST.Env, AST.Expr> r_expr = attrib_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+			attrib = attrib_attrib.var_name;
+
+			switch (expr.type.expr_type) {
+			case AST.ExprType.EnumExprType.STRUCT:
+				AST.TStruct struct_type = (AST.TStruct)expr.type;
+
+				AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.entry_name == attrib);
+				if (r_struct_find == null) {
+					throw new InvalidOperationException("Error: cannot find attribute " + attrib);
+				}
+				return new Tuple<AST.Env, AST.Expr>(env, new AST.Attribute(expr, attrib, r_struct_find.entry_type));
+			
+			case AST.ExprType.EnumExprType.UNION:
+				AST.TUnion union_type = (AST.TUnion)expr.type;
+
+				Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
+				if (r_union_find == null) {
+					throw new InvalidOperationException("Error: cannot find attribute " + attrib);
+				}
+				return new Tuple<AST.Env, AST.Expr>(env, new AST.Attribute(expr, attrib, r_union_find.Item2));
+
+			default:
+				throw new InvalidOperationException("Error: expected a struct or union");
+			}
+
+
+		}
     }
 
 
-
+	/// <summary>
+	/// Increment
+	/// 
+	/// x++
+	/// </summary>
     public class Increment : Expression {
         public Increment(Expression _expr) {
-            expr = _expr;
+            inc_expr = _expr;
         }
-        public Expression expr;
+        public readonly Expression inc_expr;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
+
+			Tuple<AST.Env, AST.Expr> r_expr = inc_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			if (!expr.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected a scalar");
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.PostIncrement(expr, expr.type));
+		}
     }
 
 
+	/// <summary>
+	/// Decrement
+	/// 
+	/// x--
+	/// </summary>
     public class Decrement : Expression {
         public Decrement(Expression _expr) {
-            expr = _expr;
+            dec_expr = _expr;
         }
-        public Expression expr;
+        public readonly Expression dec_expr;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
+
+			Tuple<AST.Env, AST.Expr> r_expr = dec_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			if (!expr.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected a scalar");
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.PostDecrement(expr, expr.type));
+		}
     }
 
 
 
     public class SizeofType : Expression {
         public SizeofType(TypeName _type_name) {
-            type_name = _type_name;
+            sizeof_typename = _type_name;
         }
+        public readonly TypeName sizeof_typename;
 
-        public TypeName type_name;
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.ExprType type;
 
+			Tuple<AST.Env, AST.ExprType> r_typename = sizeof_typename.GetExprType(env);
+			env = r_typename.Item1;
+			type = r_typename.Item2;
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((UInt32)type.SizeOf));
+		}
     }
 
 
     public class SizeofExpression : Expression {
         public SizeofExpression(Expression _expr) {
-            expr = _expr;
+            sizeof_expr = _expr;
         }
+        public readonly Expression sizeof_expr;
 
-        public Expression expr;
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
 
+			Tuple<AST.Env, AST.Expr> r_expr = sizeof_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.ConstULong((UInt32)expr.type.SizeOf));
+		}
     }
 
 
+	/// <summary>
+	/// Prefix Increment
+	/// 
+	/// ++x
+	/// </summary>
     public class PrefixIncrement : Expression {
         public PrefixIncrement(Expression _expr) {
-            expr = _expr;
+            inc_expr = _expr;
         }
-        public Expression expr;
+        public readonly Expression inc_expr;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
+
+			Tuple<AST.Env, AST.Expr> r_expr = inc_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			if (!expr.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected a scalar");
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.PreIncrement(expr, expr.type));
+		}
     }
 
 
+	/// <summary>
+	/// Prefix Decrement
+	/// 
+	/// --x
+	/// </summary>
     public class PrefixDecrement : Expression {
         public PrefixDecrement(Expression _expr) {
-            expr = _expr;
+            dec_expr = _expr;
         }
-        public Expression expr;
+        public readonly Expression dec_expr;
 
+		public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
+			AST.Expr expr;
+
+			Tuple<AST.Env, AST.Expr> r_expr = dec_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			if (!expr.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected a scalar");
+			}
+
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.PreDecrement(expr, expr.type));
+		}
     }
 
 
-    // Reference
-    // =========
-    // any type
-    // 
+    /// <summary>
+    /// Reference
+	/// 
+	/// &expr
+    /// </summary>
     public class Reference : Expression {
         public Reference(Expression _expr) {
             ref_expr = _expr;
         }
-        public Expression ref_expr;
+        public readonly Expression ref_expr;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             Tuple<AST.Env, AST.Expr> r_expr = ref_expr.GetExpr(env);
@@ -573,15 +774,19 @@ namespace SyntaxTree {
     }
 
 
-    // Dereference
-    // ===========
-    // requires pointer type
-    // 
+	/// <summary>
+	/// Dereference
+	/// 
+	/// *expr
+	/// 
+	/// Note that expr might have an **incomplete** type.
+	/// We need to search the environment
+	/// </summary>
     public class Dereference : Expression {
         public Dereference(Expression _expr) {
             deref_expr = _expr;
         }
-        public Expression deref_expr;
+        public readonly Expression deref_expr;
 
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
             Tuple<AST.Env, AST.Expr> r_expr = deref_expr.GetExpr(env);
@@ -592,8 +797,17 @@ namespace SyntaxTree {
                 throw new Exception("Error: dereferencing a non-pointer");
             }
 
+			AST.ExprType ref_type = ((AST.TPointer)expr.type).referenced_type;
+			if (ref_type.expr_type == AST.ExprType.EnumExprType.INCOMPLETE_STRUCT) {
+				AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).struct_name);
+				if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+					throw new InvalidOperationException("Error: cannot find struct");
+				}
+				ref_type = r_find.entry_type;
+			}
+
             // no matter constant or not
-            return new Tuple<AST.Env, AST.Expr>(env, new AST.Dereference(expr, ((AST.TPointer)expr.type).referenced_type));
+			return new Tuple<AST.Env, AST.Expr>(env, new AST.Dereference(expr, ref_type));
         }
     }
 
@@ -606,7 +820,7 @@ namespace SyntaxTree {
         public Positive(Expression _expr) {
             pos_expr = _expr;
         }
-        public Expression pos_expr;
+        public readonly Expression pos_expr;
 
         // TODO : [finished] Positive.GetExpr(env) -> (env, expr)
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
@@ -632,7 +846,7 @@ namespace SyntaxTree {
         public Negative(Expression _expr) {
             neg_expr = _expr;
         }
-        public Expression neg_expr;
+        public readonly Expression neg_expr;
 
         // TODO : [finished] Negative.GetExpr(env) -> (env, expr)
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
@@ -684,7 +898,7 @@ namespace SyntaxTree {
         public BitwiseNot(Expression _expr) {
             not_expr = _expr;
         }
-        public Expression not_expr;
+        public readonly Expression not_expr;
 
         // TODO : [finished] BitwiseNot.GetExpr(env) -> (env, expr)
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
@@ -728,7 +942,7 @@ namespace SyntaxTree {
         public Not(Expression _expr) {
             not_expr = _expr;
         }
-        public Expression not_expr;
+        public readonly Expression not_expr;
 
         // TODO : [finished] Not.GetExpr(env) -> (env, expr(type=long))
         public override Tuple<AST.Env, AST.Expr> GetExpr(AST.Env env) {
@@ -789,7 +1003,6 @@ namespace SyntaxTree {
             cast_typename = _type_name;
             cast_expr = _expr;
         }
-
         public readonly TypeName cast_typename;
         public readonly Expression cast_expr;
 
@@ -806,11 +1019,7 @@ namespace SyntaxTree {
 			expr = r_expr.Item2;
 
 			return new Tuple<AST.Env, AST.Expr>(env, AST.TypeCast.MakeCast(expr, type));
-
 		}
-
     }
-
-
 
 }
