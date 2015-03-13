@@ -78,14 +78,13 @@ namespace SyntaxTree {
     }
 
 
-    // Declaration specifiers
-    // ======================
-    // includes storage class specifiers
-    //          type specifiers,
-    //          type qualifiers
-    //
-    // in semant, use GetExprType(env) to get (type, env).
-    // 
+	/// <summary>
+	/// Declaration Specifiers
+	/// 
+	/// storage class specifiers
+	/// type specifiers
+	/// type qualifiers
+	/// </summary>
     public class DeclarationSpecifiers : PTNode {
         public DeclarationSpecifiers(List<StorageClassSpecifier> _scs,
                                      List<TypeSpecifier> _typespecs,
@@ -663,9 +662,13 @@ namespace SyntaxTree {
     // a base class of StructSpec and UnionSpec
     // not present in the semant phase
     // 
-    public class StructOrUnionSpecifier : TypeSpecifier {
-        public String name;
-        public List<StructDeclaration> declns;
+    public abstract class StructOrUnionSpecifier : TypeSpecifier {
+		public StructOrUnionSpecifier(String _name, List<StructDeclaration> _declns) {
+			name = _name;
+			declns = _declns;
+		}
+        public readonly String name;
+        public readonly List<StructDeclaration> declns;
     }
 
 
@@ -689,10 +692,8 @@ namespace SyntaxTree {
 	///        4. finish forming a complete struct and add it into the environment
 	/// </summary>
     public class StructSpecifier : StructOrUnionSpecifier {
-        public StructSpecifier(String _name, List<StructDeclaration> _declns) {
-            name = _name;
-            declns = _declns;
-        }
+        public StructSpecifier(String _name, List<StructDeclaration> _declns)
+			: base(_name, _declns) { }
 
 		public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
 			List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
@@ -781,10 +782,18 @@ namespace SyntaxTree {
     // =========
     // 
     public class UnionSpecifier : StructOrUnionSpecifier {
-        public UnionSpecifier(String _name, List<StructDeclaration> _decl_list) {
-            name = _name;
-            declns = _decl_list;
-        }
+        public UnionSpecifier(String _name, List<StructDeclaration> _declns)
+			: base(_name, _declns) { }
+
+		public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
+			List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+			foreach (StructDeclaration decln in declns) {
+				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+				env = r_decln.Item1;
+				attribs.AddRange(r_decln.Item2);
+			}
+			return Tuple.Create(env, attribs);
+		}
 
         // GetExprType
         // ===========
@@ -794,20 +803,70 @@ namespace SyntaxTree {
         // TODO : UnionSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
         // 
         public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDeclaration decln in declns) {
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                attribs.AddRange(r_decln.Item2);
-            }
+            
+			if (name == "") {
+				// if no name supplied
 
-            AST.TUnion type = AST.TUnion.Create(attribs, is_const, is_volatile);
+				if (declns == null) {
+					throw new ArgumentNullException("Error: parser should ensure declns != null");
+				}
 
-            if (name != "") {
-                env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, type);
-            }
+				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+				env = r_attribs.Item1;
 
-            return new Tuple<AST.Env, AST.ExprType>(env, type);
+				return new Tuple<AST.Env, AST.ExprType>(env, AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile));
+
+			} else {
+				// name supplied
+
+				if (declns == null) {
+					// if no declns supplied, then we are mentioning a union
+
+					AST.Env.Entry r_find = env.Find("union " + name);
+
+					// if the struct is not in the current environment
+					if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+
+						// add an incomplete union into the environment
+						AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
+						env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, incomplete_type);
+
+						return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
+					}
+
+					if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+						throw new InvalidOperationException("Error: find union " + name + " not a type. This should be my fault.");
+					}
+
+					return Tuple.Create(env, r_find.entry_type);
+
+				} else {
+					// declns supplied
+
+					// 1. make sure there is no complete struct in the current environment
+					if (env.Find("union " + name).entry_type.expr_type == AST.ExprType.EnumExprType.UNION) {
+						throw new InvalidOperationException("Error: re-defining a union");
+					}
+
+					// 2. add an incomplete struct into the environment
+					AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
+					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, incomplete_type);
+
+
+					// 3. iterate over the attribs
+					Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+					env = r_attribs.Item1;
+
+					// 4. create the type
+					AST.TUnion type = AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile);
+
+					// 5. add into the environment
+					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, type);
+
+					return new Tuple<AST.Env, AST.ExprType>(env, type);
+
+				}
+			}
         }
 
     }

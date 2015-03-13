@@ -468,6 +468,13 @@ namespace AST {
         public readonly List<Tuple<String, ExprType>> attribs;
     }
 
+	public class TIncompleteUnion : ExprType {
+		public TIncompleteUnion(String _name, Boolean _is_const = false, Boolean _is_volatile = false)
+			: base(EnumExprType.INCOMPLETE_UNION, 0, 0, _is_const, _is_volatile) {
+			union_name = _name;
+		}
+		public readonly String union_name;
+	}
 
     // class TFunction
     // ===============
