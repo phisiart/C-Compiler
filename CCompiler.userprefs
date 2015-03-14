@@ -1,19 +1,12 @@
 ﻿<Properties StartupItem="CCompiler.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="semant/expressions.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="cgen/expressions.cs">
     <Files>
-      <File FileName="parser/declarations.cs" Line="1" Column="1" />
-      <File FileName="parser/parser.cs" Line="1" Column="1" />
-      <File FileName="cgen/typecast.cs" Line="1" Column="1" />
-      <File FileName="semant/declarations.cs" Line="1" Column="1" />
-      <File FileName="cgen/types.cs" Line="1" Column="1" />
-      <File FileName="cgen/environment.cs" Line="1" Column="1" />
-      <File FileName="cgen/declarations.cs" Line="1" Column="1" />
-      <File FileName="cgen/expressions.cs" Line="1" Column="1" />
-      <File FileName="driver/Program.cs" Line="1" Column="1" />
-      <File FileName="scanner/scanner.cs" Line="1" Column="1" />
-      <File FileName="semant/expressions.cs" Line="3" Column="3" />
-      <File FileName="parser/expressions.cs" Line="1" Column="1" />
+      <File FileName="cgen/expressions.cs" Line="16" Column="48" />
+      <File FileName="driver/Program.cs" Line="45" Column="1" />
+      <File FileName="cgen/statements.cs" Line="66" Column="38" />
+      <File FileName="cgen/types.cs" Line="474" Column="14" NotebookId="1" />
+      <File FileName="cgen/declarations.cs" Line="72" Column="51" NotebookId="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

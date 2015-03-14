@@ -15,7 +15,7 @@ namespace SyntaxTree {
         public GotoStatement(String _label) {
             label = _label;
         }
-        public String label;
+        public readonly String label;
 
     }
 
@@ -32,7 +32,7 @@ namespace SyntaxTree {
         public ReturnStatement(Expression _expr) {
             ret_expr = _expr;
         }
-        public Expression ret_expr;
+        public readonly Expression ret_expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             Tuple<AST.Env, AST.Expr> r_expr = ret_expr.GetExpr(env);
@@ -220,36 +220,91 @@ namespace SyntaxTree {
 
     public class SwitchStatement : Statement {
         public SwitchStatement(Expression _expr, Statement _stmt) {
-            expr = _expr;
-            stmt = _stmt;
+            switch_expr = _expr;
+            switch_stmt = _stmt;
         }
-        public Expression expr;
-        public Statement stmt;
+        public readonly Expression switch_expr;
+        public readonly Statement switch_stmt;
 
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			AST.Expr expr;
+			AST.Stmt stmt;
+
+			Tuple<AST.Env, AST.Expr> r_expr = switch_expr.GetExpr(env);
+			env = r_expr.Item1;
+			expr = r_expr.Item2;
+
+			Tuple<AST.Env, AST.Stmt> r_stmt = switch_stmt.GetStmt(env);
+			env = r_stmt.Item1;
+			stmt = r_stmt.Item2;
+
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.SwitchStmt(expr, stmt));
+		}
     }
 
 
     public class IfStatement : Statement {
         public IfStatement(Expression _cond, Statement _stmt) {
-            cond = _cond;
-            stmt = _stmt;
+            if_cond = _cond;
+            if_stmt = _stmt;
         }
-        public Expression cond;
-        public Statement stmt;
+        public readonly Expression if_cond;
+        public readonly Statement if_stmt;
 
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			AST.Expr cond;
+			AST.Stmt stmt;
+
+			Tuple<AST.Env, AST.Expr> r_cond = if_cond.GetExpr(env);
+			env = r_cond.Item1;
+			cond = r_cond.Item2;
+
+			if (!cond.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected scalar type");
+			}
+
+			Tuple<AST.Env, AST.Stmt> r_stmt = if_stmt.GetStmt(env);
+			env = r_stmt.Item1;
+			stmt = r_stmt.Item2;
+
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfStmt(cond, stmt));
+		}
     }
 
-    // Finished.
+    
     public class IfElseStatement : Statement {
         public IfElseStatement(Expression _cond, Statement _true_stmt, Statement _false_stmt) {
-            cond = _cond;
-            true_stmt = _true_stmt;
-            false_stmt = _false_stmt;
+            if_cond = _cond;
+            if_true_stmt = _true_stmt;
+            if_false_stmt = _false_stmt;
         }
-        public Expression cond;
-        public Statement true_stmt;
-        public Statement false_stmt;
+        public readonly Expression if_cond;
+        public readonly Statement if_true_stmt;
+        public readonly Statement if_false_stmt;
 
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			AST.Expr cond;
+			AST.Stmt true_stmt;
+			AST.Stmt false_stmt;
+
+			Tuple<AST.Env, AST.Expr> r_cond = if_cond.GetExpr(env);
+			env = r_cond.Item1;
+			cond = r_cond.Item2;
+
+			if (!cond.type.IsScalar()) {
+				throw new InvalidOperationException("Error: expected scalar type");
+			}
+
+			Tuple<AST.Env, AST.Stmt> r_true_stmt = if_true_stmt.GetStmt(env);
+			env = r_true_stmt.Item1;
+			true_stmt = r_true_stmt.Item2;
+
+			Tuple<AST.Env, AST.Stmt> r_false_stmt = if_false_stmt.GetStmt(env);
+			env = r_false_stmt.Item1;
+			false_stmt = r_false_stmt.Item2;
+
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfElseStmt(cond, true_stmt, false_stmt));
+		}
     }
 
     // Finished.
@@ -258,8 +313,8 @@ namespace SyntaxTree {
             label = _label;
             stmt = _stmt;
         }
-        public String label;
-        public Statement stmt;
+        public readonly String label;
+        public readonly Statement stmt;
 
     }
 
@@ -270,8 +325,8 @@ namespace SyntaxTree {
             stmt = _stmt;
         }
         // expr == null means 'default'
-        public Expression expr;
-        public Statement stmt;
+        public readonly Expression expr;
+        public readonly Statement stmt;
 
     }
 

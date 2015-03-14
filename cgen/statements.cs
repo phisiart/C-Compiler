@@ -79,4 +79,34 @@ namespace AST {
         public readonly Expr for_loop;
         public readonly Stmt for_body;
     }
+
+	public class SwitchStmt : Stmt {
+		public SwitchStmt(Expr _expr, Stmt _stmt) {
+			switch_expr = _expr;
+			switch_stmt = _stmt;
+		}
+		public readonly Expr switch_expr;
+		public readonly Stmt switch_stmt;
+	}
+
+	public class IfStmt : Stmt {
+		public IfStmt(Expr _cond, Stmt _stmt) {
+			if_cond = _cond;
+			if_stmt = _stmt;
+		}
+		public readonly Expr if_cond;
+		public readonly Stmt if_stmt;
+	}
+
+	public class IfElseStmt : Stmt {
+		public IfElseStmt(Expr _cond, Stmt _true_stmt, Stmt _false_stmt) {
+			if_cond = _cond;
+			if_true_stmt = _true_stmt;
+			if_false_stmt = _false_stmt;
+		}
+		public readonly Expr if_cond;
+		public readonly Stmt if_true_stmt;
+		public readonly Stmt if_false_stmt;
+	}
+
 }

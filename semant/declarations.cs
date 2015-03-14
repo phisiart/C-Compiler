@@ -596,22 +596,14 @@ namespace SyntaxTree {
     }
 
 
-    // EnumSpec : TypeSpec
-    // ===================
-    // enum <name> {
-    //     ENUM0,
-    //     ENUM1,
-    //     ...
-    // }
-    // 
-    // members:
-    //   name      : String
-    //   enum_list : List<Enumerator>
-    // 
-
 	/// <summary>
 	/// Enum Specifier
 	/// 
+	/// enum enum-name {
+	///     ENUM-0,
+	///     ENUM-1,
+	/// 	...
+	/// }
 	/// </summary>
     public class EnumSpecifier : TypeSpecifier {
         public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
@@ -631,7 +623,11 @@ namespace SyntaxTree {
                 // so there are something in this enum type, we need to put this type into the environment
                 Int32 idx = 0;
                 foreach (Enumerator elem in spec_enums) {
-                    env = env.PushEnum(elem.name, new AST.TLong(), idx);
+					Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
+					env = r_enum.Item1;
+					String name = r_enum.Item2;
+					idx = r_enum.Item3;
+					env = env.PushEnum(name, new AST.TLong(), idx);
                     idx++;
                 }
                 env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "enum " + spec_name, new AST.TLong());
@@ -648,12 +644,31 @@ namespace SyntaxTree {
 
     public class Enumerator : PTNode {
         public Enumerator(String _name, Expression _init) {
-            name = _name;
-            init = _init;
+            enum_name = _name;
+            enum_init = _init;
         }
+        public readonly String enum_name;
+		public readonly Expression enum_init;
 
-        public Expression init;
-        public String name;
+		public Tuple<AST.Env, String, Int32> GetEnumerator(AST.Env env, Int32 idx) {
+			AST.Expr init;
+
+			if (enum_init == null) {
+				return new Tuple<AST.Env, string, int>(env, enum_name, idx);
+			}
+
+			Tuple<AST.Env, AST.Expr> r_init = enum_init.GetExpr(env);
+			env = r_init.Item1;
+			init = r_init.Item2;
+
+			init = AST.TypeCast.MakeCast(init, new AST.TLong());
+			if (!init.IsConstExpr()) {
+				throw new InvalidOperationException("Error: expected constant integer");
+			}
+			Int32 init_idx = ((AST.ConstLong)init).value;
+
+			return new Tuple<AST.Env, string, int>(env, enum_name, init_idx);
+		}
     }
 
 
@@ -889,8 +904,8 @@ namespace SyntaxTree {
             specs = _specs;
             declrs = _declrs;
         }
-        public DeclarationSpecifiers specs;
-        public List<Declarator> declrs;
+		public readonly DeclarationSpecifiers specs;
+        public readonly List<Declarator> declrs;
 
         // Get Declarations : env -> (env, (name, type)[])
         // ===============================================

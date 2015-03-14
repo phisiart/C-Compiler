@@ -165,29 +165,13 @@ public class _declaration_list : ParseRule {
 }
 
 
-// statement_list: statement
-//               | statement_list statement
-// [ note: my solution ]
-// statement_list: <statement>+
+/// <summary>
+/// statement_list
+///   : [statement]+
+/// </summary>
 public class _statement_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Statement> stmt_list) {
-        return Parser.ParseNonEmptyList(src, begin, out stmt_list, _statement.Parse);
-        //stmt_list = new List<Statement>();
-        //Statement stmt;
-        //Int32 current = _statement.Parse(src, begin, out stmt);
-        //if (current == -1) {
-        //    return -1;
-        //}
-        //stmt_list.Add(stmt);
-        //Int32 saved;
-        //while (true) {
-        //    saved = current;
-        //    current = _statement.Parse(src, current, out stmt);
-        //    if (current == -1) {
-        //        return saved;
-        //    }
-        //    stmt_list.Add(stmt);
-        //}
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Statement> stmts) {
+        return Parser.ParseNonEmptyList(src, begin, out stmts, _statement.Parse);
     }
 }
 
