@@ -17,10 +17,9 @@ namespace driver {
             scanner.src =
                 @"
 int main(int argc, char **argv) {
-    int local_variable_1;
+    int local_variable_1 = 3 * 4;
     float local_variable_2;
     const int * const * volatile a[3][4];
-	3 * 4;
 }
                 ";
             scanner.Lex();

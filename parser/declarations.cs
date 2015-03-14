@@ -485,7 +485,7 @@ public class _declarator : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
-		Parser.ParseSequence(
+		return Parser.ParseSequence(
 			src, begin, out declr,
 
 			// [pointer]?
@@ -949,8 +949,8 @@ public class _struct_or_union_specifier : ParseRule {
 			}),
 			// ]
 
-			(StructOrUnion struct_or_union, Tuple<String, List<StructDeclaration>> declns) => {
-				if (struct_or_union.is_union) {
+			(Boolean is_union, Tuple<String, List<StructDeclaration>> declns) => {
+				if (is_union) {
 					return new UnionSpecifier(declns.Item1, declns.Item2);
 				} else {
 					return new StructSpecifier(declns.Item1, declns.Item2);
@@ -962,23 +962,23 @@ public class _struct_or_union_specifier : ParseRule {
     }
 }
 
-// struct_or_union : struct | union
+
+/// <summary>
+/// struct_or_union
+///   : struct | union
+/// </summary>
 public class _struct_or_union : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnion struct_or_union) {
-        struct_or_union = null;
-        if (src[begin].type != TokenType.KEYWORD) {
-            return -1;
-        }
-        switch (((TokenKeyword)src[begin]).val) {
-        case KeywordVal.STRUCT:
-            struct_or_union = new StructOrUnion(false);
-            return begin + 1;
-        case KeywordVal.UNION:
-            struct_or_union = new StructOrUnion(true);
-            return begin + 1;
-        default:
-            return -1;
-        }
+    public static Int32 Parse(List<Token> src, Int32 begin, out Boolean is_union) {
+		if (Parser.IsKeyword(src[begin], KeywordVal.STRUCT)) {
+			is_union = false;
+			return begin + 1;
+		} else if (Parser.IsKeyword(src[begin], KeywordVal.UNION)) {
+			is_union = true;
+			return begin + 1;
+		} else {
+			is_union = false;
+			return -1;
+		}
     }
 }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using SyntaxTree;
 
 // primary_expression: identifier           /* Variable : Expression */
@@ -918,19 +919,11 @@ public class _cast_expression : Expression {
     }
 }
 
-// multiplicative_expression: cast_expression                                   /* Expression */
-//                          | multiplicative_expression '*' cast_expression     /* Multiplication */
-//                          | multiplicative_expression '/' cast_expression     /* Division */
-//                          | multiplicative_expression '%' cast_expression     /* Modulo */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this grammar is left-recursive, so we turn it into:
-// multiplicative_Expression: cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
-//
+
+/// <summary>
+/// multiplicative_expression
+///   : cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
+/// </summary>
 public class _multiplicative_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b");
@@ -950,81 +943,23 @@ public class _multiplicative_expression : ParseRule {
     }
 
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-
-        // 1. match the leftmost cast_expression
-        Int32 current = _cast_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            expr = null;
-            return -1;
-        }
-
-        // 2. try to find more
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.MULT:
-                // '*'
-                current++;
-
-                current = _cast_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new Multiplication(expr, rhs);
-                break;
-
-            case OperatorVal.DIV:
-                // '/'
-                current++;
-
-                current = _cast_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new Division(expr, rhs);
-                break;
-
-            case OperatorVal.MOD:
-                // '%'
-                current++;
-
-                current = _cast_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new Modulo(expr, rhs);
-                break;
-
-            default:
-                return current;
-            }
-        }
-
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_cast_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MULT, (_lhs, _rhs) => new Multiplication(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.DIV, (_lhs, _rhs) => new Division(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MOD, (_lhs, _rhs) => new Modulo(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// additive_expression: multiplicative_expression                           /* Expression */
-//                    | additive_expression '+' multiplicative_expression   /* Addition */
-//                    | additive_expression '-' multiplicative_expression   /* Subtraction */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this grammar is left-recursive, so turn it into:
-// additive_expression: multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
-//
+
+/// <summary>
+/// additive_expression
+///   : multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
+/// </summary>
 public class _additive_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c");
@@ -1044,68 +979,22 @@ public class _additive_expression : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-
-        // match the first multiplicative_expression
-        Int32 current = _multiplicative_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            expr = null;
-            return -1;
-        }
-        
-        // try more
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.ADD:
-                // '+'
-                current++;
-
-                current = _multiplicative_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new Addition(expr, rhs);
-                break;
-
-            case OperatorVal.SUB:
-                // '-'
-                current++;
-
-                current = _multiplicative_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new Subtraction(expr, rhs);
-                break;
-
-            default:
-                return current;
-            }
-        }
-
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_multiplicative_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.ADD, (_lhs, _rhs) => new Addition(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.SUB, (_lhs, _rhs) => new Subtraction(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// shift_expression: additive_expression                        /* Expression */
-//                 | shift_expression '<<' additive_expression  /* LeftShift */
-//                 | shift_expression '>>' additive_expression  /* RightShift */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this grammar is left-recursive, so turn it into:
-// shift_expression: additive_expression [ [ '<<' | '>>' ] additive_expression ]*
-//
+
+/// <summary>
+/// shift_expression
+///   : additive_expression [ [ '<<' | '>>' ] additive_expression ]*
+/// </summary>
 public class _shift_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c << 3");
@@ -1125,70 +1014,22 @@ public class _shift_expression : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-        
-        // match the leftmost additive_expression
-        Int32 current = _additive_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            expr = null;
-            return -1;
-        }
-
-        // try to match more
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.LSHIFT:
-                // '<<'
-                current++;
-
-                current = _additive_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new LeftShift(expr, rhs);
-                break;
-
-            case OperatorVal.RSHIFT:
-                // '>>'
-                current++;
-
-                current = _additive_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new RightShift(expr, rhs);
-                break;
-
-            default:
-                return current;
-            }
-        }
-
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_additive_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LSHIFT, (_lhs, _rhs) => new LeftShift(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.RSHIFT, (_lhs, _rhs) => new RightShift(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// relational_expression: shift_expression                              /* Expression */
-//                      | relational_expression '<' shift_expression    /* LessThan */
-//                      | relational_expression '>' shift_expression    /* GreaterThan */
-//                      | relational_expression '<=' shift_expression   /* LessEqualThan */
-//                      | relational_expression '>=' shift_expression   /* GreaterEqualThan */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this grammar is left-recursive, so turn it into:
-// relational_expression: shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
-//
+
+/// <summary>
+/// relational_expression
+///   : shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
+/// </summary>
 public class _relational_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("3 < 4");
@@ -1208,287 +1049,126 @@ public class _relational_expression : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-        
-        // match the first shift_expression
-        Int32 current = _shift_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            expr = null;
-            return -1;
-        }
-
-        // try to match more
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.LT:
-                // '<'
-                current++;
-
-                current = _shift_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new LessThan(expr, rhs);
-                break;
-
-            case OperatorVal.GT:
-                // '>'
-                current++;
-                
-                current = _shift_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new GreaterThan(expr, rhs);
-                break;
-            
-            case OperatorVal.LEQ:
-                // '<='
-                current++;
-
-                current = _shift_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new LessEqualThan(expr, rhs);
-                break;
-            case OperatorVal.GEQ:
-                // '>='
-                current++;
-
-                current = _shift_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                expr = new GreaterEqualThan(expr, rhs);
-                break;
-
-            default:
-                return current;
-            }
-        }
-
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_shift_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LT, (_lhs, _rhs) => new LessThan(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GT, (_lhs, _rhs) => new GreaterThan(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LEQ, (_lhs, _rhs) => new LessEqualThan(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GEQ, (_lhs, _rhs) => new GreaterEqualThan(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// equality_expression: relational_expression
-//                    | equality_expression == relational_expression
-//                    | equality_expression != relational_expression
-// [ note: my solution ]
-// equality_expression: relational_expression < < == | != > relational_expression >*
+
+/// <summary>
+/// equality_expression
+///   : relational_expression [ [ '==' | '!=' ] relational_expression ]*
+/// </summary>
 public class _equality_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _relational_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.EQ:
-                current++;
-                current = _relational_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new Equal(node, rhs);
-                break;
-            case OperatorVal.NEQ:
-                current++;
-                current = _relational_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new NotEqual(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
-
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_relational_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.EQ, (_lhs, _rhs) => new Equal(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.NEQ, (_lhs, _rhs) => new NotEqual(_lhs, _rhs)),
+			}
+		);
     }
 }
 
 
-// and_expression: equality_expression
-//               | and_expression & equality_expression
-// [ note: my solution ]
-// and_expression: equality_expression < & equality_expression >*
+/// <summary>
+/// and_expression
+///   : equality_expresion [ '&' equality_expression ]*
+/// </summary>
 public class _and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _equality_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.BITAND:
-                current++;
-                current = _equality_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new BitwiseAnd(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_equality_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.BITAND, (_lhs, _rhs) => new BitwiseAnd(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// exclusive_or_expression: and_expression
-//                         | exclusive_or_expression ^ and_expression
-// [ note: my solution ]
-// exclusive_or_expression: and_expression < ^ and_expression >*
+
+/// <summary>
+/// exclusive_or_expression
+///   : and_expression [ '^' and_expression ]*
+/// </summary>
 public class _exclusive_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _and_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.XOR:
-                current++;
-                current = _and_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new Xor(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
+	public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_and_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.XOR, (_lhs, _rhs) => new Xor(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// inclusive_or_expression: exclulsive_or_expression
-//                        | inclusive_or_expression | exclulsive_or_expression
-// [ note: my solution ]
-// inclusive_or_expression: exclulsive_or_expression < | exclulsive_or_expression >*
+
+/// <summary>
+/// inclusive_or_expression
+///   : exclulsive_or_expression [ '|' exclulsive_or_expression ]*
+/// </summary>
 public class _inclusive_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _exclusive_or_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.BITOR:
-                current++;
-                current = _exclusive_or_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new BitwiseOr(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_exclusive_or_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.BITOR, (_lhs, _rhs) => new BitwiseOr(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// logical_and_expression: inclusive_or_expression
-//                       | logical_and_expression && inclusive_or_expression
-// [ note: my solution ]
-// logical_and_expression: inclusive_or_expression < && inclusive_or_expression >*
+
+/// <summary>
+/// logical_and_expression
+///   : inclusive_or_expression [ '&&' inclusive_or_expression ]*
+/// 
+/// <remarks>
+/// A logical and expression is just a bunch of (bitwise) inclusive or expressions.
+/// </remarks>
+/// </summary>
 public class _logical_and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _inclusive_or_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.AND:
-                current++;
-                current = _inclusive_or_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new LogicalAnd(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_inclusive_or_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.AND, (_lhs, _rhs) => new LogicalAnd(_lhs, _rhs)),
+			}
+		);
     }
 }
 
-// logical_or_expression: logical_and_expression
-//                      | logical_or_expression || logical_and_expression
-// [ note: my solution ]
-// logical_or_expression: logical_and_expression < || logical_and_expression >*
 
+/// <summary>
+/// logical_or_expression
+///   : logical_and_expression [ '||' logical_and_expression ]*
+/// 
+/// <remarks>
+/// A logical or expression is just a bunch of logical and expressions separated by '||'s.
+/// </remarks>
+/// </summary>
 public class _logical_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        Int32 current = _logical_and_expression.Parse(src, begin, out node);
-        if (current == -1) {
-            return -1;
-        }
-
-        Expression rhs;
-        while (true) {
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.OR:
-                current++;
-                current = _logical_and_expression.Parse(src, current, out rhs);
-                if (current == -1) {
-                    return -1;
-                }
-                node = new LogicalOr(node, rhs);
-                break;
-            default:
-                return current;
-            }
-        }
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		return Parser.ParseBinaryOperator(
+			src, begin, out expr,
+			_logical_and_expression.Parse,
+			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.OR, (_lhs, _rhs) => new LogicalOr(_lhs, _rhs)),
+			}
+		);
     }
 }

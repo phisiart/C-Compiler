@@ -415,5 +415,59 @@ public class Parser {
         return GetSequenceParser(ParseFirstNode, ParseSecondNode, ParseThirdNode, Combine)(src, begin, out node);
     }
 
+	public delegate Expression BinaryExpressionConstructor(Expression lhs, Expression rhs);
+	public static Parser.FParse<Expression> GetBinaryOperatorParser(
+		Parser.FParse<Expression> OperandParser,
+		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
+	) {
+		return delegate (List<Token> src, Int32 begin, out Expression expr) {
+
+			// 1. try to match the first operand
+			Int32 current = OperandParser(src, begin, out expr);
+			if (current == -1) {
+				expr = null;
+				return -1;
+			}
+
+			// 2. try to match more operands
+			Boolean matched;
+			do {
+
+				// matched : at least one operator matched.
+				matched = false;
+
+				foreach (Tuple<OperatorVal, BinaryExpressionConstructor> bin_op_treater in bin_op_treaters) {
+					OperatorVal op = bin_op_treater.Item1;
+					BinaryExpressionConstructor Constructor = bin_op_treater.Item2;
+
+					if (!Parser.EatOperator(src, ref current, op)) {
+						continue;
+					}
+					matched = true;
+
+					Expression rhs;
+					if ((current = OperandParser(src, current, out rhs)) == -1) {
+						expr = null;
+						return -1;
+					}
+					expr = Constructor(expr, rhs);
+
+				}
+
+			} while (matched);
+
+			return current;
+
+		};
+	}
+
+	public static Int32 ParseBinaryOperator(
+		List<Token> src, Int32 begin, out Expression expr,
+		Parser.FParse<Expression> OperandParser,
+		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
+	) {
+		return GetBinaryOperatorParser(OperandParser, bin_op_treaters)(src, begin, out expr);
+	}
+
 }
 
