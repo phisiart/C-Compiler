@@ -147,12 +147,83 @@ namespace AST {
                 throw new InvalidOperationException();
             }
         }
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			Env.Entry entry = env.Find(name);
+			switch (entry.entry_loc) {
+			case Env.EntryLoc.ENUM:
+				// enum constant : just an integer
+				state.MOVL(entry.entry_offset, Reg.EAX);
+				return Reg.EAX;
+
+			case Env.EntryLoc.FRAME:
+				switch (entry.entry_type.expr_type) {
+				case ExprType.EnumExprType.LONG:
+				case ExprType.EnumExprType.ULONG:
+				case ExprType.EnumExprType.POINTER:
+					state.LOAD(entry.entry_offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
+				case ExprType.EnumExprType.FLOAT:
+				case ExprType.EnumExprType.DOUBLE:
+				case ExprType.EnumExprType.STRUCT:
+				case ExprType.EnumExprType.UNION:
+					throw new NotImplementedException();
+
+				case ExprType.EnumExprType.VOID:
+				case ExprType.EnumExprType.FUNCTION:
+				case ExprType.EnumExprType.CHAR:
+				case ExprType.EnumExprType.UCHAR:
+				case ExprType.EnumExprType.SHORT:
+				case ExprType.EnumExprType.USHORT:
+				case ExprType.EnumExprType.ERROR:
+				default:
+					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type);
+				}
+
+			case Env.EntryLoc.GLOBAL:
+				throw new NotImplementedException();
+
+			case Env.EntryLoc.STACK:
+				switch (entry.entry_type.expr_type) {
+				case ExprType.EnumExprType.LONG:
+				case ExprType.EnumExprType.ULONG:
+				case ExprType.EnumExprType.POINTER:
+					state.LOAD(-entry.entry_offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
+				case ExprType.EnumExprType.FLOAT:
+				case ExprType.EnumExprType.DOUBLE:
+				case ExprType.EnumExprType.STRUCT:
+				case ExprType.EnumExprType.UNION:
+					throw new NotImplementedException();
+
+				case ExprType.EnumExprType.VOID:
+				case ExprType.EnumExprType.FUNCTION:
+				case ExprType.EnumExprType.CHAR:
+				case ExprType.EnumExprType.UCHAR:
+				case ExprType.EnumExprType.SHORT:
+				case ExprType.EnumExprType.USHORT:
+				case ExprType.EnumExprType.ERROR:
+				default:
+					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type + " from stack");
+				}
+
+			case Env.EntryLoc.TYPEDEF:
+			case Env.EntryLoc.NOT_FOUND:
+			default:
+				throw new InvalidOperationException();
+			}
+		}
     }
 
     public class Constant : Expr {
         public Constant(ExprType _type)
             : base(_type) { }
         public override Boolean IsConstExpr() { return true; }
+		public override void CGenAddress(Env env, CGenState state) {
+			throw new InvalidOperationException("Error: cannot get the address of a constant");
+		}
     }
 
     public class ConstLong : Constant {
@@ -166,14 +237,15 @@ namespace AST {
         }
         public readonly Int32 value;
 
-        public override void CGenAddress(Env env, CGenState state) {
-            throw new Exception("Error: cannot get the address of a long literal.");
-        }
 
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL(value, Reg.EAX);
             return Reg.EAX;
         }
+
+		public override void CGenPush(Env env, CGenState state) {
+			state.PUSHL(value);
+		}
     }
 
     public class ConstULong : Constant {
@@ -186,6 +258,15 @@ namespace AST {
             return "uint(" + value + ")";
         }
         public readonly UInt32 value;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			state.MOVL((Int32)value, Reg.EAX);
+			return Reg.EAX;
+		}
+
+		public override void CGenPush(Env env, CGenState state) {
+			state.PUSHL((Int32)value);
+		}
     }
 
     public class ConstPtr : Constant {
@@ -198,6 +279,15 @@ namespace AST {
             return this.type.ToString() + "(" + value + ")";
         }
         public readonly UInt32 value;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			state.MOVL((Int32)value, Reg.EAX);
+			return Reg.EAX;
+		}
+
+		public override void CGenPush(Env env, CGenState state) {
+			state.PUSHL((Int32)value);
+		}
     }
 
     public class ConstFloat : Constant {
@@ -209,6 +299,14 @@ namespace AST {
             return "float(" + value + ")";
         }
         public readonly Single value;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			byte[] bytes = BitConverter.GetBytes(value);
+			Int32 intval = BitConverter.ToInt32(bytes, 0);
+			String name = state.CGenLongConst(intval);
+			state.MOVL(name, Reg.XMM0);
+			return Reg.XMM0;
+		}
     }
 
     public class ConstDouble : Constant {
@@ -235,8 +333,15 @@ namespace AST {
             : base(_type) {
             exprs = _exprs;
         }
-
         public readonly List<Expr> exprs;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			Reg reg = Reg.EAX;
+			foreach (Expr expr in exprs) {
+				reg = expr.CGenValue(env, state);
+			}
+			return reg;
+		}
     }
 
     public class Assignment : Expr {
@@ -245,8 +350,8 @@ namespace AST {
             lvalue = _lvalue;
             rvalue = _rvalue;
         }
-        protected Expr lvalue;
-        protected Expr rvalue;
+		public readonly Expr lvalue;
+		public readonly Expr rvalue;
     }
 
 	public class ConditionalExpr : Expr {
@@ -753,6 +858,24 @@ namespace AST {
 				(_lhs, _rhs, _type) => new AST.BitwiseOr(_lhs, _rhs, _type)
 			);
 		}
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			Reg reg_lhs = or_lhs.CGenValue(env, state);
+			if (reg_lhs != Reg.EAX) {
+				throw new InvalidOperationException("Why not %eax?");
+			}
+			state.PUSHL(reg_lhs);
+
+			Reg reg_rhs = or_rhs.CGenValue(env, state);
+			if (reg_rhs != Reg.EAX) {
+				throw new InvalidOperationException("Why not %eax?");
+			}
+			state.POPL(Reg.EBX);
+
+			state.ORL(Reg.EBX, Reg.EAX);
+
+			return Reg.EAX;
+		}
     }
 
     public class BitwiseAnd : Expr {
@@ -805,7 +928,6 @@ namespace AST {
             lhs = _lhs;
             rhs = _rhs;
         }
-
         public readonly Expr lhs;
         public readonly Expr rhs;
     }

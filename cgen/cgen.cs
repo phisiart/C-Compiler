@@ -12,6 +12,8 @@ public enum Reg {
 
     EBP,
     ESP,
+
+	XMM0,
 }
 
 public class CGenState {
@@ -28,6 +30,7 @@ public class CGenState {
         { Reg.EBX, "%ebx" },
         { Reg.EBP, "%ebp" },
         { Reg.ESP, "%esp" },
+		{ Reg.XMM0, "%xmm0" },
     };
 
     public static String StrReg(Reg reg) {
@@ -36,6 +39,10 @@ public class CGenState {
 
     public CGenState() {
         os = new System.IO.StringWriter();
+		rodata = new System.IO.StringWriter();
+		rodata.WriteLine("    section .rodata");
+
+		rodata_idx = 0;
         status = Status.NONE;
     }
 
@@ -88,6 +95,10 @@ public class CGenState {
     public void MOVL(String from, String to) {
         os.WriteLine("    movl " + from + ", " + to);
     }
+
+	public void MOVL(String from, Reg to) {
+		os.WriteLine("    movl " + from + ", " + StrReg(to));
+	}
 
     public void MOVL(Int32 imm, String to) {
         MOVL("$" + imm.ToString(), to);
@@ -185,11 +196,45 @@ public class CGenState {
     }
 
     public override String ToString() {
-        return os.ToString();
+		return os.ToString() + rodata.ToString();
     }
 
+	public void ORL(String er, String ee, String comment = "") {
+		os.Write("    orl " + er + ", " + ee);
+		if (comment == "") {
+			os.WriteLine();
+		} else {
+			os.WriteLine(" # " + comment);
+		}
+	}
+
+	public void ORL(Reg er, Reg ee, String comment = "") {
+		ORL(StrReg(er), StrReg(ee), comment);
+	}
+
+	public String CGenLongConst(Int32 val) {
+		String name = ".LC" + rodata_idx.ToString();
+		rodata.WriteLine("    .align 4");
+		rodata.WriteLine(name + ":");
+		rodata.WriteLine("    .long " + val.ToString());
+		rodata_idx++;
+		return name;
+	}
+
+	public String CGenLongLongConst(Int32 lo, Int32 hi) {
+		String name = ".LC" + rodata_idx.ToString();
+		rodata.WriteLine("    .align 8");
+		rodata.WriteLine(name + ":");
+		rodata.WriteLine("    .long " + lo.ToString());
+		rodata.WriteLine("    .long " + hi.ToString());
+		rodata_idx++;
+		return name;
+	}
 
     private System.IO.StringWriter os;
+	private System.IO.StringWriter rodata;
+	private Int32 rodata_idx;
+
     private Status status;
     private Int32 stack_size;
     

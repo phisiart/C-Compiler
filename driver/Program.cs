@@ -17,9 +17,11 @@ namespace driver {
             scanner.src =
                 @"
 int main(int argc, char **argv) {
-    int local_variable_1 = 3 * 4;
+    int b = 3 * 4;
     float local_variable_2;
     const int * const * volatile a[3][4];
+    b | b;
+	3.25f;
 }
                 ";
             scanner.Lex();
@@ -38,7 +40,6 @@ int main(int argc, char **argv) {
 				throw new InvalidOperationException("Error: not finished parsing");
 			}
 
-
             Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
 
             CGenState state = new CGenState();
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
             Console.WriteLine("x86 Assembly:");
             Console.WriteLine("======================");
             Console.WriteLine(state);
+
 
         }
     }
