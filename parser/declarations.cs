@@ -41,41 +41,15 @@ public class _declaration : ParseRule {
     }
 }
 
-// declaration_specifiers : storage_class_specifier [declaration_specifiers]?
-//                        | type_specifier [declaration_specifiers]?
-//                        | type_qualifier [declaration_specifiers]?
-//
-// RETURN: DeclarationSpecifiers
-//
-// FAIL: null
-//
-// NOTE:
-// this is just a list, i'm turning it into:
-//
-// declaration_specifiers : [ storage_class_specifier | type_specifier | type_qualifier ]+
-//
-// SEMANT NOTE:
-// 1. after parsing, we need to check that the type specifiers are one of the following sets:
-//     void
-//     char
-//     signed char
-//     unsigned char
-//     short , signed short , short int , or signed short int
-//     unsigned short , or unsigned short Int32
-//     int , signed , signed int , or no type specifiers
-//     unsigned , or unsigned Int32
-//     long , signed long , long int , or signed long int
-//     unsigned long , or unsigned long int
-//     float
-//     double
-//     long double
-//     struct-or-union specifier
-//     enum-specifier
-//     typedef-name
-//   note that typing 'int' twice isn't allowed
-// 2. you can only have **one** storage-class specifier
-// 3. you can have many type qualifiers though, because it doesn't cause ambiguity
-//
+
+/// <summary>
+/// declaration_specifiers
+///   : [ storage_class_specifier | type_specifier | type_qualifier ]+
+/// </summary>
+/// <remarks>
+/// 1. You can only have **one** storage class specifier.
+/// 2. You can have duplicate type qualifiers, since it doesn't cause ambiguity.
+/// </remarks>
 public class _declaration_specifiers : ParseRule {
     public static Boolean Test() {
         DeclarationSpecifiers decl_specs;
@@ -102,26 +76,21 @@ public class _declaration_specifiers : ParseRule {
 
             // 1. match storage_class_specifier
             StorageClassSpecifier storage_class_specifier;
-            current = _storage_class_specifier.Parse(src, current, out storage_class_specifier);
-            if (current != -1) {
+			if ((current = _storage_class_specifier.Parse(src, saved, out storage_class_specifier)) != -1) {
                 storage_class_specifiers.Add(storage_class_specifier);
                 continue;
             }
 
             // 2. if failed, match type_specifier
-            current = saved;
             TypeSpecifier type_specifier;
-            current = _type_specifier.Parse(src, current, out type_specifier);
-            if (current != -1) {
+			if ((current = _type_specifier.Parse(src, saved, out type_specifier)) != -1) {
                 type_specifiers.Add(type_specifier);
                 continue;
             }
 
             // 3. if failed, match type_qualifier
-            current = saved;
             TypeQualifier type_qualifier;
-            current = _type_qualifier.Parse(src, current, out type_qualifier);
-            if (current != -1) {
+			if ((current = _type_qualifier.Parse(src, saved, out type_qualifier)) != -1) {
                 type_qualifiers.Add(type_qualifier);
                 continue;
             }
@@ -327,24 +296,21 @@ public class _type_specifier : ParseRule {
 
         // 1. match struct or union
         StructOrUnionSpecifier struct_or_union_specifier;
-        current = _struct_or_union_specifier.Parse(src, begin, out struct_or_union_specifier);
-        if (current != -1) {
+		if ((current = _struct_or_union_specifier.Parse(src, begin, out struct_or_union_specifier)) != -1) {
             spec = struct_or_union_specifier;
             return current;
         }
 
         // 2. match enum
         EnumSpecifier enum_specifier;
-        current = _enum_specifier.Parse(src, begin, out enum_specifier);
-        if (current != -1) {
+		if ((current = _enum_specifier.Parse(src, begin, out enum_specifier)) != -1) {
             spec = enum_specifier;
             return current;
         }
 
         // 3. match typedef name
         String typedef_name;
-        current = _typedef_name.Parse(src, begin, out typedef_name);
-        if (current != -1) {
+		if ((current = _typedef_name.Parse(src, begin, out typedef_name)) != -1) {
             spec = new TypedefName(typedef_name);
             return current;
         }
@@ -615,41 +581,28 @@ public class _type_qualifier_list : ParseRule {
 }
 
 
-// direct_declarator : identifier
-//                   | '(' declarator ')'
-//                   | direct_declarator '[' [constant_expression]? ']'
-//                   | direct_declarator '(' [parameter_type_list]? ')'
-//                   | direct_declarator '(' identifier_list ')'            /* old style, i'm deleting this */
-//
-// NOTE: the grammar [ direct_declarator '(' identifier_list ')' ] is for the **old-style** function prototype like this:
-// +-------------------------------+
-// |    Int32 foo(param1, param2)    |
-// |    Int32 param1;                |
-// |    char param2;               |
-// |    {                          |
-// |        ....                   |
-// |    }                          |
-// +-------------------------------+
-//
-// i'm **not** going to support this style. function prototypes should always be like this:
-// +------------------------------------------+
-// |    Int32 foo(Int32 param1, char param2) {    |
-// |        ....                              |
-// |    }                                     |
-// +------------------------------------------+
-//
-// so, i'm deleting this particular production and changing the grammar to:
-// direct_declarator : identifier                                           /* Declarator */
-//                   | '(' declarator ')'                                   /* Declarator */
-//                   | direct_declarator '[' [constant_expression]? ']'     /* Declarator */
-//                   | direct_declarator '(' [parameter_type_list]? ')'     /* Declarator */
-//
-// RETURN: Declarator
-//
-// FAIL: null
-//
-// NOTE: this grammar is left-recursive, so i'm changing it to:
-// direct_declarator : [ identifier | '(' declarator ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
+/// <summary>
+/// direct_declarator
+///   : [ identifier | '(' declarator ')' ] [ '[' [constant_expression]? ']' | '(' [parameter_type_list]? ')' ]*
+/// </summary>
+/// <remarks>
+/// There is an old style of function definition:
+/// +-------------------------------+
+/// |    int foo(param1, param2)    |
+/// |    int  param1;               |
+/// |    char param2;               |
+/// |    {                          |
+/// |        ....                   |
+/// |    }                          |
+/// +-------------------------------+
+/// 
+/// I'm not gonna support this style, and function definitions should always be like this:
+/// +------------------------------------------+
+/// |    int foo(int param1, char param2) {    |
+/// |        ....                              |
+/// |    }                                     |
+/// +------------------------------------------+
+/// </remarks>
 public class _direct_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("(*a)[3][5 + 7][]");
@@ -683,8 +636,10 @@ public class _direct_declarator : ParseRule {
         return begin;
     }
 
-    // '[' constant_expression ']'
-    // 
+	/// <summary>
+	/// array_modifier
+	///   : '[' [constant_expression]? ']'
+	/// </summary>
     public static Int32 ParseArrayModifier(List<Token> src, Int32 begin, out ArrayModifier modifier) {
         // match '['
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LBRACKET)) {
@@ -710,9 +665,12 @@ public class _direct_declarator : ParseRule {
         return begin;
     }
 
-    // '(' parameter_type_list ')'
-    // 
+	/// <summary>
+    /// function_modifier
+	///   : '(' [parameter_type_list] ')'
+	/// </summary>
     public static Int32 ParseFunctionModifier(List<Token> src, Int32 begin, out FunctionModifier modifier) {
+
         // match '('
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
             modifier = null;
@@ -737,8 +695,9 @@ public class _direct_declarator : ParseRule {
         return begin;
     }
 
-    // array modifier or function modifier
-    // 
+	// suffix_modifier
+	//   : '[' [constant_expression]? ']'
+	//   | '(' [parameter_type_list]? ')'
     public static Int32 ParseSuffixModifier(List<Token> src, Int32 begin, out TypeModifier modifier) {
         ArrayModifier array_modifier;
         Int32 current = ParseArrayModifier(src, begin, out array_modifier);
@@ -790,45 +749,48 @@ public class _direct_declarator : ParseRule {
 }
 
 
-// enum_specifier : enum <identifier>? { enumerator_list }
-//                | enum identifier
+/// <summary>
+/// enum_specifier
+///   : enum [identifier]? '{' enumerator_list '}'
+///   | enum identifier
+/// </summary>
 public class _enum_specifier : ParseRule {
 
-    // this parses { enumerator_list }
+    /// <summary>
+	/// '{' enumerator_list '}'
+    /// </summary>
     private static Int32 ParseEnumList(List<Token> src, Int32 begin, out List<Enumerator> enum_list) {
-        enum_list = null;
         if (!Parser.IsOperator(src[begin], OperatorVal.LCURL)) {
+			enum_list = null;
             return -1;
         }
-        Int32 current = begin + 1;
-        current = _enumerator_list.Parse(src, current, out enum_list);
-        if (current == -1) {
-            return -1;
-        }
+		++begin;
+        
+		if ((begin = _enumerator_list.Parse(src, begin, out enum_list)) == -1) {
+			enum_list = null;
+			return -1;
+		}
+        
         if (!Parser.IsOperator(src[begin], OperatorVal.RCURL)) {
+			enum_list = null;
             return -1;
         }
-        current++;
-        return current;
+		return begin + 1;
     }
 
     public static Int32 Parse(List<Token> src, Int32 begin, out EnumSpecifier enum_spec) {
         
-
-        if (src[begin].type != TokenType.KEYWORD) {
-            enum_spec = null;
-            return -1;
-        }
-        if (((TokenKeyword)src[begin]).val != KeywordVal.ENUM) {
-            enum_spec = null;
-            return -1;
-        }
+		// enum
+		if (!Parser.IsKeyword(src[begin], KeywordVal.ENUM)) {
+			enum_spec = null;
+			return -1;
+		}
 
         Int32 current = begin + 1;
         List<Enumerator> enum_list;
         String name;
         if ((name = Parser.GetIdentifierValue(src[current])) != null) {
-            current++;
+			current++;
 
             Int32 saved = current;
             if ((current = ParseEnumList(src, current, out enum_list)) == -1) {
@@ -840,14 +802,12 @@ public class _enum_specifier : ParseRule {
             }
 
         } else {
-            current = ParseEnumList(src, current, out enum_list);
-            if (current == -1) {
+			if ((current = ParseEnumList(src, current, out enum_list)) == -1) {
                 enum_spec = null;
                 return -1;
             }
             enum_spec = new EnumSpecifier("", enum_list);
             return current;
-
         }
     }
 }

@@ -133,35 +133,14 @@ public class _primary_expression : ParseRule {
     }
 }
 
-// expression: assignment_expression < , assignment_expression >*
-// [ note: it's okay if there is a lonely ',', just leave it be ]
+
+/// <summary>
+/// expression
+///   : assignment_expression [ ',' assignment_expression ]*
+/// </summary>
 public class _expression : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        node = null;
-        Expression expr;
-        List<Expression> exprs = new List<Expression>();
-        Int32 current = _assignment_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            return -1;
-        }
-        exprs.Add(expr);
-        Int32 saved;
-
-        while (true) {
-            if (Parser.IsCOMMA(src[current])) {
-                saved = current;
-                current++;
-                current = _assignment_expression.Parse(src, current, out expr);
-                if (current == -1) {
-                    node = new AssignmentList(exprs);
-                    return saved;
-                }
-                exprs.Add(expr);
-            } else {
-                node = new AssignmentList(exprs);
-                return current;
-            }
-        }
+		return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
     }
 }
 
@@ -532,34 +511,14 @@ public class _postfix_expression : ParseRule {
     }
 }
 
-// argument_expression_list: assignment_expression < , assignment_expression >*
+
+/// <summary>
+/// argument_expression_list
+///   : assignment_expression [ ',' assignment_expression ]*
+/// </summary>
 public class _argument_expression_list : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out List<Expression> node) {
-        node = null;
-        Expression expr;
-        List<Expression> exprs = new List<Expression>();
-        Int32 current = _assignment_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            return -1;
-        }
-        exprs.Add(expr);
-        Int32 saved;
-
-        while (true) {
-            if (Parser.IsCOMMA(src[current])) {
-                saved = current;
-                current++;
-                current = _assignment_expression.Parse(src, current, out expr);
-                if (current == -1) {
-                    node = exprs;
-                    return saved;
-                }
-                exprs.Add(expr);
-            } else {
-                node = exprs;
-                return current;
-            }
-        }
+		return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
     }
 }
 
