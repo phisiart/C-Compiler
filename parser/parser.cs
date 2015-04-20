@@ -253,7 +253,7 @@ public class Parser {
         return GetChoicesParser(ParseFuncs)(src, begin, out node);
     }
 
-    public static Int32 ParseNonEmptyListWithSep<TRet>(List<Token> src, Int32 pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : PTNode {
+    public static Int32 ParseNonEmptyListWithSep<TRet>(List<Token> src, Int32 pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : class {
         list = new List<TRet>();
         TRet item;
 

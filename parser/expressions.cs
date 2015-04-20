@@ -140,7 +140,14 @@ public class _primary_expression : ParseRule {
 /// </summary>
 public class _expression : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-		return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
+        List<Expression> assign_exprs;
+        if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out assign_exprs, _assignment_expression.Parse, OperatorVal.COMMA)) == -1) {
+            node = null;
+            return -1;
+        } else {
+            node = new AssignmentList(assign_exprs);
+            return begin;
+        }
     }
 }
 
