@@ -8,23 +8,34 @@ namespace SyntaxTree {
         public virtual Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             throw new NotImplementedException();
         }
+//		public virtual AST.Stmt Semant(ref AST.Env env, AST.Stmt parent) {
+//			throw new NotImplementedException();
+//		}
     }
 
 
     public class GotoStatement : Statement {
         public GotoStatement(String _label) {
-            label = _label;
+            goto_label = _label;
         }
-        public readonly String label;
-
+        public readonly String goto_label;
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(goto_label));
+		}
     }
 
 
     public class ContinueStatement : Statement {
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.ContStmt());
+		}
     }
 
 
     public class BreakStatement : Statement {
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.BreakStmt());
+		}
     }
 
 
@@ -49,8 +60,8 @@ namespace SyntaxTree {
             stmt_declns = _decl_list;
             stmt_stmts = _stmt_list;
         }
-        List<Declaration> stmt_declns;
-        List<Statement> stmt_stmts;
+        public readonly List<Declaration> stmt_declns;
+        public readonly List<Statement> stmt_stmts;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             env = env.InScope();
@@ -75,6 +86,9 @@ namespace SyntaxTree {
 
         }
 
+//		public override AST.Stmt Semant(ref AST.Env env, AST.Stmt parent) {
+//			return new AST.CompoundStmt(ref env, stmt_declns, stmt_stmts);
+//		}
     }
 
 
@@ -82,7 +96,7 @@ namespace SyntaxTree {
         public ExpressionStatement(Expression _expr) {
             stmt_expr = _expr;
         }
-        public Expression stmt_expr;
+        public readonly Expression stmt_expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             Tuple<AST.Env, AST.Expr> r_expr = stmt_expr.GetExpr(env);
@@ -307,8 +321,8 @@ namespace SyntaxTree {
 		}
     }
 
-    // Finished.
-    public class LabeledStatement : Statement {
+
+	public class LabeledStatement : Statement {
         public LabeledStatement(String _label, Statement _stmt) {
             label = _label;
             stmt = _stmt;
@@ -316,10 +330,15 @@ namespace SyntaxTree {
         public readonly String label;
         public readonly Statement stmt;
 
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+			env = r_stmt.Item1;
+			return new Tuple<AST.Env, AST.Stmt>(env, new AST.LabeledStmt(label, r_stmt.Item2));
+		}
     }
 
-    // Finished.
-    public class CaseStatement : Statement {
+
+	public class CaseStatement : Statement {
         public CaseStatement(Expression _expr, Statement _stmt) {
             expr = _expr;
             stmt = _stmt;
@@ -328,6 +347,29 @@ namespace SyntaxTree {
         public readonly Expression expr;
         public readonly Statement stmt;
 
+		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+			if (expr == null) {
+				Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+				env = r_stmt.Item1;
+				return new Tuple<AST.Env, AST.Stmt>(env, new AST.DefaultStmt(r_stmt.Item2));
+			
+			} else {
+				Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+				env = r_expr.Item1;
+
+				AST.Expr case_expr = AST.TypeCast.MakeCast(r_expr.Item2, new AST.TLong());
+				if (!case_expr.IsConstExpr()) {
+					throw new InvalidOperationException("case expr not const");
+				}
+				Int32 case_value = ((AST.ConstLong)case_expr).value;
+
+				Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
+				env = r_stmt.Item1;
+
+				return new Tuple<AST.Env, AST.Stmt>(env, new AST.CaseStmt(case_value, r_stmt.Item2));
+			}
+
+		}
     }
 
 }

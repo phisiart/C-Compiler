@@ -19,9 +19,12 @@ namespace driver {
 int main(int argc, char **argv) {
     int b = 3 * 4;
     float local_variable_2;
+	double local_variable_3;
     const int * const * volatile a[3][4];
     b | b;
 	3.25f;
+	""3.0"";
+	
 }
                 ";
             scanner.Lex();

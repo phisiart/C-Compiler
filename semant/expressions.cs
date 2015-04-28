@@ -41,7 +41,7 @@ namespace SyntaxTree {
 			BinExprConstructor<TRet> construct
 		) where TRet : AST.Expr {
 
-			Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+			Tuple<AST.Expr, AST.Expr, AST.ExprType.ExprTypeKind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
 			lhs = r_cast.Item1;
 			rhs = r_cast.Item2;
 
@@ -52,15 +52,15 @@ namespace SyntaxTree {
 			Boolean is_const = c1 || c2;
 			Boolean is_volatile = v1 || v2;
 
-			AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+			AST.ExprType.ExprTypeKind enum_type = r_cast.Item3;
 
 			AST.Expr expr;
 			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
 				switch (enum_type) {
-				case AST.ExprType.EnumExprType.ULONG:
+				case AST.ExprType.ExprTypeKind.ULONG:
 					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
 					break;
-				case AST.ExprType.EnumExprType.LONG:
+				case AST.ExprType.ExprTypeKind.LONG:
 					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
 					break;
 				default:
@@ -70,10 +70,10 @@ namespace SyntaxTree {
 
 			} else {
 				switch (enum_type) {
-				case AST.ExprType.EnumExprType.ULONG:
+				case AST.ExprType.ExprTypeKind.ULONG:
 					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
 					break;
-				case AST.ExprType.EnumExprType.LONG:
+				case AST.ExprType.ExprTypeKind.LONG:
 					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
 					break;
 				default:
@@ -132,7 +132,7 @@ namespace SyntaxTree {
 			BinExprConstructor<TRet> construct
 		) where TRet : AST.Expr {
 
-			Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+			Tuple<AST.Expr, AST.Expr, AST.ExprType.ExprTypeKind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
 			lhs = r_cast.Item1;
 			rhs = r_cast.Item2;
 
@@ -143,21 +143,21 @@ namespace SyntaxTree {
 			Boolean is_const = c1 || c2;
 			Boolean is_volatile = v1 || v2;
 
-			AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+			AST.ExprType.ExprTypeKind enum_type = r_cast.Item3;
 
 			AST.Expr expr;
 			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
 				switch (enum_type) {
-				case AST.ExprType.EnumExprType.DOUBLE:
+				case AST.ExprType.ExprTypeKind.DOUBLE:
 					expr = new AST.ConstDouble(double_op(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
 					break;
-				case AST.ExprType.EnumExprType.FLOAT:
+				case AST.ExprType.ExprTypeKind.FLOAT:
 					expr = new AST.ConstFloat(float_op(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
 					break;
-				case AST.ExprType.EnumExprType.ULONG:
+				case AST.ExprType.ExprTypeKind.ULONG:
 					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
 					break;
-				case AST.ExprType.EnumExprType.LONG:
+				case AST.ExprType.ExprTypeKind.LONG:
 					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
 					break;
 				default:
@@ -166,16 +166,16 @@ namespace SyntaxTree {
 
 			} else {
 				switch (enum_type) {
-				case AST.ExprType.EnumExprType.DOUBLE:
+				case AST.ExprType.ExprTypeKind.DOUBLE:
 					expr = construct(lhs, rhs, new AST.TDouble(is_const, is_volatile));
 					break;
-				case AST.ExprType.EnumExprType.FLOAT:
+				case AST.ExprType.ExprTypeKind.FLOAT:
 					expr = construct(lhs, rhs, new AST.TFloat(is_const, is_volatile));
 					break;
-				case AST.ExprType.EnumExprType.ULONG:
+				case AST.ExprType.ExprTypeKind.ULONG:
 					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
 					break;
-				case AST.ExprType.EnumExprType.LONG:
+				case AST.ExprType.ExprTypeKind.LONG:
 					expr = construct(lhs, rhs, new AST.TLong(is_const, is_volatile));
 					break;
 				default:
@@ -244,7 +244,7 @@ namespace SyntaxTree {
             env = r_rhs.Item1;
             AST.Expr rhs = r_rhs.Item2;
 
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualScalarConversion(lhs, rhs);
+            Tuple<AST.Expr, AST.Expr, AST.ExprType.ExprTypeKind> r_cast = AST.TypeCast.UsualScalarConversion(lhs, rhs);
 
             lhs = r_cast.Item1;
             rhs = r_cast.Item2;
@@ -255,21 +255,21 @@ namespace SyntaxTree {
             Boolean is_const = c1 || c2;
             Boolean is_volatile = v1 || v2;
 
-            AST.ExprType.EnumExprType enum_type = r_cast.Item3;
+            AST.ExprType.ExprTypeKind enum_type = r_cast.Item3;
 
             AST.Expr expr;
             if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
                 switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
+                case AST.ExprType.ExprTypeKind.DOUBLE:
                     expr = new AST.ConstLong(double_op(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
                     break;
-                case AST.ExprType.EnumExprType.FLOAT:
+                case AST.ExprType.ExprTypeKind.FLOAT:
                     expr = new AST.ConstLong(float_op(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
                     break;
-                case AST.ExprType.EnumExprType.ULONG:
+                case AST.ExprType.ExprTypeKind.ULONG:
                     expr = new AST.ConstLong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
                     break;
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
                     break;
                 default:
@@ -279,10 +279,10 @@ namespace SyntaxTree {
 
             } else {
                 switch (enum_type) {
-                case AST.ExprType.EnumExprType.DOUBLE:
-                case AST.ExprType.EnumExprType.FLOAT:
-                case AST.ExprType.EnumExprType.ULONG:
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.DOUBLE:
+                case AST.ExprType.ExprTypeKind.FLOAT:
+                case AST.ExprType.ExprTypeKind.ULONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     expr = construct(lhs, rhs, new AST.TLong(is_const, is_volatile));
                     break;
                 default:
@@ -368,8 +368,8 @@ namespace SyntaxTree {
 		public static Tuple<AST.Env, AST.Expr> GetUnaryOpExpr(
             AST.Env env,
             Expression expr,
-            Dictionary<AST.ExprType.EnumExprType, UnaryExprConstructor> constructors,
-            Dictionary<AST.ExprType.EnumExprType, UnaryExprConstructor> const_constructors
+            Dictionary<AST.ExprType.ExprTypeKind, UnaryExprConstructor> constructors,
+            Dictionary<AST.ExprType.ExprTypeKind, UnaryExprConstructor> const_constructors
         ) {
             throw new NotImplementedException();
         }
@@ -474,7 +474,7 @@ namespace SyntaxTree {
 			// 1. if both true_expr and false_expr have arithmetic types
 			//    perform usual arithmetic conversion
 			if (true_expr.type.IsArith() && false_expr.type.IsArith()) {
-				Tuple<AST.Expr, AST.Expr, AST.ExprType.EnumExprType> r_cast = AST.TypeCast.UsualArithmeticConversion(true_expr, false_expr);
+				Tuple<AST.Expr, AST.Expr, AST.ExprType.ExprTypeKind> r_cast = AST.TypeCast.UsualArithmeticConversion(true_expr, false_expr);
 				true_expr = r_cast.Item1;
 				false_expr = r_cast.Item2;
 				return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
@@ -486,13 +486,13 @@ namespace SyntaxTree {
 
 				// 2. if both true_expr and false_expr have struct or union type
 				//    make sure they are compatible
-				case AST.ExprType.EnumExprType.STRUCT:
+				case AST.ExprType.ExprTypeKind.STRUCT:
 					if (!true_expr.type.EqualType(false_expr.type)) {
 						throw new InvalidOperationException("Error: expected same struct");
 					}
 					return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
 				
-				case AST.ExprType.EnumExprType.UNION:
+				case AST.ExprType.ExprTypeKind.UNION:
 					if (!true_expr.type.EqualType(false_expr.type)) {
 						throw new InvalidOperationException("Error: expected same union");
 					}
@@ -500,15 +500,15 @@ namespace SyntaxTree {
 				
 				// 3. if both true_expr and false_expr have void type
 				//    return void
-				case AST.ExprType.EnumExprType.VOID:
+				case AST.ExprType.ExprTypeKind.VOID:
 					return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type));
 
 				// 4. if both true_expr and false_expr have pointer type
-				case AST.ExprType.EnumExprType.POINTER:
+				case AST.ExprType.ExprTypeKind.POINTER:
 
 					// if either points to void, convert to void *
-					if (((AST.TPointer)true_expr.type).referenced_type.expr_type == AST.ExprType.EnumExprType.VOID
-					    || ((AST.TPointer)false_expr.type).referenced_type.expr_type == AST.ExprType.EnumExprType.VOID) {
+					if (((AST.TPointer)true_expr.type).referenced_type.expr_type == AST.ExprType.ExprTypeKind.VOID
+					    || ((AST.TPointer)false_expr.type).referenced_type.expr_type == AST.ExprType.ExprTypeKind.VOID) {
 						return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid())));
 					}
 
@@ -536,7 +536,7 @@ namespace SyntaxTree {
             env = r_func.Item1;
             AST.Expr func = r_func.Item2;
 
-            if (func.type.expr_type != AST.ExprType.EnumExprType.FUNCTION) {
+            if (func.type.expr_type != AST.ExprType.ExprTypeKind.FUNCTION) {
                 throw new Exception("Error: calling a non-function.");
             }
 
@@ -581,7 +581,7 @@ namespace SyntaxTree {
 			attrib = attrib_attrib.var_name;
 
 			switch (expr.type.expr_type) {
-			case AST.ExprType.EnumExprType.STRUCT:
+			case AST.ExprType.ExprTypeKind.STRUCT:
 				AST.TStruct struct_type = (AST.TStruct)expr.type;
 
 				AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.entry_name == attrib);
@@ -590,7 +590,7 @@ namespace SyntaxTree {
 				}
 				return new Tuple<AST.Env, AST.Expr>(env, new AST.Attribute(expr, attrib, r_struct_find.entry_type));
 			
-			case AST.ExprType.EnumExprType.UNION:
+			case AST.ExprType.ExprTypeKind.UNION:
 				AST.TUnion union_type = (AST.TUnion)expr.type;
 
 				Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
@@ -793,12 +793,12 @@ namespace SyntaxTree {
             env = r_expr.Item1;
             AST.Expr expr = r_expr.Item2;
 
-            if (expr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+            if (expr.type.expr_type != AST.ExprType.ExprTypeKind.POINTER) {
                 throw new Exception("Error: dereferencing a non-pointer");
             }
 
 			AST.ExprType ref_type = ((AST.TPointer)expr.type).referenced_type;
-			if (ref_type.expr_type == AST.ExprType.EnumExprType.INCOMPLETE_STRUCT) {
+			if (ref_type.expr_type == AST.ExprType.ExprTypeKind.INCOMPLETE_STRUCT) {
 				AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).struct_name);
 				if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
 					throw new InvalidOperationException("Error: cannot find struct");
@@ -861,19 +861,19 @@ namespace SyntaxTree {
 
             if (expr.IsConstExpr()) {
                 switch (expr.type.expr_type) {
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     expr = new AST.ConstLong(-long_expr.value);
                     break;
-                case AST.ExprType.EnumExprType.ULONG:
+                case AST.ExprType.ExprTypeKind.ULONG:
                     AST.ConstULong ulong_expr = (AST.ConstULong)expr;
                     expr = new AST.ConstLong(-(Int32)ulong_expr.value);
                     break;
-                case AST.ExprType.EnumExprType.FLOAT:
+                case AST.ExprType.ExprTypeKind.FLOAT:
                     AST.ConstFloat float_expr = (AST.ConstFloat)expr;
                     expr = new AST.ConstFloat(-float_expr.value);
                     break;
-                case AST.ExprType.EnumExprType.DOUBLE:
+                case AST.ExprType.ExprTypeKind.DOUBLE:
                     AST.ConstDouble double_expr = (AST.ConstDouble)expr;
                     expr = new AST.ConstDouble(-double_expr.value);
                     break;
@@ -913,11 +913,11 @@ namespace SyntaxTree {
 
             if (expr.IsConstExpr()) {
                 switch (expr.type.expr_type) {
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     expr = new AST.ConstLong(~long_expr.value);
                     break;
-                case AST.ExprType.EnumExprType.ULONG:
+                case AST.ExprType.ExprTypeKind.ULONG:
                     AST.ConstULong ulong_expr = (AST.ConstULong)expr;
                     expr = new AST.ConstULong(~ulong_expr.value);
                     break;
@@ -958,19 +958,19 @@ namespace SyntaxTree {
             if (expr.IsConstExpr()) {
                 Boolean value = false;
                 switch (expr.type.expr_type) {
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     value = long_expr.value != 0;
                     break;
-                case AST.ExprType.EnumExprType.ULONG:
+                case AST.ExprType.ExprTypeKind.ULONG:
                     AST.ConstULong ulong_expr = (AST.ConstULong)expr;
                     value = ulong_expr.value != 0;
                     break;
-                case AST.ExprType.EnumExprType.FLOAT:
+                case AST.ExprType.ExprTypeKind.FLOAT:
                     AST.ConstFloat float_expr = (AST.ConstFloat)expr;
                     value = float_expr.value != 0;
                     break;
-                case AST.ExprType.EnumExprType.DOUBLE:
+                case AST.ExprType.ExprTypeKind.DOUBLE:
                     AST.ConstDouble double_expr = (AST.ConstDouble)expr;
                     value = double_expr.value != 0;
                     break;

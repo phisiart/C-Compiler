@@ -48,23 +48,23 @@ namespace AST {
                 break;
             case Env.EntryLoc.GLOBAL:
                 switch (entry.entry_type.expr_type) {
-                case ExprType.EnumExprType.FUNCTION:
+                case ExprType.ExprTypeKind.FUNCTION:
                     state.LEA(name);
                     break;
-                case ExprType.EnumExprType.CHAR:
-                case ExprType.EnumExprType.DOUBLE:
-                case ExprType.EnumExprType.ERROR:
-                case ExprType.EnumExprType.FLOAT:
+                case ExprType.ExprTypeKind.CHAR:
+                case ExprType.ExprTypeKind.DOUBLE:
+                case ExprType.ExprTypeKind.ERROR:
+                case ExprType.ExprTypeKind.FLOAT:
                 
-                case ExprType.EnumExprType.LONG:
-                case ExprType.EnumExprType.POINTER:
-                case ExprType.EnumExprType.SHORT:
-                case ExprType.EnumExprType.STRUCT:
-                case ExprType.EnumExprType.UCHAR:
-                case ExprType.EnumExprType.ULONG:
-                case ExprType.EnumExprType.UNION:
-                case ExprType.EnumExprType.USHORT:
-                case ExprType.EnumExprType.VOID:
+                case ExprType.ExprTypeKind.LONG:
+                case ExprType.ExprTypeKind.POINTER:
+                case ExprType.ExprTypeKind.SHORT:
+                case ExprType.ExprTypeKind.STRUCT:
+                case ExprType.ExprTypeKind.UCHAR:
+                case ExprType.ExprTypeKind.ULONG:
+                case ExprType.ExprTypeKind.UNION:
+                case ExprType.ExprTypeKind.USHORT:
+                case ExprType.ExprTypeKind.VOID:
                 default:
                     throw new NotImplementedException();
                 }
@@ -87,26 +87,26 @@ namespace AST {
                 break;
             case Env.EntryLoc.FRAME:
                 switch (entry.entry_type.expr_type) {
-                case ExprType.EnumExprType.LONG:
-                case ExprType.EnumExprType.ULONG:
-                case ExprType.EnumExprType.POINTER:
+                case ExprType.ExprTypeKind.LONG:
+                case ExprType.ExprTypeKind.ULONG:
+                case ExprType.ExprTypeKind.POINTER:
                     state.LOAD(entry.entry_offset, Reg.EBP, Reg.EAX);
                     state.PUSHL(Reg.EAX);
                     break;
 
-                case ExprType.EnumExprType.FLOAT:
-                case ExprType.EnumExprType.DOUBLE:
-                case ExprType.EnumExprType.STRUCT:
-                case ExprType.EnumExprType.UNION:
+                case ExprType.ExprTypeKind.FLOAT:
+                case ExprType.ExprTypeKind.DOUBLE:
+                case ExprType.ExprTypeKind.STRUCT:
+                case ExprType.ExprTypeKind.UNION:
                     throw new NotImplementedException();
 
-                case ExprType.EnumExprType.VOID:
-                case ExprType.EnumExprType.FUNCTION:
-                case ExprType.EnumExprType.CHAR:
-                case ExprType.EnumExprType.UCHAR:
-                case ExprType.EnumExprType.SHORT:
-                case ExprType.EnumExprType.USHORT:
-                case ExprType.EnumExprType.ERROR:
+                case ExprType.ExprTypeKind.VOID:
+                case ExprType.ExprTypeKind.FUNCTION:
+                case ExprType.ExprTypeKind.CHAR:
+                case ExprType.ExprTypeKind.UCHAR:
+                case ExprType.ExprTypeKind.SHORT:
+                case ExprType.ExprTypeKind.USHORT:
+                case ExprType.ExprTypeKind.ERROR:
                 default:
                     throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type);
                 }
@@ -117,26 +117,26 @@ namespace AST {
 
             case Env.EntryLoc.STACK:
                 switch (entry.entry_type.expr_type) {
-                case ExprType.EnumExprType.LONG:
-                case ExprType.EnumExprType.ULONG:
-                case ExprType.EnumExprType.POINTER:
+                case ExprType.ExprTypeKind.LONG:
+                case ExprType.ExprTypeKind.ULONG:
+                case ExprType.ExprTypeKind.POINTER:
                     state.LOAD(-entry.entry_offset, Reg.EBP, Reg.EAX);
                     state.PUSHL(Reg.EAX);
                     break;
 
-                case ExprType.EnumExprType.FLOAT:
-                case ExprType.EnumExprType.DOUBLE:
-                case ExprType.EnumExprType.STRUCT:
-                case ExprType.EnumExprType.UNION:
+                case ExprType.ExprTypeKind.FLOAT:
+                case ExprType.ExprTypeKind.DOUBLE:
+                case ExprType.ExprTypeKind.STRUCT:
+                case ExprType.ExprTypeKind.UNION:
                     throw new NotImplementedException();
 
-                case ExprType.EnumExprType.VOID:
-                case ExprType.EnumExprType.FUNCTION:
-                case ExprType.EnumExprType.CHAR:
-                case ExprType.EnumExprType.UCHAR:
-                case ExprType.EnumExprType.SHORT:
-                case ExprType.EnumExprType.USHORT:
-                case ExprType.EnumExprType.ERROR:
+                case ExprType.ExprTypeKind.VOID:
+                case ExprType.ExprTypeKind.FUNCTION:
+                case ExprType.ExprTypeKind.CHAR:
+                case ExprType.ExprTypeKind.UCHAR:
+                case ExprType.ExprTypeKind.SHORT:
+                case ExprType.ExprTypeKind.USHORT:
+                case ExprType.ExprTypeKind.ERROR:
                 default:
                     throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type + " from stack");
                 }
@@ -158,25 +158,25 @@ namespace AST {
 
 			case Env.EntryLoc.FRAME:
 				switch (entry.entry_type.expr_type) {
-				case ExprType.EnumExprType.LONG:
-				case ExprType.EnumExprType.ULONG:
-				case ExprType.EnumExprType.POINTER:
+				case ExprType.ExprTypeKind.LONG:
+				case ExprType.ExprTypeKind.ULONG:
+				case ExprType.ExprTypeKind.POINTER:
 					state.LOAD(entry.entry_offset, Reg.EBP, Reg.EAX);
 					return Reg.EAX;
 
-				case ExprType.EnumExprType.FLOAT:
-				case ExprType.EnumExprType.DOUBLE:
-				case ExprType.EnumExprType.STRUCT:
-				case ExprType.EnumExprType.UNION:
+				case ExprType.ExprTypeKind.FLOAT:
+				case ExprType.ExprTypeKind.DOUBLE:
+				case ExprType.ExprTypeKind.STRUCT:
+				case ExprType.ExprTypeKind.UNION:
 					throw new NotImplementedException();
 
-				case ExprType.EnumExprType.VOID:
-				case ExprType.EnumExprType.FUNCTION:
-				case ExprType.EnumExprType.CHAR:
-				case ExprType.EnumExprType.UCHAR:
-				case ExprType.EnumExprType.SHORT:
-				case ExprType.EnumExprType.USHORT:
-				case ExprType.EnumExprType.ERROR:
+				case ExprType.ExprTypeKind.VOID:
+				case ExprType.ExprTypeKind.FUNCTION:
+				case ExprType.ExprTypeKind.CHAR:
+				case ExprType.ExprTypeKind.UCHAR:
+				case ExprType.ExprTypeKind.SHORT:
+				case ExprType.ExprTypeKind.USHORT:
+				case ExprType.ExprTypeKind.ERROR:
 				default:
 					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type);
 				}
@@ -186,25 +186,25 @@ namespace AST {
 
 			case Env.EntryLoc.STACK:
 				switch (entry.entry_type.expr_type) {
-				case ExprType.EnumExprType.LONG:
-				case ExprType.EnumExprType.ULONG:
-				case ExprType.EnumExprType.POINTER:
+				case ExprType.ExprTypeKind.LONG:
+				case ExprType.ExprTypeKind.ULONG:
+				case ExprType.ExprTypeKind.POINTER:
 					state.LOAD(-entry.entry_offset, Reg.EBP, Reg.EAX);
 					return Reg.EAX;
 
-				case ExprType.EnumExprType.FLOAT:
-				case ExprType.EnumExprType.DOUBLE:
-				case ExprType.EnumExprType.STRUCT:
-				case ExprType.EnumExprType.UNION:
+				case ExprType.ExprTypeKind.FLOAT:
+				case ExprType.ExprTypeKind.DOUBLE:
+				case ExprType.ExprTypeKind.STRUCT:
+				case ExprType.ExprTypeKind.UNION:
 					throw new NotImplementedException();
 
-				case ExprType.EnumExprType.VOID:
-				case ExprType.EnumExprType.FUNCTION:
-				case ExprType.EnumExprType.CHAR:
-				case ExprType.EnumExprType.UCHAR:
-				case ExprType.EnumExprType.SHORT:
-				case ExprType.EnumExprType.USHORT:
-				case ExprType.EnumExprType.ERROR:
+				case ExprType.ExprTypeKind.VOID:
+				case ExprType.ExprTypeKind.FUNCTION:
+				case ExprType.ExprTypeKind.CHAR:
+				case ExprType.ExprTypeKind.UCHAR:
+				case ExprType.ExprTypeKind.SHORT:
+				case ExprType.ExprTypeKind.USHORT:
+				case ExprType.ExprTypeKind.ERROR:
 				default:
 					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type + " from stack");
 				}
@@ -290,6 +290,7 @@ namespace AST {
 		}
     }
 
+	// TODO: generate a const long and load it into %st(0) using flds <name>
     public class ConstFloat : Constant {
         public ConstFloat(Single _value)
             : base(new TFloat(true)) {
@@ -304,8 +305,8 @@ namespace AST {
 			byte[] bytes = BitConverter.GetBytes(value);
 			Int32 intval = BitConverter.ToInt32(bytes, 0);
 			String name = state.CGenLongConst(intval);
-			state.MOVL(name, Reg.XMM0);
-			return Reg.XMM0;
+			state.FLDS(name);
+			return Reg.ST0;
 		}
     }
 
@@ -318,6 +319,16 @@ namespace AST {
             return "double(" + value + ")";
         }
         public readonly Double value;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			// throw new NotImplementedException();
+			byte[] bytes = BitConverter.GetBytes(value);
+			Int32 first_int = BitConverter.ToInt32(bytes, 0);
+			Int32 second_int = BitConverter.ToInt32(bytes, 4);
+			String name = state.CGenLongLongConst(first_int, second_int);
+			state.FLDL(name);
+			return Reg.ST0;
+		}
     }
 
     public class ConstStringLiteral : Constant {
@@ -326,6 +337,12 @@ namespace AST {
             value = _value;
         }
         public readonly String value;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			String name = state.CGenString(value);
+			state.MOVL(name, Reg.EAX);
+			return Reg.EAX;
+		}
     }
 
     public class AssignmentList : Expr {
@@ -540,10 +557,10 @@ namespace AST {
 		public readonly Expr add_rhs;
 
 		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+			if (ptr.type.expr_type != AST.ExprType.ExprTypeKind.POINTER) {
 				throw new InvalidOperationException("Error: expect a pointer");
 			}
-			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
+			if (offset.type.expr_type != AST.ExprType.ExprTypeKind.LONG) {
 				throw new InvalidOperationException("Error: expect an integer");
 			}
 
@@ -569,7 +586,7 @@ namespace AST {
 		}
 
 		public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
-			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+			if (lhs.type.expr_type == AST.ExprType.ExprTypeKind.POINTER) {
 				if (!rhs.type.IsIntegral()) {
 					throw new InvalidOperationException("Error: must add an integral to a pointer");
 				}
@@ -578,7 +595,7 @@ namespace AST {
 				// lhs = base, rhs = offset
 				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
 
-			} else if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+			} else if (rhs.type.expr_type == AST.ExprType.ExprTypeKind.POINTER) {
 				if (!lhs.type.IsIntegral()) {
 					throw new InvalidOperationException("Error: must add an integral to a pointer");
 				}
@@ -612,10 +629,10 @@ namespace AST {
 		public readonly Expr sub_rhs;
 
 		public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.expr_type != AST.ExprType.EnumExprType.POINTER) {
+			if (ptr.type.expr_type != AST.ExprType.ExprTypeKind.POINTER) {
 				throw new InvalidOperationException("Error: expect a pointer");
 			}
-			if (offset.type.expr_type != AST.ExprType.EnumExprType.LONG) {
+			if (offset.type.expr_type != AST.ExprType.ExprTypeKind.LONG) {
 				throw new InvalidOperationException("Error: expect an integer");
 			}
 
@@ -641,8 +658,8 @@ namespace AST {
 		}
 
 		public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
-			if (lhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
-				if (rhs.type.expr_type == AST.ExprType.EnumExprType.POINTER) {
+			if (lhs.type.expr_type == AST.ExprType.ExprTypeKind.POINTER) {
+				if (rhs.type.expr_type == AST.ExprType.ExprTypeKind.POINTER) {
 					// both operands are pointers
 
 					AST.TPointer lhs_type = (AST.TPointer)(lhs.type);

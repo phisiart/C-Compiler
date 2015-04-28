@@ -57,7 +57,7 @@ namespace SyntaxTree {
             AST.ExprType type = r_declr.Item2;
 
             AST.TFunction func_type;
-            if (type.expr_type == AST.ExprType.EnumExprType.FUNCTION) {
+            if (type.expr_type == AST.ExprType.ExprTypeKind.FUNCTION) {
                 func_type = (AST.TFunction)type;
             } else {
                 Log.SemantError("Error: not a function");

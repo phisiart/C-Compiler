@@ -144,28 +144,28 @@ namespace SyntaxTree {
             if (specs_typespecs.All(spec => spec.basic != BasicTypeSpecifier.NULL)) {
                 List<BasicTypeSpecifier> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
                 switch (GetBasicType(basic_specs)) {
-                case AST.ExprType.EnumExprType.CHAR:
+                case AST.ExprType.ExprTypeKind.CHAR:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.UCHAR:
+                case AST.ExprType.ExprTypeKind.UCHAR:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUChar(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.SHORT:
+                case AST.ExprType.ExprTypeKind.SHORT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TShort(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.USHORT:
+                case AST.ExprType.ExprTypeKind.USHORT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUShort(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.LONG:
+                case AST.ExprType.ExprTypeKind.LONG:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.ULONG:
+                case AST.ExprType.ExprTypeKind.ULONG:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TULong(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.FLOAT:
+                case AST.ExprType.ExprTypeKind.FLOAT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFloat(is_const, is_volatile));
 
-                case AST.ExprType.EnumExprType.DOUBLE:
+                case AST.ExprType.ExprTypeKind.DOUBLE:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TDouble(is_const, is_volatile));
 
                 default:
@@ -210,14 +210,14 @@ namespace SyntaxTree {
         // output: EnumExprType
         // returns a type from a list of type specifiers
         // 
-        private static AST.ExprType.EnumExprType GetBasicType(List<BasicTypeSpecifier> specs) {
-            foreach (KeyValuePair<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> pair in bspecs2enumtype) {
+        private static AST.ExprType.ExprTypeKind GetBasicType(List<BasicTypeSpecifier> specs) {
+            foreach (KeyValuePair<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> pair in bspecs2enumtype) {
                 if (MatchSpecs(specs, pair.Key)) {
                     return pair.Value;
                 }
             }
             Log.SemantError("Error: can't match type specifiers");
-            return AST.ExprType.EnumExprType.ERROR;
+            return AST.ExprType.ExprTypeKind.ERROR;
         }
 
         // MatchSpecs
@@ -233,32 +233,32 @@ namespace SyntaxTree {
         // bspecs2enumtype
         // ===============
         // 
-        private static Dictionary<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> bspecs2enumtype = new Dictionary<List<BasicTypeSpecifier>, AST.ExprType.EnumExprType> {
+        private static Dictionary<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> bspecs2enumtype = new Dictionary<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> {
 
             // void : { void }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.VOID }, AST.ExprType.EnumExprType.VOID },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.VOID }, AST.ExprType.ExprTypeKind.VOID },
 
             // char : { char }
             //      | { signed char }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.CHAR }, AST.ExprType.EnumExprType.CHAR },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.EnumExprType.CHAR },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.CHAR }, AST.ExprType.ExprTypeKind.CHAR },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.ExprTypeKind.CHAR },
 
             // uchar : { unsigned char }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.EnumExprType.UCHAR },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.ExprTypeKind.UCHAR },
 
             // short : { short }
             //       | { signed short }
             //       | { short Int32 }
             //       | { signed short Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.SHORT },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.SHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.SHORT },
 
             // ushort : { unsigned short }
             //        | { unsigned short Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.EnumExprType.USHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.USHORT },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.USHORT },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.USHORT },
 
             // long : { Int32 }
             //      | { signed }
@@ -267,30 +267,30 @@ namespace SyntaxTree {
             //      | { signed long }
             //      | { long Int32 }
             //      | { signed long Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.LONG },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
 
             // ulong : { unsigned }
             //       | { unsigned Int32 }
             //       | { unsigned long }
             //       | { unsigned long Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.EnumExprType.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.EnumExprType.ULONG },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED }, AST.ExprType.ExprTypeKind.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.ULONG },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.ULONG },
 
             // float : { float }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.FLOAT }, AST.ExprType.EnumExprType.FLOAT },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.FLOAT }, AST.ExprType.ExprTypeKind.FLOAT },
 
             // double : { double }
             //        | { long double }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.DOUBLE }, AST.ExprType.EnumExprType.DOUBLE },
+            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.DOUBLE }, AST.ExprType.ExprTypeKind.DOUBLE },
+        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.DOUBLE }, AST.ExprType.ExprTypeKind.DOUBLE },
 
     };
 
@@ -762,7 +762,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("struct " + name).entry_type.expr_type == AST.ExprType.EnumExprType.STRUCT) {
+					if (env.Find("struct " + name).entry_type.expr_type == AST.ExprType.ExprTypeKind.STRUCT) {
 						throw new InvalidOperationException("Error: re-defining a struct");
 					}
 
@@ -859,7 +859,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("union " + name).entry_type.expr_type == AST.ExprType.EnumExprType.UNION) {
+					if (env.Find("union " + name).entry_type.expr_type == AST.ExprType.ExprTypeKind.UNION) {
 						throw new InvalidOperationException("Error: re-defining a union");
 					}
 

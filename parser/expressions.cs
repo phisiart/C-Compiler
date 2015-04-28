@@ -139,48 +139,61 @@ public class _primary_expression : ParseRule {
 ///   : assignment_expression [ ',' assignment_expression ]*
 /// </summary>
 public class _expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
         List<Expression> assign_exprs;
         if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out assign_exprs, _assignment_expression.Parse, OperatorVal.COMMA)) == -1) {
-            node = null;
+            expr = null;
             return -1;
         } else {
-            node = new AssignmentList(assign_exprs);
+            expr = new AssignmentList(assign_exprs);
             return begin;
         }
     }
 }
 
-// constant_expression: conditional_expression
-// [ note: when declaring an array, the size should be a const ]
+/// <summary>
+/// constant_expression:
+///   : conditional_expression
+/// </summary>
+/// <remarks>
+/// When declaring an array, the size should be a constant.
+/// </remarks>
 public class _constant_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
-        return _conditional_expression.Parse(src, begin, out node);
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+        return _conditional_expression.Parse(src, begin, out expr);
     }
 }
 
 
-// conditional_expression: logical_or_expression < ? expression : conditional_expression >?
+/// <summary>
+/// conditional_expression:
+///   : logical_or_expression [ '?' expression ':' conditional_expression ]?
+/// </summary>
 public class _conditional_expression : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+		// logical_or_expression
         Int32 current = _logical_or_expression.Parse(src, begin, out expr);
         if (current == -1) {
             return -1;
         }
 
+		// '?'
         if (!Parser.EatOperator(src, ref current, OperatorVal.QUESTION)) {
             return current;
         }
 
+		// expression
         Expression true_expr;
         if ((current = _expression.Parse(src, current, out true_expr)) == -1) {
             return -1;
         }
 
+		// ':'
         if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
             return -1;
         }
 
+		// conditional_expression
         Expression false_expr;
         if ((current = Parse(src, current, out false_expr)) == -1) {
             return -1;

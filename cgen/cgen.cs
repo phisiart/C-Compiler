@@ -14,6 +14,8 @@ public enum Reg {
     ESP,
 
 	XMM0,
+
+	ST0,
 }
 
 public class CGenState {
@@ -61,6 +63,21 @@ public class CGenState {
         os.WriteLine(name + ":");
         stack_size = 0;
     }
+
+	/// <summary>
+	/// FLDS: load float to FPU stack.
+	/// </summary>
+	public void FLDS(String addr) {
+		os.WriteLine("    flds " + addr);
+	}
+
+	/// <summary>
+	/// FLDL: load double to FPU stack.
+	/// </summary>
+	/// <param name="addr">Address.</param>
+	public void FLDL(String addr) {
+		os.WriteLine("    fldl " + addr);
+	}
 
     // PUSHL
     // =====
@@ -227,6 +244,14 @@ public class CGenState {
 		rodata.WriteLine(name + ":");
 		rodata.WriteLine("    .long " + lo.ToString());
 		rodata.WriteLine("    .long " + hi.ToString());
+		rodata_idx++;
+		return name;
+	}
+
+	public String CGenString(String str) {
+		String name = ".LC" + rodata_idx.ToString();
+		rodata.WriteLine(name + ":");
+		rodata.WriteLine("    .string \"" + str + "\"");
 		rodata_idx++;
 		return name;
 	}
