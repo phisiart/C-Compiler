@@ -40,7 +40,7 @@ namespace AST {
                     decln_init.CGenValue(env, state);
 
                     // -<offset>(%ebp) = %eax
-                    state.STORE(Reg.EAX, -entry.entry_offset, Reg.EBP);
+                    state.STOREL(Reg.EAX, -entry.entry_offset, Reg.EBP);
 
                     break;
                 case Env.EntryLoc.GLOBAL:

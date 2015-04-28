@@ -18,6 +18,11 @@ public enum Reg {
 	ST0,
 }
 
+public enum CGenReturn {
+	EAX,
+	ST0,
+}
+
 public class CGenState {
     private enum Status {
         NONE,
@@ -33,6 +38,7 @@ public class CGenState {
         { Reg.EBP, "%ebp" },
         { Reg.ESP, "%esp" },
 		{ Reg.XMM0, "%xmm0" },
+		{ Reg.ST0, "%st(0)" },
     };
 
     public static String StrReg(Reg reg) {
@@ -71,12 +77,20 @@ public class CGenState {
 		os.WriteLine("    flds " + addr);
 	}
 
+	public void FLDS(Int32 imm, Reg from) {
+		os.WriteLine("    flds " + imm.ToString() + "(" + StrReg(from));
+	}
+
 	/// <summary>
 	/// FLDL: load double to FPU stack.
 	/// </summary>
 	/// <param name="addr">Address.</param>
 	public void FLDL(String addr) {
 		os.WriteLine("    fldl " + addr);
+	}
+
+	public void FLDL(Int32 imm, Reg from) {
+		os.WriteLine("    fldl " + imm.ToString() + "(" + StrReg(from));
 	}
 
     // PUSHL
@@ -128,20 +142,68 @@ public class CGenState {
     public void MOVL(Reg from, Reg to) {
         MOVL(StrReg(from), StrReg(to));
     }
-
-    public void STORE(Reg from, Reg to) {
+		
+    public void STOREL(Reg from, Reg to) {
         MOVL(StrReg(from), "(" + StrReg(to) + ")");
     }
 
     // movl from, offset(to)
-    public void STORE(Reg from, Int32 offset, Reg to) {
+    public void STOREL(Reg from, Int32 offset, Reg to) {
         MOVL(StrReg(from), offset.ToString() + "(" + StrReg(to) + ")");
     }
 
-    // movl offset(from), to
-    public void LOAD(Int32 offset, Reg from, Reg to) {
-        MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
-    }
+	// movl offset(from), to
+	public void LOADL(Int32 offset, Reg from, Reg to) {
+		MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
+	}
+
+	// MOVZBL
+	// ======
+	public void MOVZBL(String from, String to) {
+		os.WriteLine("    movzbl " + from + ", " + to);
+	}
+
+	// MOVSBL
+	// ======
+	public void MOVSBL(String from, String to) {
+		os.WriteLine("    movsbl " + from + ", " + to);
+	}
+
+	// MOVB
+	// ====
+	public void MOVB(String from, String to) {
+		os.WriteLine("    movb " + from + ", " + to);
+	}
+
+//	public void LOADB(Int32 offset, Reg from, Reg to) {
+//		MOVB(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
+//	}
+
+	public void LOADZBL(Int32 offset, Reg from, Reg to) {
+		MOVZBL(offset.ToString() + StrReg(from), StrReg(to));
+	}
+
+	public void LOADSBL(Int32 offset, Reg from, Reg to) {
+		MOVSBL(offset.ToString() + StrReg(from), StrReg(to));
+	}
+
+	// MOVZWL
+	// ======
+	public void MOVZWL(String from, String to) {
+		os.WriteLine("    movzwl " + from + ", " + to);
+	}
+
+	public void MOVSWL(String from, String to) {
+		os.WriteLine("    movswl " + from + ", " + to);
+	}
+
+	public void LOADZWL(Int32 offset, Reg from, Reg to) {
+		MOVZWL(offset.ToString() + StrReg(from), StrReg(to));
+	}
+
+	public void LOADSWL(Int32 offset, Reg from, Reg to) {
+		MOVSWL(offset.ToString() + StrReg(from), StrReg(to));
+	}
 
     // LEA
     // ===
@@ -172,7 +234,7 @@ public class CGenState {
         PUSHL(Reg.EAX);
         lhs.CGenAddress(env, this);
         POPL(Reg.EBX);
-        STORE(Reg.EAX, Reg.EBX);
+        STOREL(Reg.EAX, Reg.EBX);
     }
     public void LEAVE() {
         //os.WriteLine("    leave # pop frame, restore %ebp");

@@ -90,7 +90,7 @@ namespace AST {
                 case ExprType.ExprTypeKind.LONG:
                 case ExprType.ExprTypeKind.ULONG:
                 case ExprType.ExprTypeKind.POINTER:
-                    state.LOAD(entry.entry_offset, Reg.EBP, Reg.EAX);
+                    state.LOADL(entry.entry_offset, Reg.EBP, Reg.EAX);
                     state.PUSHL(Reg.EAX);
                     break;
 
@@ -120,7 +120,7 @@ namespace AST {
                 case ExprType.ExprTypeKind.LONG:
                 case ExprType.ExprTypeKind.ULONG:
                 case ExprType.ExprTypeKind.POINTER:
-                    state.LOAD(-entry.entry_offset, Reg.EBP, Reg.EAX);
+                    state.LOADL(-entry.entry_offset, Reg.EBP, Reg.EAX);
                     state.PUSHL(Reg.EAX);
                     break;
 
@@ -150,32 +150,63 @@ namespace AST {
 
 		public override Reg CGenValue(Env env, CGenState state) {
 			Env.Entry entry = env.Find(name);
+
+			Int32 offset = entry.entry_offset;
+			if (entry.entry_loc == Env.EntryLoc.STACK) {
+				offset = -offset;
+			}
+
 			switch (entry.entry_loc) {
+
 			case Env.EntryLoc.ENUM:
 				// enum constant : just an integer
-				state.MOVL(entry.entry_offset, Reg.EAX);
+				state.MOVL(offset, Reg.EAX);
 				return Reg.EAX;
 
 			case Env.EntryLoc.FRAME:
+			case Env.EntryLoc.STACK:
 				switch (entry.entry_type.expr_type) {
 				case ExprType.ExprTypeKind.LONG:
 				case ExprType.ExprTypeKind.ULONG:
 				case ExprType.ExprTypeKind.POINTER:
-					state.LOAD(entry.entry_offset, Reg.EBP, Reg.EAX);
+					state.LOADL(offset, Reg.EBP, Reg.EAX);
 					return Reg.EAX;
 
 				case ExprType.ExprTypeKind.FLOAT:
+					state.FLDS(offset, Reg.EBP);
+					return Reg.ST0;
+
 				case ExprType.ExprTypeKind.DOUBLE:
+					state.FLDL(offset, Reg.EBP);
+					return Reg.ST0;
+
 				case ExprType.ExprTypeKind.STRUCT:
 				case ExprType.ExprTypeKind.UNION:
 					throw new NotImplementedException();
 
 				case ExprType.ExprTypeKind.VOID:
+					throw new InvalidOperationException("Error: cannot get value of void");
+
 				case ExprType.ExprTypeKind.FUNCTION:
+					state.MOVL(name, Reg.EAX);
+					return Reg.EAX;
+
 				case ExprType.ExprTypeKind.CHAR:
+					state.LOADSBL(offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
 				case ExprType.ExprTypeKind.UCHAR:
+					state.LOADZBL(offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
 				case ExprType.ExprTypeKind.SHORT:
+					state.LOADSWL(offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
 				case ExprType.ExprTypeKind.USHORT:
+					state.LOADZWL(offset, Reg.EBP, Reg.EAX);
+					return Reg.EAX;
+
 				case ExprType.ExprTypeKind.ERROR:
 				default:
 					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type);
@@ -184,30 +215,30 @@ namespace AST {
 			case Env.EntryLoc.GLOBAL:
 				throw new NotImplementedException();
 
-			case Env.EntryLoc.STACK:
-				switch (entry.entry_type.expr_type) {
-				case ExprType.ExprTypeKind.LONG:
-				case ExprType.ExprTypeKind.ULONG:
-				case ExprType.ExprTypeKind.POINTER:
-					state.LOAD(-entry.entry_offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
-
-				case ExprType.ExprTypeKind.FLOAT:
-				case ExprType.ExprTypeKind.DOUBLE:
-				case ExprType.ExprTypeKind.STRUCT:
-				case ExprType.ExprTypeKind.UNION:
-					throw new NotImplementedException();
-
-				case ExprType.ExprTypeKind.VOID:
-				case ExprType.ExprTypeKind.FUNCTION:
-				case ExprType.ExprTypeKind.CHAR:
-				case ExprType.ExprTypeKind.UCHAR:
-				case ExprType.ExprTypeKind.SHORT:
-				case ExprType.ExprTypeKind.USHORT:
-				case ExprType.ExprTypeKind.ERROR:
-				default:
-					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type + " from stack");
-				}
+//			case Env.EntryLoc.STACK:
+//				switch (entry.entry_type.expr_type) {
+//				case ExprType.ExprTypeKind.LONG:
+//				case ExprType.ExprTypeKind.ULONG:
+//				case ExprType.ExprTypeKind.POINTER:
+//					state.LOADL(-entry.entry_offset, Reg.EBP, Reg.EAX);
+//					return Reg.EAX;
+//
+//				case ExprType.ExprTypeKind.FLOAT:
+//				case ExprType.ExprTypeKind.DOUBLE:
+//				case ExprType.ExprTypeKind.STRUCT:
+//				case ExprType.ExprTypeKind.UNION:
+//					throw new NotImplementedException();
+//
+//				case ExprType.ExprTypeKind.VOID:
+//				case ExprType.ExprTypeKind.FUNCTION:
+//				case ExprType.ExprTypeKind.CHAR:
+//				case ExprType.ExprTypeKind.UCHAR:
+//				case ExprType.ExprTypeKind.SHORT:
+//				case ExprType.ExprTypeKind.USHORT:
+//				case ExprType.ExprTypeKind.ERROR:
+//				default:
+//					throw new InvalidOperationException("Error: cannot push type " + entry.entry_type.expr_type + " from stack");
+//				}
 
 			case Env.EntryLoc.TYPEDEF:
 			case Env.EntryLoc.NOT_FOUND:
@@ -310,6 +341,9 @@ namespace AST {
 		}
     }
 
+	/// <summary>
+	/// Constant Double
+	/// </summary>
     public class ConstDouble : Constant {
         public ConstDouble(Double _value)
             : base(new TDouble(true)) {
@@ -320,6 +354,9 @@ namespace AST {
         }
         public readonly Double value;
 
+		/// <summary>
+		/// fldl addr
+		/// </summary>
 		public override Reg CGenValue(Env env, CGenState state) {
 			// throw new NotImplementedException();
 			byte[] bytes = BitConverter.GetBytes(value);
@@ -418,11 +455,11 @@ namespace AST {
     public class Attribute : Expr {
         public Attribute(Expr _expr, String _attrib_name, ExprType _type)
             : base(_type) {
-            expr = _expr;
+            attrib_expr = _expr;
             attrib_name = _attrib_name;
         }
-        protected Expr expr;
-        protected String attrib_name;
+		public readonly Expr attrib_expr;
+        public readonly String attrib_name;
     }
 
     public class PostIncrement : Expr {
@@ -430,7 +467,7 @@ namespace AST {
             : base(_type) {
             expr = _expr;
         }
-        protected Expr expr;
+		public readonly Expr expr;
     }
 
     public class PostDecrement : Expr {

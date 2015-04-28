@@ -16,15 +16,20 @@ namespace driver {
             Scanner scanner = new Scanner();
             scanner.src =
                 @"
+int foo() {
+	return 0;
+}
 int main(int argc, char **argv) {
     int b = 3 * 4;
+    char c;
     float local_variable_2;
-	double local_variable_3;
+    double local_variable_3;
     const int * const * volatile a[3][4];
-    b | b;
-	3.25f;
-	""3.0"";
-	
+    b;
+    foo();
+    3.25f;
+    ""3.0"";
+    c;
 }
                 ";
             scanner.Lex();
