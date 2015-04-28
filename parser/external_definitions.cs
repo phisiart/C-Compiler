@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SyntaxTree;
 
 // translation_unit : [external_declaration]+
-public class _translation_unit : PTNode {
-    public static bool Test() {
+public class _translation_unit : ParseRule {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
         TranslationUnit unit;
-        int current = Parse(src, 0, out unit);
+        Int32 current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
         }
@@ -29,9 +30,9 @@ public class _translation_unit : PTNode {
         return true;
     }
     
-    public static int Parse(List<Token> src, int pos, out TranslationUnit unit) {
-        List<ASTNode> list;
-        int current;
+    public static Int32 Parse(List<Token> src, Int32 pos, out TranslationUnit unit) {
+        List<ExternalDeclaration> list;
+        Int32 current;
         if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
             unit = new TranslationUnit(list);
             return current;
@@ -43,11 +44,11 @@ public class _translation_unit : PTNode {
     
 }
 // external_declaration: function_definition | declaration
-public class _external_declaration : PTNode {
-    public static bool Test() {
+public class _external_declaration : ParseRule {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("int a;");
-        ASTNode node;
-        int current = Parse(src, 0, out node);
+        ExternalDeclaration node;
+        Int32 current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
         }
@@ -61,8 +62,8 @@ public class _external_declaration : PTNode {
         return true;
     }
 
-    public static int Parse(List<Token> src, int pos, out ASTNode node) {
-        return Parser.Parse2Choices<ASTNode, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+    public static Int32 Parse(List<Token> src, Int32 pos, out ExternalDeclaration node) {
+        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Declaration>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -71,8 +72,8 @@ public class _external_declaration : PTNode {
 //
 // NOTE: the optional declaration_list is for the **old-style** function prototype like this:
 // +-------------------------------+
-// |    int foo(param1, param2)    |
-// |    int param1;                |
+// |    Int32 foo(param1, param2)    |
+// |    Int32 param1;                |
 // |    char param2;               |
 // |    {                          |
 // |        ....                   |
@@ -81,7 +82,7 @@ public class _external_declaration : PTNode {
 //
 // i'm **not** going to support this style. function prototypes should always be like this:
 // +------------------------------------------+
-// |    int foo(int param1, char param2) {    |
+// |    Int32 foo(Int32 param1, char param2) {    |
 // |        ....                              |
 // |    }                                     |
 // +------------------------------------------+
@@ -93,11 +94,11 @@ public class _external_declaration : PTNode {
 //
 // FAIL: null
 //
-public class _function_definition : PTNode {
-    public static bool Test() {
+public class _function_definition : ParseRule {
+    public static Boolean Test() {
         var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
         FunctionDefinition def;
-        int current = Parse(src, 0, out def);
+        Int32 current = Parse(src, 0, out def);
         if (current == -1) {
             return false;
         }
@@ -105,17 +106,17 @@ public class _function_definition : PTNode {
         return true;
     }
     
-    public static int Parse(List<Token> src, int begin, out FunctionDefinition def) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out FunctionDefinition def) {
         // try to match declaration_specifiers, if not found, create an empty one.
-        DeclnSpecs specs;
-        int current = _declaration_specifiers.Parse(src, begin, out specs);
+        DeclarationSpecifiers specs;
+        Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclnSpecs(new List<StorageClassSpecifier>(), new List<TypeSpec>(), new List<TypeQualifier>());
+            specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
             current = begin;
         }
 
         // match declarator
-        Declr decl;
+        Declarator decl;
         current = _declarator.Parse(src, current, out decl);
         if (current == -1) {
             def = null;
@@ -123,7 +124,7 @@ public class _function_definition : PTNode {
         }
 
         // match compound_statement
-        Statement stmt;
+        CompoundStatement stmt;
         current = _compound_statement.Parse(src, current, out stmt);
         if (current == -1) {
             def = null;

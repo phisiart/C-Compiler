@@ -1,0 +1,16 @@
+﻿<Properties StartupItem="CCompiler.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="driver/Program.cs">
+    <Files>
+      <File FileName="driver/Program.cs" Line="4" Column="19" />
+      <File FileName="cgen/statements.cs" Line="214" Column="19" />
+      <File FileName="semant/statements.cs" Line="99" Column="25" NotebookId="1" />
+      <File FileName="semant/declarations.cs" Line="23" Column="4" NotebookId="1" />
+      <File FileName="cgen/cgen.cs" Line="234" Column="36" NotebookId="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

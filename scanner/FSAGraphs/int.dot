@@ -1,0 +1,38 @@
+digraph int {
+    node [shape = circle, width = 0.6, height = 0.6, fontname = "monospace", fixedsize = true, fontsize = 12];
+    edge [fontname = "monospace", fontsize = 12];
+
+    node [shape = circle];
+        START; ZX;
+
+    node [style = filled];
+        Z D O H L U UL;
+    
+    node [shape = circle, fixedsize = true];
+        START -> Z [ label = "0" ];
+        START -> D [ label = "[1-9]" ];
+
+        Z -> ZX [ label = "[Xx]" ];
+        Z -> O [ label = "[0-7]" ];
+        Z -> U [ label = "[Uu]" ];
+        Z -> L [ label = "[Ll]" ];
+
+        D -> D [ label = "[0-9]" ];
+        D -> U [ label = "[Uu]" ];
+        D -> L [ label = "[Ll]" ];
+
+        ZX -> H [ label = "<hex>" ];
+
+        O -> O [ label = "[0-7]" ];
+        O -> L [ label = "[Ll]" ];
+        O -> U [ label = "[Uu]" ];
+
+        H -> H [ label = "<hex>" ];
+        H -> L [ label = "[Ll]" ];
+        H -> U [ label = "[Uu]" ];
+
+        L -> UL [ label = "[Uu]" ];
+        
+        U -> UL [ label = "[Ll]" ];
+
+}
