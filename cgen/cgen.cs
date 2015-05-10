@@ -357,6 +357,31 @@ public class CGenState {
 		ORL(StrReg(er), StrReg(ee), comment);
 	}
 
+    /// <summary>
+    /// SALL er, ee
+    /// ee = ee << er
+    /// Note that there is only one kind of lshift.
+    /// </summary>
+    public void SALL(String er, String ee) {
+        os.WriteLine("    sall " + er + ", " + ee);
+    }
+    
+    public void SALL(Reg er, Reg ee) {
+        SALL(StrReg(er), StrReg(ee));
+    }
+
+    /// <summary>
+    /// XORL er, ee
+    /// ee = ee ^ er
+    /// </summary>
+    public void XORL(String er, String ee) {
+        os.WriteLine("    xorl " + er + ", " + ee);
+    }
+
+    public void XORL(Reg er, Reg ee) {
+        XORL(StrReg(er), StrReg(ee));
+    }
+
 	public String CGenLongConst(Int32 val) {
 		String name = ".LC" + rodata_idx.ToString();
 		rodata.WriteLine("    .align 4");

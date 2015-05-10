@@ -19,7 +19,9 @@ namespace AST {
         public Expr(ExprType _type) {
             type = _type;
         }
-        public virtual Boolean IsConstExpr() { return false; }
+        public virtual Boolean IsConstExpr() {
+            return false;
+        }
         public virtual Reg CGenValue(Env env, CGenState state) {
             throw new NotImplementedException();
         }
@@ -95,7 +97,8 @@ namespace AST {
     }
 
     public class EmptyExpr : Expr {
-        public EmptyExpr() : base(new TVoid()) { }
+        public EmptyExpr() : base(new TVoid()) {
+        }
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL(0, Reg.EAX);
             return Reg.EAX;
@@ -129,7 +132,7 @@ namespace AST {
                 case ExprType.ExprTypeKind.DOUBLE:
                 case ExprType.ExprTypeKind.ERROR:
                 case ExprType.ExprTypeKind.FLOAT:
-                
+
                 case ExprType.ExprTypeKind.LONG:
                 case ExprType.ExprTypeKind.POINTER:
                 case ExprType.ExprTypeKind.SHORT:
@@ -152,75 +155,75 @@ namespace AST {
         }
 
         // TODO: struct and union
-		public override Reg CGenValue(Env env, CGenState state) {
-			Env.Entry entry = env.Find(name);
+        public override Reg CGenValue(Env env, CGenState state) {
+            Env.Entry entry = env.Find(name);
 
-			Int32 offset = entry.entry_offset;
-			if (entry.entry_loc == Env.EntryLoc.STACK) {
-				offset = -offset;
-			}
+            Int32 offset = entry.entry_offset;
+            if (entry.entry_loc == Env.EntryLoc.STACK) {
+                offset = -offset;
+            }
 
-			switch (entry.entry_loc) {
-			case Env.EntryLoc.ENUM:
-				// enum constant : just an integer
-				state.MOVL(offset, Reg.EAX);
-				return Reg.EAX;
+            switch (entry.entry_loc) {
+            case Env.EntryLoc.ENUM:
+                // enum constant : just an integer
+                state.MOVL(offset, Reg.EAX);
+                return Reg.EAX;
 
-			case Env.EntryLoc.FRAME:
-			case Env.EntryLoc.STACK:
-				switch (type.type_kind) {
-				case ExprType.ExprTypeKind.LONG:
-				case ExprType.ExprTypeKind.ULONG:
-				case ExprType.ExprTypeKind.POINTER:
-					state.MOVL(offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
+            case Env.EntryLoc.FRAME:
+            case Env.EntryLoc.STACK:
+                switch (type.type_kind) {
+                case ExprType.ExprTypeKind.LONG:
+                case ExprType.ExprTypeKind.ULONG:
+                case ExprType.ExprTypeKind.POINTER:
+                    state.MOVL(offset, Reg.EBP, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.FLOAT:
-					state.FLDS(offset, Reg.EBP);
-					return Reg.ST0;
+                case ExprType.ExprTypeKind.FLOAT:
+                    state.FLDS(offset, Reg.EBP);
+                    return Reg.ST0;
 
-				case ExprType.ExprTypeKind.DOUBLE:
-					state.FLDL(offset, Reg.EBP);
-					return Reg.ST0;
+                case ExprType.ExprTypeKind.DOUBLE:
+                    state.FLDL(offset, Reg.EBP);
+                    return Reg.ST0;
 
-				case ExprType.ExprTypeKind.STRUCT:
-				case ExprType.ExprTypeKind.UNION:
-					throw new NotImplementedException();
+                case ExprType.ExprTypeKind.STRUCT:
+                case ExprType.ExprTypeKind.UNION:
+                    throw new NotImplementedException();
 
-				case ExprType.ExprTypeKind.VOID:
+                case ExprType.ExprTypeKind.VOID:
                     state.MOVL(0, Reg.EAX);
                     return Reg.EAX;
 
-				case ExprType.ExprTypeKind.FUNCTION:
-					state.MOVL(name, Reg.EAX);
-					return Reg.EAX;
+                case ExprType.ExprTypeKind.FUNCTION:
+                    state.MOVL(name, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.CHAR:
-					state.MOVSBL(offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
+                case ExprType.ExprTypeKind.CHAR:
+                    state.MOVSBL(offset, Reg.EBP, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.UCHAR:
-					state.MOVZBL(offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
+                case ExprType.ExprTypeKind.UCHAR:
+                    state.MOVZBL(offset, Reg.EBP, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.SHORT:
-					state.MOVSWL(offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
+                case ExprType.ExprTypeKind.SHORT:
+                    state.MOVSWL(offset, Reg.EBP, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.USHORT:
-					state.MOVZWL(offset, Reg.EBP, Reg.EAX);
-					return Reg.EAX;
+                case ExprType.ExprTypeKind.USHORT:
+                    state.MOVZWL(offset, Reg.EBP, Reg.EAX);
+                    return Reg.EAX;
 
-				case ExprType.ExprTypeKind.ERROR:
-				default:
+                case ExprType.ExprTypeKind.ERROR:
+                default:
                     throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
-				}
+                }
 
-			case Env.EntryLoc.GLOBAL:
+            case Env.EntryLoc.GLOBAL:
                 switch (type.type_kind) {
                 case ExprType.ExprTypeKind.CHAR:
                     state.MOVSBL(name, Reg.EAX);
-					return Reg.EAX;
+                    return Reg.EAX;
 
                 case ExprType.ExprTypeKind.UCHAR:
                     state.MOVZBL(name, Reg.EAX);
@@ -246,7 +249,7 @@ namespace AST {
 
                 case ExprType.ExprTypeKind.FLOAT:
                     state.FLDS(name);
-					return Reg.ST0;
+                    return Reg.ST0;
 
                 case ExprType.ExprTypeKind.DOUBLE:
                     state.FLDL(name);
@@ -273,21 +276,24 @@ namespace AST {
                     throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
                 }
 
-			case Env.EntryLoc.TYPEDEF:
-			case Env.EntryLoc.NOT_FOUND:
-			default:
+            case Env.EntryLoc.TYPEDEF:
+            case Env.EntryLoc.NOT_FOUND:
+            default:
                 throw new InvalidProgramException("cannot get the value of a " + entry.entry_loc.ToString());
-			}
-		}
+            }
+        }
     }
 
     public abstract class Constant : Expr {
         public Constant(ExprType _type)
-            : base(_type) { }
-        public override Boolean IsConstExpr() { return true; }
-		public override void CGenAddress(Env env, CGenState state) {
-			throw new InvalidOperationException("Error: cannot get the address of a constant");
-		}
+            : base(_type) {
+        }
+        public override Boolean IsConstExpr() {
+            return true;
+        }
+        public override void CGenAddress(Env env, CGenState state) {
+            throw new InvalidOperationException("Error: cannot get the address of a constant");
+        }
     }
 
     public class ConstLong : Constant {
@@ -306,9 +312,9 @@ namespace AST {
             return Reg.EAX;
         }
 
-		public override void CGenPush(Env env, CGenState state) {
-			state.PUSHL(value);
-		}
+        public override void CGenPush(Env env, CGenState state) {
+            state.PUSHL(value);
+        }
     }
 
     public class ConstULong : Constant {
@@ -322,14 +328,14 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-		public override Reg CGenValue(Env env, CGenState state) {
-			state.MOVL((Int32)value, Reg.EAX);
-			return Reg.EAX;
-		}
+        public override Reg CGenValue(Env env, CGenState state) {
+            state.MOVL((Int32)value, Reg.EAX);
+            return Reg.EAX;
+        }
 
-		public override void CGenPush(Env env, CGenState state) {
-			state.PUSHL((Int32)value);
-		}
+        public override void CGenPush(Env env, CGenState state) {
+            state.PUSHL((Int32)value);
+        }
     }
 
     public class ConstPtr : Constant {
@@ -343,14 +349,14 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-		public override Reg CGenValue(Env env, CGenState state) {
-			state.MOVL((Int32)value, Reg.EAX);
-			return Reg.EAX;
-		}
+        public override Reg CGenValue(Env env, CGenState state) {
+            state.MOVL((Int32)value, Reg.EAX);
+            return Reg.EAX;
+        }
 
-		public override void CGenPush(Env env, CGenState state) {
-			state.PUSHL((Int32)value);
-		}
+        public override void CGenPush(Env env, CGenState state) {
+            state.PUSHL((Int32)value);
+        }
     }
 
     /// <summary>
@@ -369,18 +375,18 @@ namespace AST {
         /// <summary>
         /// flds addr
         /// </summary>
-		public override Reg CGenValue(Env env, CGenState state) {
-			byte[] bytes = BitConverter.GetBytes(value);
-			Int32 intval = BitConverter.ToInt32(bytes, 0);
-			String name = state.CGenLongConst(intval);
-			state.FLDS(name);
-			return Reg.ST0;
-		}
+        public override Reg CGenValue(Env env, CGenState state) {
+            byte[] bytes = BitConverter.GetBytes(value);
+            Int32 intval = BitConverter.ToInt32(bytes, 0);
+            String name = state.CGenLongConst(intval);
+            state.FLDS(name);
+            return Reg.ST0;
+        }
     }
 
-	/// <summary>
-	/// Constant Double
-	/// </summary>
+    /// <summary>
+    /// Constant Double
+    /// </summary>
     public class ConstDouble : Constant {
         public ConstDouble(Double _value)
             : base(new TDouble(true)) {
@@ -391,17 +397,17 @@ namespace AST {
         }
         public readonly Double value;
 
-		/// <summary>
-		/// fldl addr
-		/// </summary>
-		public override Reg CGenValue(Env env, CGenState state) {
-			byte[] bytes = BitConverter.GetBytes(value);
-			Int32 first_int = BitConverter.ToInt32(bytes, 0);
-			Int32 second_int = BitConverter.ToInt32(bytes, 4);
-			String name = state.CGenLongLongConst(first_int, second_int);
-			state.FLDL(name);
-			return Reg.ST0;
-		}
+        /// <summary>
+        /// fldl addr
+        /// </summary>
+        public override Reg CGenValue(Env env, CGenState state) {
+            byte[] bytes = BitConverter.GetBytes(value);
+            Int32 first_int = BitConverter.ToInt32(bytes, 0);
+            Int32 second_int = BitConverter.ToInt32(bytes, 4);
+            String name = state.CGenLongLongConst(first_int, second_int);
+            state.FLDL(name);
+            return Reg.ST0;
+        }
     }
 
     public class ConstStringLiteral : Constant {
@@ -411,11 +417,11 @@ namespace AST {
         }
         public readonly String value;
 
-		public override Reg CGenValue(Env env, CGenState state) {
-			String name = state.CGenString(value);
-			state.MOVL(name, Reg.EAX);
-			return Reg.EAX;
-		}
+        public override Reg CGenValue(Env env, CGenState state) {
+            String name = state.CGenString(value);
+            state.MOVL(name, Reg.EAX);
+            return Reg.EAX;
+        }
     }
 
     public class AssignmentList : Expr {
@@ -425,13 +431,13 @@ namespace AST {
         }
         public readonly List<Expr> exprs;
 
-		public override Reg CGenValue(Env env, CGenState state) {
-			Reg reg = Reg.EAX;
-			foreach (Expr expr in exprs) {
-				reg = expr.CGenValue(env, state);
-			}
-			return reg;
-		}
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg reg = Reg.EAX;
+            foreach (Expr expr in exprs) {
+                reg = expr.CGenValue(env, state);
+            }
+            return reg;
+        }
     }
 
     public class Assignment : Expr {
@@ -526,17 +532,17 @@ namespace AST {
         }
     }
 
-	public class ConditionalExpr : Expr {
-		public ConditionalExpr(Expr _cond, Expr _true_expr, Expr _false_expr, ExprType _type)
-			: base(_type) {
-			cond_cond = _cond;
-			cond_true_expr = _true_expr;
-			cond_false_expr = _false_expr;
-		}
-		public readonly Expr cond_cond;
-		public readonly Expr cond_true_expr;
-		public readonly Expr cond_false_expr;
-	}
+    public class ConditionalExpr : Expr {
+        public ConditionalExpr(Expr _cond, Expr _true_expr, Expr _false_expr, ExprType _type)
+            : base(_type) {
+            cond_cond = _cond;
+            cond_true_expr = _true_expr;
+            cond_false_expr = _false_expr;
+        }
+        public readonly Expr cond_cond;
+        public readonly Expr cond_true_expr;
+        public readonly Expr cond_false_expr;
+    }
 
     public class FunctionCall : Expr {
         public FunctionCall(Expr _function, TFunction _func_type, List<Expr> _arguments, ExprType _type)
@@ -545,8 +551,8 @@ namespace AST {
             call_func_type = _func_type;
             call_args = _arguments;
         }
-        public readonly Expr       call_func;
-        public readonly TFunction  call_func_type;
+        public readonly Expr call_func;
+        public readonly TFunction call_func_type;
         public readonly List<Expr> call_args;
 
         public override void CGenAddress(Env env, CGenState state) {
@@ -554,9 +560,9 @@ namespace AST {
         }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            
+
             // Push the arguments onto the stack in reverse order
-            for (Int32 i = call_args.Count; i --> 0;) {
+            for (Int32 i = call_args.Count; i-- > 0; ) {
                 Expr arg = call_args[i];
                 arg.CGenPush(env, state);
             }
@@ -576,7 +582,7 @@ namespace AST {
             attrib_expr = _expr;
             attrib_name = _attrib_name;
         }
-		public readonly Expr attrib_expr;
+        public readonly Expr attrib_expr;
         public readonly String attrib_name;
     }
 
@@ -585,7 +591,7 @@ namespace AST {
             : base(_type) {
             expr = _expr;
         }
-		public readonly Expr expr;
+        public readonly Expr expr;
     }
 
     public class PostDecrement : Expr {
@@ -701,185 +707,185 @@ namespace AST {
         public readonly Expr lhs;
         public readonly Expr rhs;
     }
-    
-	public class Add : Expr {
-		public Add(Expr _lhs, Expr _rhs, ExprType _type)
-			: base(_type) {
-			add_lhs = _lhs;
-			add_rhs = _rhs;
-		}
-		public readonly Expr add_lhs;
-		public readonly Expr add_rhs;
 
-		public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
-				throw new InvalidOperationException("Error: expect a pointer");
-			}
-			if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
-				throw new InvalidOperationException("Error: expect an integer");
-			}
+    public class Add : Expr {
+        public Add(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            add_lhs = _lhs;
+            add_rhs = _rhs;
+        }
+        public readonly Expr add_lhs;
+        public readonly Expr add_rhs;
 
-			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
-				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
-				Int32 _offset = ((AST.ConstLong)offset).value;
-				return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
-			}
+        public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
+            if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
+                throw new InvalidOperationException("Error: expect a pointer");
+            }
+            if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
+                throw new InvalidOperationException("Error: expect an integer");
+            }
 
-			return AST.TypeCast.ToPointer(
-				new AST.Add(
-					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
-					new AST.Multiply(
-						offset,
-						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
-						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-					),
-					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-				),
-				ptr.type
-			);
-		}
+            if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+                Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
+                Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
+                Int32 _offset = ((AST.ConstLong)offset).value;
+                return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
+            }
 
-		public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
-			if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
-				if (!rhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
+            return AST.TypeCast.ToPointer(
+                new AST.Add(
+                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+                    new AST.Multiply(
+                        offset,
+                        new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
+                        new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                    ),
+                    new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                ),
+                ptr.type
+            );
+        }
 
-				// lhs = base, rhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
+        public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
+            if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+                if (!rhs.type.IsIntegral()) {
+                    throw new InvalidOperationException("Error: must add an integral to a pointer");
+                }
+                rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
 
-			} else if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
-				if (!lhs.type.IsIntegral()) {
-					throw new InvalidOperationException("Error: must add an integral to a pointer");
-				}
-				lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
+                // lhs = base, rhs = offset
+                return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
 
-				// rhs = base, lhs = offset
-				return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
+            } else if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+                if (!lhs.type.IsIntegral()) {
+                    throw new InvalidOperationException("Error: must add an integral to a pointer");
+                }
+                lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, rhs.type.is_volatile));
 
-			} else {
-				return SyntaxTree.Expression.GetArithmeticBinOpExpr(
-					env,
-					lhs,
-					rhs,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(x, y) => x + y,
-					(_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
-				);
-			}
-		}
-	}
+                // rhs = base, lhs = offset
+                return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
 
-	public class Sub : Expr {
-		public Sub(Expr _lhs, Expr _rhs, ExprType _type)
-			: base(_type) {
-			sub_lhs = _lhs;
-			sub_rhs = _rhs;
-		}
-		public readonly Expr sub_lhs;
-		public readonly Expr sub_rhs;
+            } else {
+                return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                    env,
+                    lhs,
+                    rhs,
+                    (x, y) => x + y,
+                    (x, y) => x + y,
+                    (x, y) => x + y,
+                    (x, y) => x + y,
+                    (_lhs, _rhs, _type) => new AST.Add(_lhs, _rhs, _type)
+                );
+            }
+        }
+    }
 
-		public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-			if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
-				throw new InvalidOperationException("Error: expect a pointer");
-			}
-			if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
-				throw new InvalidOperationException("Error: expect an integer");
-			}
+    public class Sub : Expr {
+        public Sub(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            sub_lhs = _lhs;
+            sub_rhs = _rhs;
+        }
+        public readonly Expr sub_lhs;
+        public readonly Expr sub_rhs;
 
-			if (ptr.IsConstExpr() && offset.IsConstExpr()) {
-				Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-				Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
-				Int32 _offset = ((AST.ConstLong)offset).value;
-				return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
-			}
+        public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
+            if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
+                throw new InvalidOperationException("Error: expect a pointer");
+            }
+            if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
+                throw new InvalidOperationException("Error: expect an integer");
+            }
 
-			return AST.TypeCast.ToPointer(
-				new AST.Sub(
-					AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
-					new AST.Multiply(
-						offset,
-						new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
-						new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-					),
-					new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-				),
-				ptr.type
-			);
-		}
+            if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+                Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
+                Int32 _scale = ((AST.TPointer)(ptr.type)).referenced_type.SizeOf;
+                Int32 _offset = ((AST.ConstLong)offset).value;
+                return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
+            }
 
-		public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
-			if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
-				if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
-					// both operands are pointers
+            return AST.TypeCast.ToPointer(
+                new AST.Sub(
+                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+                    new AST.Multiply(
+                        offset,
+                        new AST.ConstLong(((AST.TPointer)(ptr.type)).referenced_type.SizeOf),
+                        new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                    ),
+                    new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                ),
+                ptr.type
+            );
+        }
 
-					AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
-					AST.TPointer rhs_type = (AST.TPointer)(rhs.type);
-					if (!lhs_type.referenced_type.EqualType(rhs_type.referenced_type)) {
-						throw new InvalidOperationException("Error: the two pointers points to different types");
-					}
+        public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
+            if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+                if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+                    // both operands are pointers
 
-					Int32 scale = lhs_type.referenced_type.SizeOf;
+                    AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
+                    AST.TPointer rhs_type = (AST.TPointer)(rhs.type);
+                    if (!lhs_type.referenced_type.EqualType(rhs_type.referenced_type)) {
+                        throw new InvalidOperationException("Error: the two pointers points to different types");
+                    }
 
-					if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-						return new Tuple<AST.Env, AST.Expr>(
-							env,
-							new AST.ConstLong(
-								(Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale
-							)
-						);
+                    Int32 scale = lhs_type.referenced_type.SizeOf;
 
-					} else {
-						return new Tuple<AST.Env, AST.Expr>(
-							env,
-							new AST.Divide(
-								// long(lhs) - long(rhs)
-								new AST.Sub(
-									AST.TypeCast.MakeCast(lhs, new AST.TLong()),
-									AST.TypeCast.MakeCast(rhs, new AST.TLong()),
-									new AST.TLong()
-								),
-								// / scale
-								new AST.ConstLong(scale),
-								new AST.TLong()
-							)
-						);
-					}
+                    if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+                        return new Tuple<AST.Env, AST.Expr>(
+                            env,
+                            new AST.ConstLong(
+                                (Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale
+                            )
+                        );
 
-				} else {
-					// pointer - integral
+                    } else {
+                        return new Tuple<AST.Env, AST.Expr>(
+                            env,
+                            new AST.Divide(
+                            // long(lhs) - long(rhs)
+                                new AST.Sub(
+                                    AST.TypeCast.MakeCast(lhs, new AST.TLong()),
+                                    AST.TypeCast.MakeCast(rhs, new AST.TLong()),
+                                    new AST.TLong()
+                                ),
+                            // / scale
+                                new AST.ConstLong(scale),
+                                new AST.TLong()
+                            )
+                        );
+                    }
 
-					if (!rhs.type.IsIntegral()) {
-						throw new InvalidOperationException("Error: expected an integral");
-					}
+                } else {
+                    // pointer - integral
 
-					rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
+                    if (!rhs.type.IsIntegral()) {
+                        throw new InvalidOperationException("Error: expected an integral");
+                    }
 
-					return new Tuple<AST.Env, AST.Expr>(env, GetPointerSubtraction(lhs, rhs));
-				}
+                    rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
 
-			} else {
-				// lhs is not a pointer.
+                    return new Tuple<AST.Env, AST.Expr>(env, GetPointerSubtraction(lhs, rhs));
+                }
 
-				// we need usual arithmetic cast
-				return SyntaxTree.Expression.GetArithmeticBinOpExpr(
-					env,
-					lhs,
-					rhs,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(x, y) => x - y,
-					(_lhs, _rhs, _type) => new AST.Sub(_lhs, _rhs, _type)
-				);
+            } else {
+                // lhs is not a pointer.
 
-			}
-		}
-	}
+                // we need usual arithmetic cast
+                return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                    env,
+                    lhs,
+                    rhs,
+                    (x, y) => x - y,
+                    (x, y) => x - y,
+                    (x, y) => x - y,
+                    (x, y) => x - y,
+                    (_lhs, _rhs, _type) => new AST.Sub(_lhs, _rhs, _type)
+                );
+
+            }
+        }
+    }
 
     public class Multiply : Expr {
         public Multiply(Expr _lhs, Expr _rhs, ExprType _type)
@@ -888,174 +894,50 @@ namespace AST {
             mult_rhs = _rhs;
         }
         public readonly Expr mult_lhs;
-		public readonly Expr mult_rhs;
+        public readonly Expr mult_rhs;
 
-		public static Tuple<Env, Expr> MakeMultiply(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetArithmeticBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(x, y) => x * y,
-				(_lhs, _rhs, _type) => new Multiply(_lhs, _rhs, _type)
-			);
-		}
+        public static Tuple<Env, Expr> MakeMultiply(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x * y,
+                (x, y) => x * y,
+                (x, y) => x * y,
+                (x, y) => x * y,
+                (_lhs, _rhs, _type) => new Multiply(_lhs, _rhs, _type)
+            );
+        }
     }
 
     public class Divide : Expr {
         public Divide(Expr _lhs, Expr _rhs, ExprType _type)
             : base(_type) {
-			div_lhs = _lhs;
-			div_rhs = _rhs;
+            div_lhs = _lhs;
+            div_rhs = _rhs;
         }
-		public readonly Expr div_lhs;
+        public readonly Expr div_lhs;
         public readonly Expr div_rhs;
 
-		public static Tuple<Env, Expr> MakeDivide(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetArithmeticBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(x, y) => x / y,
-				(_lhs, _rhs, _type) => new Divide(lhs, rhs, _type)
-			);
-		}
-    }
-
-    public class Modulo : Expr {
-        public Modulo(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            mod_lhs = _lhs;
-            mod_rhs = _rhs;
+        public static Tuple<Env, Expr> MakeDivide(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x / y,
+                (x, y) => x / y,
+                (x, y) => x / y,
+                (x, y) => x / y,
+                (_lhs, _rhs, _type) => new Divide(lhs, rhs, _type)
+            );
         }
-		public readonly Expr mod_lhs;
-		public readonly Expr mod_rhs;
-
-		public static Tuple<Env, Expr> MakeModulo(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x % y,
-				(x, y) => x % y,
-				(_lhs, _rhs, _type) => new Modulo(_lhs, _rhs, _type)
-			);
-		}
-    }
-
-    public class LShift : Expr {
-        public LShift(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lshift_lhs = _lhs;
-            lshift_rhs = _rhs;
-        }
-		public readonly Expr lshift_lhs;
-		public readonly Expr lshift_rhs;
-
-		public static Tuple<Env, Expr> MakeLShift(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => (UInt32)((Int32)x << (Int32)y),
-				(x, y) => x << y,
-				(_lhs, _rhs, type) => new LShift(lhs, rhs, type)
-			);
-		}
-    }
-
-    public class RShift : Expr {
-        public RShift(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            rshift_lhs = _lhs;
-            rshift_rhs = _rhs;
-        }
-        public readonly Expr rshift_lhs;
-        public readonly Expr rshift_rhs;
-
-		public static Tuple<Env, Expr> MakeRShift(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => (UInt32)((Int32)x >> (Int32)y),
-				(x, y) => x >> y,
-				(_lhs, _rhs, _type) => new RShift(_lhs, _rhs, _type)
-			);
-		}
-    }
-
-    public class Xor : Expr {
-        public Xor(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            xor_lhs = _lhs;
-            xor_rhs = _rhs;
-        }
-        public readonly Expr xor_lhs;
-        public readonly Expr xor_rhs;
-
-		public static Tuple<Env, Expr> MakeXor(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x ^ y,
-				(x, y) => x ^ y,
-				(_lhs, _rhs, _type) => new Xor(_lhs, _rhs, _type)
-			);
-		}
-    }
-
-    public class BitwiseOr : Expr {
-        public BitwiseOr(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            or_lhs = _lhs;
-            or_rhs = _rhs;
-        }
-        public readonly Expr or_lhs;
-        public readonly Expr or_rhs;
-
-		public static Tuple<Env, Expr> MakeOr(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x | y,
-				(x, y) => x | y,
-				(_lhs, _rhs, _type) => new AST.BitwiseOr(_lhs, _rhs, _type)
-			);
-		}
-
-		public override Reg CGenValue(Env env, CGenState state) {
-			Reg reg_lhs = or_lhs.CGenValue(env, state);
-			if (reg_lhs != Reg.EAX) {
-				throw new InvalidOperationException("Why not %eax?");
-			}
-			state.PUSHL(reg_lhs);
-
-			Reg reg_rhs = or_rhs.CGenValue(env, state);
-			if (reg_rhs != Reg.EAX) {
-				throw new InvalidOperationException("Why not %eax?");
-			}
-			state.POPL(Reg.EBX);
-
-			state.ORL(Reg.EBX, Reg.EAX);
-
-			return Reg.EAX;
-		}
     }
 
     /// <summary>
-    /// Bitwise And: lhs & rhs
-    /// lhs & rhs must both be integral (%eax)
+    /// Integral Binary Operation
     /// </summary>
-    public class BitwiseAnd : Expr {
-        public BitwiseAnd(Expr lhs, Expr rhs, ExprType type)
+    public abstract class IntBinOp : Expr {
+        public IntBinOp(Expr lhs, Expr rhs, ExprType type)
             : base(type) {
             this.lhs = lhs;
             this.rhs = rhs;
@@ -1064,16 +946,7 @@ namespace AST {
         public readonly Expr lhs;
         public readonly Expr rhs;
 
-		public static Tuple<Env, Expr> MakeBitwiseAnd(Env env, Expr lhs, Expr rhs) {
-			return SyntaxTree.Expression.GetIntegralBinOpExpr(
-				env,
-				lhs,
-				rhs,
-				(x, y) => x & y,
-				(x, y) => x & y,
-				(_lhs, _rhs, _type) => new BitwiseAnd(_lhs, _rhs, _type)
-			);
-		}
+        public abstract void CGenOp(CGenState state);
 
         public override Reg CGenValue(Env env, CGenState state) {
             // 1. %eax = lhs
@@ -1099,6 +972,140 @@ namespace AST {
 
             return Reg.EAX;
         }
+    }
+
+    // TODO: use DIV to get modulo
+    public class Modulo : IntBinOp {
+        public Modulo(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            throw new NotImplementedException();
+        }
+
+        public static Tuple<Env, Expr> MakeModulo(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x % y,
+                (x, y) => x % y,
+                (_lhs, _rhs, _type) => new Modulo(_lhs, _rhs, _type)
+            );
+        }
+    }
+
+    public class LShift : IntBinOp {
+        public LShift(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            state.SALL(Reg.EBX, Reg.EAX);
+        }
+
+        public static Tuple<Env, Expr> MakeLShift(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => (UInt32)((Int32)x << (Int32)y),
+                (x, y) => x << y,
+                (_lhs, _rhs, type) => new LShift(lhs, rhs, type)
+            );
+        }
+    }
+
+    // TODO: arithmetic rshift and logical rshift
+    public class RShift : IntBinOp {
+        public RShift(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            throw new NotImplementedException();
+        }
+
+        public static Tuple<Env, Expr> MakeRShift(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => (UInt32)((Int32)x >> (Int32)y),
+                (x, y) => x >> y,
+                (_lhs, _rhs, _type) => new RShift(_lhs, _rhs, _type)
+            );
+        }
+    }
+
+    public class Xor : IntBinOp {
+        public Xor(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            state.XORL(Reg.EBX, Reg.EAX);
+        }
+
+        public static Tuple<Env, Expr> MakeXor(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x ^ y,
+                (x, y) => x ^ y,
+                (_lhs, _rhs, _type) => new Xor(_lhs, _rhs, _type)
+            );
+        }
+    }
+
+    public class BitwiseOr : IntBinOp {
+        public BitwiseOr(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            state.ORL(Reg.EBX, Reg.EAX);
+        }
+
+        public static Tuple<Env, Expr> MakeOr(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x | y,
+                (x, y) => x | y,
+                (_lhs, _rhs, _type) => new AST.BitwiseOr(_lhs, _rhs, _type)
+            );
+        }
+
+    }
+
+    /// <summary>
+    /// Bitwise And: lhs & rhs
+    /// lhs & rhs must both be integral (%eax)
+    /// </summary>
+    public class BitwiseAnd : IntBinOp {
+        public BitwiseAnd(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) {
+        }
+
+        public override void CGenOp(CGenState state) {
+            state.ANDL(Reg.EBX, Reg.EAX);
+        }
+
+        public static Tuple<Env, Expr> MakeBitwiseAnd(Env env, Expr lhs, Expr rhs) {
+            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+                env,
+                lhs,
+                rhs,
+                (x, y) => x & y,
+                (x, y) => x & y,
+                (_lhs, _rhs, _type) => new BitwiseAnd(_lhs, _rhs, _type)
+            );
+        }
+
     }
 
     public class LogicalAnd : Expr {
