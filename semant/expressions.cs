@@ -481,8 +481,8 @@ namespace SyntaxTree {
 			}
 
 
-			if (true_expr.type.expr_type == false_expr.type.expr_type) {
-				switch (true_expr.type.expr_type) {
+			if (true_expr.type.type_kind == false_expr.type.type_kind) {
+				switch (true_expr.type.type_kind) {
 
 				// 2. if both true_expr and false_expr have struct or union type
 				//    make sure they are compatible
@@ -507,8 +507,8 @@ namespace SyntaxTree {
 				case AST.ExprType.ExprTypeKind.POINTER:
 
 					// if either points to void, convert to void *
-					if (((AST.TPointer)true_expr.type).referenced_type.expr_type == AST.ExprType.ExprTypeKind.VOID
-					    || ((AST.TPointer)false_expr.type).referenced_type.expr_type == AST.ExprType.ExprTypeKind.VOID) {
+					if (((AST.TPointer)true_expr.type).referenced_type.type_kind == AST.ExprType.ExprTypeKind.VOID
+					    || ((AST.TPointer)false_expr.type).referenced_type.type_kind == AST.ExprType.ExprTypeKind.VOID) {
 						return new Tuple<AST.Env, AST.Expr>(env, new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid())));
 					}
 
@@ -536,7 +536,7 @@ namespace SyntaxTree {
             env = r_func.Item1;
             AST.Expr func = r_func.Item2;
 
-            if (func.type.expr_type != AST.ExprType.ExprTypeKind.FUNCTION) {
+            if (func.type.type_kind != AST.ExprType.ExprTypeKind.FUNCTION) {
                 throw new Exception("Error: calling a non-function.");
             }
 
@@ -580,7 +580,7 @@ namespace SyntaxTree {
 			expr = r_expr.Item2;
 			attrib = attrib_attrib.var_name;
 
-			switch (expr.type.expr_type) {
+			switch (expr.type.type_kind) {
 			case AST.ExprType.ExprTypeKind.STRUCT:
 				AST.TStruct struct_type = (AST.TStruct)expr.type;
 
@@ -793,12 +793,12 @@ namespace SyntaxTree {
             env = r_expr.Item1;
             AST.Expr expr = r_expr.Item2;
 
-            if (expr.type.expr_type != AST.ExprType.ExprTypeKind.POINTER) {
+            if (expr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
                 throw new Exception("Error: dereferencing a non-pointer");
             }
 
 			AST.ExprType ref_type = ((AST.TPointer)expr.type).referenced_type;
-			if (ref_type.expr_type == AST.ExprType.ExprTypeKind.INCOMPLETE_STRUCT) {
+			if (ref_type.type_kind == AST.ExprType.ExprTypeKind.INCOMPLETE_STRUCT) {
 				AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).struct_name);
 				if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
 					throw new InvalidOperationException("Error: cannot find struct");
@@ -860,7 +860,7 @@ namespace SyntaxTree {
             }
 
             if (expr.IsConstExpr()) {
-                switch (expr.type.expr_type) {
+                switch (expr.type.type_kind) {
                 case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     expr = new AST.ConstLong(-long_expr.value);
@@ -912,7 +912,7 @@ namespace SyntaxTree {
             }
 
             if (expr.IsConstExpr()) {
-                switch (expr.type.expr_type) {
+                switch (expr.type.type_kind) {
                 case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     expr = new AST.ConstLong(~long_expr.value);
@@ -957,7 +957,7 @@ namespace SyntaxTree {
 
             if (expr.IsConstExpr()) {
                 Boolean value = false;
-                switch (expr.type.expr_type) {
+                switch (expr.type.type_kind) {
                 case AST.ExprType.ExprTypeKind.LONG:
                     AST.ConstLong long_expr = (AST.ConstLong)expr;
                     value = long_expr.value != 0;

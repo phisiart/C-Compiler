@@ -13,7 +13,8 @@ public enum Reg {
     EBP,
     ESP,
 
-	XMM0,
+    AL,
+    AX,
 
 	ST0,
 }
@@ -37,7 +38,6 @@ public class CGenState {
         { Reg.EBX, "%ebx" },
         { Reg.EBP, "%ebp" },
         { Reg.ESP, "%esp" },
-		{ Reg.XMM0, "%xmm0" },
 		{ Reg.ST0, "%st(0)" },
     };
 
@@ -78,7 +78,7 @@ public class CGenState {
 	}
 
 	public void FLDS(Int32 imm, Reg from) {
-		os.WriteLine("    flds " + imm.ToString() + "(" + StrReg(from));
+		FLDS(imm.ToString() + "(" + StrReg(from));
 	}
 
 	/// <summary>
@@ -90,8 +90,32 @@ public class CGenState {
 	}
 
 	public void FLDL(Int32 imm, Reg from) {
-		os.WriteLine("    fldl " + imm.ToString() + "(" + StrReg(from));
+		FLDL(imm.ToString() + "(" + StrReg(from));
 	}
+
+    /// <summary>
+    /// FSTS: store float from FPU stack.
+    /// </summary>
+    /// <param name="addr"></param>
+    public void FSTS(String addr) {
+        os.WriteLine("    fsts " + addr);
+    }
+
+    public void FSTS(Int32 imm, Reg to) {
+        FSTS(imm.ToString() + "(" + StrReg(to));
+    }
+
+    /// <summary>
+    /// FSTL: store double from FPU stack.
+    /// </summary>
+    /// <param name="addr"></param>
+    public void FSTL(String addr) {
+        os.WriteLine("    fstl " + addr);
+    }
+
+    public void FSTL(Int32 imm, Reg to) {
+        FSTL(imm.ToString() + "(" + StrReg(to));
+    }
 
     // PUSHL
     // =====
@@ -121,14 +145,15 @@ public class CGenState {
         POPL(StrReg(reg));
     }
 
-    // MOVL
-    // ====
+    /// <summary>
+    /// MOVL: move a 4-byte long
+    /// </summary>
     public void MOVL(String from, String to) {
         os.WriteLine("    movl " + from + ", " + to);
     }
 
 	public void MOVL(String from, Reg to) {
-		os.WriteLine("    movl " + from + ", " + StrReg(to));
+        MOVL(from, StrReg(to));
 	}
 
     public void MOVL(Int32 imm, String to) {
@@ -142,66 +167,94 @@ public class CGenState {
     public void MOVL(Reg from, Reg to) {
         MOVL(StrReg(from), StrReg(to));
     }
-		
-    public void STOREL(Reg from, Reg to) {
-        MOVL(StrReg(from), "(" + StrReg(to) + ")");
-    }
 
-    // movl from, offset(to)
-    public void STOREL(Reg from, Int32 offset, Reg to) {
+    public void MOVL(Reg from, Int32 offset, Reg to) {
         MOVL(StrReg(from), offset.ToString() + "(" + StrReg(to) + ")");
     }
 
-	// movl offset(from), to
-	public void LOADL(Int32 offset, Reg from, Reg to) {
+	public void MOVL(Int32 offset, Reg from, Reg to) {
 		MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
 	}
 
-	// MOVZBL
-	// ======
+    /// <summary>
+    /// MOVZBL: move a byte and zero-extend to a 4-byte long
+    /// </summary>
 	public void MOVZBL(String from, String to) {
 		os.WriteLine("    movzbl " + from + ", " + to);
 	}
 
-	// MOVSBL
-	// ======
+    public void MOVZBL(String from, Reg to) {
+        MOVZBL(from, StrReg(to));
+    }
+
+    public void MOVZBL(Int32 offset, Reg from, Reg to) {
+        MOVZBL(offset.ToString() + StrReg(from), StrReg(to));
+    }
+
+    /// <summary>
+    /// MOVSBL: move a byte and sign-extend to a 4-byte long
+    /// </summary>
 	public void MOVSBL(String from, String to) {
 		os.WriteLine("    movsbl " + from + ", " + to);
 	}
 
-	// MOVB
-	// ====
+    public void MOVSBL(String from, Reg to) {
+        MOVSBL(from, StrReg(to));
+    }
+
+    public void MOVSBL(Int32 offset, Reg from, Reg to) {
+        MOVSBL(offset.ToString() + StrReg(from), StrReg(to));
+    }
+
+    /// <summary>
+    /// MOVB: move a byte
+    /// </summary>
 	public void MOVB(String from, String to) {
 		os.WriteLine("    movb " + from + ", " + to);
 	}
 
-//	public void LOADB(Int32 offset, Reg from, Reg to) {
-//		MOVB(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
-//	}
+    public void MOVB(Reg from, Int32 imm, Reg to) {
+        MOVB(StrReg(from), imm.ToString() + "(" + StrReg(to) + ")");
+    }
 
-	public void LOADZBL(Int32 offset, Reg from, Reg to) {
-		MOVZBL(offset.ToString() + StrReg(from), StrReg(to));
-	}
+    /// <summary>
+    /// MOVW: move a 2-byte word
+    /// </summary>
+    public void MOVW(String from, String to) {
+        os.WriteLine("    movw " + from + ", " + to);
+    }
 
-	public void LOADSBL(Int32 offset, Reg from, Reg to) {
-		MOVSBL(offset.ToString() + StrReg(from), StrReg(to));
-	}
+    public void MOVW(Reg from, Int32 imm, Reg to) {
+        MOVW(StrReg(from), imm.ToString() + "(" + StrReg(to) + ")");
+    }
 
-	// MOVZWL
-	// ======
+    /// <summary>
+    /// MOVZWL: move a 2-byte word and zero-extend to a 4-byte long
+    /// </summary>
 	public void MOVZWL(String from, String to) {
 		os.WriteLine("    movzwl " + from + ", " + to);
 	}
 
+    public void MOVZWL(String from, Reg to) {
+        MOVZWL(from, StrReg(to));
+    }
+    
+    public void MOVZWL(Int32 offset, Reg from, Reg to) {
+        MOVZWL(offset.ToString() + StrReg(from), StrReg(to));
+    }
+
+    /// <summary>
+    /// MOVSWL: move a 2-byte word and sign-extend to a 4-byte long
+    /// </summary>
 	public void MOVSWL(String from, String to) {
 		os.WriteLine("    movswl " + from + ", " + to);
 	}
 
-	public void LOADZWL(Int32 offset, Reg from, Reg to) {
-		MOVZWL(offset.ToString() + StrReg(from), StrReg(to));
-	}
+    public void MOVSWL(String from, Reg to) {
+        MOVSWL(from, StrReg(to));
+    }
 
-	public void LOADSWL(Int32 offset, Reg from, Reg to) {
+	public void MOVSWL(Int32 offset, Reg from, Reg to) {
 		MOVSWL(offset.ToString() + StrReg(from), StrReg(to));
 	}
 
@@ -229,13 +282,6 @@ public class CGenState {
         }
     }
 
-    public void CGenAssignment(AST.Env env, AST.Expr lhs, AST.Expr rhs) {
-        rhs.CGenValue(env, this);
-        PUSHL(Reg.EAX);
-        lhs.CGenAddress(env, this);
-        POPL(Reg.EBX);
-        STOREL(Reg.EAX, Reg.EBX);
-    }
     public void LEAVE() {
         //os.WriteLine("    leave # pop frame, restore %ebp");
         os.WriteLine("    leave");
@@ -254,9 +300,9 @@ public class CGenState {
         os.WriteLine("    # " + comment);
     }
 
-    // SUBL
-    // ====
-    // 
+    /// <summary>
+    /// SUBL: subtract long
+    /// </summary>
     public void SUBL(String er, String ee, String comment = "") {
         os.Write("    subl " + er + ", " + ee);
         if (comment == "") {
@@ -270,6 +316,10 @@ public class CGenState {
         SUBL(er.ToString(), ee, comment);
     }
 
+    public void SUBL(Int32 er, Reg ee, String comment = "") {
+        SUBL(er.ToString(), StrReg(ee), comment);
+    }
+
     public void SUBL(Reg er, Reg ee, String comment = "") {
         SUBL(StrReg(er), StrReg(ee), comment);
     }
@@ -278,6 +328,22 @@ public class CGenState {
 		return os.ToString() + rodata.ToString();
     }
 
+    /// <summary>
+    /// ANDL er, ee
+    /// ee = er & ee
+    /// </summary>
+    public void ANDL(String er, String ee) {
+        os.WriteLine("    andl " + er + ", " + ee);
+    }
+
+    public void ANDL(Reg er, Reg ee) {
+        ANDL(StrReg(er), StrReg(ee));
+    }
+    
+    /// <summary>
+    /// ORL er, ee
+    ///     ee = ee | er
+    /// </summary>
 	public void ORL(String er, String ee, String comment = "") {
 		os.Write("    orl " + er + ", " + ee);
 		if (comment == "") {

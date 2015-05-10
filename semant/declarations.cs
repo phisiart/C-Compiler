@@ -762,7 +762,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("struct " + name).entry_type.expr_type == AST.ExprType.ExprTypeKind.STRUCT) {
+					if (env.Find("struct " + name).entry_type.type_kind == AST.ExprType.ExprTypeKind.STRUCT) {
 						throw new InvalidOperationException("Error: re-defining a struct");
 					}
 
@@ -859,7 +859,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("union " + name).entry_type.expr_type == AST.ExprType.ExprTypeKind.UNION) {
+					if (env.Find("union " + name).entry_type.type_kind == AST.ExprType.ExprTypeKind.UNION) {
 						throw new InvalidOperationException("Error: re-defining a union");
 					}
 

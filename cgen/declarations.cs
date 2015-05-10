@@ -30,7 +30,7 @@ namespace AST {
 
         public void CGenExternDecln(Env env, CGenState state) {
             state.CGenExpandStack(env.GetStackOffset(), ToString());
-            if (decln_init.type.expr_type != ExprType.ExprTypeKind.VOID) {
+            if (decln_init.type.type_kind != ExprType.ExprTypeKind.VOID) {
                 // need initialization
 
                 Env.Entry entry = env.Find(decln_name);
@@ -40,7 +40,7 @@ namespace AST {
                     decln_init.CGenValue(env, state);
 
                     // -<offset>(%ebp) = %eax
-                    state.STOREL(Reg.EAX, -entry.entry_offset, Reg.EBP);
+                    state.MOVL(Reg.EAX, -entry.entry_offset, Reg.EBP);
 
                     break;
                 case Env.EntryLoc.GLOBAL:

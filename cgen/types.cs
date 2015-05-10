@@ -105,7 +105,7 @@ namespace AST {
         public ExprType(ExprTypeKind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile) {
             is_const = _is_const;
             is_volatile = _is_volatile;
-            expr_type = _expr_type;
+            type_kind = _expr_type;
             size_of = _size_of;
             alignment = _alignment;
         }
@@ -128,7 +128,7 @@ namespace AST {
         public static Int32 ALIGN_DOUBLE = 4;
         public static Int32 ALIGN_POINTER = 4;
 
-        public readonly ExprTypeKind expr_type;
+        public readonly ExprTypeKind type_kind;
         public virtual Boolean IsArith() { return false; }
         public virtual Boolean IsIntegral() { return false; }
         public virtual Boolean IsScalar() { return false; }
@@ -188,7 +188,7 @@ namespace AST {
             return true;
         }
         public override Boolean EqualType(ExprType other) {
-            return expr_type == other.expr_type;
+            return type_kind == other.type_kind;
         }
     }
 
@@ -301,7 +301,7 @@ namespace AST {
             return new TPointer(referenced_type, _is_const, _is_volatile);
         }
         public override Boolean EqualType(ExprType other) {
-            return other.expr_type == ExprTypeKind.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
+            return other.type_kind == ExprTypeKind.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
         public override String ToString() {
             return DumpQualifiers() + "ptr<" + referenced_type.ToString() + ">";
@@ -347,7 +347,7 @@ namespace AST {
         }
 
         public override Boolean EqualType(ExprType other) {
-            return other.expr_type == ExprTypeKind.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
+            return other.type_kind == ExprTypeKind.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
         }
 
         public override String ToString() {
