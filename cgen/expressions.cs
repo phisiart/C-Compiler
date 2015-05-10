@@ -268,7 +268,6 @@ namespace AST {
         }
         public readonly Int32 value;
 
-
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL(value, Reg.EAX);
             return Reg.EAX;
@@ -406,6 +405,11 @@ namespace AST {
         }
 		public readonly Expr lvalue;
 		public readonly Expr rvalue;
+
+		public override Reg CGenValue(Env env, CGenState state) {
+			Reg addr = lvalue.CGenAddress(env, state);
+
+		}
     }
 
 	public class ConditionalExpr : Expr {
