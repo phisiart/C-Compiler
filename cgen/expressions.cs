@@ -33,7 +33,7 @@ namespace AST {
         /// The default implementation of CGenPush uses CGenValue.
         /// </summary>
         // TODO: struct and union
-        public override void CGenPush(Env env, CGenState state) {
+        public virtual void CGenPush(Env env, CGenState state) {
             Reg ret = CGenValue(env, state);
 
             switch (type.type_kind) {
