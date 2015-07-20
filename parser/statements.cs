@@ -79,7 +79,7 @@ public class _jump_statement : ParseRule {
             break;
         case KeywordVal.RETURN:
             Int32 saved = current;
-            Expression expr;
+            Expr expr;
             current = _expression.Parse(src, current, out expr);
             if (current == -1) {
                 current = saved;
@@ -112,11 +112,11 @@ public class _compound_statement : ParseRule {
         }
         Int32 current = begin + 1;
 
-        List<Declaration> decl_list;
+        List<Decln> decl_list;
         Int32 saved = current;
         current = _declaration_list.Parse(src, current, out decl_list);
         if (current == -1) {
-            decl_list = new List<Declaration>();
+            decl_list = new List<Decln>();
             current = saved;
         }
 
@@ -144,9 +144,9 @@ public class _compound_statement : ParseRule {
 // [ note: my solution ]
 // declaration_list: <declaration>+
 public class _declaration_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Declaration> decl_list) {
-        decl_list = new List<Declaration>();
-        Declaration decl;
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Decln> decl_list) {
+        decl_list = new List<Decln>();
+        Decln decl;
         Int32 current = _declaration.Parse(src, begin, out decl);
         if (current == -1) {
             return -1;
@@ -180,7 +180,7 @@ public class _statement_list : ParseRule {
 public class _expression_statement : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
         stmt = null;
-        Expression expr;
+        Expr expr;
         Int32 current = _expression.Parse(src, begin, out expr);
         if (current == -1) {
             expr = null;
@@ -209,7 +209,7 @@ public class _iteration_statement : ParseRule {
             // while
             current = begin + 1;
 
-            Expression cond;
+            Expr cond;
             current = Parser.ParseParenExpr(src, current, out cond);
             if (current == -1) {
                 return -1;
@@ -234,7 +234,7 @@ public class _iteration_statement : ParseRule {
                 return -1;
             }
 
-            Expression cond;
+            Expr cond;
             current = Parser.ParseParenExpr(src, current, out cond);
             if (current == -1) {
                 return -1;
@@ -253,7 +253,7 @@ public class _iteration_statement : ParseRule {
             }
 
             // match init
-            Expression init;
+            Expr init;
             Int32 saved = current;
             current = _expression.Parse(src, current, out init);
             if (current == -1) {
@@ -267,7 +267,7 @@ public class _iteration_statement : ParseRule {
             }
 
             // match cond
-            Expression cond;
+            Expr cond;
             saved = current;
             current = _expression.Parse(src, current, out cond);
             if (current == -1) {
@@ -281,7 +281,7 @@ public class _iteration_statement : ParseRule {
             }
 
             // match loop
-            Expression loop;
+            Expr loop;
             saved = current;
             current = _expression.Parse(src, current, out loop);
             if (current == -1) {
@@ -319,7 +319,7 @@ public class _selection_statement : ParseRule {
         stmt = null;
 
         Int32 current;
-        Expression expr;
+        Expr expr;
         if (Parser.IsKeyword(src[begin], KeywordVal.SWITCH)) {
             // switch
             current = begin + 1;
@@ -397,7 +397,7 @@ public class _labeled_statement : ParseRule {
             current = begin + 1;
 
             // match expr
-            Expression expr;
+            Expr expr;
             current = _constant_expression.Parse(src, current, out expr);
             if (current == -1) {
                 return -1;
@@ -418,7 +418,7 @@ public class _labeled_statement : ParseRule {
             return current;
 
         } else if (src[begin].type == TokenType.IDENTIFIER) {
-            String label = ((TokenIdentifier)src[begin]).val;
+            string label = ((TokenIdentifier)src[begin]).val;
             current = begin + 1;
 
             // match ':'

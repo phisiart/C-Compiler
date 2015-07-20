@@ -80,7 +80,7 @@ namespace AST {
      */
 
     public class ExprType {
-        public enum ExprTypeKind {
+        public enum Kind {
             ERROR,
             VOID,
             CHAR,
@@ -102,7 +102,7 @@ namespace AST {
             INIT_LIST,
         }
 
-        public ExprType(ExprTypeKind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile) {
+        public ExprType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile) {
             is_const = _is_const;
             is_volatile = _is_volatile;
             type_kind = _expr_type;
@@ -111,7 +111,7 @@ namespace AST {
         }
 
         public static ExprType CreateInitList() {
-            return new ExprType(ExprTypeKind.INIT_LIST, 0, 0, true, false);
+            return new ExprType(Kind.INIT_LIST, 0, 0, true, false);
         }
 
         public static Int32 SIZEOF_CHAR = 1;
@@ -128,13 +128,13 @@ namespace AST {
         public static Int32 ALIGN_DOUBLE = 4;
         public static Int32 ALIGN_POINTER = 4;
 
-        public readonly ExprTypeKind type_kind;
+        public readonly Kind type_kind;
         public virtual Boolean IsArith() { return false; }
         public virtual Boolean IsIntegral() { return false; }
         public virtual Boolean IsScalar() { return false; }
         public virtual Boolean EqualType(ExprType other) { return false; }
-        public String DumpQualifiers() {
-            String str = "";
+        public string DumpQualifiers() {
+            string str = "";
             if (is_const) {
                 str += "const ";
             }
@@ -163,18 +163,18 @@ namespace AST {
 
     public class TVoid : ExprType {
         public TVoid(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.VOID, 0, 0, _is_const, _is_volatile) {
+            : base(Kind.VOID, 0, 0, _is_const, _is_volatile) {
         }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TVoid(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "void";
         }
     }
 
     public abstract class ScalarType : ExprType {
-        public ScalarType(ExprTypeKind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
+        public ScalarType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
         public override Boolean IsScalar() {
             return true;
@@ -182,7 +182,7 @@ namespace AST {
     }
 
     public abstract class ArithmeticType : ScalarType {
-        public ArithmeticType(ExprTypeKind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
+        public ArithmeticType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
         public override Boolean IsArith() {
             return true;
@@ -193,7 +193,7 @@ namespace AST {
     }
 
     public abstract class IntegralType : ArithmeticType {
-        public IntegralType(ExprTypeKind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
+        public IntegralType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
         public override Boolean IsIntegral() {
             return true;
@@ -202,88 +202,88 @@ namespace AST {
 
     public class TChar : IntegralType {
         public TChar(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.CHAR, SIZEOF_CHAR, ALIGN_CHAR, _is_const, _is_volatile) { }
+            : base(Kind.CHAR, SIZEOF_CHAR, ALIGN_CHAR, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TChar(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "char";
         }
     }
 
     public class TUChar : IntegralType {
         public TUChar(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.UCHAR, SIZEOF_CHAR, ALIGN_CHAR, _is_const, _is_volatile) { }
+            : base(Kind.UCHAR, SIZEOF_CHAR, ALIGN_CHAR, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUChar(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "unsigned char";
         }
     }
 
     public class TShort : IntegralType {
         public TShort(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.SHORT, SIZEOF_SHORT, ALIGN_SHORT, _is_const, _is_volatile) { }
+            : base(Kind.SHORT, SIZEOF_SHORT, ALIGN_SHORT, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TShort(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "short";
         }
     }
 
     public class TUShort : IntegralType {
         public TUShort(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.USHORT, SIZEOF_SHORT, ALIGN_SHORT, _is_const, _is_volatile) { }
+            : base(Kind.USHORT, SIZEOF_SHORT, ALIGN_SHORT, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUShort(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "unsigned short";
         }
     }
 
     public class TLong : IntegralType {
         public TLong(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.LONG, SIZEOF_LONG, ALIGN_LONG, _is_const, _is_volatile) { }
+            : base(Kind.LONG, SIZEOF_LONG, ALIGN_LONG, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TLong(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "long";
         }
     }
 
     public class TULong : IntegralType {
         public TULong(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.ULONG, SIZEOF_LONG, ALIGN_LONG, _is_const, _is_volatile) { }
+            : base(Kind.ULONG, SIZEOF_LONG, ALIGN_LONG, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TULong(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "unsigned long";
         }
     }
 
     public class TFloat : ArithmeticType {
         public TFloat(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.FLOAT, SIZEOF_FLOAT, ALIGN_FLOAT, _is_const, _is_volatile) { }
+            : base(Kind.FLOAT, SIZEOF_FLOAT, ALIGN_FLOAT, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TFloat(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "float";
         }
     }
 
     public class TDouble : ArithmeticType {
         public TDouble(Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.DOUBLE, SIZEOF_DOUBLE, ALIGN_DOUBLE, _is_const, _is_volatile) { }
+            : base(Kind.DOUBLE, SIZEOF_DOUBLE, ALIGN_DOUBLE, _is_const, _is_volatile) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TDouble(_is_const, _is_volatile);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "double";
         }
     }
@@ -293,7 +293,7 @@ namespace AST {
     // 
     public class TPointer : ScalarType {
         public TPointer(ExprType _referenced_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.POINTER, SIZEOF_POINTER, ALIGN_POINTER, _is_const, _is_volatile) {
+            : base(Kind.POINTER, SIZEOF_POINTER, ALIGN_POINTER, _is_const, _is_volatile) {
             referenced_type = _referenced_type;
         }
         public readonly ExprType referenced_type;
@@ -301,9 +301,9 @@ namespace AST {
             return new TPointer(referenced_type, _is_const, _is_volatile);
         }
         public override Boolean EqualType(ExprType other) {
-            return other.type_kind == ExprTypeKind.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
+            return other.type_kind == Kind.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
         }
-        public override String ToString() {
+        public override string ToString() {
             return DumpQualifiers() + "ptr<" + referenced_type.ToString() + ">";
         }
     }
@@ -313,7 +313,7 @@ namespace AST {
     // 
     public class TIncompleteArray : ExprType {
         public TIncompleteArray(ExprType _elem_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.ARRAY, 0, _elem_type.Alignment, _is_const, _is_volatile) {
+            : base(Kind.ARRAY, 0, _elem_type.Alignment, _is_const, _is_volatile) {
             array_elem_type = _elem_type;
         }
 
@@ -325,7 +325,7 @@ namespace AST {
             return base.EqualType(other);
         }
 
-        public override String ToString() {
+        public override string ToString() {
             return array_elem_type.ToString() + "[]";
         }
 
@@ -334,7 +334,7 @@ namespace AST {
 
     public class TArray : ExprType {
         public TArray(ExprType _elem_type, Int32 _nelems, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.ARRAY, _elem_type.SizeOf * _nelems, _elem_type.Alignment, _is_const, _is_volatile) {
+            : base(Kind.ARRAY, _elem_type.SizeOf * _nelems, _elem_type.Alignment, _is_const, _is_volatile) {
             array_elem_type = _elem_type;
             array_nelems = _nelems;
         }
@@ -347,21 +347,21 @@ namespace AST {
         }
 
         public override Boolean EqualType(ExprType other) {
-            return other.type_kind == ExprTypeKind.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
+            return other.type_kind == Kind.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
         }
 
-        public override String ToString() {
+        public override string ToString() {
             return "arr<" + array_nelems + ", " + array_elem_type.ToString() + ">";
         }
 
     }
     
 	public class TIncompleteStruct : ExprType {
-		public TIncompleteStruct(String _name, Boolean _is_const = false, Boolean _is_volatile = false)
-			: base(ExprTypeKind.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) {
+		public TIncompleteStruct(string _name, Boolean _is_const = false, Boolean _is_volatile = false)
+			: base(Kind.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) {
 			struct_name = _name;
 		}
-		public readonly String struct_name;
+		public readonly string struct_name;
 	}
 
     // class TStruct
@@ -371,15 +371,15 @@ namespace AST {
     // 
     public class TStruct : ExprType {
         private TStruct(List<Utils.StoreEntry> _attribs, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
-            : base(ExprTypeKind.STRUCT, _size_of, _alignment, _is_const, _is_volatile) {
+            : base(Kind.STRUCT, _size_of, _alignment, _is_const, _is_volatile) {
             attribs = _attribs;
         }
 
-        public static TStruct Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
+        public static TStruct Create(List<Tuple<string, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
             List<Utils.StoreEntry> attribs = new List<Utils.StoreEntry>();
             Int32 offset = 0;
             Int32 alignment = 0;
-            foreach (Tuple<String, ExprType> _attrib in _attribs) {
+            foreach (Tuple<string, ExprType> _attrib in _attribs) {
                 Int32 curr_align = _attrib.Item2.Alignment;
                 if (curr_align > alignment) {
                     alignment = curr_align;
@@ -392,8 +392,8 @@ namespace AST {
             return new TStruct(attribs, offset, alignment, _is_const, _is_volatile);
         }
         
-        public String Dump(Boolean dump_attribs) {
-            String str = "struct (size = " + SizeOf + ")";
+        public string Dump(Boolean dump_attribs) {
+            string str = "struct (size = " + SizeOf + ")";
             if (dump_attribs) {
                 str += "\n";
                 foreach (Utils.StoreEntry attrib in attribs) {
@@ -407,8 +407,8 @@ namespace AST {
             return new TStruct(attribs, size_of, alignment, _is_const, _is_volatile);
         }
 
-        public override String ToString() {
-            String str = DumpQualifiers() + "struct { ";
+        public override string ToString() {
+            string str = DumpQualifiers() + "struct { ";
             foreach (Utils.StoreEntry attrib in attribs) {
                 str += attrib.entry_name + " : " + attrib.entry_type.ToString() + "; ";
             }
@@ -426,12 +426,12 @@ namespace AST {
     // stores the names and types of attributes
     // 
     public class TUnion : ExprType {
-        public TUnion(List<Tuple<String, ExprType>> _attribs, Int32 _size_of, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(ExprTypeKind.UNION, _size_of, _size_of, _is_const, _is_volatile) {
+        public TUnion(List<Tuple<string, ExprType>> _attribs, Int32 _size_of, Boolean _is_const = false, Boolean _is_volatile = false)
+            : base(Kind.UNION, _size_of, _size_of, _is_const, _is_volatile) {
             attribs = _attribs;
         }
 
-        public static TUnion Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
+        public static TUnion Create(List<Tuple<string, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
             Int32 size_of;
             if (_attribs.Count != 0) {
                 size_of = _attribs.Max(x => x.Item2.SizeOf);
@@ -445,35 +445,35 @@ namespace AST {
             return new TUnion(attribs, SizeOf, _is_const, _is_volatile);
         }
 
-        public String Dump(Boolean dump_attribs) {
-            String str = "union (size = " + SizeOf + ")";
+        public string Dump(Boolean dump_attribs) {
+            string str = "union (size = " + SizeOf + ")";
             if (dump_attribs) {
                 str += "\n";
-                foreach (Tuple<String, ExprType> attrib in attribs) {
+                foreach (Tuple<string, ExprType> attrib in attribs) {
                     str += "  " + attrib.Item1 + " : " + attrib.Item2.ToString() + "\n";
                 }
             }
             return str;
         }
 
-        public override String ToString() {
-            String str = DumpQualifiers() + "union { ";
-            foreach (Tuple<String, ExprType> attrib in attribs) {
+        public override string ToString() {
+            string str = DumpQualifiers() + "union { ";
+            foreach (Tuple<string, ExprType> attrib in attribs) {
                 str += attrib.Item1 + " : " + attrib.Item2.ToString() + "; ";
             }
             str += "}";
             return str;
         }
 
-        public readonly List<Tuple<String, ExprType>> attribs;
+        public readonly List<Tuple<string, ExprType>> attribs;
     }
 
 	public class TIncompleteUnion : ExprType {
-		public TIncompleteUnion(String _name, Boolean _is_const = false, Boolean _is_volatile = false)
-			: base(ExprTypeKind.INCOMPLETE_UNION, 0, 0, _is_const, _is_volatile) {
+		public TIncompleteUnion(string _name, Boolean _is_const = false, Boolean _is_volatile = false)
+			: base(Kind.INCOMPLETE_UNION, 0, 0, _is_const, _is_volatile) {
 			union_name = _name;
 		}
-		public readonly String union_name;
+		public readonly string union_name;
 	}
 
     // class TFunction
@@ -486,17 +486,17 @@ namespace AST {
     // 
     public class TFunction : ExprType {
         public TFunction(ExprType _ret_type, List<Utils.StoreEntry> _args, Int32 _size_of, Int32 _alignment, Boolean _varargs)
-            : base(ExprTypeKind.FUNCTION, _size_of, _alignment, true, false) {
+            : base(Kind.FUNCTION, _size_of, _alignment, true, false) {
             args = _args;
             ret_type = _ret_type;
             varargs = _varargs;
         }
-        public static TFunction Create(ExprType _ret_type, List<Tuple<String, ExprType>> _args, Boolean _varargs) {
+        public static TFunction Create(ExprType _ret_type, List<Tuple<string, ExprType>> _args, Boolean _varargs) {
             List<Utils.StoreEntry> args = new List<Utils.StoreEntry>();
             Int32 regsz = SIZEOF_LONG; // 32-bit machine: Int32 = 4 bytes
             Int32 offset = 2 * regsz;  // first parameter should be at %ebp + 8
             Int32 alignment = regsz;
-            foreach (Tuple<String, ExprType> arg in _args) {
+            foreach (Tuple<string, ExprType> arg in _args) {
                 args.Add(new Utils.StoreEntry(arg.Item1, arg.Item2, offset));
                 offset += arg.Item2.SizeOf;
 
@@ -512,8 +512,8 @@ namespace AST {
             return new TFunction(_ret_type, args, offset, alignment, _varargs);
         }
 
-        public String Dump(Boolean dump_args = false) {
-            String str = "function";
+        public string Dump(Boolean dump_args = false) {
+            string str = "function";
             if (dump_args) {
                 str += "\n";
                 foreach (Utils.StoreEntry arg in args) {
@@ -523,8 +523,8 @@ namespace AST {
             return str;
         }
 
-        public override String ToString() {
-            String str = "";
+        public override string ToString() {
+            string str = "";
             for (Int32 i = 0; i < args.Count; ++i) {
                 if (i != 0) {
                     str += ", ";

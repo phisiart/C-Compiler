@@ -21,11 +21,11 @@ using SyntaxTree;
 // 1. This grammar is LL(1)
 // 2. identifier shouldn't be previously defined as a typedef_name
 //    this is to resolve the ambiguity of something like a * b
-// 3. first set : id, const, String, '('
+// 3. first set : id, const, string, '('
 //
 public class _primary_expression : ParseRule {
     public static Boolean Test() {
-        Expression expr;
+        Expr expr;
 
         var src = Parser.GetTokensFromString("test_id");
         Int32 current = Parse(src, 0, out expr);
@@ -51,7 +51,7 @@ public class _primary_expression : ParseRule {
             return false;
         }
 
-        src = Parser.GetTokensFromString("\"String\"");
+        src = Parser.GetTokensFromString("\"string\"");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -66,10 +66,10 @@ public class _primary_expression : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 
         // 1. match identifier
-        String var_name = Parser.GetIdentifierValue(src[begin]);
+        string var_name = Parser.GetIdentifierValue(src[begin]);
         if (var_name != null) {
             if (!ParserEnvironment.HasTypedefName(var_name)) {
                 expr = new Variable(var_name);
@@ -101,7 +101,7 @@ public class _primary_expression : ParseRule {
             return begin + 1;
         }
 
-        // 3. match String literal
+        // 3. match string literal
         if (src[begin].type == TokenType.STRING) {
             expr = new StringLiteral(((TokenString)src[begin]).val);
             return begin + 1;
@@ -139,8 +139,8 @@ public class _primary_expression : ParseRule {
 ///   : assignment_expression [ ',' assignment_expression ]*
 /// </summary>
 public class _expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-        List<Expression> assign_exprs;
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
+        List<Expr> assign_exprs;
         if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out assign_exprs, _assignment_expression.Parse, OperatorVal.COMMA)) == -1) {
             expr = null;
             return -1;
@@ -159,7 +159,7 @@ public class _expression : ParseRule {
 /// When declaring an array, the size should be a constant.
 /// </remarks>
 public class _constant_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
         return _conditional_expression.Parse(src, begin, out expr);
     }
 }
@@ -170,7 +170,7 @@ public class _constant_expression : ParseRule {
 ///   : logical_or_expression [ '?' expression ':' conditional_expression ]?
 /// </summary>
 public class _conditional_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		// logical_or_expression
         Int32 current = _logical_or_expression.Parse(src, begin, out expr);
         if (current == -1) {
@@ -183,7 +183,7 @@ public class _conditional_expression : ParseRule {
         }
 
 		// expression
-        Expression true_expr;
+        Expr true_expr;
         if ((current = _expression.Parse(src, current, out true_expr)) == -1) {
             return -1;
         }
@@ -194,7 +194,7 @@ public class _conditional_expression : ParseRule {
         }
 
 		// conditional_expression
-        Expression false_expr;
+        Expr false_expr;
         if ((current = Parse(src, current, out false_expr)) == -1) {
             return -1;
         }
@@ -212,10 +212,10 @@ public class _conditional_expression : ParseRule {
 // [ note: first try unary ]
 // first(conditional_expression) = first(cast_expression)
 public class _assignment_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr node) {
         node = null;
-        Expression lvalue;
-        Expression rvalue;
+        Expr lvalue;
+        Expr rvalue;
         Int32 current = _unary_expression.Parse(src, begin, out lvalue);
         if (current != -1) {
             if (src[current].type == TokenType.OPERATOR) {
@@ -354,7 +354,7 @@ public class _assignment_expression : ParseRule {
 public class _postfix_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -405,7 +405,7 @@ public class _postfix_expression : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 
         // step 1. match primary_expression
         Int32 current = _primary_expression.Parse(src, begin, out expr);
@@ -428,7 +428,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // 1. match expression
-                Expression idx;
+                Expr idx;
                 current = _expression.Parse(src, current, out idx);
                 if (current == -1) {
                     expr = null;
@@ -452,11 +452,11 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // 1. match arglist, if no match, assume empty arglist
-                List<Expression> args;
+                List<Expr> args;
                 Int32 saved = current;
                 current = _argument_expression_list.Parse(src, current, out args);
                 if (current == -1) {
-                    args = new List<Expression>();
+                    args = new List<Expr>();
                     current = saved;
                 }
                 
@@ -480,7 +480,7 @@ public class _postfix_expression : ParseRule {
                     expr = null;
                     return -1;
                 }
-                String attrib = ((TokenIdentifier)src[current]).val;
+                string attrib = ((TokenIdentifier)src[current]).val;
                 current++;
 
                 // successful match
@@ -494,7 +494,7 @@ public class _postfix_expression : ParseRule {
                 if (src[current].type != TokenType.IDENTIFIER) {
                     return -1;
                 }
-                String pattrib = ((TokenIdentifier)src[current]).val;
+                string pattrib = ((TokenIdentifier)src[current]).val;
                 current++;
 
                 // successful match
@@ -537,7 +537,7 @@ public class _postfix_expression : ParseRule {
 ///   : assignment_expression [ ',' assignment_expression ]*
 /// </summary>
 public class _argument_expression_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Expression> node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Expr> node) {
 		return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
     }
 }
@@ -567,12 +567,12 @@ public class _argument_expression_list : ParseRule {
 //
 // first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
 //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = { id const String ( ++ -- & * + - ~ ! sizeof }
+//           = { id const string ( ++ -- & * + - ~ ! sizeof }
 //
 public class _unary_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -673,7 +673,7 @@ public class _unary_expression : ParseRule {
         return begin;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
         //expr = null;
 
         Int32 current;
@@ -847,10 +847,10 @@ public class _unary_expression : ParseRule {
 // NOTE:
 // this is right-recursive, which is totally fine
 //
-public class _cast_expression : Expression {
+public class _cast_expression : Expr {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -871,7 +871,7 @@ public class _cast_expression : Expression {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression node) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr node) {
 
         // 1. try to match '(' type_name ')'
         TypeName type_name;
@@ -906,7 +906,7 @@ public class _cast_expression : Expression {
 public class _multiplicative_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -921,7 +921,7 @@ public class _multiplicative_expression : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_cast_expression.Parse,
@@ -942,7 +942,7 @@ public class _multiplicative_expression : ParseRule {
 public class _additive_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -957,7 +957,7 @@ public class _additive_expression : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_multiplicative_expression.Parse,
@@ -977,7 +977,7 @@ public class _additive_expression : ParseRule {
 public class _shift_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a * b + c << 3");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -992,7 +992,7 @@ public class _shift_expression : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_additive_expression.Parse,
@@ -1012,7 +1012,7 @@ public class _shift_expression : ParseRule {
 public class _relational_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("3 < 4");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -1027,7 +1027,7 @@ public class _relational_expression : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_shift_expression.Parse,
@@ -1047,7 +1047,7 @@ public class _relational_expression : ParseRule {
 ///   : relational_expression [ [ '==' | '!=' ] relational_expression ]*
 /// </summary>
 public class _equality_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_relational_expression.Parse,
@@ -1065,7 +1065,7 @@ public class _equality_expression : ParseRule {
 ///   : equality_expresion [ '&' equality_expression ]*
 /// </summary>
 public class _and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_equality_expression.Parse,
@@ -1082,7 +1082,7 @@ public class _and_expression : ParseRule {
 ///   : and_expression [ '^' and_expression ]*
 /// </summary>
 public class _exclusive_or_expression : ParseRule {
-	public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+	public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_and_expression.Parse,
@@ -1099,7 +1099,7 @@ public class _exclusive_or_expression : ParseRule {
 ///   : exclulsive_or_expression [ '|' exclulsive_or_expression ]*
 /// </summary>
 public class _inclusive_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_exclusive_or_expression.Parse,
@@ -1120,7 +1120,7 @@ public class _inclusive_or_expression : ParseRule {
 /// </remarks>
 /// </summary>
 public class _logical_and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_inclusive_or_expression.Parse,
@@ -1141,7 +1141,7 @@ public class _logical_and_expression : ParseRule {
 /// </remarks>
 /// </summary>
 public class _logical_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 		return Parser.ParseBinaryOperator(
 			src, begin, out expr,
 			_logical_and_expression.Parse,

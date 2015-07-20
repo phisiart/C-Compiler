@@ -60,7 +60,7 @@ public class TokenOperator : Token {
     }
     public readonly OperatorVal val;
 
-    public static Dictionary<String, OperatorVal> ops = new Dictionary<String, OperatorVal>() {
+    public static Dictionary<string, OperatorVal> ops = new Dictionary<string, OperatorVal>() {
         { "[",    OperatorVal.LBRACKET     },
         { "]",    OperatorVal.RBRACKET     },
         { "(",    OperatorVal.LPAREN       },
@@ -108,7 +108,7 @@ public class TokenOperator : Token {
         { "}",    OperatorVal.RCURL        }
     };
 
-    public override String ToString() {
+    public override string ToString() {
         return type.ToString() + " [" + val.ToString() + "]: " + ops.First(pair => pair.Value == val).Key;
     }
 }
@@ -163,7 +163,7 @@ public class FSAOperator : FSA {
     };
 
     private State state;
-    private String scanned;
+    private string scanned;
 
     public FSAOperator() {
         state = State.START;

@@ -97,7 +97,7 @@ public class Parser {
         return false;
     }
 
-    public static String GetIdentifierValue(Token token) {
+    public static string GetIdentifierValue(Token token) {
         if (token.type == TokenType.IDENTIFIER) {
             return ((TokenIdentifier)token).val;
         } else {
@@ -105,7 +105,7 @@ public class Parser {
         }
     }
 
-    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out String id) {
+    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out string id) {
         if (src[begin].type == TokenType.IDENTIFIER) {
             id = ((TokenIdentifier)src[begin]).val;
             return begin + 1;
@@ -115,7 +115,7 @@ public class Parser {
         }
     }
 
-    public static List<Token> GetTokensFromString(String src) {
+    public static List<Token> GetTokensFromString(string src) {
         Scanner lex = new Scanner();
         lex.src = src;
         lex.Lex();
@@ -272,7 +272,7 @@ public class Parser {
 
     }
 
-    public static Int32 ParseParenExpr(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 ParseParenExpr(List<Token> src, Int32 begin, out Expr expr) {
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
             expr = null;
             return -1;
@@ -415,12 +415,12 @@ public class Parser {
         return GetSequenceParser(ParseFirstNode, ParseSecondNode, ParseThirdNode, Combine)(src, begin, out node);
     }
 
-	public delegate Expression BinaryExpressionConstructor(Expression lhs, Expression rhs);
-	public static Parser.FParse<Expression> GetBinaryOperatorParser(
-		Parser.FParse<Expression> OperandParser,
+	public delegate Expr BinaryExpressionConstructor(Expr lhs, Expr rhs);
+	public static Parser.FParse<Expr> GetBinaryOperatorParser(
+		Parser.FParse<Expr> OperandParser,
 		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
 	) {
-		return delegate (List<Token> src, Int32 begin, out Expression expr) {
+		return delegate (List<Token> src, Int32 begin, out Expr expr) {
 
 			// 1. try to match the first operand
 			Int32 current = OperandParser(src, begin, out expr);
@@ -445,7 +445,7 @@ public class Parser {
 					}
 					matched = true;
 
-					Expression rhs;
+					Expr rhs;
 					if ((current = OperandParser(src, current, out rhs)) == -1) {
 						expr = null;
 						return -1;
@@ -462,8 +462,8 @@ public class Parser {
 	}
 
 	public static Int32 ParseBinaryOperator(
-		List<Token> src, Int32 begin, out Expression expr,
-		Parser.FParse<Expression> OperandParser,
+		List<Token> src, Int32 begin, out Expr expr,
+		Parser.FParse<Expr> OperandParser,
 		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
 	) {
 		return GetBinaryOperatorParser(OperandParser, bin_op_treaters)(src, begin, out expr);

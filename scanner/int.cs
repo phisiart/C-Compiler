@@ -11,15 +11,15 @@ public enum IntSuffix {
 };
 
 public class TokenInt : Token {
-    public TokenInt(Int64 _val, IntSuffix _suffix, String _raw)
+    public TokenInt(Int64 _val, IntSuffix _suffix, string _raw)
         : base(TokenType.INT) {
         val = _val;
         suffix = _suffix;
         raw = _raw;
     }
 
-    public override String ToString() {
-        String str = type.ToString();
+    public override string ToString() {
+        string str = type.ToString();
         switch (suffix) {
         case IntSuffix.L:
             str += "(long)";
@@ -37,7 +37,7 @@ public class TokenInt : Token {
     }
 
     public readonly Int64 val;
-    public readonly String raw;
+    public readonly string raw;
     public readonly IntSuffix suffix;
 }
 
@@ -57,7 +57,7 @@ public class FSAInt : FSA {
     };
 
     private Int64 val;
-    private String raw;
+    private string raw;
     private IntSuffix suffix;
     private State state;
 

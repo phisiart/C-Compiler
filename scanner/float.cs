@@ -13,7 +13,7 @@ public enum FloatSuffix {
 // It can either be a float or double.
 // 
 public class TokenFloatConst : Token {
-    public TokenFloatConst(Double _val, FloatSuffix _suffix, String _raw)
+    public TokenFloatConst(Double _val, FloatSuffix _suffix, string _raw)
         : base(TokenType.FLOAT) {
         val = _val;
         suffix = _suffix;
@@ -21,11 +21,11 @@ public class TokenFloatConst : Token {
     }
 
     public readonly Double val;
-    public readonly String raw;
+    public readonly string raw;
     public readonly FloatSuffix suffix;
 
-    public override String ToString() {
-        String str = type.ToString();
+    public override string ToString() {
+        string str = type.ToString();
         switch (suffix) {
         case FloatSuffix.F:
             str += "(float)";
@@ -61,7 +61,7 @@ public class FSAFloat : FSA {
         DPL
     };
 
-    private String raw;
+    private string raw;
     private Int64 int_part;
     private Int64 frac_part;
     private Int64 frac_count;

@@ -11,12 +11,12 @@ using System.Linq;
 public class _declaration : ParseRule {
     public static Boolean Test() {
         List<Token> src = Parser.GetTokensFromString("static int a = 3, *b = 0, **c = 3;");
-        Declaration decl;
+        Decln decl;
         Int32 current = Parse(src, 0, out decl);
         return current != -1;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declaration declaration) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Decln declaration) {
         return Parser.ParseSequence(src, begin, out declaration,
 
             // declaration_specifiers
@@ -29,13 +29,13 @@ public class _declaration : ParseRule {
             Parser.GetOperatorParser(OperatorVal.SEMICOLON),
 
 			// # if this declaration is a typeof, then add the name into the environment
-            (DeclarationSpecifiers decln_specs, List<InitializationDeclarator> init_declrs, Boolean _) => {
+            (DeclnSpecs decln_specs, List<InitializationDeclarator> init_declrs, Boolean _) => {
                 if (decln_specs.IsTypedef()) {
                     foreach (InitializationDeclarator init_declr in init_declrs) {
                         ParserEnvironment.AddTypedefName(init_declr.declr.declr_name);
                     }
                 }
-                return new Declaration(decln_specs, init_declrs);
+                return new Decln(decln_specs, init_declrs);
             }
         );
     }
@@ -52,7 +52,7 @@ public class _declaration : ParseRule {
 /// </remarks>
 public class _declaration_specifiers : ParseRule {
     public static Boolean Test() {
-        DeclarationSpecifiers decl_specs;
+        DeclnSpecs decl_specs;
 
         var src = Parser.GetTokensFromString("typedef Int32 long double const");
         Int32 current = Parse(src, 0, out decl_specs);
@@ -65,8 +65,8 @@ public class _declaration_specifiers : ParseRule {
     }
 
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out DeclarationSpecifiers decl_specs) {
-        List<StorageClassSpecifier> storage_class_specifiers = new List<StorageClassSpecifier>();
+    public static Int32 Parse(List<Token> src, Int32 begin, out DeclnSpecs decl_specs) {
+        List<StorageClassSpec> storage_class_specifiers = new List<StorageClassSpec>();
         List<TypeSpecifier> type_specifiers = new List<TypeSpecifier>();
         List<TypeQualifier> type_qualifiers = new List<TypeQualifier>();
         
@@ -75,7 +75,7 @@ public class _declaration_specifiers : ParseRule {
             Int32 saved = current;
 
             // 1. match storage_class_specifier
-            StorageClassSpecifier storage_class_specifier;
+            StorageClassSpec storage_class_specifier;
 			if ((current = _storage_class_specifier.Parse(src, saved, out storage_class_specifier)) != -1) {
                 storage_class_specifiers.Add(storage_class_specifier);
                 continue;
@@ -106,7 +106,7 @@ public class _declaration_specifiers : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclarationSpecifiers(storage_class_specifiers, type_specifiers, type_qualifiers);
+        decl_specs = new DeclnSpecs(storage_class_specifiers, type_specifiers, type_qualifiers);
         return current;
 
     }
@@ -154,7 +154,7 @@ public class _init_declarator : ParseRule {
 			// initializer
 			_initializer.Parse,
 
-			(Boolean _, Expression _init) => _init
+			(Boolean _, Expr _init) => _init
 
 		);
 
@@ -164,9 +164,9 @@ public class _init_declarator : ParseRule {
 			_declarator.Parse,
 
 			// [ '=' initializer ]?
-			Parser.GetOptionalParser<Expression>(null, InitializerParser),
+			Parser.GetOptionalParser<Expr>(null, InitializerParser),
 
-			(Declarator declr, Expression init) => new InitializationDeclarator(declr, init)
+			(Declr declr, Expr init) => new InitializationDeclarator(declr, init)
 		);
     }
 }
@@ -182,7 +182,7 @@ public class _init_declarator : ParseRule {
 /// </summary>
 public class _storage_class_specifier : ParseRule {
     public static Boolean Test() {
-        StorageClassSpecifier decl_specs;
+        StorageClassSpec decl_specs;
 
         var src = Parser.GetTokensFromString("typedef");
         Int32 current = Parse(src, 0, out decl_specs);
@@ -199,11 +199,11 @@ public class _storage_class_specifier : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out StorageClassSpecifier spec) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StorageClassSpec spec) {
 
         // make sure the token is a keyword
         if (src[begin].type != TokenType.KEYWORD) {
-            spec = StorageClassSpecifier.NULL;
+            spec = StorageClassSpec.NULL;
             return -1;
         }
 
@@ -211,27 +211,27 @@ public class _storage_class_specifier : ParseRule {
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.AUTO:
-            spec = StorageClassSpecifier.AUTO;
+            spec = StorageClassSpec.AUTO;
             return begin + 1;
 
         case KeywordVal.REGISTER:
-            spec = StorageClassSpecifier.REGISTER;
+            spec = StorageClassSpec.REGISTER;
             return begin + 1;
 
         case KeywordVal.STATIC:
-            spec = StorageClassSpecifier.STATIC;
+            spec = StorageClassSpec.STATIC;
             return begin + 1;
 
         case KeywordVal.EXTERN:
-            spec = StorageClassSpecifier.EXTERN;
+            spec = StorageClassSpec.EXTERN;
             return begin + 1;
 
         case KeywordVal.TYPEDEF:
-            spec = StorageClassSpecifier.TYPEDEF;
+            spec = StorageClassSpec.TYPEDEF;
             return begin + 1;
 
         default:
-            spec = StorageClassSpecifier.NULL;
+            spec = StorageClassSpec.NULL;
             return -1;
         }
     }
@@ -266,7 +266,7 @@ public class _type_specifier : ParseRule {
     public static Boolean Test() {
         TypeSpecifier spec;
 
-        List<String> codes = new List<String> {
+        List<string> codes = new List<string> {
             "union { int a; }", "void", "char", "short", "int", "long", "float", "double", "signed", "unsigned",
             "struct { int a; }"
         };
@@ -309,7 +309,7 @@ public class _type_specifier : ParseRule {
         }
 
         // 3. match typedef name
-        String typedef_name;
+        string typedef_name;
 		if ((current = _typedef_name.Parse(src, begin, out typedef_name)) != -1) {
             spec = new TypedefName(typedef_name);
             return current;
@@ -326,39 +326,39 @@ public class _type_specifier : ParseRule {
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.VOID:
-            spec = new TypeSpecifier(BasicTypeSpecifier.VOID);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.VOID);
             return begin + 1;
 
         case KeywordVal.CHAR:
-            spec = new TypeSpecifier(BasicTypeSpecifier.CHAR);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.CHAR);
             return begin + 1;
 
         case KeywordVal.SHORT:
-            spec = new TypeSpecifier(BasicTypeSpecifier.SHORT);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.SHORT);
             return begin + 1;
 
         case KeywordVal.INT:
-            spec = new TypeSpecifier(BasicTypeSpecifier.INT);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.INT);
             return begin + 1;
 
         case KeywordVal.LONG:
-            spec = new TypeSpecifier(BasicTypeSpecifier.LONG);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.LONG);
             return begin + 1;
 
         case KeywordVal.FLOAT:
-            spec = new TypeSpecifier(BasicTypeSpecifier.FLOAT);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.FLOAT);
             return begin + 1;
 
         case KeywordVal.DOUBLE:
-            spec = new TypeSpecifier(BasicTypeSpecifier.DOUBLE);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.DOUBLE);
             return begin + 1;
 
         case KeywordVal.SIGNED:
-            spec = new TypeSpecifier(BasicTypeSpecifier.SIGNED);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.SIGNED);
             return begin + 1;
 
         case KeywordVal.UNSIGNED:
-            spec = new TypeSpecifier(BasicTypeSpecifier.UNSIGNED);
+            spec = new TypeSpecifier(TypeSpecifier.Kind.UNSIGNED);
             return begin + 1;
 
         default:
@@ -442,7 +442,7 @@ public class _type_qualifier : ParseRule {
 public class _declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("* const * const a[3][4]");
-        Declarator decl;
+        Declr decl;
         Int32 current = Parse(src, 0, out decl);
         if (current == -1) {
             return false;
@@ -450,7 +450,7 @@ public class _declarator : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declr declr) {
 		return Parser.ParseSequence(
 			src, begin, out declr,
 
@@ -460,11 +460,11 @@ public class _declarator : ParseRule {
 			// direct_declarator
 			_direct_declarator.Parse,
 
-			(List<PointerModifier> pointer_modifiers, Declarator direct_declr) => {
-				String name = direct_declr.declr_name;
+			(List<PointerModifier> pointer_modifiers, Declr direct_declr) => {
+				string name = direct_declr.declr_name;
 				List<TypeModifier> modifiers = new List<TypeModifier>(direct_declr.declr_modifiers);
 				modifiers.AddRange(pointer_modifiers);
-				return new Declarator(name, modifiers);
+				return new Declr(name, modifiers);
 			}
 		);
     }
@@ -606,7 +606,7 @@ public class _type_qualifier_list : ParseRule {
 public class _direct_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("(*a)[3][5 + 7][]");
-        Declarator decl;
+        Declr decl;
         Int32 current = Parse(src, 0, out decl);
         if (current == -1) {
             return false;
@@ -617,7 +617,7 @@ public class _direct_declarator : ParseRule {
 
     // '(' declarator ')'
     // 
-    public static Int32 ParseDeclarator(List<Token> src, Int32 begin, out Declarator declr) {
+    public static Int32 ParseDeclarator(List<Token> src, Int32 begin, out Declr declr) {
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
             declr = null;
             return -1;
@@ -648,10 +648,10 @@ public class _direct_declarator : ParseRule {
         }
 
         // match constant_expression, if fail, just put null
-        Expression nelems;
+        Expr nelems;
         Int32 saved = begin;
         if ((begin = _constant_expression.Parse(src, begin, out nelems)) == -1) {
-            nelems = new EmptyExpression();
+            nelems = new EmptyExpr();
             begin = saved;
         }
 
@@ -718,8 +718,8 @@ public class _direct_declarator : ParseRule {
     
     // Parse direct declarator
     // 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
-        String name;
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declr declr) {
+        string name;
         List<TypeModifier> modifiers = new List<TypeModifier>();
 
         // 1. match: id | '(' declarator ')'
@@ -742,7 +742,7 @@ public class _direct_declarator : ParseRule {
         current = Parser.ParseList(src, current, out more_modifiers, ParseSuffixModifier);
         modifiers.AddRange(more_modifiers);
 
-        declr = new Declarator(name, modifiers);
+        declr = new Declr(name, modifiers);
         return current;
     }
 
@@ -788,7 +788,7 @@ public class _enum_specifier : ParseRule {
 
         Int32 current = begin + 1;
         List<Enumerator> enum_list;
-        String name;
+        string name;
         if ((name = Parser.GetIdentifierValue(src[current])) != null) {
 			current++;
 
@@ -844,12 +844,12 @@ public class _enumerator : ParseRule {
 
 					// constant_expression
 					_constant_expression.Parse,
-					(Boolean _, Expression expr) => expr
+					(Boolean _, Expr expr) => expr
 				)
 			),
 			// ]?
 
-			(String name, Expression expr) => new Enumerator(name, expr)
+			(string name, Expr expr) => new Enumerator(name, expr)
 
 		);
     }
@@ -861,7 +861,7 @@ public class _enumerator : ParseRule {
 ///   : identifier
 /// </summary>
 public class _enumeration_constant : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out String name) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out string name) {
         return Parser.ParseIdentifier(src, begin, out name);
     }
 }
@@ -884,7 +884,7 @@ public class _struct_or_union_specifier : ParseRule {
 			_struct_or_union.Parse,
 
 			// [
-			Parser.GetChoicesParser (new List<Parser.FParse<Tuple<String, List<StructDeclaration>>>> {
+			Parser.GetChoicesParser (new List<Parser.FParse<Tuple<string, List<StructDeclaration>>>> {
 
 				// [
 				Parser.GetSequenceParser(
@@ -895,7 +895,7 @@ public class _struct_or_union_specifier : ParseRule {
 					// { struct_declaration_list }
 					Parser.GetBraceSurroundedParser<List<StructDeclaration>>(_struct_declaration_list.Parse),
 
-					(String id, List<StructDeclaration> declns) => Tuple.Create(id, declns)
+					(string id, List<StructDeclaration> declns) => Tuple.Create(id, declns)
 				),
 				// ]
 
@@ -904,12 +904,12 @@ public class _struct_or_union_specifier : ParseRule {
 				// identifier
 				Parser.GetModifiedParser(
 					Parser.ParseIdentifier,
-					(String id) => new Tuple<String, List<StructDeclaration>>(id, null)
+					(string id) => new Tuple<string, List<StructDeclaration>>(id, null)
 				)
 			}),
 			// ]
 
-			(Boolean is_union, Tuple<String, List<StructDeclaration>> declns) => {
+			(Boolean is_union, Tuple<string, List<StructDeclaration>> declns) => {
 				if (is_union) {
 					return new UnionSpecifier(declns.Item1, declns.Item2);
 				} else {
@@ -976,7 +976,7 @@ public class _struct_declaration : ParseRule {
 			// ';'
             Parser.GetOperatorParser(OperatorVal.SEMICOLON),
 
-            (DeclarationSpecifiers specs, List<Declarator> declrs, Boolean _) => new StructDeclaration(specs, declrs)
+            (DeclnSpecs specs, List<Declr> declrs, Boolean _) => new StructDeclaration(specs, declrs)
         );
     }
 }
@@ -989,7 +989,7 @@ public class _struct_declaration : ParseRule {
 public class _specifier_qualifier_list : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("int long const");
-        DeclarationSpecifiers specs;
+        DeclnSpecs specs;
         Int32 current = Parse(src, 0, out specs);
         if (current == -1) {
             return false;
@@ -998,7 +998,7 @@ public class _specifier_qualifier_list : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out DeclarationSpecifiers decl_specs) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out DeclnSpecs decl_specs) {
         List<TypeSpecifier> type_specifiers = new List<TypeSpecifier>();
         List<TypeQualifier> type_qualifiers = new List<TypeQualifier>();
 
@@ -1032,7 +1032,7 @@ public class _specifier_qualifier_list : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclarationSpecifiers(null, type_specifiers, type_qualifiers);
+        decl_specs = new DeclnSpecs(null, type_specifiers, type_qualifiers);
         return begin;
 
     }
@@ -1047,7 +1047,7 @@ public class _specifier_qualifier_list : ParseRule {
 public class _struct_declarator_list : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("*a, *b[3]");
-        List<Declarator> decl_list;
+        List<Declr> decl_list;
         Int32 current = Parse(src, 0, out decl_list);
         if (current == -1) {
             return false;
@@ -1055,7 +1055,7 @@ public class _struct_declarator_list : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Declarator> declrs) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Declr> declrs) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out declrs, _struct_declarator.Parse, OperatorVal.COMMA);
     }
 }
@@ -1071,7 +1071,7 @@ public class _struct_declarator_list : ParseRule {
 /// </remarks>
 /// </summary>
 public class _struct_declarator : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declr declr) {
         return _declarator.Parse(src, begin, out declr);
     }
 }
@@ -1100,14 +1100,14 @@ public class _parameter_declaration : ParseRule {
 
             // [ 
             Parser.GetOptionalParser(
-                new Declarator("", new List<TypeModifier>()),
+                new Declr("", new List<TypeModifier>()),
 
                 // declarator | abstract_declarator
-                Parser.GetChoicesParser(new List<Parser.FParse<Declarator>> { _declarator.Parse, _abstract_declarator.Parse })
+                Parser.GetChoicesParser(new List<Parser.FParse<Declr>> { _declarator.Parse, _abstract_declarator.Parse })
             ),
             // ]?
 
-            (DeclarationSpecifiers specs, Declarator declr) => new ParameterDeclaration(specs, declr)
+            (DeclnSpecs specs, Declr declr) => new ParameterDeclaration(specs, declr)
         );
     }
 }
@@ -1123,7 +1123,7 @@ public class _parameter_declaration : ParseRule {
 /// an abstract declarator is a non-empty list of (pointer, function, or array) type modifiers
 /// </summary>
 public class _abstract_declarator : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declr declr) {
         List<TypeModifier> modifiers;
         begin = Parser.ParseSequence(src, begin, out modifiers,
 
@@ -1131,14 +1131,14 @@ public class _abstract_declarator : ParseRule {
             Parser.GetOptionalParser(new List<PointerModifier>(), _pointer.Parse),
 
 			// [direct_abstract_declarator]?
-            Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),
+            Parser.GetOptionalParser(new Declr("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),
 
-            (List<PointerModifier> ptr_modifiers, Declarator abst_declr) => abst_declr.declr_modifiers.Concat(ptr_modifiers).ToList()
+            (List<PointerModifier> ptr_modifiers, Declr abst_declr) => abst_declr.declr_modifiers.Concat(ptr_modifiers).ToList()
         );
 
         // make sure the list is non-empty
         if (begin != -1 && modifiers.Any()) {
-            declr = new Declarator("", modifiers);
+            declr = new Declr("", modifiers);
             return begin;
         } else {
             declr = null;
@@ -1162,7 +1162,7 @@ public class _abstract_declarator : ParseRule {
 public class _direct_abstract_declarator : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("(*)[3][5 + 7][]");
-        Declarator decl;
+        Declr decl;
         Int32 current = Parse(src, 0, out decl);
         if (current == -1) {
             return false;
@@ -1173,7 +1173,7 @@ public class _direct_abstract_declarator : ParseRule {
 
     // '(' abstract_declarator ')'
     // 
-    public static Int32 ParseAbstractDeclarator(List<Token> src, Int32 begin, out Declarator decl) {
+    public static Int32 ParseAbstractDeclarator(List<Token> src, Int32 begin, out Declr decl) {
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
             decl = null;
             return -1;
@@ -1192,7 +1192,7 @@ public class _direct_abstract_declarator : ParseRule {
         return begin;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Declarator declr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Declr declr) {
         List<TypeModifier> modifiers;
 
         // 1. match modifier | '(' abstract_declarator ')'
@@ -1215,7 +1215,7 @@ public class _direct_abstract_declarator : ParseRule {
         current = Parser.ParseList(src, current, out more_modifiers, _direct_declarator.ParseSuffixModifier);
         modifiers.AddRange(more_modifiers);
 
-        declr = new Declarator("", modifiers);
+        declr = new Declr("", modifiers);
         return current;
     }
 
@@ -1228,7 +1228,7 @@ public class _direct_abstract_declarator : ParseRule {
 public class _initializer : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a = 3");
-        Expression expr;
+        Expr expr;
         Int32 current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -1249,7 +1249,7 @@ public class _initializer : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
         // 1. if not start with '{', we have to match assignment_expression
         if (!Parser.EatOperator(src, ref begin, OperatorVal.LCURL))
             return _assignment_expression.Parse(src, begin, out expr);
@@ -1281,7 +1281,7 @@ public class _initializer : ParseRule {
 public class _initializer_list : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("{1, 2}, {2, 3}");
-        Expression init;
+        Expr init;
         Int32 current = Parse(src, 0, out init);
         if (current == -1) {
             return false;
@@ -1289,8 +1289,8 @@ public class _initializer_list : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expression expr) {
-        List<Expression> exprs;
+    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
+        List<Expr> exprs;
         if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out exprs, _initializer.Parse, OperatorVal.COMMA)) == -1) {
             expr = null;
             return -1;
@@ -1316,9 +1316,9 @@ public class _type_name : ParseRule {
             _specifier_qualifier_list.Parse,
 
             // [abstract_declarator]?
-            Parser.GetOptionalParser(new Declarator("", new List<TypeModifier>()), _abstract_declarator.Parse),
+            Parser.GetOptionalParser(new Declr("", new List<TypeModifier>()), _abstract_declarator.Parse),
 
-            (DeclarationSpecifiers specs, Declarator declr) => new TypeName(specs, declr)
+            (DeclnSpecs specs, Declr declr) => new TypeName(specs, declr)
         );
     }
 }
@@ -1331,7 +1331,7 @@ public class _type_name : ParseRule {
 /// We need to look it up in the parser environment.
 /// </summary>
 public class _typedef_name : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out String name) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out string name) {
         if ((begin = (Parser.ParseIdentifier(src, begin, out name))) == -1) {
             return -1;
         }

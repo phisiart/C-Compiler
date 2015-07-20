@@ -37,28 +37,28 @@ namespace AST {
 	/// Goto Statement
 	/// </summary>
 	public class GotoStmt : Stmt {
-//		public GotoStmt(Env _env, Stmt _parent, String _label) : base(_parent) {
+//		public GotoStmt(Env _env, Stmt _parent, string _label) : base(_parent) {
 //			stmt_label = _label;
 //		}
-		public GotoStmt(String _label) {
+		public GotoStmt(string _label) {
 			stmt_label = _label;
 		}
-		public readonly String stmt_label;
+		public readonly string stmt_label;
 	}
 
 	/// <summary>
 	/// Labeled Statement
 	/// </summary>
 	public class LabeledStmt : Stmt {
-//		public LabeledStmt(ref Env _env, Stmt _parent, String _label, SyntaxTree.Statement _stmt) : base(_parent) {
+//		public LabeledStmt(ref Env _env, Stmt _parent, string _label, SyntaxTree.Statement _stmt) : base(_parent) {
 //			stmt_label = _label;
 //			stmt_stmt = _stmt.Semant(ref _env, this);
 //		}
-		public LabeledStmt(String _label, Stmt _stmt) {
+		public LabeledStmt(string _label, Stmt _stmt) {
 			stmt_label = _label;
 			stmt_stmt = _stmt;
 		}
-		public readonly String stmt_label;
+		public readonly string stmt_label;
 		public readonly Stmt stmt_stmt;
 	}
 

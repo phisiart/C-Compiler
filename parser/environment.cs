@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 public class ParserScope {
     public ParserScope() {
-        vars = new List<String>();
-        typedef_names = new List<String>();
+        vars = new List<string>();
+        typedef_names = new List<string>();
     }
 
-    public Boolean HasTypedefName(String type) {
+    public Boolean HasTypedefName(string type) {
         return typedef_names.FindIndex(x => x == type) != -1;
     }
 
-    public void AddTypedefName(String type) {
+    public void AddTypedefName(string type) {
         typedef_names.Add(type);
     }
 
 
-    public List<String> typedef_names;
-    public List<String> vars;
+    public List<string> typedef_names;
+    public List<string> vars;
 
 }
 
@@ -35,11 +35,11 @@ public static class ParserEnvironment {
         scopes.Pop();
     }
 
-    public static Boolean HasTypedefName(String type) {
+    public static Boolean HasTypedefName(string type) {
         return scopes.Peek().HasTypedefName(type);
     }
 
-    public static void AddTypedefName(String type) {
+    public static void AddTypedefName(string type) {
         scopes.Peek().AddTypedefName(type);
     }
 

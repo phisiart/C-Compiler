@@ -14,15 +14,15 @@ namespace AST {
             TYPEDEF,
         }
 
-        public Decln(String name, SCS scs, ExprType type, Expr init) {
+        public Decln(string name, SCS scs, ExprType type, Expr init) {
             decln_name = name;
             decln_scs  = scs;
             decln_type = type;
             decln_init = init;
         }
 
-        public override String ToString() {
-            String str = "[" + decln_scs.ToString() + "] ";
+        public override string ToString() {
+            string str = "[" + decln_scs.ToString() + "] ";
             str += decln_name;
             str += " : " + decln_type.ToString();
             return str;
@@ -30,7 +30,7 @@ namespace AST {
 
         public void CGenExternDecln(Env env, CGenState state) {
             state.CGenExpandStack(env.GetStackOffset(), ToString());
-            if (decln_init.type.type_kind != ExprType.ExprTypeKind.VOID) {
+            if (decln_init.type.type_kind != ExprType.Kind.VOID) {
                 // need initialization
 
                 Env.Entry entry = env.Find(decln_name);
@@ -58,7 +58,7 @@ namespace AST {
             }
         }
 
-        private readonly String     decln_name;
+        private readonly string     decln_name;
         private readonly SCS        decln_scs;
         private readonly ExprType   decln_type;
         private readonly Expr       decln_init;

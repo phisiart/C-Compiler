@@ -31,7 +31,7 @@ public class CGenState {
         DATA,
     }
 
-    public static Dictionary<Reg, String> reg_strs = new Dictionary<Reg, String>() {
+    public static Dictionary<Reg, string> reg_strs = new Dictionary<Reg, string>() {
         { Reg.EAX, "%eax" },
         { Reg.ECX, "%ecx" },
         { Reg.EDX, "%edx" },
@@ -41,7 +41,7 @@ public class CGenState {
 		{ Reg.ST0, "%st(0)" },
     };
 
-    public static String StrReg(Reg reg) {
+    public static string StrReg(Reg reg) {
         return reg_strs[reg];
     }
 
@@ -61,11 +61,11 @@ public class CGenState {
         }
     }
 
-    public void GLOBL(String name) {
+    public void GLOBL(string name) {
         os.WriteLine("    .globl " + name);
     }
 
-    public void CGenFuncName(String name) {
+    public void CGenFuncName(string name) {
         os.WriteLine(name + ":");
         stack_size = 0;
     }
@@ -73,7 +73,7 @@ public class CGenState {
 	/// <summary>
 	/// FLDS: load float to FPU stack.
 	/// </summary>
-	public void FLDS(String addr) {
+	public void FLDS(string addr) {
 		os.WriteLine("    flds " + addr);
 	}
 
@@ -85,7 +85,7 @@ public class CGenState {
 	/// FLDL: load double to FPU stack.
 	/// </summary>
 	/// <param name="addr">Address.</param>
-	public void FLDL(String addr) {
+	public void FLDL(string addr) {
 		os.WriteLine("    fldl " + addr);
 	}
 
@@ -97,7 +97,7 @@ public class CGenState {
     /// FSTS: store float from FPU stack.
     /// </summary>
     /// <param name="addr"></param>
-    public void FSTS(String addr) {
+    public void FSTS(string addr) {
         os.WriteLine("    fsts " + addr);
     }
 
@@ -109,7 +109,7 @@ public class CGenState {
     /// FSTL: store double from FPU stack.
     /// </summary>
     /// <param name="addr"></param>
-    public void FSTL(String addr) {
+    public void FSTL(string addr) {
         os.WriteLine("    fstl " + addr);
     }
 
@@ -119,7 +119,7 @@ public class CGenState {
 
     // PUSHL
     // =====
-    public void PUSHL(String reg) {
+    public void PUSHL(string reg) {
         os.WriteLine("    pushl " + reg);
     }
 
@@ -137,7 +137,7 @@ public class CGenState {
 
     // POPL
     // ====
-    public void POPL(String addr) {
+    public void POPL(string addr) {
         os.WriteLine("    popl " + addr);
     }
 
@@ -148,15 +148,15 @@ public class CGenState {
     /// <summary>
     /// MOVL: move a 4-byte long
     /// </summary>
-    public void MOVL(String from, String to) {
+    public void MOVL(string from, string to) {
         os.WriteLine("    movl " + from + ", " + to);
     }
 
-	public void MOVL(String from, Reg to) {
+	public void MOVL(string from, Reg to) {
         MOVL(from, StrReg(to));
 	}
 
-    public void MOVL(Int32 imm, String to) {
+    public void MOVL(Int32 imm, string to) {
         MOVL("$" + imm.ToString(), to);
     }
 
@@ -179,11 +179,11 @@ public class CGenState {
     /// <summary>
     /// MOVZBL: move a byte and zero-extend to a 4-byte long
     /// </summary>
-	public void MOVZBL(String from, String to) {
+	public void MOVZBL(string from, string to) {
 		os.WriteLine("    movzbl " + from + ", " + to);
 	}
 
-    public void MOVZBL(String from, Reg to) {
+    public void MOVZBL(string from, Reg to) {
         MOVZBL(from, StrReg(to));
     }
 
@@ -194,11 +194,11 @@ public class CGenState {
     /// <summary>
     /// MOVSBL: move a byte and sign-extend to a 4-byte long
     /// </summary>
-	public void MOVSBL(String from, String to) {
+	public void MOVSBL(string from, string to) {
 		os.WriteLine("    movsbl " + from + ", " + to);
 	}
 
-    public void MOVSBL(String from, Reg to) {
+    public void MOVSBL(string from, Reg to) {
         MOVSBL(from, StrReg(to));
     }
 
@@ -209,7 +209,7 @@ public class CGenState {
     /// <summary>
     /// MOVB: move a byte
     /// </summary>
-	public void MOVB(String from, String to) {
+	public void MOVB(string from, string to) {
 		os.WriteLine("    movb " + from + ", " + to);
 	}
 
@@ -220,7 +220,7 @@ public class CGenState {
     /// <summary>
     /// MOVW: move a 2-byte word
     /// </summary>
-    public void MOVW(String from, String to) {
+    public void MOVW(string from, string to) {
         os.WriteLine("    movw " + from + ", " + to);
     }
 
@@ -231,11 +231,11 @@ public class CGenState {
     /// <summary>
     /// MOVZWL: move a 2-byte word and zero-extend to a 4-byte long
     /// </summary>
-	public void MOVZWL(String from, String to) {
+	public void MOVZWL(string from, string to) {
 		os.WriteLine("    movzwl " + from + ", " + to);
 	}
 
-    public void MOVZWL(String from, Reg to) {
+    public void MOVZWL(string from, Reg to) {
         MOVZWL(from, StrReg(to));
     }
     
@@ -246,11 +246,11 @@ public class CGenState {
     /// <summary>
     /// MOVSWL: move a 2-byte word and sign-extend to a 4-byte long
     /// </summary>
-	public void MOVSWL(String from, String to) {
+	public void MOVSWL(string from, string to) {
 		os.WriteLine("    movswl " + from + ", " + to);
 	}
 
-    public void MOVSWL(String from, Reg to) {
+    public void MOVSWL(string from, Reg to) {
         MOVSWL(from, StrReg(to));
     }
 
@@ -261,21 +261,21 @@ public class CGenState {
     // LEA
     // ===
     // 
-    public void LEA(String addr) {
+    public void LEA(string addr) {
         os.WriteLine("    lea " + addr);
     }
 
     // CALL
     // ====
     // 
-    public void CALL(String addr) {
+    public void CALL(string addr) {
         os.WriteLine("    call " + addr);
     }
 
     // CGenExpandStack
     // ===============
     // 
-    public void CGenExpandStack(Int32 size, String comment = "") {
+    public void CGenExpandStack(Int32 size, string comment = "") {
         if (size > stack_size) {
             SUBL(size - stack_size, StrReg(Reg.ESP), comment);
             stack_size = size;
@@ -296,14 +296,14 @@ public class CGenState {
         os.WriteLine();
     }
 
-    public void COMMENT(String comment) {
+    public void COMMENT(string comment) {
         os.WriteLine("    # " + comment);
     }
 
     /// <summary>
     /// SUBL: subtract long
     /// </summary>
-    public void SUBL(String er, String ee, String comment = "") {
+    public void SUBL(string er, string ee, string comment = "") {
         os.Write("    subl " + er + ", " + ee);
         if (comment == "") {
             os.WriteLine();
@@ -312,19 +312,19 @@ public class CGenState {
         }
     }
 
-    public void SUBL(Int32 er, String ee, String comment = "") {
+    public void SUBL(Int32 er, string ee, string comment = "") {
         SUBL(er.ToString(), ee, comment);
     }
 
-    public void SUBL(Int32 er, Reg ee, String comment = "") {
+    public void SUBL(Int32 er, Reg ee, string comment = "") {
         SUBL(er.ToString(), StrReg(ee), comment);
     }
 
-    public void SUBL(Reg er, Reg ee, String comment = "") {
+    public void SUBL(Reg er, Reg ee, string comment = "") {
         SUBL(StrReg(er), StrReg(ee), comment);
     }
 
-    public override String ToString() {
+    public override string ToString() {
 		return os.ToString() + rodata.ToString();
     }
 
@@ -332,7 +332,7 @@ public class CGenState {
     /// ANDL er, ee
     /// ee = er & ee
     /// </summary>
-    public void ANDL(String er, String ee) {
+    public void ANDL(string er, string ee) {
         os.WriteLine("    andl " + er + ", " + ee);
     }
 
@@ -344,7 +344,7 @@ public class CGenState {
     /// ORL er, ee
     ///     ee = ee | er
     /// </summary>
-	public void ORL(String er, String ee, String comment = "") {
+	public void ORL(string er, string ee, string comment = "") {
 		os.Write("    orl " + er + ", " + ee);
 		if (comment == "") {
 			os.WriteLine();
@@ -353,7 +353,7 @@ public class CGenState {
 		}
 	}
 
-	public void ORL(Reg er, Reg ee, String comment = "") {
+	public void ORL(Reg er, Reg ee, string comment = "") {
 		ORL(StrReg(er), StrReg(ee), comment);
 	}
 
@@ -362,7 +362,7 @@ public class CGenState {
     /// ee = ee << er
     /// Note that there is only one kind of lshift.
     /// </summary>
-    public void SALL(String er, String ee) {
+    public void SALL(string er, string ee) {
         os.WriteLine("    sall " + er + ", " + ee);
     }
     
@@ -374,7 +374,7 @@ public class CGenState {
     /// XORL er, ee
     /// ee = ee ^ er
     /// </summary>
-    public void XORL(String er, String ee) {
+    public void XORL(string er, string ee) {
         os.WriteLine("    xorl " + er + ", " + ee);
     }
 
@@ -382,8 +382,8 @@ public class CGenState {
         XORL(StrReg(er), StrReg(ee));
     }
 
-	public String CGenLongConst(Int32 val) {
-		String name = ".LC" + rodata_idx.ToString();
+	public string CGenLongConst(Int32 val) {
+		string name = ".LC" + rodata_idx.ToString();
 		rodata.WriteLine("    .align 4");
 		rodata.WriteLine(name + ":");
 		rodata.WriteLine("    .long " + val.ToString());
@@ -391,8 +391,8 @@ public class CGenState {
 		return name;
 	}
 
-	public String CGenLongLongConst(Int32 lo, Int32 hi) {
-		String name = ".LC" + rodata_idx.ToString();
+	public string CGenLongLongConst(Int32 lo, Int32 hi) {
+		string name = ".LC" + rodata_idx.ToString();
 		rodata.WriteLine("    .align 8");
 		rodata.WriteLine(name + ":");
 		rodata.WriteLine("    .long " + lo.ToString());
@@ -401,8 +401,8 @@ public class CGenState {
 		return name;
 	}
 
-	public String CGenString(String str) {
-		String name = ".LC" + rodata_idx.ToString();
+	public string CGenString(string str) {
+		string name = ".LC" + rodata_idx.ToString();
 		rodata.WriteLine(name + ":");
 		rodata.WriteLine("    .string \"" + str + "\"");
 		rodata_idx++;

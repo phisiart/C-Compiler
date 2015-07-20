@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CCompiler</RootNamespace>
     <AssemblyName>CCompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -71,14 +72,14 @@
     <Compile Include="scanner\strtable.cs" />
     <Compile Include="scanner\tokens.cs" />
     <Compile Include="scanner\utils.cs" />
-    <Compile Include="semant\declarations.cs" />
-    <Compile Include="semant\error.cs" />
-    <Compile Include="semant\expressions.cs" />
-    <Compile Include="semant\external_definitions.cs" />
-    <Compile Include="semant\statements.cs" />
-    <Compile Include="semant\const_expressions.cs" />
-    <Compile Include="semant\assignment_operators.cs" />
-    <Compile Include="semant\binary_operators.cs" />
+    <Compile Include="SyntaxTree\declarations.cs" />
+    <Compile Include="SyntaxTree\error.cs" />
+    <Compile Include="SyntaxTree\expressions.cs" />
+    <Compile Include="SyntaxTree\external_definitions.cs" />
+    <Compile Include="SyntaxTree\statements.cs" />
+    <Compile Include="SyntaxTree\const_expressions.cs" />
+    <Compile Include="SyntaxTree\assignment_operators.cs" />
+    <Compile Include="SyntaxTree\binary_operators.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

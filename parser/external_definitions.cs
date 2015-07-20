@@ -63,7 +63,7 @@ public class _external_declaration : ParseRule {
     }
 
     public static Int32 Parse(List<Token> src, Int32 pos, out ExternalDeclaration node) {
-        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Declaration>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -108,15 +108,15 @@ public class _function_definition : ParseRule {
     
     public static Int32 Parse(List<Token> src, Int32 begin, out FunctionDefinition def) {
         // try to match declaration_specifiers, if not found, create an empty one.
-        DeclarationSpecifiers specs;
+        DeclnSpecs specs;
         Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclarationSpecifiers(new List<StorageClassSpecifier>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
+            specs = new DeclnSpecs(new List<StorageClassSpec>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
             current = begin;
         }
 
         // match declarator
-        Declarator decl;
+        Declr decl;
         current = _declarator.Parse(src, current, out decl);
         if (current == -1) {
             def = null;

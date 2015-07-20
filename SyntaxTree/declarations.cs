@@ -5,13 +5,13 @@ using System.Linq;
 namespace SyntaxTree {
 
     // the declaration of an object
-    public class Declaration : ExternalDeclaration {
-        public Declaration(DeclarationSpecifiers decl_specs_, List<InitializationDeclarator> init_declrs_) {
+    public class Decln : ExternalDeclaration {
+        public Decln(DeclnSpecs decl_specs_, List<InitializationDeclarator> init_declrs_) {
             decl_specs = decl_specs_;
             inner_init_declrs = init_declrs_;
         }
 
-        public readonly DeclarationSpecifiers decl_specs;
+        public readonly DeclnSpecs decl_specs;
         public IReadOnlyList<InitializationDeclarator> init_declrs {
             get { return inner_init_declrs; }
         }
@@ -27,12 +27,12 @@ namespace SyntaxTree {
             AST.ExprType base_type = r_specs.Item3;
 
             foreach (InitializationDeclarator init_declr in init_declrs) {
-                Tuple<AST.Env, AST.ExprType, AST.Expr, String> r_declr = init_declr.GetInitDeclr(env, base_type);
+                Tuple<AST.Env, AST.ExprType, AST.Expr, string> r_declr = init_declr.GetInitDeclr(env, base_type);
 
                 env = r_declr.Item1;
                 AST.ExprType type = r_declr.Item2;
                 AST.Expr init = r_declr.Item3;
-                String name = r_declr.Item4;
+                string name = r_declr.Item4;
 
                 // TODO : [finished] add the newly declared object into the environment
                 AST.Env.EntryLoc loc;
@@ -85,8 +85,8 @@ namespace SyntaxTree {
 	/// type specifiers
 	/// type qualifiers
 	/// </summary>
-    public class DeclarationSpecifiers : PTNode {
-        public DeclarationSpecifiers(List<StorageClassSpecifier> _scs,
+    public class DeclnSpecs : PTNode {
+        public DeclnSpecs(List<StorageClassSpec> _scs,
                                      List<TypeSpecifier> _typespecs,
                                      List<TypeQualifier> _typequals) {
             specs_scs = _scs;
@@ -94,7 +94,7 @@ namespace SyntaxTree {
             specs_typespecs = _typespecs;
         }
 
-        public readonly List<StorageClassSpecifier> specs_scs;
+        public readonly List<StorageClassSpec> specs_scs;
         public readonly List<TypeSpecifier> specs_typespecs;
         public readonly List<TypeQualifier> specs_typequals;
 
@@ -106,18 +106,18 @@ namespace SyntaxTree {
 
             AST.Decln.SCS scs;
             switch (GetStorageClass()) {
-            case StorageClassSpecifier.AUTO:
-            case StorageClassSpecifier.NULL:
-            case StorageClassSpecifier.REGISTER:
+            case StorageClassSpec.AUTO:
+            case StorageClassSpec.NULL:
+            case StorageClassSpec.REGISTER:
                 scs = AST.Decln.SCS.AUTO;
                 break;
-            case StorageClassSpecifier.EXTERN:
+            case StorageClassSpec.EXTERN:
                 scs = AST.Decln.SCS.EXTERN;
                 break;
-            case StorageClassSpecifier.STATIC:
+            case StorageClassSpec.STATIC:
                 scs = AST.Decln.SCS.STATIC;
                 break;
-            case StorageClassSpecifier.TYPEDEF:
+            case StorageClassSpec.TYPEDEF:
                 scs = AST.Decln.SCS.TYPEDEF;
                 break;
             default:
@@ -141,31 +141,31 @@ namespace SyntaxTree {
             }
 
             // 2. now let's analyse type specs
-            if (specs_typespecs.All(spec => spec.basic != BasicTypeSpecifier.NULL)) {
-                List<BasicTypeSpecifier> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
+            if (specs_typespecs.All(spec => spec.basic != TypeSpecifier.Kind.NULL)) {
+                List<TypeSpecifier.Kind> basic_specs = specs_typespecs.ConvertAll(spec => spec.basic);
                 switch (GetBasicType(basic_specs)) {
-                case AST.ExprType.ExprTypeKind.CHAR:
+                case AST.ExprType.Kind.CHAR:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.UCHAR:
+                case AST.ExprType.Kind.UCHAR:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUChar(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.SHORT:
+                case AST.ExprType.Kind.SHORT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TShort(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.USHORT:
+                case AST.ExprType.Kind.USHORT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUShort(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.LONG:
+                case AST.ExprType.Kind.LONG:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.ULONG:
+                case AST.ExprType.Kind.ULONG:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TULong(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.FLOAT:
+                case AST.ExprType.Kind.FLOAT:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFloat(is_const, is_volatile));
 
-                case AST.ExprType.ExprTypeKind.DOUBLE:
+                case AST.ExprType.Kind.DOUBLE:
                     return new Tuple<AST.Env, AST.ExprType>(env, new AST.TDouble(is_const, is_volatile));
 
                 default:
@@ -186,17 +186,17 @@ namespace SyntaxTree {
         // ========
         // Used by the parser
         // 
-        public Boolean IsTypedef() {
-            return specs_scs.Exists(scs => scs == StorageClassSpecifier.TYPEDEF);
+        public bool IsTypedef() {
+            return specs_scs.Exists(scs => scs == StorageClassSpec.TYPEDEF);
         }
 
         // GetStorageClass
         // ===============
         // Infer the storage class
         // 
-        public StorageClassSpecifier GetStorageClass() {
+        public StorageClassSpec GetStorageClass() {
             if (specs_scs.Count == 0) {
-                return StorageClassSpecifier.NULL;
+                return StorageClassSpec.NULL;
             } else if (specs_scs.Count == 1) {
                 return specs_scs[0];
             } else {
@@ -210,89 +210,71 @@ namespace SyntaxTree {
         // output: EnumExprType
         // returns a type from a list of type specifiers
         // 
-        private static AST.ExprType.ExprTypeKind GetBasicType(List<BasicTypeSpecifier> specs) {
-            foreach (KeyValuePair<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> pair in bspecs2enumtype) {
-                if (MatchSpecs(specs, pair.Key)) {
+        private static AST.ExprType.Kind GetBasicType(List<TypeSpecifier.Kind> specs) {
+            foreach (KeyValuePair<TypeSpecifier.Kind[], AST.ExprType.Kind> pair in bspecs2enumtype) {
+                if (!Enumerable.Except(pair.Key, specs).Any()) {
                     return pair.Value;
                 }
             }
             Log.SemantError("Error: can't match type specifiers");
-            return AST.ExprType.ExprTypeKind.ERROR;
+            return AST.ExprType.Kind.ERROR;
         }
 
-        // MatchSpecs
-        // ============================
-        // input: specs, key
-        // private
-        // Test whether the basic type specs matches the key
-        // 
-        private static Boolean MatchSpecs(List<BasicTypeSpecifier> lhs, List<BasicTypeSpecifier> rhs) {
-            return lhs.Count == rhs.Count && rhs.All(item => lhs.Contains(item));
-        }
+        //// MatchSpecs
+        //// ============================
+        //// input: specs, key
+        //// private
+        //// Test whether the basic type specs matches the key
+        //// 
+        //private static bool MatchSpecs(List<TypeSpecifier.Kind> lhs, List<TypeSpecifier.Kind> rhs) {
+        //    return lhs.Count == rhs.Count && rhs.All(item => lhs.Contains(item));
+        //}
 
-        // bspecs2enumtype
-        // ===============
-        // 
-        private static Dictionary<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> bspecs2enumtype = new Dictionary<List<BasicTypeSpecifier>, AST.ExprType.ExprTypeKind> {
+        private static IReadOnlyDictionary<TypeSpecifier.Kind[], AST.ExprType.Kind> bspecs2enumtype = new Dictionary<TypeSpecifier.Kind[], AST.ExprType.Kind> {
 
-            // void : { void }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.VOID }, AST.ExprType.ExprTypeKind.VOID },
+            // void
+            [new[] { TypeSpecifier.Kind.VOID }] = AST.ExprType.Kind.VOID,
 
-            // char : { char }
-            //      | { signed char }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.CHAR }, AST.ExprType.ExprTypeKind.CHAR },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.ExprTypeKind.CHAR },
+            // char
+            [new[] { TypeSpecifier.Kind.CHAR }] = AST.ExprType.Kind.CHAR,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.CHAR }] = AST.ExprType.Kind.CHAR,
 
-            // uchar : { unsigned char }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.CHAR}, AST.ExprType.ExprTypeKind.UCHAR },
+            // uchar
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.CHAR }] = AST.ExprType.Kind.UCHAR,
 
-            // short : { short }
-            //       | { signed short }
-            //       | { short Int32 }
-            //       | { signed short Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.SHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.SHORT },
+            // short
+            [new[] { TypeSpecifier.Kind.SHORT }] = AST.ExprType.Kind.SHORT,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.SHORT }] = AST.ExprType.Kind.SHORT,
+            [new[] { TypeSpecifier.Kind.SHORT, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.SHORT,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.SHORT, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.SHORT,
 
-            // ushort : { unsigned short }
-            //        | { unsigned short Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT }, AST.ExprType.ExprTypeKind.USHORT },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.SHORT, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.USHORT },
+            // ushort
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.SHORT }] = AST.ExprType.Kind.USHORT,
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.SHORT, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.USHORT,
 
-            // long : { Int32 }
-            //      | { signed }
-            //      | { signed Int32 }
-            //      | { long }
-            //      | { signed long }
-            //      | { long Int32 }
-            //      | { signed long Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.SIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.LONG },
+            // long
+            [new[] { TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.SIGNED }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.LONG }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.LONG }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.LONG, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.LONG,
+            [new[] { TypeSpecifier.Kind.SIGNED, TypeSpecifier.Kind.LONG, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.LONG,
 
-            // ulong : { unsigned }
-            //       | { unsigned Int32 }
-            //       | { unsigned long }
-            //       | { unsigned long Int32 }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED }, AST.ExprType.ExprTypeKind.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG }, AST.ExprType.ExprTypeKind.ULONG },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.UNSIGNED, BasicTypeSpecifier.LONG, BasicTypeSpecifier.INT }, AST.ExprType.ExprTypeKind.ULONG },
+            // ulong
+            [new[] { TypeSpecifier.Kind.UNSIGNED }] = AST.ExprType.Kind.ULONG,
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.ULONG,
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.LONG }] = AST.ExprType.Kind.ULONG,
+            [new[] { TypeSpecifier.Kind.UNSIGNED, TypeSpecifier.Kind.LONG, TypeSpecifier.Kind.INT }] = AST.ExprType.Kind.ULONG,
 
-            // float : { float }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.FLOAT }, AST.ExprType.ExprTypeKind.FLOAT },
+            // float
+            [new[] { TypeSpecifier.Kind.FLOAT }] = AST.ExprType.Kind.FLOAT,
 
-            // double : { double }
-            //        | { long double }
-            { new List<BasicTypeSpecifier> { BasicTypeSpecifier.DOUBLE }, AST.ExprType.ExprTypeKind.DOUBLE },
-        { new List<BasicTypeSpecifier> { BasicTypeSpecifier.LONG, BasicTypeSpecifier.DOUBLE }, AST.ExprType.ExprTypeKind.DOUBLE },
+            // double
+            [new[] { TypeSpecifier.Kind.DOUBLE }] = AST.ExprType.Kind.DOUBLE,
+            [new[] { TypeSpecifier.Kind.LONG, TypeSpecifier.Kind.DOUBLE }] = AST.ExprType.Kind.DOUBLE,
 
-    };
+        };
 
     }
 
@@ -303,7 +285,7 @@ namespace SyntaxTree {
     // 
     public class InitializationDeclarator : PTNode {
 
-        public InitializationDeclarator(Declarator _declr, Expression _init) {
+        public InitializationDeclarator(Declr _declr, Expr _init) {
             if (_declr != null) {
                 declr = _declr;
             } else {
@@ -313,33 +295,33 @@ namespace SyntaxTree {
             if (_init != null) {
                 init = _init;
             } else {
-                init = new EmptyExpression();
+                init = new EmptyExpr();
             }
         }
 
-        public Declarator declr;
-        public Expression init;
+        public Declr declr;
+        public Expr init;
 
 
         // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
-        public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
+        public Tuple<AST.Env, AST.ExprType, AST.Expr, string> GetInitDeclr(AST.Env env, AST.ExprType type) {
 
-            Tuple<AST.Env, AST.Expr> r_init = init.GetExpr(env);
+            Tuple<AST.Env, AST.Expr> r_init = init.GetExprEnv(env);
             env = r_init.Item1;
             AST.Expr ast_init = r_init.Item2;
 
-            Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, type);
+            Tuple<AST.Env, AST.ExprType, string> r_declr = declr.WrapExprType(env, type);
             env = r_declr.Item1;
             type = r_declr.Item2;
-            String name = r_declr.Item3;
+            string name = r_declr.Item3;
 
-            return new Tuple<AST.Env, AST.ExprType, AST.Expr, String>(env, type, ast_init, name);
+            return new Tuple<AST.Env, AST.ExprType, AST.Expr, string>(env, type, ast_init, name);
         }
 
     }
 
 
-    public enum StorageClassSpecifier {
+    public enum StorageClassSpec {
         NULL,
         ERROR,
         AUTO,
@@ -347,20 +329,6 @@ namespace SyntaxTree {
         STATIC,
         EXTERN,
         TYPEDEF
-    }
-
-
-    public enum BasicTypeSpecifier {
-        NULL,
-        VOID,
-        CHAR,
-        SHORT,
-        INT,
-        LONG,
-        FLOAT,
-        DOUBLE,
-        SIGNED,
-        UNSIGNED
     }
 
     // TypeSpec
@@ -378,10 +346,23 @@ namespace SyntaxTree {
     //                 +--- UnionSpec
     //
     public class TypeSpecifier : PTNode {
-        public TypeSpecifier() {
-            basic = BasicTypeSpecifier.NULL;
+        public enum Kind {
+            NULL,
+            VOID,
+            CHAR,
+            SHORT,
+            INT,
+            LONG,
+            FLOAT,
+            DOUBLE,
+            SIGNED,
+            UNSIGNED
         }
-        public TypeSpecifier(BasicTypeSpecifier spec) {
+
+        public TypeSpecifier() {
+            basic = Kind.NULL;
+        }
+        public TypeSpecifier(Kind spec) {
             basic = spec;
         }
 
@@ -394,7 +375,7 @@ namespace SyntaxTree {
             throw new NotImplementedException();
         }
 
-        public readonly BasicTypeSpecifier basic;
+        public readonly Kind basic;
     }
 
 
@@ -404,7 +385,7 @@ namespace SyntaxTree {
 	/// Represents a name that has been previously defined as a typedef.
     /// </summary>
     public class TypedefName : TypeSpecifier {
-        public TypedefName(String _name) {
+        public TypedefName(string _name) {
             name = _name;
         }
 
@@ -422,7 +403,7 @@ namespace SyntaxTree {
         }
 
 
-        public readonly String name;
+        public readonly string name;
     }
 
 
@@ -468,11 +449,11 @@ namespace SyntaxTree {
         // ========================================
         // 
         public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType ret_type) {
-            Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> r_params = param_type_list.GetParamTypes(env);
+            Tuple<Boolean, List<Tuple<AST.Env, string, AST.ExprType>>> r_params = param_type_list.GetParamTypes(env);
             Boolean varargs = r_params.Item1;
-            List<Tuple<AST.Env, String, AST.ExprType>> param_types = r_params.Item2;
+            List<Tuple<AST.Env, string, AST.ExprType>> param_types = r_params.Item2;
 
-            List<Tuple<String, AST.ExprType>> args = param_types.ConvertAll(arg => {
+            List<Tuple<string, AST.ExprType>> args = param_types.ConvertAll(arg => {
                 env = arg.Item1;
                 return Tuple.Create(arg.Item2, arg.Item3);
             });
@@ -482,7 +463,7 @@ namespace SyntaxTree {
     }
 
     public class ArrayModifier : TypeModifier {
-        public ArrayModifier(Expression _nelems)
+        public ArrayModifier(Expr _nelems)
             : base(TypeModifierKind.ARRAY) {
             array_nelems = _nelems;
         }
@@ -491,7 +472,7 @@ namespace SyntaxTree {
         // ========================================
         // 
         public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
-            Tuple<AST.Env, AST.Expr> r_nelems = array_nelems.GetExpr(env);
+            Tuple<AST.Env, AST.Expr> r_nelems = array_nelems.GetExprEnv(env);
             env = r_nelems.Item1;
 
             // Try to cast the 'nelems' expression to a long int.
@@ -505,7 +486,7 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TArray(type, nelems));
         }
 
-        public readonly Expression array_nelems;
+        public readonly Expr array_nelems;
     }
 
     public class PointerModifier : TypeModifier {
@@ -525,23 +506,23 @@ namespace SyntaxTree {
         public readonly List<TypeQualifier> type_qualifiers;
     }
 
-    public class Declarator : PTNode {
-        public Declarator(String _name, List<TypeModifier> _declr_modifiers) {
+    public class Declr : PTNode {
+        public Declr(string _name, List<TypeModifier> _declr_modifiers) {
             inner_declr_modifiers = _declr_modifiers;
             declr_name = _name;
         }
 
-        public Declarator()
+        public Declr()
             : this("", new List<TypeModifier>()) { }
 
         public IReadOnlyList<TypeModifier> declr_modifiers {
             get { return inner_declr_modifiers; }
         }
         private readonly List<TypeModifier> inner_declr_modifiers;
-        public readonly String declr_name;
+        public readonly string declr_name;
 
         // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
-        public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
+        public virtual Tuple<AST.Env, AST.ExprType, string> WrapExprType(AST.Env env, AST.ExprType type) {
             for (int i = inner_declr_modifiers.Count; i --> 0;) {
                 TypeModifier modifier = inner_declr_modifiers[i];
 
@@ -549,15 +530,15 @@ namespace SyntaxTree {
                 env = r.Item1;
                 type = r.Item2;
             }
-            return new Tuple<AST.Env, AST.ExprType, String>(env, type, declr_name);
+            return new Tuple<AST.Env, AST.ExprType, string>(env, type, declr_name);
         }
     }
 
-    public class NullDeclarator : Declarator {
+    public class NullDeclarator : Declr {
         public NullDeclarator() : base("", new List<TypeModifier>()) { }
 
-        public override Tuple<AST.Env, AST.ExprType, String> WrapExprType(AST.Env env, AST.ExprType type) {
-            return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
+        public override Tuple<AST.Env, AST.ExprType, string> WrapExprType(AST.Env env, AST.ExprType type) {
+            return new Tuple<AST.Env, AST.ExprType, string>(env, type, "");
         }
     }
 
@@ -582,11 +563,11 @@ namespace SyntaxTree {
         // Get Parameter Types
         // ===================
         // 
-        public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypes(AST.Env env) {
+        public Tuple<Boolean, List<Tuple<AST.Env, string, AST.ExprType>>> GetParamTypes(AST.Env env) {
             return Tuple.Create(
                 params_varargs,
                 params_inner_declns.ConvertAll(decln => {
-                    Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDecln(env);
+                    Tuple<AST.Env, string, AST.ExprType> r_decln = decln.GetParamDecln(env);
                     env = r_decln.Item1;
                     return r_decln;
                 })
@@ -606,7 +587,7 @@ namespace SyntaxTree {
 	/// }
 	/// </summary>
     public class EnumSpecifier : TypeSpecifier {
-        public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
+        public EnumSpecifier(string _name, List<Enumerator> _enum_list) {
             spec_name = _name;
             spec_enums = _enum_list;
         }
@@ -623,9 +604,9 @@ namespace SyntaxTree {
                 // so there are something in this enum type, we need to put this type into the environment
                 Int32 idx = 0;
                 foreach (Enumerator elem in spec_enums) {
-					Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
+					Tuple<AST.Env, string, Int32> r_enum = elem.GetEnumerator(env, idx);
 					env = r_enum.Item1;
-					String name = r_enum.Item2;
+					string name = r_enum.Item2;
 					idx = r_enum.Item3;
 					env = env.PushEnum(name, new AST.TLong(), idx);
                     idx++;
@@ -636,28 +617,28 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
         }
 
-        public readonly String spec_name;
+        public readonly string spec_name;
         public readonly List<Enumerator> spec_enums;
 
     }
 
 
     public class Enumerator : PTNode {
-        public Enumerator(String _name, Expression _init) {
+        public Enumerator(string _name, Expr _init) {
             enum_name = _name;
             enum_init = _init;
         }
-        public readonly String enum_name;
-		public readonly Expression enum_init;
+        public readonly string enum_name;
+		public readonly Expr enum_init;
 
-		public Tuple<AST.Env, String, Int32> GetEnumerator(AST.Env env, Int32 idx) {
+		public Tuple<AST.Env, string, Int32> GetEnumerator(AST.Env env, Int32 idx) {
 			AST.Expr init;
 
 			if (enum_init == null) {
 				return new Tuple<AST.Env, string, int>(env, enum_name, idx);
 			}
 
-			Tuple<AST.Env, AST.Expr> r_init = enum_init.GetExpr(env);
+			Tuple<AST.Env, AST.Expr> r_init = enum_init.GetExprEnv(env);
 			env = r_init.Item1;
 			init = r_init.Item2;
 
@@ -678,11 +659,11 @@ namespace SyntaxTree {
     // not present in the semant phase
     // 
     public abstract class StructOrUnionSpecifier : TypeSpecifier {
-		public StructOrUnionSpecifier(String _name, List<StructDeclaration> _declns) {
+		public StructOrUnionSpecifier(string _name, List<StructDeclaration> _declns) {
 			name = _name;
 			declns = _declns;
 		}
-        public readonly String name;
+        public readonly string name;
         public readonly List<StructDeclaration> declns;
     }
 
@@ -707,13 +688,13 @@ namespace SyntaxTree {
 	///        4. finish forming a complete struct and add it into the environment
 	/// </summary>
     public class StructSpecifier : StructOrUnionSpecifier {
-        public StructSpecifier(String _name, List<StructDeclaration> _declns)
+        public StructSpecifier(string _name, List<StructDeclaration> _declns)
 			: base(_name, _declns) { }
 
-		public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-			List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+		public Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> GetAttribs(AST.Env env) {
+			List<Tuple<string, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
 			foreach (StructDeclaration decln in declns) {
-				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+				Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_decln = decln.GetDeclns(env);
 				env = r_decln.Item1;
 				attribs.AddRange(r_decln.Item2);
 			}
@@ -729,7 +710,7 @@ namespace SyntaxTree {
 					throw new ArgumentNullException("Error: parser should ensure declns != null");
 				}
 
-				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+				Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_attribs = GetAttribs(env);
 				env = r_attribs.Item1;
 
 				return new Tuple<AST.Env, AST.ExprType>(env, AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile));
@@ -762,7 +743,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("struct " + name).entry_type.type_kind == AST.ExprType.ExprTypeKind.STRUCT) {
+					if (env.Find("struct " + name).entry_type.type_kind == AST.ExprType.Kind.STRUCT) {
 						throw new InvalidOperationException("Error: re-defining a struct");
 					}
 
@@ -772,7 +753,7 @@ namespace SyntaxTree {
 
 
 					// 3. iterate over the attribs
-					Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+					Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_attribs = GetAttribs(env);
 					env = r_attribs.Item1;
 
 					// 4. create the type
@@ -797,13 +778,13 @@ namespace SyntaxTree {
     // =========
     // 
     public class UnionSpecifier : StructOrUnionSpecifier {
-        public UnionSpecifier(String _name, List<StructDeclaration> _declns)
+        public UnionSpecifier(string _name, List<StructDeclaration> _declns)
 			: base(_name, _declns) { }
 
-		public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-			List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+		public Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> GetAttribs(AST.Env env) {
+			List<Tuple<string, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
 			foreach (StructDeclaration decln in declns) {
-				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+				Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_decln = decln.GetDeclns(env);
 				env = r_decln.Item1;
 				attribs.AddRange(r_decln.Item2);
 			}
@@ -826,7 +807,7 @@ namespace SyntaxTree {
 					throw new ArgumentNullException("Error: parser should ensure declns != null");
 				}
 
-				Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+				Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_attribs = GetAttribs(env);
 				env = r_attribs.Item1;
 
 				return new Tuple<AST.Env, AST.ExprType>(env, AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile));
@@ -859,7 +840,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("union " + name).entry_type.type_kind == AST.ExprType.ExprTypeKind.UNION) {
+					if (env.Find("union " + name).entry_type.type_kind == AST.ExprType.Kind.UNION) {
 						throw new InvalidOperationException("Error: re-defining a union");
 					}
 
@@ -869,7 +850,7 @@ namespace SyntaxTree {
 
 
 					// 3. iterate over the attribs
-					Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+					Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> r_attribs = GetAttribs(env);
 					env = r_attribs.Item1;
 
 					// 4. create the type
@@ -900,30 +881,30 @@ namespace SyntaxTree {
 
 
     public class StructDeclaration : PTNode {
-        public StructDeclaration(DeclarationSpecifiers _specs, List<Declarator> _declrs) {
+        public StructDeclaration(DeclnSpecs _specs, List<Declr> _declrs) {
             specs = _specs;
             declrs = _declrs;
         }
-		public readonly DeclarationSpecifiers specs;
-        public readonly List<Declarator> declrs;
+		public readonly DeclnSpecs specs;
+        public readonly List<Declr> declrs;
 
         // Get Declarations : env -> (env, (name, type)[])
         // ===============================================
         // 
-        public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
+        public Tuple<AST.Env, List<Tuple<string, AST.ExprType>>> GetDeclns(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprType(env);
             env = r_specs.Item1;
             AST.ExprType base_type = r_specs.Item2;
 
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (Declarator declr in declrs) {
-                Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprType(env, base_type);
+            List<Tuple<string, AST.ExprType>> attribs = new List<Tuple<string, AST.ExprType>>();
+            foreach (Declr declr in declrs) {
+                Tuple<AST.Env, AST.ExprType, string> r_declr = declr.WrapExprType(env, base_type);
                 env = r_declr.Item1;
                 AST.ExprType type = r_declr.Item2;
-                String name = r_declr.Item3;
-                attribs.Add(new Tuple<String, AST.ExprType>(name, type));
+                string name = r_declr.Item3;
+                attribs.Add(new Tuple<string, AST.ExprType>(name, type));
             }
-            return new Tuple<AST.Env, List<Tuple<String, AST.ExprType>>>(env, attribs);
+            return new Tuple<AST.Env, List<Tuple<string, AST.ExprType>>>(env, attribs);
         }
 
     }
@@ -932,7 +913,7 @@ namespace SyntaxTree {
     // =====================
     // 
     public class ParameterDeclaration : PTNode {
-        public ParameterDeclaration(DeclarationSpecifiers _specs, Declarator _decl) {
+        public ParameterDeclaration(DeclnSpecs _specs, Declr _decl) {
             specs = _specs;
 
             if (_decl != null) {
@@ -942,24 +923,24 @@ namespace SyntaxTree {
             }
         }
 
-        public readonly DeclarationSpecifiers specs;
-        public readonly Declarator decl;
+        public readonly DeclnSpecs specs;
+        public readonly Declr decl;
 
         // Get Parameter Declaration : env -> (env, name, type)
         // ====================================================
         // 
-        public Tuple<AST.Env, String, AST.ExprType> GetParamDecln(AST.Env env) {
+        public Tuple<AST.Env, string, AST.ExprType> GetParamDecln(AST.Env env) {
             Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
             env = r_specs.Item1;
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType type = r_specs.Item3;
 
-            Tuple<AST.Env, AST.ExprType, String> r_declr = decl.WrapExprType(env, type);
+            Tuple<AST.Env, AST.ExprType, string> r_declr = decl.WrapExprType(env, type);
             env = r_declr.Item1;
             type = r_declr.Item2;
-            String name = r_declr.Item3;
+            string name = r_declr.Item3;
 
-            return new Tuple<AST.Env, String, AST.ExprType>(env, name, type);
+            return new Tuple<AST.Env, string, AST.ExprType>(env, name, type);
         }
 
     }
@@ -974,15 +955,15 @@ namespace SyntaxTree {
     //    
     // 2. aggregate types
     // 3. strings
-    public class InitializerList : Expression {
-        public InitializerList(List<Expression> _exprs) {
+    public class InitializerList : Expr {
+        public InitializerList(List<Expr> _exprs) {
             initlist_exprs = _exprs;
         }
-        public List<Expression> initlist_exprs;
+        public List<Expr> initlist_exprs;
 
         public Tuple<AST.Env, AST.InitList> GetInitList(AST.Env env) {
             List<AST.Expr> exprs = initlist_exprs.ConvertAll(expr => {
-                Tuple<AST.Env, AST.Expr> r_expr = expr.GetExpr(env);
+                Tuple<AST.Env, AST.Expr> r_expr = expr.GetExprEnv(env);
                 env = r_expr.Item1;
                 return r_expr.Item2;
             });
@@ -997,17 +978,17 @@ namespace SyntaxTree {
     // describes a qualified type
     // 
     public class TypeName : PTNode {
-        public TypeName(DeclarationSpecifiers _specs, Declarator _decl) {
-            typename_specs = _specs;
-            typename_declr = _decl;
+        public TypeName(DeclnSpecs specs, Declr declr) {
+            this.specs = specs;
+            this.declr = declr;
         }
 
-        public readonly DeclarationSpecifiers typename_specs;
-        public readonly Declarator typename_declr;
+        public readonly DeclnSpecs specs;
+        public readonly Declr declr;
 
         public Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> r_specs = typename_specs.GetExprType(env);
-            Tuple<AST.Env, AST.ExprType, String> r_declr = typename_declr.WrapExprType(r_specs.Item1, r_specs.Item2);
+            Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType, string> r_declr = declr.WrapExprType(r_specs.Item1, r_specs.Item2);
             return Tuple.Create(r_declr.Item1, r_declr.Item2);
         }
     }

@@ -12,12 +12,12 @@ namespace AST {
         // the inner storage of entries
         // 
         public class StoreEntry {
-            public StoreEntry(String name, ExprType type, Int32 offset) {
+            public StoreEntry(string name, ExprType type, Int32 offset) {
                 entry_name = name;
                 entry_type = type;
                 entry_offset = offset;
             }
-            public readonly String entry_name;
+            public readonly string entry_name;
             public readonly ExprType entry_type;
             public readonly Int32 entry_offset;
         }

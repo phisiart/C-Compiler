@@ -44,7 +44,7 @@ public class TokenKeyword : Token {
         val = _val;
     }
     public readonly KeywordVal val;
-    public static Dictionary<String, KeywordVal> keywords = new Dictionary<String, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
+    public static Dictionary<string, KeywordVal> keywords = new Dictionary<string, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
         { "AUTO",        KeywordVal.AUTO      },
         { "DOUBLE",      KeywordVal.DOUBLE    },
         { "INT",         KeywordVal.INT       },
@@ -79,7 +79,7 @@ public class TokenKeyword : Token {
         { "WHILE",       KeywordVal.WHILE     }
     };
 
-    public override String ToString() {
+    public override string ToString() {
         return type.ToString() + ": " + val.ToString();
     }
 

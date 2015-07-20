@@ -5,12 +5,12 @@
 // If the identifier is found to be a keyword, then it will be a keyword
 // 
 public class TokenIdentifier : Token {
-    public TokenIdentifier(String _val)
+    public TokenIdentifier(string _val)
         : base(TokenType.IDENTIFIER) {
         val = _val;
     }
-    public readonly String val;
-    public override String ToString() {
+    public readonly string val;
+    public override string ToString() {
         return type.ToString() + ": " + val;
     }
 }
@@ -23,7 +23,7 @@ public class FSAIdentifier : FSA {
         ID
     };
     private State state;
-    private String scanned;
+    private string scanned;
 
     public FSAIdentifier() {
         state = State.START;
@@ -48,7 +48,7 @@ public class FSAIdentifier : FSA {
     }
 
     public override sealed Token RetrieveToken() {
-        String name = scanned.Substring(0, scanned.Length - 1);
+        string name = scanned.Substring(0, scanned.Length - 1);
         if (TokenKeyword.keywords.ContainsKey(name)) {
             return new TokenKeyword(TokenKeyword.keywords[name]);
         } else {

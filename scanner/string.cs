@@ -1,19 +1,19 @@
 ﻿using System;
 
-// String literal
+// string literal
 // --------------
 public class TokenString : Token {
-    public TokenString(String _val, Int32 _idx, String _raw)
+    public TokenString(string _val, Int32 _idx, string _raw)
         : base(TokenType.STRING) {
         val = _val;
         idx = _idx;
         raw = _raw;
     }
-    public readonly String raw;
-    public readonly String val;
+    public readonly string raw;
+    public readonly string val;
     public readonly Int32 idx;
 
-    public override String ToString() {
+    public override string ToString() {
         return type.ToString() + ": " + "\"" + raw + "\"" + "\n\"" + val + "\"";
     }
 }
@@ -30,8 +30,8 @@ public class FSAString : FSA {
 
     private State state;
     private FSAChar fsachar;
-    public String val;
-    public String raw;
+    public string val;
+    public string raw;
 
     public FSAString() {
         state = State.START;

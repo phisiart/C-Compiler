@@ -37,12 +37,12 @@ namespace AST {
             Reg ret = CGenValue(env, state);
 
             switch (type.type_kind) {
-            case ExprType.ExprTypeKind.CHAR:
-            case ExprType.ExprTypeKind.UCHAR:
-            case ExprType.ExprTypeKind.SHORT:
-            case ExprType.ExprTypeKind.USHORT:
-            case ExprType.ExprTypeKind.LONG:
-            case ExprType.ExprTypeKind.ULONG:
+            case ExprType.Kind.CHAR:
+            case ExprType.Kind.UCHAR:
+            case ExprType.Kind.SHORT:
+            case ExprType.Kind.USHORT:
+            case ExprType.Kind.LONG:
+            case ExprType.Kind.ULONG:
                 // Integral
                 if (ret != Reg.EAX) {
                     throw new InvalidProgramException("Integral values should be returned to %eax");
@@ -50,7 +50,7 @@ namespace AST {
                 state.PUSHL(Reg.EAX);
                 break;
 
-            case ExprType.ExprTypeKind.FLOAT:
+            case ExprType.Kind.FLOAT:
                 // Float
                 if (ret != Reg.ST0) {
                     throw new InvalidProgramException("Floats should be returned to %st(0)");
@@ -59,7 +59,7 @@ namespace AST {
                 state.FSTS(0, Reg.ESP);
                 break;
 
-            case ExprType.ExprTypeKind.DOUBLE:
+            case ExprType.Kind.DOUBLE:
                 // Double
                 if (ret != Reg.ST0) {
                     throw new InvalidProgramException("Doubles should be returned to %st(0)");
@@ -68,9 +68,9 @@ namespace AST {
                 state.FSTL(0, Reg.ESP);
                 break;
 
-            case ExprType.ExprTypeKind.ARRAY:
-            case ExprType.ExprTypeKind.FUNCTION:
-            case ExprType.ExprTypeKind.POINTER:
+            case ExprType.Kind.ARRAY:
+            case ExprType.Kind.FUNCTION:
+            case ExprType.Kind.POINTER:
                 // Pointer
                 if (ret != Reg.EAX) {
                     throw new InvalidProgramException("Pointer values should be returned to %eax");
@@ -78,16 +78,16 @@ namespace AST {
                 state.PUSHL(Reg.EAX);
                 break;
 
-            case ExprType.ExprTypeKind.ERROR:
-            case ExprType.ExprTypeKind.INCOMPLETE_ARRAY:
-            case ExprType.ExprTypeKind.INCOMPLETE_STRUCT:
-            case ExprType.ExprTypeKind.INCOMPLETE_UNION:
-            case ExprType.ExprTypeKind.INIT_LIST:
-            case ExprType.ExprTypeKind.VOID:
+            case ExprType.Kind.ERROR:
+            case ExprType.Kind.INCOMPLETE_ARRAY:
+            case ExprType.Kind.INCOMPLETE_STRUCT:
+            case ExprType.Kind.INCOMPLETE_UNION:
+            case ExprType.Kind.INIT_LIST:
+            case ExprType.Kind.VOID:
                 throw new InvalidProgramException(type.type_kind.ToString() + " can't be pushed onto the stack");
 
-            case ExprType.ExprTypeKind.STRUCT:
-            case ExprType.ExprTypeKind.UNION:
+            case ExprType.Kind.STRUCT:
+            case ExprType.Kind.UNION:
                 throw new NotImplementedException();
             }
 
@@ -109,11 +109,11 @@ namespace AST {
     }
 
     public class Variable : Expr {
-        public Variable(ExprType _type, String _name)
+        public Variable(ExprType _type, string _name)
             : base(_type) {
             name = _name;
         }
-        public readonly String name;
+        public readonly string name;
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(name);
@@ -124,24 +124,24 @@ namespace AST {
                 break;
             case Env.EntryLoc.GLOBAL:
                 switch (entry.entry_type.type_kind) {
-                case ExprType.ExprTypeKind.FUNCTION:
+                case ExprType.Kind.FUNCTION:
                     state.LEA(name);
                     break;
 
-                case ExprType.ExprTypeKind.CHAR:
-                case ExprType.ExprTypeKind.DOUBLE:
-                case ExprType.ExprTypeKind.ERROR:
-                case ExprType.ExprTypeKind.FLOAT:
+                case ExprType.Kind.CHAR:
+                case ExprType.Kind.DOUBLE:
+                case ExprType.Kind.ERROR:
+                case ExprType.Kind.FLOAT:
 
-                case ExprType.ExprTypeKind.LONG:
-                case ExprType.ExprTypeKind.POINTER:
-                case ExprType.ExprTypeKind.SHORT:
-                case ExprType.ExprTypeKind.STRUCT:
-                case ExprType.ExprTypeKind.UCHAR:
-                case ExprType.ExprTypeKind.ULONG:
-                case ExprType.ExprTypeKind.UNION:
-                case ExprType.ExprTypeKind.USHORT:
-                case ExprType.ExprTypeKind.VOID:
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.POINTER:
+                case ExprType.Kind.SHORT:
+                case ExprType.Kind.STRUCT:
+                case ExprType.Kind.UCHAR:
+                case ExprType.Kind.ULONG:
+                case ExprType.Kind.UNION:
+                case ExprType.Kind.USHORT:
+                case ExprType.Kind.VOID:
                 default:
                     throw new NotImplementedException();
                 }
@@ -172,106 +172,106 @@ namespace AST {
             case Env.EntryLoc.FRAME:
             case Env.EntryLoc.STACK:
                 switch (type.type_kind) {
-                case ExprType.ExprTypeKind.LONG:
-                case ExprType.ExprTypeKind.ULONG:
-                case ExprType.ExprTypeKind.POINTER:
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.ULONG:
+                case ExprType.Kind.POINTER:
                     state.MOVL(offset, Reg.EBP, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.FLOAT:
+                case ExprType.Kind.FLOAT:
                     state.FLDS(offset, Reg.EBP);
                     return Reg.ST0;
 
-                case ExprType.ExprTypeKind.DOUBLE:
+                case ExprType.Kind.DOUBLE:
                     state.FLDL(offset, Reg.EBP);
                     return Reg.ST0;
 
-                case ExprType.ExprTypeKind.STRUCT:
-                case ExprType.ExprTypeKind.UNION:
+                case ExprType.Kind.STRUCT:
+                case ExprType.Kind.UNION:
                     throw new NotImplementedException();
 
-                case ExprType.ExprTypeKind.VOID:
+                case ExprType.Kind.VOID:
                     state.MOVL(0, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.FUNCTION:
+                case ExprType.Kind.FUNCTION:
                     state.MOVL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.CHAR:
+                case ExprType.Kind.CHAR:
                     state.MOVSBL(offset, Reg.EBP, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.UCHAR:
+                case ExprType.Kind.UCHAR:
                     state.MOVZBL(offset, Reg.EBP, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.SHORT:
+                case ExprType.Kind.SHORT:
                     state.MOVSWL(offset, Reg.EBP, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.USHORT:
+                case ExprType.Kind.USHORT:
                     state.MOVZWL(offset, Reg.EBP, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.ERROR:
+                case ExprType.Kind.ERROR:
                 default:
                     throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
                 }
 
             case Env.EntryLoc.GLOBAL:
                 switch (type.type_kind) {
-                case ExprType.ExprTypeKind.CHAR:
+                case ExprType.Kind.CHAR:
                     state.MOVSBL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.UCHAR:
+                case ExprType.Kind.UCHAR:
                     state.MOVZBL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.SHORT:
+                case ExprType.Kind.SHORT:
                     state.MOVSWL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.USHORT:
+                case ExprType.Kind.USHORT:
                     state.MOVZWL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.LONG:
-                case ExprType.ExprTypeKind.ULONG:
-                case ExprType.ExprTypeKind.POINTER:
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.ULONG:
+                case ExprType.Kind.POINTER:
                     state.MOVL(name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.FUNCTION:
+                case ExprType.Kind.FUNCTION:
                     state.MOVL("$" + name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.FLOAT:
+                case ExprType.Kind.FLOAT:
                     state.FLDS(name);
                     return Reg.ST0;
 
-                case ExprType.ExprTypeKind.DOUBLE:
+                case ExprType.Kind.DOUBLE:
                     state.FLDL(name);
                     return Reg.ST0;
 
-                case ExprType.ExprTypeKind.STRUCT:
-                case ExprType.ExprTypeKind.UNION:
+                case ExprType.Kind.STRUCT:
+                case ExprType.Kind.UNION:
                     throw new NotImplementedException();
 
-                case ExprType.ExprTypeKind.VOID:
+                case ExprType.Kind.VOID:
                     state.MOVL(0, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.ARRAY:
+                case ExprType.Kind.ARRAY:
                     state.MOVL("$" + name, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.ExprTypeKind.ERROR:
-                case ExprType.ExprTypeKind.INCOMPLETE_ARRAY:
-                case ExprType.ExprTypeKind.INCOMPLETE_STRUCT:
-                case ExprType.ExprTypeKind.INCOMPLETE_UNION:
-                case ExprType.ExprTypeKind.INIT_LIST:
+                case ExprType.Kind.ERROR:
+                case ExprType.Kind.INCOMPLETE_ARRAY:
+                case ExprType.Kind.INCOMPLETE_STRUCT:
+                case ExprType.Kind.INCOMPLETE_UNION:
+                case ExprType.Kind.INIT_LIST:
                 default:
                     throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
                 }
@@ -302,7 +302,7 @@ namespace AST {
             value = _value;
         }
 
-        public override String ToString() {
+        public override string ToString() {
             return "Int32(" + value + ")";
         }
         public readonly Int32 value;
@@ -323,7 +323,7 @@ namespace AST {
             value = _value;
         }
 
-        public override String ToString() {
+        public override string ToString() {
             return "uint(" + value + ")";
         }
         public readonly UInt32 value;
@@ -344,7 +344,7 @@ namespace AST {
             value = _value;
         }
 
-        public override String ToString() {
+        public override string ToString() {
             return this.type.ToString() + "(" + value + ")";
         }
         public readonly UInt32 value;
@@ -367,7 +367,7 @@ namespace AST {
             : base(new TFloat(true)) {
             value = _value;
         }
-        public override String ToString() {
+        public override string ToString() {
             return "float(" + value + ")";
         }
         public readonly Single value;
@@ -378,7 +378,7 @@ namespace AST {
         public override Reg CGenValue(Env env, CGenState state) {
             byte[] bytes = BitConverter.GetBytes(value);
             Int32 intval = BitConverter.ToInt32(bytes, 0);
-            String name = state.CGenLongConst(intval);
+            string name = state.CGenLongConst(intval);
             state.FLDS(name);
             return Reg.ST0;
         }
@@ -392,7 +392,7 @@ namespace AST {
             : base(new TDouble(true)) {
             value = _value;
         }
-        public override String ToString() {
+        public override string ToString() {
             return "double(" + value + ")";
         }
         public readonly Double value;
@@ -404,21 +404,21 @@ namespace AST {
             byte[] bytes = BitConverter.GetBytes(value);
             Int32 first_int = BitConverter.ToInt32(bytes, 0);
             Int32 second_int = BitConverter.ToInt32(bytes, 4);
-            String name = state.CGenLongLongConst(first_int, second_int);
+            string name = state.CGenLongLongConst(first_int, second_int);
             state.FLDL(name);
             return Reg.ST0;
         }
     }
 
     public class ConstStringLiteral : Constant {
-        public ConstStringLiteral(String _value)
+        public ConstStringLiteral(string _value)
             : base(new TPointer(new TChar(true), true)) {
             value = _value;
         }
-        public readonly String value;
+        public readonly string value;
 
         public override Reg CGenValue(Env env, CGenState state) {
-            String name = state.CGenString(value);
+            string name = state.CGenString(value);
             state.MOVL(name, Reg.EAX);
             return Reg.EAX;
         }
@@ -460,8 +460,8 @@ namespace AST {
 
             Reg ret = rvalue.CGenValue(env, state);
             switch (lvalue.type.type_kind) {
-            case ExprType.ExprTypeKind.CHAR:
-            case ExprType.ExprTypeKind.UCHAR:
+            case ExprType.Kind.CHAR:
+            case ExprType.Kind.UCHAR:
                 // pop %ebx
                 // now %ebx = %lhs
                 state.POPL(Reg.EBX);
@@ -471,8 +471,8 @@ namespace AST {
 
                 return Reg.EAX;
 
-            case ExprType.ExprTypeKind.SHORT:
-            case ExprType.ExprTypeKind.USHORT:
+            case ExprType.Kind.SHORT:
+            case ExprType.Kind.USHORT:
                 // pop %ebx
                 // now %ebx = %lhs
                 state.POPL(Reg.EBX);
@@ -482,9 +482,9 @@ namespace AST {
 
                 return Reg.EAX;
 
-            case ExprType.ExprTypeKind.LONG:
-            case ExprType.ExprTypeKind.ULONG:
-            case ExprType.ExprTypeKind.POINTER:
+            case ExprType.Kind.LONG:
+            case ExprType.Kind.ULONG:
+            case ExprType.Kind.POINTER:
                 // pop %ebx
                 // now %ebx = %lhs
                 state.POPL(Reg.EBX);
@@ -494,7 +494,7 @@ namespace AST {
 
                 return Reg.EAX;
 
-            case ExprType.ExprTypeKind.FLOAT:
+            case ExprType.Kind.FLOAT:
                 // pop %ebx
                 // now %ebx = %lhs
                 state.POPL(Reg.EBX);
@@ -504,7 +504,7 @@ namespace AST {
 
                 return Reg.ST0;
 
-            case ExprType.ExprTypeKind.DOUBLE:
+            case ExprType.Kind.DOUBLE:
                 // pop %ebx
                 // now %ebx = %lhs
                 state.POPL(Reg.EBX);
@@ -514,18 +514,18 @@ namespace AST {
 
                 return Reg.ST0;
 
-            case ExprType.ExprTypeKind.STRUCT:
-            case ExprType.ExprTypeKind.UNION:
+            case ExprType.Kind.STRUCT:
+            case ExprType.Kind.UNION:
                 throw new NotImplementedException();
 
-            case ExprType.ExprTypeKind.FUNCTION:
-            case ExprType.ExprTypeKind.VOID:
-            case ExprType.ExprTypeKind.ARRAY:
-            case ExprType.ExprTypeKind.ERROR:
-            case ExprType.ExprTypeKind.INCOMPLETE_ARRAY:
-            case ExprType.ExprTypeKind.INCOMPLETE_STRUCT:
-            case ExprType.ExprTypeKind.INCOMPLETE_UNION:
-            case ExprType.ExprTypeKind.INIT_LIST:
+            case ExprType.Kind.FUNCTION:
+            case ExprType.Kind.VOID:
+            case ExprType.Kind.ARRAY:
+            case ExprType.Kind.ERROR:
+            case ExprType.Kind.INCOMPLETE_ARRAY:
+            case ExprType.Kind.INCOMPLETE_STRUCT:
+            case ExprType.Kind.INCOMPLETE_UNION:
+            case ExprType.Kind.INIT_LIST:
             default:
                 throw new InvalidProgramException("cannot assign to a " + type.type_kind.ToString());
             }
@@ -577,13 +577,13 @@ namespace AST {
     }
 
     public class Attribute : Expr {
-        public Attribute(Expr _expr, String _attrib_name, ExprType _type)
+        public Attribute(Expr _expr, string _attrib_name, ExprType _type)
             : base(_type) {
             attrib_expr = _expr;
             attrib_name = _attrib_name;
         }
         public readonly Expr attrib_expr;
-        public readonly String attrib_name;
+        public readonly string attrib_name;
     }
 
     public class PostIncrement : Expr {
@@ -718,10 +718,10 @@ namespace AST {
         public readonly Expr add_rhs;
 
         public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
+            if (ptr.type.type_kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
+            if (offset.type.type_kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
@@ -747,7 +747,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
-            if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+            if (lhs.type.type_kind == AST.ExprType.Kind.POINTER) {
                 if (!rhs.type.IsIntegral()) {
                     throw new InvalidOperationException("Error: must add an integral to a pointer");
                 }
@@ -756,7 +756,7 @@ namespace AST {
                 // lhs = base, rhs = offset
                 return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
 
-            } else if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+            } else if (rhs.type.type_kind == AST.ExprType.Kind.POINTER) {
                 if (!lhs.type.IsIntegral()) {
                     throw new InvalidOperationException("Error: must add an integral to a pointer");
                 }
@@ -766,7 +766,7 @@ namespace AST {
                 return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(rhs, lhs));
 
             } else {
-                return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                return SyntaxTree.Expr.GetArithmeticBinOpExpr(
                     env,
                     lhs,
                     rhs,
@@ -790,10 +790,10 @@ namespace AST {
         public readonly Expr sub_rhs;
 
         public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.type.type_kind != AST.ExprType.ExprTypeKind.POINTER) {
+            if (ptr.type.type_kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.type.type_kind != AST.ExprType.ExprTypeKind.LONG) {
+            if (offset.type.type_kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
@@ -819,8 +819,8 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
-            if (lhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
-                if (rhs.type.type_kind == AST.ExprType.ExprTypeKind.POINTER) {
+            if (lhs.type.type_kind == AST.ExprType.Kind.POINTER) {
+                if (rhs.type.type_kind == AST.ExprType.Kind.POINTER) {
                     // both operands are pointers
 
                     AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
@@ -872,7 +872,7 @@ namespace AST {
                 // lhs is not a pointer.
 
                 // we need usual arithmetic cast
-                return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+                return SyntaxTree.Expr.GetArithmeticBinOpExpr(
                     env,
                     lhs,
                     rhs,
@@ -897,7 +897,7 @@ namespace AST {
         public readonly Expr mult_rhs;
 
         public static Tuple<Env, Expr> MakeMultiply(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+            return SyntaxTree.Expr.GetArithmeticBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -920,7 +920,7 @@ namespace AST {
         public readonly Expr div_rhs;
 
         public static Tuple<Env, Expr> MakeDivide(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetArithmeticBinOpExpr(
+            return SyntaxTree.Expr.GetArithmeticBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -985,7 +985,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeModulo(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -1006,7 +1006,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeLShift(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -1028,7 +1028,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeRShift(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -1049,7 +1049,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeXor(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -1070,7 +1070,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeOr(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
@@ -1096,7 +1096,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeBitwiseAnd(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expression.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExpr(
                 env,
                 lhs,
                 rhs,
