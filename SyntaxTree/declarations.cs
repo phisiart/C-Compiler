@@ -743,7 +743,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("struct " + name).entry_type.type_kind == AST.ExprType.Kind.STRUCT) {
+					if (env.Find("struct " + name).entry_type.kind == AST.ExprType.Kind.STRUCT) {
 						throw new InvalidOperationException("Error: re-defining a struct");
 					}
 
@@ -840,7 +840,7 @@ namespace SyntaxTree {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("union " + name).entry_type.type_kind == AST.ExprType.Kind.UNION) {
+					if (env.Find("union " + name).entry_type.kind == AST.ExprType.Kind.UNION) {
 						throw new InvalidOperationException("Error: re-defining a union");
 					}
 
@@ -986,7 +986,14 @@ namespace SyntaxTree {
         public readonly DeclnSpecs specs;
         public readonly Declr declr;
 
-        public Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env) {
+        // TODO: check env
+        public AST.ExprType GetExprType(AST.Env env) {
+            AST.ExprType type = specs.GetExprType(env).Item2;
+            return declr.WrapExprType(env, type).Item2;
+        }
+
+        [Obsolete]
+        public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprType(env);
             Tuple<AST.Env, AST.ExprType, string> r_declr = declr.WrapExprType(r_specs.Item1, r_specs.Item2);
             return Tuple.Create(r_declr.Item1, r_declr.Item2);

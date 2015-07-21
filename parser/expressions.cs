@@ -85,13 +85,13 @@ public class _primary_expression : ParseRule {
         if (src[begin].type == TokenType.CHAR) {
             // expr = new ConstChar(((TokenChar)src[begin]).val);
             // NOTE : there is no const char in C, there is only const Int32 ...
-            expr = new ConstInt(((TokenCharConst)src[begin]).val, IntSuffix.NONE);
+            expr = new ConstInt(((TokenCharConst)src[begin]).val, TokenInt.Suffix.NONE);
             return begin + 1;
         }
 
         // 2.2. match float
         if (src[begin].type == TokenType.FLOAT) {
-            expr = new ConstFloat(((TokenFloatConst)src[begin]).val, ((TokenFloatConst)src[begin]).suffix);
+            expr = new ConstFloat(((TokenFloat)src[begin]).value, ((TokenFloat)src[begin]).suffix);
             return begin + 1;
         }
 

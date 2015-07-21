@@ -2,23 +2,35 @@
 using System.Collections.Generic;
 
 namespace SyntaxTree {
+    /// <summary>
+    /// Assignment
+    /// a = b
+    /// </summary>
 	public class Assignment : Expr {
-		public Assignment(Expr _lvalue, Expr _rvalue) {
-			assign_lvalue = _lvalue;
-			assign_rvalue = _rvalue;
+		public Assignment(Expr lvalue, Expr rvalue) {
+			this.lvalue = lvalue;
+			this.rvalue = rvalue;
 		}
-		public readonly Expr assign_lvalue;
-		public readonly Expr assign_rvalue;
+		public readonly Expr lvalue;
+		public readonly Expr rvalue;
 
+        public override AST.Expr GetExpr(AST.Env env) {
+            AST.Expr lvalue = this.lvalue.GetExpr(env);
+            AST.Expr rvalue = this.rvalue.GetExpr(env);
+            rvalue = AST.TypeCast.MakeCast(rvalue, lvalue.type);
+            return new AST.Assignment(lvalue, rvalue, lvalue.type);
+        }
+
+        [Obsolete]
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
 			AST.Expr lvalue;
 			AST.Expr rvalue;
 
-			Tuple<AST.Env, AST.Expr> r_lhs = assign_lvalue.GetExprEnv(env);
+            Tuple<AST.Env, AST.Expr> r_lhs = this.lvalue.GetExprEnv(env);
 			env = r_lhs.Item1;
 			lvalue = r_lhs.Item2;
 
-			Tuple<AST.Env, AST.Expr> r_rhs = assign_rvalue.GetExprEnv(env);
+            Tuple<AST.Env, AST.Expr> r_rhs = this.rvalue.GetExprEnv(env);
 			env = r_rhs.Item1;
 			rvalue = r_rhs.Item2;
 
@@ -29,20 +41,29 @@ namespace SyntaxTree {
 
 	}
 
-
+    /// <summary>
+    /// MultAssign
+    /// a *= b
+    /// </summary>
 	public class MultAssign : Expr {
-		public MultAssign(Expr _lvalue, Expr _rvalue) {
-			mult_lvalue = _lvalue;
-			mult_rvalue = _rvalue;
+		public MultAssign(Expr lvalue, Expr rvalue) {
+			this.lvalue = lvalue;
+			this.rvalue = rvalue;
 		}
-		public readonly Expr mult_lvalue;
-		public readonly Expr mult_rvalue;
+		public readonly Expr lvalue;
+		public readonly Expr rvalue;
 
+        public override AST.Expr GetExpr(AST.Env env) {
+            return GetBinaryAssignOperation(
+                )
+        }
+
+        [Obsolete]
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
 			return GetBinaryAssignOperation(
 				env,
-				mult_lvalue,
-				mult_rvalue,
+				lvalue,
+				rvalue,
 				AST.Multiply.MakeMultiply
 			);
 		}
@@ -191,7 +212,7 @@ namespace SyntaxTree {
 		public readonly Expr xor_rvalue;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				xor_lvalue,
 				xor_rvalue,
@@ -210,7 +231,7 @@ namespace SyntaxTree {
 		public readonly Expr or_rvalue;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				or_lvalue,
 				or_rvalue,

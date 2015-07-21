@@ -3,15 +3,17 @@
 // Int32
 // ---
 // there are four types of integers: signed, unsigned, signed long, unsigned long
-public enum IntSuffix {
-    NONE,
-    U,
-    L,
-    UL
-};
+
 
 public class TokenInt : Token {
-    public TokenInt(Int64 _val, IntSuffix _suffix, string _raw)
+    public enum Suffix {
+        NONE,
+        U,
+        L,
+        UL
+    };
+
+    public TokenInt(Int64 _val, Suffix _suffix, string _raw)
         : base(TokenType.INT) {
         val = _val;
         suffix = _suffix;
@@ -21,13 +23,13 @@ public class TokenInt : Token {
     public override string ToString() {
         string str = type.ToString();
         switch (suffix) {
-        case IntSuffix.L:
+        case Suffix.L:
             str += "(long)";
             break;
-        case IntSuffix.U:
+        case Suffix.U:
             str += "(unsigned)";
             break;
-        case IntSuffix.UL:
+        case Suffix.UL:
             str += "(unsigned long)";
             break;
         default:
@@ -38,7 +40,7 @@ public class TokenInt : Token {
 
     public readonly Int64 val;
     public readonly string raw;
-    public readonly IntSuffix suffix;
+    public readonly Suffix suffix;
 }
 
 public class FSAInt : FSA {
@@ -58,21 +60,21 @@ public class FSAInt : FSA {
 
     private Int64 val;
     private string raw;
-    private IntSuffix suffix;
+    private TokenInt.Suffix suffix;
     private State state;
 
     public FSAInt() {
         state = State.START;
         val = 0;
         raw = "";
-        suffix = IntSuffix.NONE;
+        suffix = TokenInt.Suffix.NONE;
     }
 
     public override sealed void Reset() {
         state = State.START;
         val = 0;
         raw = "";
-        suffix = IntSuffix.NONE;
+        suffix = TokenInt.Suffix.NONE;
     }
 
     public override sealed FSAStatus GetStatus() {
@@ -117,10 +119,10 @@ public class FSAInt : FSA {
                 val += ch - '0';
                 state = State.O;
             } else if (ch == 'u' || ch == 'U') {
-                suffix = IntSuffix.U;
+                suffix = TokenInt.Suffix.U;
                 state = State.U;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = IntSuffix.L;
+                suffix = TokenInt.Suffix.L;
                 state = State.L;
             } else {
                 state = State.END;
@@ -132,10 +134,10 @@ public class FSAInt : FSA {
                 val += ch - '0';
                 state = State.D;
             } else if (ch == 'u' || ch == 'U') {
-                suffix = IntSuffix.U;
+                suffix = TokenInt.Suffix.U;
                 state = State.U;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = IntSuffix.L;
+                suffix = TokenInt.Suffix.L;
                 state = State.L;
             } else {
                 state = State.END;
@@ -156,10 +158,10 @@ public class FSAInt : FSA {
                 val += ch - '0';
                 state = State.O;
             } else if (ch == 'u' || ch == 'U') {
-                suffix = IntSuffix.U;
+                suffix = TokenInt.Suffix.U;
                 state = State.U;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = IntSuffix.L;
+                suffix = TokenInt.Suffix.L;
                 state = State.L;
             } else {
                 state = State.END;
@@ -167,7 +169,7 @@ public class FSAInt : FSA {
             break;
         case State.L:
             if (ch == 'u' || ch == 'U') {
-                suffix = IntSuffix.UL;
+                suffix = TokenInt.Suffix.UL;
                 state = State.UL;
             } else {
                 state = State.END;
@@ -179,10 +181,10 @@ public class FSAInt : FSA {
                 val += Utils.GetHexDigit(ch);
                 state = State.H;
             } else if (ch == 'u' || ch == 'U') {
-                suffix = IntSuffix.U;
+                suffix = TokenInt.Suffix.U;
                 state = State.U;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = IntSuffix.L;
+                suffix = TokenInt.Suffix.L;
                 state = State.L;
             } else {
                 state = State.END;
@@ -190,7 +192,7 @@ public class FSAInt : FSA {
             break;
         case State.U:
             if (ch == 'l' || ch == 'L') {
-                suffix = IntSuffix.UL;
+                suffix = TokenInt.Suffix.UL;
                 state = State.UL;
             } else {
                 state = State.END;

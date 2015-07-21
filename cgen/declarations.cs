@@ -30,7 +30,7 @@ namespace AST {
 
         public void CGenExternDecln(Env env, CGenState state) {
             state.CGenExpandStack(env.GetStackOffset(), ToString());
-            if (decln_init.type.type_kind != ExprType.Kind.VOID) {
+            if (decln_init.type.kind != ExprType.Kind.VOID) {
                 // need initialization
 
                 Env.Entry entry = env.Find(decln_name);

@@ -48,8 +48,8 @@ namespace AST {
         // converts expr to type
         // 
         public static Expr SignedIntegralToArith(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.type_kind;
-            ExprType.Kind to = type.type_kind;
+            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind to = type.kind;
 
             switch (from) {
             case ExprType.Kind.CHAR:
@@ -176,8 +176,8 @@ namespace AST {
         //       however, I just treat unsigned long as long.
         // 
         public static Expr UnsignedIntegralToArith(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.type_kind;
-            ExprType.Kind to = type.type_kind;
+            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind to = type.kind;
 
             switch (from) {
             case ExprType.Kind.UCHAR:
@@ -305,8 +305,8 @@ namespace AST {
         //       I don't know why, but I follow it.
         // 
         public static Expr FloatToArith(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.type_kind;
-            ExprType.Kind to = type.type_kind;
+            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind to = type.kind;
 
             switch (from) {
             case ExprType.Kind.FLOAT:
@@ -428,8 +428,8 @@ namespace AST {
         //       if else, assert.
         // 
         public static Expr FromPointer(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.type_kind;
-            ExprType.Kind to = type.type_kind;
+            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind to = type.kind;
 
             if (from != ExprType.Kind.POINTER) {
                 throw new Exception("Error: expected a pointer.");
@@ -469,8 +469,8 @@ namespace AST {
         //       if else, assert.
         // 
         public static Expr ToPointer(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.type_kind;
-            ExprType.Kind to = type.type_kind;
+            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind to = type.kind;
 
             if (to != ExprType.Kind.POINTER) {
                 throw new Exception("Error: expected casting to pointer.");
@@ -488,7 +488,7 @@ namespace AST {
                 // if we are casting from an integral
 
                 // whatever integral -> ulong
-                switch (expr.type.type_kind) {
+                switch (expr.type.kind) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.SHORT:
                 case ExprType.Kind.LONG:
@@ -529,16 +529,16 @@ namespace AST {
             }
 
             // from pointer
-            if (expr.type.type_kind == ExprType.Kind.POINTER) {
+            if (expr.type.kind == ExprType.Kind.POINTER) {
                 return FromPointer(expr, type);
             }
 
             // to pointer
-            if (type.type_kind == ExprType.Kind.POINTER) {
+            if (type.kind == ExprType.Kind.POINTER) {
                 return ToPointer(expr, type);
             }
 
-            switch (expr.type.type_kind) {
+            switch (expr.type.kind) {
                 // from signed integral
             case ExprType.Kind.CHAR:
             case ExprType.Kind.SHORT:
@@ -579,17 +579,17 @@ namespace AST {
             Boolean c2 = t2.is_const;
             Boolean v2 = t2.is_volatile;
             // 1. if either expr is double: both are converted to double
-            if (t1.type_kind == ExprType.Kind.DOUBLE || t2.type_kind == ExprType.Kind.DOUBLE) {
+            if (t1.kind == ExprType.Kind.DOUBLE || t2.kind == ExprType.Kind.DOUBLE) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TDouble(c1, v1)), MakeCast(e2, new TDouble(c2, v2)), ExprType.Kind.DOUBLE);
             }
 
             // 2. if either expr is float: both are converted to float
-            if (t1.type_kind == ExprType.Kind.FLOAT || t2.type_kind == ExprType.Kind.FLOAT) {
+            if (t1.kind == ExprType.Kind.FLOAT || t2.kind == ExprType.Kind.FLOAT) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TFloat(c1, v1)), MakeCast(e2, new TFloat(c2, v2)), ExprType.Kind.FLOAT);
             }
 
             // 3. if either expr is unsigned long: both are converted to unsigned long
-            if (t1.type_kind == ExprType.Kind.ULONG || t2.type_kind == ExprType.Kind.ULONG) {
+            if (t1.kind == ExprType.Kind.ULONG || t2.kind == ExprType.Kind.ULONG) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TULong(c1, v1)), MakeCast(e2, new TULong(c2, v2)), ExprType.Kind.ULONG);
             }
 
@@ -607,10 +607,10 @@ namespace AST {
         // possible return type: double, float, ulong, long
         // 
         public static Tuple<Expr, Expr, ExprType.Kind> UsualScalarConversion(Expr e1, Expr e2) {
-            if (e1.type.type_kind == ExprType.Kind.POINTER) {
+            if (e1.type.kind == ExprType.Kind.POINTER) {
                 e1 = FromPointer(e1, new TULong(e1.type.is_const, e1.type.is_volatile));
             }
-            if (e2.type.type_kind == ExprType.Kind.POINTER) {
+            if (e2.type.kind == ExprType.Kind.POINTER) {
                 e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile));
             }
             return UsualArithmeticConversion(e1, e2);

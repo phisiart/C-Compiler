@@ -36,7 +36,7 @@ namespace AST {
         public virtual void CGenPush(Env env, CGenState state) {
             Reg ret = CGenValue(env, state);
 
-            switch (type.type_kind) {
+            switch (type.kind) {
             case ExprType.Kind.CHAR:
             case ExprType.Kind.UCHAR:
             case ExprType.Kind.SHORT:
@@ -84,7 +84,7 @@ namespace AST {
             case ExprType.Kind.INCOMPLETE_UNION:
             case ExprType.Kind.INIT_LIST:
             case ExprType.Kind.VOID:
-                throw new InvalidProgramException(type.type_kind.ToString() + " can't be pushed onto the stack");
+                throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
 
             case ExprType.Kind.STRUCT:
             case ExprType.Kind.UNION:
@@ -123,7 +123,7 @@ namespace AST {
             case Env.EntryLoc.STACK:
                 break;
             case Env.EntryLoc.GLOBAL:
-                switch (entry.entry_type.type_kind) {
+                switch (entry.entry_type.kind) {
                 case ExprType.Kind.FUNCTION:
                     state.LEA(name);
                     break;
@@ -171,7 +171,7 @@ namespace AST {
 
             case Env.EntryLoc.FRAME:
             case Env.EntryLoc.STACK:
-                switch (type.type_kind) {
+                switch (type.kind) {
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
                 case ExprType.Kind.POINTER:
@@ -216,11 +216,11 @@ namespace AST {
 
                 case ExprType.Kind.ERROR:
                 default:
-                    throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
+                    throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
                 }
 
             case Env.EntryLoc.GLOBAL:
-                switch (type.type_kind) {
+                switch (type.kind) {
                 case ExprType.Kind.CHAR:
                     state.MOVSBL(name, Reg.EAX);
                     return Reg.EAX;
@@ -273,7 +273,7 @@ namespace AST {
                 case ExprType.Kind.INCOMPLETE_UNION:
                 case ExprType.Kind.INIT_LIST:
                 default:
-                    throw new InvalidProgramException("cannot get the value of a " + type.type_kind.ToString());
+                    throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
                 }
 
             case Env.EntryLoc.TYPEDEF:
@@ -459,7 +459,7 @@ namespace AST {
             state.PUSHL(Reg.EAX);
 
             Reg ret = rvalue.CGenValue(env, state);
-            switch (lvalue.type.type_kind) {
+            switch (lvalue.type.kind) {
             case ExprType.Kind.CHAR:
             case ExprType.Kind.UCHAR:
                 // pop %ebx
@@ -527,7 +527,7 @@ namespace AST {
             case ExprType.Kind.INCOMPLETE_UNION:
             case ExprType.Kind.INIT_LIST:
             default:
-                throw new InvalidProgramException("cannot assign to a " + type.type_kind.ToString());
+                throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());
             }
         }
     }
@@ -718,10 +718,10 @@ namespace AST {
         public readonly Expr add_rhs;
 
         public static AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.type.type_kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.type.kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.type.type_kind != AST.ExprType.Kind.LONG) {
+            if (offset.type.kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
@@ -747,7 +747,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeAdd(Env env, Expr lhs, Expr rhs) {
-            if (lhs.type.type_kind == AST.ExprType.Kind.POINTER) {
+            if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
                 if (!rhs.type.IsIntegral()) {
                     throw new InvalidOperationException("Error: must add an integral to a pointer");
                 }
@@ -756,7 +756,7 @@ namespace AST {
                 // lhs = base, rhs = offset
                 return new Tuple<AST.Env, AST.Expr>(env, GetPointerAddition(lhs, rhs));
 
-            } else if (rhs.type.type_kind == AST.ExprType.Kind.POINTER) {
+            } else if (rhs.type.kind == AST.ExprType.Kind.POINTER) {
                 if (!lhs.type.IsIntegral()) {
                     throw new InvalidOperationException("Error: must add an integral to a pointer");
                 }
@@ -790,10 +790,10 @@ namespace AST {
         public readonly Expr sub_rhs;
 
         public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.type.type_kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.type.kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.type.type_kind != AST.ExprType.Kind.LONG) {
+            if (offset.type.kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
@@ -819,8 +819,8 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeSub(Env env, Expr lhs, Expr rhs) {
-            if (lhs.type.type_kind == AST.ExprType.Kind.POINTER) {
-                if (rhs.type.type_kind == AST.ExprType.Kind.POINTER) {
+            if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
+                if (rhs.type.kind == AST.ExprType.Kind.POINTER) {
                     // both operands are pointers
 
                     AST.TPointer lhs_type = (AST.TPointer)(lhs.type);
@@ -985,7 +985,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeModulo(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,
@@ -1006,7 +1006,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeLShift(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,
@@ -1028,7 +1028,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeRShift(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,
@@ -1049,7 +1049,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeXor(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,
@@ -1070,7 +1070,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeOr(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,
@@ -1096,7 +1096,7 @@ namespace AST {
         }
 
         public static Tuple<Env, Expr> MakeBitwiseAnd(Env env, Expr lhs, Expr rhs) {
-            return SyntaxTree.Expr.GetIntegralBinOpExpr(
+            return SyntaxTree.Expr.GetIntegralBinOpExprEnv(
                 env,
                 lhs,
                 rhs,

@@ -3,6 +3,58 @@ using System.Collections.Generic;
 
 namespace SyntaxTree {
 
+    public abstract class BinaryOp : Expr {
+        public BinaryOp(Expr lhs, Expr rhs) {
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+    }
+
+    public abstract class BinaryIntegralOp : BinaryOp {
+        public BinaryIntegralOp(Expr lhs, Expr rhs)
+            : base(lhs, rhs) { }
+
+        public abstract Int32 OperateLong(Int32 lhs, Int32 rhs);
+        public abstract UInt32 OperateULong(UInt32 lhs, UInt32 rhs);
+        public abstract AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type);
+
+        public override AST.Expr GetExpr(AST.Env env) {
+
+            AST.Expr lhs = this.lhs.GetExpr(env);
+            AST.Expr rhs = this.rhs.GetExpr(env);
+
+            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
+            lhs = r_cast.Item1;
+            rhs = r_cast.Item2;
+            AST.ExprType.Kind kind = r_cast.Item3;
+
+            Boolean is_const = lhs.type.is_const || rhs.type.is_const;
+            Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
+
+            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+                switch (kind) {
+                    case AST.ExprType.Kind.ULONG:
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+                    case AST.ExprType.Kind.LONG:
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+                    default:
+                        throw new InvalidOperationException("Expected long or unsigned long.");
+                }
+            }
+
+            switch (kind) {
+                case AST.ExprType.Kind.ULONG:
+                    return ConstructExpr(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                case AST.ExprType.Kind.LONG:
+                    return ConstructExpr(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                default:
+                    throw new InvalidOperationException("Expected long or unsigned long.");
+            }
+        }
+    }
+
 	/// <summary>
 	/// Multiplication
 	/// 
@@ -17,7 +69,7 @@ namespace SyntaxTree {
 		public readonly Expr mult_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				mult_lhs,
 				mult_rhs,
@@ -41,7 +93,7 @@ namespace SyntaxTree {
 		public readonly Expr div_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				div_lhs,
 				div_rhs,
@@ -65,7 +117,7 @@ namespace SyntaxTree {
 		public readonly Expr mod_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				mod_lhs,
 				mod_rhs,
@@ -92,7 +144,7 @@ namespace SyntaxTree {
 		public readonly Expr add_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				add_lhs,
 				add_rhs,
@@ -119,7 +171,7 @@ namespace SyntaxTree {
 		public readonly Expr sub_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				sub_lhs,
 				sub_rhs,
@@ -143,7 +195,7 @@ namespace SyntaxTree {
 		public readonly Expr shift_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				shift_lhs,
 				shift_rhs,
@@ -167,7 +219,7 @@ namespace SyntaxTree {
 		public readonly Expr shift_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				shift_lhs,
 				shift_rhs,
@@ -360,7 +412,7 @@ namespace SyntaxTree {
 		public readonly Expr and_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				and_lhs,
 				and_rhs,
@@ -383,7 +435,7 @@ namespace SyntaxTree {
 		public readonly Expr xor_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				xor_lhs,
 				xor_rhs,
@@ -406,7 +458,7 @@ namespace SyntaxTree {
 		public readonly Expr or_rhs;
 
 		public override Tuple<AST.Env, AST.Expr> GetExprEnv(AST.Env env) {
-			return GetBinaryOperation(
+			return GetBinaryOpEnv(
 				env,
 				or_lhs,
 				or_rhs,

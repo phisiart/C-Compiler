@@ -80,6 +80,7 @@
     <Compile Include="SyntaxTree\const_expressions.cs" />
     <Compile Include="SyntaxTree\assignment_operators.cs" />
     <Compile Include="SyntaxTree\binary_operators.cs" />
+    <Compile Include="SyntaxTree\unary_operators.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

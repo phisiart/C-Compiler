@@ -1,43 +1,43 @@
 ﻿using System;
 
-
-public enum FloatSuffix {
-    NONE,
-    F,
-    L
-}
-
 // TokenFloatConst
 // ===============
 // The token representing a floating number.
 // It can either be a float or double.
 // 
-public class TokenFloatConst : Token {
-    public TokenFloatConst(Double _val, FloatSuffix _suffix, string _raw)
-        : base(TokenType.FLOAT) {
-        val = _val;
-        suffix = _suffix;
-        raw = _raw;
+public class TokenFloat : Token {
+
+    public enum Suffix {
+        NONE,
+        F,
+        L
     }
 
-    public readonly Double val;
-    public readonly string raw;
-    public readonly FloatSuffix suffix;
+    public TokenFloat(Double value, Suffix suffix, String source)
+        : base(TokenType.FLOAT) {
+        this.value = value;
+        this.suffix = suffix;
+        this.source = source;
+    }
+
+    public readonly Double value;
+    public readonly String source;
+    public readonly Suffix suffix;
 
     public override string ToString() {
         string str = type.ToString();
         switch (suffix) {
-        case FloatSuffix.F:
+        case Suffix.F:
             str += "(float)";
             break;
-        case FloatSuffix.L:
+        case Suffix.L:
             str += "(long double)";
             break;
         default:
             str += "(double)";
             break;
         }
-        return str + ": " + val.ToString() + " \"" + raw + "\"";
+        return str + ": " + value.ToString() + " \"" + source + "\"";
     }
 }
 
@@ -67,7 +67,7 @@ public class FSAFloat : FSA {
     private Int64 frac_count;
     private Int64 exp_part;
     private Boolean exp_pos;
-    private FloatSuffix suffix;
+    private TokenFloat.Suffix suffix;
     private State state;
 
     public FSAFloat() {
@@ -76,7 +76,7 @@ public class FSAFloat : FSA {
         frac_part = 0;
         frac_count = 0;
         exp_part = 0;
-        suffix = FloatSuffix.NONE;
+        suffix = TokenFloat.Suffix.NONE;
         exp_pos = true;
         raw = "";
     }
@@ -87,7 +87,7 @@ public class FSAFloat : FSA {
         frac_part = 0;
         frac_count = 0;
         exp_part = 0;
-        suffix = FloatSuffix.NONE;
+        suffix = TokenFloat.Suffix.NONE;
         exp_pos = true;
         raw = "";
     }
@@ -112,7 +112,7 @@ public class FSAFloat : FSA {
         } else {
             val = (int_part + frac_part * Math.Pow(0.1, frac_count)) * Math.Pow(10, -exp_part);
         }
-        return new TokenFloatConst(val, suffix, raw.Substring(0, raw.Length - 1));
+        return new TokenFloat(val, suffix, raw.Substring(0, raw.Length - 1));
     }
 
     public override sealed void ReadChar(Char ch) {
@@ -166,10 +166,10 @@ public class FSAFloat : FSA {
             } else if (ch == 'e' || ch == 'E') {
                 state = State.DE;
             } else if (ch == 'f' || ch == 'F') {
-                suffix = FloatSuffix.F;
+                suffix = TokenFloat.Suffix.F;
                 state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = FloatSuffix.L;
+                suffix = TokenFloat.Suffix.L;
                 state = State.DPL;
             } else {
                 state = State.END;
@@ -185,10 +185,10 @@ public class FSAFloat : FSA {
             } else if (ch == 'e' || ch == 'E') {
                 state = State.DE;
             } else if (ch == 'f' || ch == 'F') {
-                suffix = FloatSuffix.F;
+                suffix = TokenFloat.Suffix.F;
                 state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = FloatSuffix.L;
+                suffix = TokenFloat.Suffix.L;
                 state = State.DPL;
             } else {
                 state = State.END;
@@ -219,7 +219,7 @@ public class FSAFloat : FSA {
             break;
 
         case State.DPL:
-            suffix = FloatSuffix.L;
+            suffix = TokenFloat.Suffix.L;
             state = State.END;
             break;
 
@@ -229,10 +229,10 @@ public class FSAFloat : FSA {
                 exp_part += ch - '0';
                 state = State.DED;
             } else if (ch == 'f' || ch == 'F') {
-                suffix = FloatSuffix.F;
+                suffix = TokenFloat.Suffix.F;
                 state = State.PDF;
             } else if (ch == 'l' || ch == 'L') {
-                suffix = FloatSuffix.L;
+                suffix = TokenFloat.Suffix.L;
                 state = State.DPL;
             } else {
                 state = State.END;
