@@ -35,23 +35,23 @@ namespace SyntaxTree {
                 string name = r_declr.Item4;
 
                 // TODO : [finished] add the newly declared object into the environment
-                AST.Env.EntryLoc loc;
+                AST.Env.EntryKind loc;
                 switch (scs) {
                 case AST.Decln.SCS.AUTO:
                     if (env.IsGlobal()) {
-                        loc = AST.Env.EntryLoc.GLOBAL;
+                        loc = AST.Env.EntryKind.GLOBAL;
                     } else {
-                        loc = AST.Env.EntryLoc.STACK;
+                        loc = AST.Env.EntryKind.STACK;
                     }
                     break;
                 case AST.Decln.SCS.EXTERN:
-                    loc = AST.Env.EntryLoc.GLOBAL;
+                    loc = AST.Env.EntryKind.GLOBAL;
                     break;
                 case AST.Decln.SCS.STATIC:
-                    loc = AST.Env.EntryLoc.GLOBAL;
+                    loc = AST.Env.EntryKind.GLOBAL;
                     break;
                 case AST.Decln.SCS.TYPEDEF:
-                    loc = AST.Env.EntryLoc.TYPEDEF;
+                    loc = AST.Env.EntryKind.TYPEDEF;
                     break;
                 default:
                     Log.SemantError("scs error");
@@ -305,10 +305,7 @@ namespace SyntaxTree {
 
         // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
         public Tuple<AST.Env, AST.ExprType, AST.Expr, string> GetInitDeclr(AST.Env env, AST.ExprType type) {
-
-            Tuple<AST.Env, AST.Expr> r_init = init.GetExprEnv(env);
-            env = r_init.Item1;
-            AST.Expr ast_init = r_init.Item2;
+            AST.Expr ast_init = init.GetExpr(env);
 
             Tuple<AST.Env, AST.ExprType, string> r_declr = declr.WrapExprType(env, type);
             env = r_declr.Item1;
@@ -391,15 +388,15 @@ namespace SyntaxTree {
 
         public override Tuple<AST.Env, AST.ExprType> GetExprType(AST.Env env, Boolean is_const, Boolean is_volatile) {
 			AST.Env.Entry r_find = env.Find(name);
-			if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+			if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
 				throw new InvalidOperationException("Error: cannot find name \"" + name + "\"");
 			}
 
-			if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+			if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
 				throw new InvalidOperationException("Error: \"" + name + "\" is not a typedef name");
 			}
 
-			return Tuple.Create(env, r_find.entry_type.GetQualifiedType(is_const, is_volatile));
+			return Tuple.Create(env, r_find.type.GetQualifiedType(is_const, is_volatile));
         }
 
 
@@ -472,11 +469,10 @@ namespace SyntaxTree {
         // ========================================
         // 
         public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
-            Tuple<AST.Env, AST.Expr> r_nelems = array_nelems.GetExprEnv(env);
-            env = r_nelems.Item1;
+            AST.Expr expr_nelems = array_nelems.GetExpr(env);
 
             // Try to cast the 'nelems' expression to a long int.
-            AST.Expr expr_nelems = AST.TypeCast.MakeCast(r_nelems.Item2, new AST.TLong());
+            expr_nelems = AST.TypeCast.MakeCast(expr_nelems, new AST.TLong());
 
             if (!expr_nelems.IsConstExpr()) {
                 throw new InvalidOperationException("Error: size of the array is not a constant.");
@@ -596,7 +592,7 @@ namespace SyntaxTree {
             if (spec_enums == null) {
                 // if there is no content in this enum type, we must find it's definition in the environment
                 AST.Env.Entry entry = env.Find("enum " + spec_name);
-                if (entry == null || entry.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+                if (entry == null || entry.kind != AST.Env.EntryKind.TYPEDEF) {
                     Log.SemantError("Error: type 'enum " + spec_name + " ' has not been defined.");
                     return null;
                 }
@@ -611,7 +607,7 @@ namespace SyntaxTree {
 					env = env.PushEnum(name, new AST.TLong(), idx);
                     idx++;
                 }
-                env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "enum " + spec_name, new AST.TLong());
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + spec_name, new AST.TLong());
             }
 
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
@@ -638,11 +634,9 @@ namespace SyntaxTree {
 				return new Tuple<AST.Env, string, int>(env, enum_name, idx);
 			}
 
-			Tuple<AST.Env, AST.Expr> r_init = enum_init.GetExprEnv(env);
-			env = r_init.Item1;
-			init = r_init.Item2;
+			init = enum_init.GetExpr(env);
 
-			init = AST.TypeCast.MakeCast(init, new AST.TLong());
+            init = AST.TypeCast.MakeCast(init, new AST.TLong());
 			if (!init.IsConstExpr()) {
 				throw new InvalidOperationException("Error: expected constant integer");
 			}
@@ -724,32 +718,32 @@ namespace SyntaxTree {
 					AST.Env.Entry r_find = env.Find("struct " + name);
 
 					// if the struct is not in the current environment
-					if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+					if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
 
 						// add an incomplete struct into the environment
 						AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
-						env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
+						env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, incomplete_type);
 
 						return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
 					}
 
-					if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+					if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
 						throw new InvalidOperationException("Error: find struct " + name + " not a type. This should be my fault.");
 					}
 
-					return Tuple.Create(env, r_find.entry_type);
+					return Tuple.Create(env, r_find.type);
 
 				} else {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("struct " + name).entry_type.kind == AST.ExprType.Kind.STRUCT) {
+					if (env.Find("struct " + name).type.kind == AST.ExprType.Kind.STRUCT) {
 						throw new InvalidOperationException("Error: re-defining a struct");
 					}
 
 					// 2. add an incomplete struct into the environment
 					AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
-					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, incomplete_type);
+					env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, incomplete_type);
 
 
 					// 3. iterate over the attribs
@@ -760,7 +754,7 @@ namespace SyntaxTree {
 					AST.TStruct type = AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile);
 
 					// 5. add into the environment
-					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "struct " + name, type);
+					env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, type);
 
 					return new Tuple<AST.Env, AST.ExprType>(env, type);
 
@@ -821,32 +815,32 @@ namespace SyntaxTree {
 					AST.Env.Entry r_find = env.Find("union " + name);
 
 					// if the struct is not in the current environment
-					if (r_find.entry_loc == AST.Env.EntryLoc.NOT_FOUND) {
+					if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
 
 						// add an incomplete union into the environment
 						AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
-						env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, incomplete_type);
+						env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, incomplete_type);
 
 						return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
 					}
 
-					if (r_find.entry_loc != AST.Env.EntryLoc.TYPEDEF) {
+					if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
 						throw new InvalidOperationException("Error: find union " + name + " not a type. This should be my fault.");
 					}
 
-					return Tuple.Create(env, r_find.entry_type);
+					return Tuple.Create(env, r_find.type);
 
 				} else {
 					// declns supplied
 
 					// 1. make sure there is no complete struct in the current environment
-					if (env.Find("union " + name).entry_type.kind == AST.ExprType.Kind.UNION) {
+					if (env.Find("union " + name).type.kind == AST.ExprType.Kind.UNION) {
 						throw new InvalidOperationException("Error: re-defining a union");
 					}
 
 					// 2. add an incomplete struct into the environment
 					AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
-					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, incomplete_type);
+					env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, incomplete_type);
 
 
 					// 3. iterate over the attribs
@@ -857,7 +851,7 @@ namespace SyntaxTree {
 					AST.TUnion type = AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile);
 
 					// 5. add into the environment
-					env = env.PushEntry(AST.Env.EntryLoc.TYPEDEF, "union " + name, type);
+					env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, type);
 
 					return new Tuple<AST.Env, AST.ExprType>(env, type);
 
@@ -961,13 +955,8 @@ namespace SyntaxTree {
         }
         public List<Expr> initlist_exprs;
 
-        public Tuple<AST.Env, AST.InitList> GetInitList(AST.Env env) {
-            List<AST.Expr> exprs = initlist_exprs.ConvertAll(expr => {
-                Tuple<AST.Env, AST.Expr> r_expr = expr.GetExprEnv(env);
-                env = r_expr.Item1;
-                return r_expr.Item2;
-            });
-            return Tuple.Create(env, new AST.InitList(exprs));
+        public override AST.Expr GetExpr(AST.Env env) {
+            throw new InvalidOperationException();
         }
 
     }

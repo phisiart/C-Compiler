@@ -46,9 +46,7 @@ namespace SyntaxTree {
         public readonly Expr ret_expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            Tuple<AST.Env, AST.Expr> r_expr = ret_expr.GetExprEnv(env);
-            env = r_expr.Item1;
-            AST.Expr expr = r_expr.Item2;
+            AST.Expr expr = ret_expr.GetExpr(env);
             expr = AST.TypeCast.MakeCast(expr, env.GetCurrentFunction().ret_type);
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
         }
@@ -99,10 +97,7 @@ namespace SyntaxTree {
         public readonly Expr stmt_expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            Tuple<AST.Env, AST.Expr> r_expr = stmt_expr.GetExprEnv(env);
-            env = r_expr.Item1;
-            AST.Expr expr = r_expr.Item2;
-
+            AST.Expr expr = stmt_expr.GetExpr(env);
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ExprStmt(expr));
         }
     }
@@ -127,9 +122,7 @@ namespace SyntaxTree {
             AST.Expr cond;
             AST.Stmt body;
 
-            Tuple<AST.Env, AST.Expr> r_cond = while_cond.GetExprEnv(env);
-            env = r_cond.Item1;
-            cond = r_cond.Item2;
+            cond = while_cond.GetExpr(env);
 
             if (!cond.type.IsScalar()) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
@@ -168,9 +161,7 @@ namespace SyntaxTree {
             env = r_body.Item1;
             body = r_body.Item2;
 
-            Tuple<AST.Env, AST.Expr> r_cond = do_cond.GetExprEnv(env);
-            env = r_cond.Item1;
-            cond = r_cond.Item2;
+            cond = do_cond.GetExpr(env);
 
             if (!cond.type.IsScalar()) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
@@ -206,21 +197,15 @@ namespace SyntaxTree {
             AST.Expr loop;
             AST.Stmt body;
 
-            Tuple<AST.Env, AST.Expr> r_init = for_init.GetExprEnv(env);
-            env = r_init.Item1;
-            init = r_init.Item2;
+            init = for_init.GetExpr(env);
 
-            Tuple<AST.Env, AST.Expr> r_cond = for_cond.GetExprEnv(env);
-            env = r_cond.Item1;
-            cond = r_cond.Item2;
+            cond = for_cond.GetExpr(env);
 
             if (!cond.type.IsScalar()) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
-            Tuple<AST.Env, AST.Expr> r_loop = for_loop.GetExprEnv(env);
-            env = r_loop.Item1;
-            loop = r_loop.Item2;
+            loop = for_loop.GetExpr(env);
 
             Tuple<AST.Env, AST.Stmt> r_body = for_body.GetStmt(env);
             env = r_body.Item1;
@@ -244,11 +229,9 @@ namespace SyntaxTree {
 			AST.Expr expr;
 			AST.Stmt stmt;
 
-			Tuple<AST.Env, AST.Expr> r_expr = switch_expr.GetExprEnv(env);
-			env = r_expr.Item1;
-			expr = r_expr.Item2;
+			expr = switch_expr.GetExpr(env);
 
-			Tuple<AST.Env, AST.Stmt> r_stmt = switch_stmt.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_stmt = switch_stmt.GetStmt(env);
 			env = r_stmt.Item1;
 			stmt = r_stmt.Item2;
 
@@ -269,11 +252,9 @@ namespace SyntaxTree {
 			AST.Expr cond;
 			AST.Stmt stmt;
 
-			Tuple<AST.Env, AST.Expr> r_cond = if_cond.GetExprEnv(env);
-			env = r_cond.Item1;
-			cond = r_cond.Item2;
+			cond = if_cond.GetExpr(env);
 
-			if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar()) {
 				throw new InvalidOperationException("Error: expected scalar type");
 			}
 
@@ -301,11 +282,9 @@ namespace SyntaxTree {
 			AST.Stmt true_stmt;
 			AST.Stmt false_stmt;
 
-			Tuple<AST.Env, AST.Expr> r_cond = if_cond.GetExprEnv(env);
-			env = r_cond.Item1;
-			cond = r_cond.Item2;
+			cond = if_cond.GetExpr(env);
 
-			if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar()) {
 				throw new InvalidOperationException("Error: expected scalar type");
 			}
 
@@ -354,10 +333,12 @@ namespace SyntaxTree {
 				return new Tuple<AST.Env, AST.Stmt>(env, new AST.DefaultStmt(r_stmt.Item2));
 			
 			} else {
-				Tuple<AST.Env, AST.Expr> r_expr = expr.GetExprEnv(env);
-				env = r_expr.Item1;
 
-				AST.Expr case_expr = AST.TypeCast.MakeCast(r_expr.Item2, new AST.TLong());
+                AST.Expr case_expr = expr.GetExpr(env);
+				//Tuple<AST.Env, AST.Expr> r_expr = expr.GetExprEnv(env);
+				//env = r_expr.Item1;
+
+				case_expr = AST.TypeCast.MakeCast(case_expr, new AST.TLong());
 				if (!case_expr.IsConstExpr()) {
 					throw new InvalidOperationException("case expr not const");
 				}

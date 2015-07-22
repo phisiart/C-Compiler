@@ -70,7 +70,7 @@ namespace SyntaxTree {
             case AST.Decln.SCS.AUTO:
             case AST.Decln.SCS.EXTERN:
             case AST.Decln.SCS.STATIC:
-                env = env.PushEntry(AST.Env.EntryLoc.GLOBAL, name, type);
+                env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
                 break;
             default:
                 Log.SemantError("Error: invalid storage class specifier for function definition.");

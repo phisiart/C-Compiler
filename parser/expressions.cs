@@ -281,7 +281,7 @@ public class _assignment_expression : ParseRule {
                     if (current == -1) {
                         return -1;
                     }
-                    node = new LeftShiftAssign(lvalue, rvalue);
+                    node = new LShiftAssign(lvalue, rvalue);
                     return current;
 
                 case OperatorVal.RSHIFTASSIGN:
@@ -290,7 +290,7 @@ public class _assignment_expression : ParseRule {
                     if (current == -1) {
                         return -1;
                     }
-                    node = new RightShiftAssign(lvalue, rvalue);
+                    node = new RShiftAssign(lvalue, rvalue);
                     return current;
 
                 case OperatorVal.ANDASSIGN:
@@ -443,7 +443,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new Dereference(new Addition(expr, idx));
+                expr = new Dereference(new Add(expr, idx));
                 // expr = new ArrayElement(expr, idx);
                 break;
 
@@ -507,7 +507,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new Increment(expr);
+                expr = new PostIncrement(expr);
                 break;
 
             case OperatorVal.DEC:
@@ -516,7 +516,7 @@ public class _postfix_expression : ParseRule {
                 current++;
                 
                 // successful match
-                expr = new Decrement(expr);
+                expr = new PostDecrement(expr);
                 break;
 
             default:
@@ -703,7 +703,7 @@ public class _unary_expression : ParseRule {
             }
 
             // 1.2. -- successful match
-            expr = new SizeofExpression(expr);
+            expr = new SizeofExpr(expr);
             return current;
 
         } // sizeof
@@ -746,7 +746,7 @@ public class _unary_expression : ParseRule {
                 return -1;
             }
 
-            expr = new PrefixDecrement(expr);
+            expr = new PreDecrement(expr);
             return current;
 
         case OperatorVal.BITAND:
@@ -926,8 +926,8 @@ public class _multiplicative_expression : ParseRule {
 			src, begin, out expr,
 			_cast_expression.Parse,
 			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MULT, (_lhs, _rhs) => new Multiplication(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.DIV, (_lhs, _rhs) => new Division(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MULT, (_lhs, _rhs) => new Multiply(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.DIV, (_lhs, _rhs) => new Divide(_lhs, _rhs)),
 				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MOD, (_lhs, _rhs) => new Modulo(_lhs, _rhs)),
 			}
 		);
@@ -962,8 +962,8 @@ public class _additive_expression : ParseRule {
 			src, begin, out expr,
 			_multiplicative_expression.Parse,
 			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.ADD, (_lhs, _rhs) => new Addition(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.SUB, (_lhs, _rhs) => new Subtraction(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.ADD, (_lhs, _rhs) => new Add(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.SUB, (_lhs, _rhs) => new Sub(_lhs, _rhs)),
 			}
 		);
     }
@@ -997,8 +997,8 @@ public class _shift_expression : ParseRule {
 			src, begin, out expr,
 			_additive_expression.Parse,
 			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LSHIFT, (_lhs, _rhs) => new LeftShift(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.RSHIFT, (_lhs, _rhs) => new RightShift(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LSHIFT, (_lhs, _rhs) => new LShift(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.RSHIFT, (_lhs, _rhs) => new RShift(_lhs, _rhs)),
 			}
 		);
     }
@@ -1032,10 +1032,10 @@ public class _relational_expression : ParseRule {
 			src, begin, out expr,
 			_shift_expression.Parse,
 			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LT, (_lhs, _rhs) => new LessThan(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GT, (_lhs, _rhs) => new GreaterThan(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LEQ, (_lhs, _rhs) => new LessEqualThan(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GEQ, (_lhs, _rhs) => new GreaterEqualThan(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LT, (_lhs, _rhs) => new Less(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GT, (_lhs, _rhs) => new Greater(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LEQ, (_lhs, _rhs) => new LEqual(_lhs, _rhs)),
+				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GEQ, (_lhs, _rhs) => new GEqual(_lhs, _rhs)),
 			}
 		);
     }

@@ -34,22 +34,22 @@ namespace AST {
                 // need initialization
 
                 Env.Entry entry = env.Find(decln_name);
-                switch (entry.entry_loc) {
-                case Env.EntryLoc.STACK:
+                switch (entry.kind) {
+                case Env.EntryKind.STACK:
                     // %eax = <decln_init>
                     decln_init.CGenValue(env, state);
 
                     // -<offset>(%ebp) = %eax
-                    state.MOVL(Reg.EAX, -entry.entry_offset, Reg.EBP);
+                    state.MOVL(Reg.EAX, -entry.offset, Reg.EBP);
 
                     break;
-                case Env.EntryLoc.GLOBAL:
+                case Env.EntryKind.GLOBAL:
                     // TODO : extern decln global
                     break;
-                case Env.EntryLoc.ENUM:
-                case Env.EntryLoc.FRAME:
-                case Env.EntryLoc.NOT_FOUND:
-                case Env.EntryLoc.TYPEDEF:
+                case Env.EntryKind.ENUM:
+                case Env.EntryKind.FRAME:
+                case Env.EntryKind.NOT_FOUND:
+                case Env.EntryKind.TYPEDEF:
                 default:
                     throw new NotImplementedException();
                 }

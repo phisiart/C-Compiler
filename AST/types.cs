@@ -294,17 +294,17 @@ namespace AST {
     public class TPointer : ScalarType {
         public TPointer(ExprType _referenced_type, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(Kind.POINTER, SIZEOF_POINTER, ALIGN_POINTER, _is_const, _is_volatile) {
-            referenced_type = _referenced_type;
+            ref_t = _referenced_type;
         }
-        public readonly ExprType referenced_type;
+        public readonly ExprType ref_t;
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TPointer(referenced_type, _is_const, _is_volatile);
+            return new TPointer(ref_t, _is_const, _is_volatile);
         }
         public override Boolean EqualType(ExprType other) {
-            return other.kind == Kind.POINTER && ((TPointer)other).referenced_type.EqualType(referenced_type);
+            return other.kind == Kind.POINTER && ((TPointer)other).ref_t.EqualType(ref_t);
         }
         public override string ToString() {
-            return DumpQualifiers() + "ptr<" + referenced_type.ToString() + ">";
+            return DumpQualifiers() + "ptr<" + ref_t.ToString() + ">";
         }
     }
 

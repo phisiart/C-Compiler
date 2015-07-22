@@ -14,7 +14,7 @@ namespace AST {
         //   FRAME: this is a function parameter
         //   GLOBAL: this is a global symbol
         // 
-        public enum EntryLoc {
+        public enum EntryKind {
             NOT_FOUND,
             ENUM,
             TYPEDEF,
@@ -35,14 +35,14 @@ namespace AST {
         //              GLOBAL: N/A
         // 
         public class Entry {
-            public Entry(EntryLoc loc, ExprType type, Int32 offset) {
-                entry_loc = loc;
-                entry_type = type;
-                entry_offset = offset;
+            public Entry(EntryKind kind, ExprType type, Int32 offset) {
+                this.kind = kind;
+                this.type = type;
+                this.offset = offset;
             }
-            public readonly EntryLoc entry_loc;
-            public readonly ExprType entry_type;
-            public readonly Int32      entry_offset;
+            public readonly EntryKind kind;
+            public readonly ExprType  type;
+            public readonly Int32     offset;
         }
 
         private class Scope {
@@ -110,18 +110,18 @@ namespace AST {
             // output: Scope
             // returns a new scope with everything the same as this, excpet for a new entry
             // 
-            public Scope PushEntry(EntryLoc loc, string name, ExprType type) {
+            public Scope PushEntry(EntryKind loc, string name, ExprType type) {
                 Scope scope = new Scope(this);
                 switch (loc) {
-                case EntryLoc.STACK:
+                case EntryKind.STACK:
                     scope.scope_stack_offset += type.SizeOf;
                     scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.Alignment);
                     scope.scope_stack_entries.Add(new Utils.StoreEntry(name, type, scope.scope_stack_offset));
                     break;
-                case EntryLoc.GLOBAL:
+                case EntryKind.GLOBAL:
                     scope.scope_global_entries.Add(new Utils.StoreEntry(name, type, 0));
                     break;
-                case EntryLoc.TYPEDEF:
+                case EntryKind.TYPEDEF:
                     scope.scope_typedef_entries.Add(new Utils.StoreEntry(name, type, 0));
                     break;
                 default:
@@ -170,27 +170,27 @@ namespace AST {
 
                 // search the enum entries
                 if ((store_entry = scope_enum_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryLoc.ENUM, store_entry.entry_type, store_entry.entry_offset);
+                    return new Entry(EntryKind.ENUM, store_entry.entry_type, store_entry.entry_offset);
                 }
 
                 // search the typedef entries
                 if ((store_entry = scope_typedef_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryLoc.TYPEDEF, store_entry.entry_type, store_entry.entry_offset);
+                    return new Entry(EntryKind.TYPEDEF, store_entry.entry_type, store_entry.entry_offset);
                 }
                 
                 // search the stack entries
                 if ((store_entry = scope_stack_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryLoc.STACK, store_entry.entry_type, store_entry.entry_offset);
+                    return new Entry(EntryKind.STACK, store_entry.entry_type, store_entry.entry_offset);
                 }
 
                 // search the function arguments
                 if ((store_entry = scope_curr_func.args.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryLoc.FRAME, store_entry.entry_type, store_entry.entry_offset);
+                    return new Entry(EntryKind.FRAME, store_entry.entry_type, store_entry.entry_offset);
                 }
 
                 // search the global entries
                 if ((store_entry = scope_global_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryLoc.GLOBAL, store_entry.entry_type, store_entry.entry_offset);
+                    return new Entry(EntryKind.GLOBAL, store_entry.entry_type, store_entry.entry_offset);
                 }
 
                 return null;
@@ -293,7 +293,7 @@ namespace AST {
         // ouput: Environment
         // return a new environment which adds a symbol entry
         // 
-        public Env PushEntry(EntryLoc loc, string name, ExprType type) {
+        public Env PushEntry(EntryKind loc, string name, ExprType type) {
             // note the nested copy constructor. this is because the constructor would reverse the elements.
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEntry(loc, name, type);
@@ -354,7 +354,7 @@ namespace AST {
                     return entry;
                 }
             }
-			return new Entry(EntryLoc.NOT_FOUND, new TVoid(), 0);
+			return new Entry(EntryKind.NOT_FOUND, new TVoid(), 0);
         }
 
         public Entry FindInCurrentScope(string name) {

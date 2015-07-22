@@ -42,8 +42,8 @@ namespace AST {
             state.TEXT();
             Env.Entry entry = env.Find(func_name);
             state.COMMENT(ToString());
-            switch (entry.entry_loc) {
-            case Env.EntryLoc.GLOBAL:
+            switch (entry.kind) {
+            case Env.EntryKind.GLOBAL:
                 switch (func_scs) {
                 case Decln.SCS.AUTO:
                 case Decln.SCS.EXTERN:

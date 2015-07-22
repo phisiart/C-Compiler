@@ -43,15 +43,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cgen\cgen.cs" />
-    <Compile Include="cgen\declarations.cs" />
-    <Compile Include="cgen\environment.cs" />
-    <Compile Include="cgen\expressions.cs" />
-    <Compile Include="cgen\external_declarations.cs" />
-    <Compile Include="cgen\statements.cs" />
-    <Compile Include="cgen\typecast.cs" />
-    <Compile Include="cgen\types.cs" />
-    <Compile Include="cgen\utils.cs" />
+    <Compile Include="AST\cgen.cs" />
+    <Compile Include="AST\declarations.cs" />
+    <Compile Include="AST\environment.cs" />
+    <Compile Include="AST\expressions.cs" />
+    <Compile Include="AST\external_declarations.cs" />
+    <Compile Include="AST\statements.cs" />
+    <Compile Include="AST\typecast.cs" />
+    <Compile Include="AST\types.cs" />
+    <Compile Include="AST\utils.cs" />
     <Compile Include="driver\Program.cs" />
     <Compile Include="parser\declarations.cs" />
     <Compile Include="parser\environment.cs" />
@@ -78,7 +78,7 @@
     <Compile Include="SyntaxTree\external_definitions.cs" />
     <Compile Include="SyntaxTree\statements.cs" />
     <Compile Include="SyntaxTree\const_expressions.cs" />
-    <Compile Include="SyntaxTree\assignment_operators.cs" />
+    <Compile Include="SyntaxTree\AssignmentOperators.cs" />
     <Compile Include="SyntaxTree\binary_operators.cs" />
     <Compile Include="SyntaxTree\unary_operators.cs" />
   </ItemGroup>
