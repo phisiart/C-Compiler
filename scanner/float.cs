@@ -101,7 +101,7 @@ public class FSAFloat : FSA {
         case State.ERROR:
             return FSAStatus.ERROR;
         default:
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 

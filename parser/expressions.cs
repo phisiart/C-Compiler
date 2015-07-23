@@ -85,7 +85,7 @@ public class _primary_expression : ParseRule {
         if (src[begin].type == TokenType.CHAR) {
             // expr = new ConstChar(((TokenChar)src[begin]).val);
             // NOTE : there is no const char in C, there is only const Int32 ...
-            expr = new ConstInt(((TokenCharConst)src[begin]).val, TokenInt.Suffix.NONE);
+            expr = new ConstInt(((TokenCharConst)src[begin]).value, TokenInt.Suffix.NONE);
             return begin + 1;
         }
 

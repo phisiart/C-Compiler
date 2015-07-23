@@ -55,7 +55,7 @@ public class FSASpace : FSA {
         } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 
@@ -124,7 +124,7 @@ public class FSANewLine : FSA {
         } else if (state == NewLineState.ERROR) {
             return FSAStatus.ERROR;
         } else {
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 

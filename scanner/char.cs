@@ -5,15 +5,15 @@
 // A character constant
 // 
 public class TokenCharConst : Token {
-    public TokenCharConst(String _raw, Char _val)
+    public TokenCharConst(String raw, Char value)
         : base(TokenType.CHAR) {
-        raw = _raw;
-        val = _val;
+        this.raw = raw;
+        this.value = value;
     }
     public readonly String raw;
-    public readonly Char val;
+    public readonly Char value;
     public override String ToString() {
-        return type.ToString() + ": " + "\'" + raw + "\'" + "\n\'" + val + "\'";
+        return type.ToString() + ": " + "\'" + raw + "\'" + "\n\'" + value + "\'";
     }
 }
 
@@ -88,7 +88,7 @@ public class FSAChar : FSA {
         } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 
@@ -296,7 +296,7 @@ public class FSACharConst : FSA {
         } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 

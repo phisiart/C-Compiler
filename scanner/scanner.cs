@@ -31,7 +31,7 @@ public class Scanner {
             fsas.ForEach(fsa => fsa.ReadChar(src[i]));
 
             // if no running
-            if (fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.RUN) == -1) {
+            if (fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.RUNNING) == -1) {
                 Int32 idx = fsas.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
                 if (idx != -1) {
                     // Console.WriteLine("> " + src.Substring(pos, i - pos));

@@ -538,6 +538,7 @@ namespace SyntaxTree {
 
 
         // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
+        [Obsolete]
         public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprTypeEnv(AST.Env env, AST.ExprType type) {
             for (int i = inner_declr_modifiers.Count; i-- > 0;) {
                 TypeModifier modifier = inner_declr_modifiers[i];

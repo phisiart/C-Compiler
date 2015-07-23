@@ -3,7 +3,7 @@
 public enum FSAStatus {
     NONE,
     END,
-    RUN,
+    RUNNING,
     ERROR
 }
 

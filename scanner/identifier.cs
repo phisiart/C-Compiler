@@ -43,7 +43,7 @@ public class FSAIdentifier : FSA {
         } else if (state == State.ERROR) {
             return FSAStatus.ERROR;
         } else {
-            return FSAStatus.RUN;
+            return FSAStatus.RUNNING;
         }
     }
 
