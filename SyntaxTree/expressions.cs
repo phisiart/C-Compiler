@@ -174,10 +174,10 @@ namespace SyntaxTree {
     /// Only a name
     /// </summary>
     public class Variable : Expr {
-        public Variable(string name) {
+        public Variable(String name) {
             this.name = name;
         }
-		public readonly string name;
+		public readonly String name;
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Env.Entry entry = env.Find(name);
@@ -352,7 +352,7 @@ namespace SyntaxTree {
                 case AST.ExprType.Kind.UNION:
                     AST.TUnion union_type = (AST.TUnion)expr.type;
 
-                    Tuple<string, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
+                    Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
                     if (r_union_find == null) {
                         throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
                     }

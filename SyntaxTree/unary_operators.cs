@@ -53,7 +53,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.ExprType type = type_name.GetExprType(env);
-            return new AST.ConstULong((UInt32)type.SizeOf);
+            return new AST.ConstULong((UInt32)type.size_of);
         }
     }
     
@@ -68,7 +68,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
-            return new AST.ConstULong((UInt32)expr.type.SizeOf);
+            return new AST.ConstULong((UInt32)expr.type.size_of);
         }
     }
 
@@ -148,7 +148,7 @@ namespace SyntaxTree {
 
             AST.ExprType ref_type = ((AST.TPointer)expr.type).ref_t;
             if (ref_type.kind == AST.ExprType.Kind.INCOMPLETE_STRUCT) {
-                AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).struct_name);
+                AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).name);
                 if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
                     throw new InvalidOperationException("Cannot find struct.");
                 }

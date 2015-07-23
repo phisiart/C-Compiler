@@ -14,15 +14,15 @@ namespace AST {
             TYPEDEF,
         }
 
-        public Decln(string name, SCS scs, ExprType type, Expr init) {
+        public Decln(String name, SCS scs, ExprType type, Expr init) {
             decln_name = name;
             decln_scs  = scs;
             decln_type = type;
             decln_init = init;
         }
 
-        public override string ToString() {
-            string str = "[" + decln_scs.ToString() + "] ";
+        public override String ToString() {
+            String str = "[" + decln_scs.ToString() + "] ";
             str += decln_name;
             str += " : " + decln_type.ToString();
             return str;
@@ -58,7 +58,7 @@ namespace AST {
             }
         }
 
-        private readonly string     decln_name;
+        private readonly String     decln_name;
         private readonly SCS        decln_scs;
         private readonly ExprType   decln_type;
         private readonly Expr       decln_init;
@@ -66,7 +66,7 @@ namespace AST {
 
     public class InitList : Expr {
         public InitList(List<Expr> _exprs) :
-            base(ExprType.CreateInitList()) {
+            base(new TInitList()) {
             initlist_exprs = _exprs;
         }
         public readonly List<Expr> initlist_exprs;

@@ -12,7 +12,7 @@ class TestingClass {
 
 namespace driver {
     class Program {
-        static void Main(string[] args) {
+        static void Main(String[] args) {
             Scanner scanner = new Scanner();
             scanner.src =
                 @"

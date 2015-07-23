@@ -55,7 +55,7 @@ namespace SyntaxTree {
     }
 
 	/// <summary>
-	/// string Literal
+	/// String Literal
 	/// </summary>
 	public class StringLiteral : Expr {
 		public StringLiteral(String value) {

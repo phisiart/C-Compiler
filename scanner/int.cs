@@ -13,15 +13,15 @@ public class TokenInt : Token {
         UL
     };
 
-    public TokenInt(Int64 _val, Suffix _suffix, string _raw)
+    public TokenInt(Int64 _val, Suffix _suffix, String _raw)
         : base(TokenType.INT) {
         val = _val;
         suffix = _suffix;
         raw = _raw;
     }
 
-    public override string ToString() {
-        string str = type.ToString();
+    public override String ToString() {
+        String str = type.ToString();
         switch (suffix) {
         case Suffix.L:
             str += "(long)";
@@ -39,7 +39,7 @@ public class TokenInt : Token {
     }
 
     public readonly Int64 val;
-    public readonly string raw;
+    public readonly String raw;
     public readonly Suffix suffix;
 }
 
@@ -59,7 +59,7 @@ public class FSAInt : FSA {
     };
 
     private Int64 val;
-    private string raw;
+    private String raw;
     private TokenInt.Suffix suffix;
     private State state;
 

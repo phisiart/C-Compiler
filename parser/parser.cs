@@ -97,7 +97,7 @@ public class Parser {
         return false;
     }
 
-    public static string GetIdentifierValue(Token token) {
+    public static String GetIdentifierValue(Token token) {
         if (token.type == TokenType.IDENTIFIER) {
             return ((TokenIdentifier)token).val;
         } else {
@@ -105,7 +105,7 @@ public class Parser {
         }
     }
 
-    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out string id) {
+    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out String id) {
         if (src[begin].type == TokenType.IDENTIFIER) {
             id = ((TokenIdentifier)src[begin]).val;
             return begin + 1;
@@ -115,7 +115,7 @@ public class Parser {
         }
     }
 
-    public static List<Token> GetTokensFromString(string src) {
+    public static List<Token> GetTokensFromString(String src) {
         Scanner lex = new Scanner();
         lex.src = src;
         lex.Lex();

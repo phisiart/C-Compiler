@@ -110,11 +110,11 @@ namespace AST {
     }
 
     public class Variable : Expr {
-        public Variable(ExprType _type, string _name)
+        public Variable(ExprType _type, String _name)
             : base(_type) {
             name = _name;
         }
-        public readonly string name;
+        public readonly String name;
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(name);
@@ -303,7 +303,7 @@ namespace AST {
             value = _value;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return "Int32(" + value + ")";
         }
         public readonly Int32 value;
@@ -324,7 +324,7 @@ namespace AST {
             value = _value;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return "uint(" + value + ")";
         }
         public readonly UInt32 value;
@@ -345,7 +345,7 @@ namespace AST {
             value = _value;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return this.type.ToString() + "(" + value + ")";
         }
         public readonly UInt32 value;
@@ -368,7 +368,7 @@ namespace AST {
             : base(new TFloat(true)) {
             value = _value;
         }
-        public override string ToString() {
+        public override String ToString() {
             return "float(" + value + ")";
         }
         public readonly Single value;
@@ -379,7 +379,7 @@ namespace AST {
         public override Reg CGenValue(Env env, CGenState state) {
             byte[] bytes = BitConverter.GetBytes(value);
             Int32 intval = BitConverter.ToInt32(bytes, 0);
-            string name = state.CGenLongConst(intval);
+            String name = state.CGenLongConst(intval);
             state.FLDS(name);
             return Reg.ST0;
         }
@@ -393,7 +393,7 @@ namespace AST {
             : base(new TDouble(true)) {
             value = _value;
         }
-        public override string ToString() {
+        public override String ToString() {
             return "double(" + value + ")";
         }
         public readonly Double value;
@@ -405,21 +405,21 @@ namespace AST {
             byte[] bytes = BitConverter.GetBytes(value);
             Int32 first_int = BitConverter.ToInt32(bytes, 0);
             Int32 second_int = BitConverter.ToInt32(bytes, 4);
-            string name = state.CGenLongLongConst(first_int, second_int);
+            String name = state.CGenLongLongConst(first_int, second_int);
             state.FLDL(name);
             return Reg.ST0;
         }
     }
 
     public class ConstStringLiteral : Constant {
-        public ConstStringLiteral(string _value)
+        public ConstStringLiteral(String _value)
             : base(new TPointer(new TChar(true), true)) {
             value = _value;
         }
-        public readonly string value;
+        public readonly String value;
 
         public override Reg CGenValue(Env env, CGenState state) {
-            string name = state.CGenString(value);
+            String name = state.CGenString(value);
             state.MOVL(name, Reg.EAX);
             return Reg.EAX;
         }

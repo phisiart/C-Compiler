@@ -110,12 +110,12 @@ namespace AST {
             // output: Scope
             // returns a new scope with everything the same as this, excpet for a new entry
             // 
-            public Scope PushEntry(EntryKind loc, string name, ExprType type) {
+            public Scope PushEntry(EntryKind loc, String name, ExprType type) {
                 Scope scope = new Scope(this);
                 switch (loc) {
                 case EntryKind.STACK:
-                    scope.scope_stack_offset += type.SizeOf;
-                    scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.Alignment);
+                    scope.scope_stack_offset += type.size_of;
+                    scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.alignment);
                     scope.scope_stack_entries.Add(new Utils.StoreEntry(name, type, scope.scope_stack_offset));
                     break;
                 case EntryKind.GLOBAL:
@@ -137,7 +137,7 @@ namespace AST {
             // output: Environment
             // return a new environment which adds a enum value
             // 
-            public Scope PushEnum(string name, ExprType type, Int32 value) {
+            public Scope PushEnum(String name, ExprType type, Int32 value) {
                 Scope scope = new Scope(this);
                 scope.scope_enum_entries.Add(new Utils.StoreEntry(name, type, value));
                 return scope;
@@ -165,7 +165,7 @@ namespace AST {
             // output: Entry
             // search for a symbol in the current scope
             // 
-            public Entry Find(string name) {
+            public Entry Find(String name) {
                 Utils.StoreEntry store_entry;
 
                 // search the enum entries
@@ -200,16 +200,16 @@ namespace AST {
             // Dump
             // ====
             // input: depth, indent
-            // output: string
+            // output: String
             // dumps the content in this level
             // 
-            public string Dump(Int32 depth, string single_indent) {
-                string indent = "";
+            public String Dump(Int32 depth, String single_indent) {
+                String indent = "";
                 for (; depth > 0; depth--) {
                     indent += single_indent;
                 }
 
-                string str = "";
+                String str = "";
                 foreach (Utils.StoreEntry entry in scope_curr_func.args) {
                     str += indent;
                     str += "[%ebp + " + entry.entry_offset + "] " + entry.entry_name + " : " + entry.entry_type.ToString() + "\n";
@@ -293,7 +293,7 @@ namespace AST {
         // ouput: Environment
         // return a new environment which adds a symbol entry
         // 
-        public Env PushEntry(EntryKind loc, string name, ExprType type) {
+        public Env PushEntry(EntryKind loc, String name, ExprType type) {
             // note the nested copy constructor. this is because the constructor would reverse the elements.
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEntry(loc, name, type);
@@ -307,7 +307,7 @@ namespace AST {
         // output: Environment
         // return a new environment which adds a enum value
         // 
-        public Env PushEnum(string name, ExprType type, Int32 value) {
+        public Env PushEnum(String name, ExprType type, Int32 value) {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(env_scopes));
             Scope top = scopes.Pop().PushEnum(name, type, value);
             scopes.Push(top);
@@ -347,7 +347,7 @@ namespace AST {
             return env_scopes.Peek().scope_stack_offset;
         }
 
-        public Entry Find(string name) {
+        public Entry Find(String name) {
             Entry entry = null;
             foreach (Scope scope in env_scopes) {
                 if ((entry = scope.Find(name)) != null) {
@@ -357,7 +357,7 @@ namespace AST {
 			return new Entry(EntryKind.NOT_FOUND, new TVoid(), 0);
         }
 
-        public Entry FindInCurrentScope(string name) {
+        public Entry FindInCurrentScope(String name) {
             return env_scopes.Peek().Find(name);
         }
 
@@ -365,8 +365,8 @@ namespace AST {
             return env_scopes.Count == 1;
         }
 
-        public string Dump() {
-            string str = "";
+        public String Dump() {
+            String str = "";
             Int32 depth = 0;
             foreach (Scope scope in env_scopes) {
                 str += scope.Dump(depth, "  ");

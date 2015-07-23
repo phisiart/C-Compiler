@@ -15,10 +15,10 @@ namespace SyntaxTree {
 
 
     public class GotoStatement : Statement {
-        public GotoStatement(string _label) {
+        public GotoStatement(String _label) {
             goto_label = _label;
         }
-        public readonly string goto_label;
+        public readonly String goto_label;
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(goto_label));
 		}
@@ -302,11 +302,11 @@ namespace SyntaxTree {
 
 
 	public class LabeledStatement : Statement {
-        public LabeledStatement(string _label, Statement _stmt) {
+        public LabeledStatement(String _label, Statement _stmt) {
             label = _label;
             stmt = _stmt;
         }
-        public readonly string label;
+        public readonly String label;
         public readonly Statement stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {

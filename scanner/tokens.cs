@@ -16,7 +16,7 @@ public class Token {
         type = _type;
     }
 
-    public override string ToString() {
+    public override String ToString() {
         return type.ToString();
     }
     public readonly TokenType type;

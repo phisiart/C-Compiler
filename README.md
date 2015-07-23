@@ -1,5 +1,5 @@
 C Compiler in C#
-=
+===
 
 This intends to be a full ANSI C compiler. It generates x86 (32-bit) assembly code in linux. The goal is to produce `.s` files that `gcc`'s assembler and linker could directly use.
 
@@ -17,3 +17,18 @@ This intends to be a full ANSI C compiler. It generates x86 (32-bit) assembly co
 
 ### 4. Code Generator - round 20%
 * Generates x86 assembly code.
+
+### About environment change in expressions
+I thought that the environment shouldn't change (no new type or object introduced inside an expression). That now seems not correct.
+
+Consider this:
+
+    int size = sizeof(struct A { int a; });
+    // a new type introduced insize a 'sizeof' expression.
+    
+    void *ptr = (struct B { int b; } *)0x0;
+    // a new type introduced insize a type-cast expression.
+    
+    struct A a = { 3 };
+    struct B b = { 4 };
+    // these new types can also be referred to afterwards, but only in the same scope.

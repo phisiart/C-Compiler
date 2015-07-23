@@ -21,7 +21,7 @@ using SyntaxTree;
 // 1. This grammar is LL(1)
 // 2. identifier shouldn't be previously defined as a typedef_name
 //    this is to resolve the ambiguity of something like a * b
-// 3. first set : id, const, string, '('
+// 3. first set : id, const, String, '('
 //
 public class _primary_expression : ParseRule {
     public static Boolean Test() {
@@ -51,7 +51,7 @@ public class _primary_expression : ParseRule {
             return false;
         }
 
-        src = Parser.GetTokensFromString("\"string\"");
+        src = Parser.GetTokensFromString("\"String\"");
         current = Parse(src, 0, out expr);
         if (current == -1) {
             return false;
@@ -69,7 +69,7 @@ public class _primary_expression : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
 
         // 1. match identifier
-        string var_name = Parser.GetIdentifierValue(src[begin]);
+        String var_name = Parser.GetIdentifierValue(src[begin]);
         if (var_name != null) {
             if (!ParserEnvironment.HasTypedefName(var_name)) {
                 expr = new Variable(var_name);
@@ -101,7 +101,7 @@ public class _primary_expression : ParseRule {
             return begin + 1;
         }
 
-        // 3. match string literal
+        // 3. match String literal
         if (src[begin].type == TokenType.STRING) {
             expr = new StringLiteral(((TokenString)src[begin]).val);
             return begin + 1;
@@ -480,7 +480,7 @@ public class _postfix_expression : ParseRule {
                     expr = null;
                     return -1;
                 }
-                string attrib = ((TokenIdentifier)src[current]).val;
+                String attrib = ((TokenIdentifier)src[current]).val;
                 current++;
 
                 // successful match
@@ -494,7 +494,7 @@ public class _postfix_expression : ParseRule {
                 if (src[current].type != TokenType.IDENTIFIER) {
                     return -1;
                 }
-                string pattrib = ((TokenIdentifier)src[current]).val;
+                String pattrib = ((TokenIdentifier)src[current]).val;
                 current++;
 
                 // successful match
@@ -567,7 +567,7 @@ public class _argument_expression_list : ParseRule {
 //
 // first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
 //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = { id const string ( ++ -- & * + - ~ ! sizeof }
+//           = { id const String ( ++ -- & * + - ~ ! sizeof }
 //
 public class _unary_expression : ParseRule {
     public static Boolean Test() {

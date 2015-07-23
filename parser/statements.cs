@@ -418,7 +418,7 @@ public class _labeled_statement : ParseRule {
             return current;
 
         } else if (src[begin].type == TokenType.IDENTIFIER) {
-            string label = ((TokenIdentifier)src[begin]).val;
+            String label = ((TokenIdentifier)src[begin]).val;
             current = begin + 1;
 
             // match ':'

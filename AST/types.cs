@@ -79,7 +79,7 @@ namespace AST {
      
      */
 
-    public class ExprType {
+    public abstract class ExprType {
         public enum Kind {
             ERROR,
             VOID,
@@ -102,16 +102,12 @@ namespace AST {
             INIT_LIST,
         }
 
-        public ExprType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile) {
-            is_const = _is_const;
-            is_volatile = _is_volatile;
-            kind = _expr_type;
-            size_of = _size_of;
-            alignment = _alignment;
-        }
-
-        public static ExprType CreateInitList() {
-            return new ExprType(Kind.INIT_LIST, 0, 0, true, false);
+        public ExprType(Kind kind, Int32 size_of, Int32 alignment, Boolean is_const, Boolean is_volatile) {
+            this.is_const = is_const;
+            this.is_volatile = is_volatile;
+            this.kind = kind;
+            this.size_of = size_of;
+            this.alignment = alignment;
         }
 
         public static Int32 SIZEOF_CHAR = 1;
@@ -133,8 +129,8 @@ namespace AST {
         public virtual Boolean IsIntegral() { return false; }
         public virtual Boolean IsScalar() { return false; }
         public virtual Boolean EqualType(ExprType other) { return false; }
-        public string DumpQualifiers() {
-            string str = "";
+        public String DumpQualifiers() {
+            String str = "";
             if (is_const) {
                 str += "const ";
             }
@@ -144,21 +140,21 @@ namespace AST {
             return str;
         }
 
-        public virtual ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return null;
-        }
+        public abstract ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile);
 
-        public Int32 SizeOf {
-            get { return size_of; }
-        }
-        public Int32 Alignment {
-            get { return alignment; }
-        }
-        protected Int32 size_of;
-        protected Int32 alignment;
+        public readonly Int32 size_of;
+        public readonly Int32 alignment;
         public readonly Boolean is_const;
         public readonly Boolean is_volatile;
 
+    }
+
+    public class TInitList : ExprType {
+        public TInitList()
+            : base(Kind.INIT_LIST, 0, 0, true, true) { }
+        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
+            throw new InvalidOperationException();
+        }
     }
 
     public class TVoid : ExprType {
@@ -168,7 +164,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TVoid(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "void";
         }
     }
@@ -206,7 +202,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TChar(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "char";
         }
     }
@@ -217,7 +213,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUChar(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned char";
         }
     }
@@ -228,7 +224,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TShort(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "short";
         }
     }
@@ -239,7 +235,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TUShort(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned short";
         }
     }
@@ -250,7 +246,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TLong(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "long";
         }
     }
@@ -261,7 +257,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TULong(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "unsigned long";
         }
     }
@@ -272,7 +268,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TFloat(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "float";
         }
     }
@@ -283,7 +279,7 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             return new TDouble(_is_const, _is_volatile);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "double";
         }
     }
@@ -303,7 +299,7 @@ namespace AST {
         public override Boolean EqualType(ExprType other) {
             return other.kind == Kind.POINTER && ((TPointer)other).ref_t.EqualType(ref_t);
         }
-        public override string ToString() {
+        public override String ToString() {
             return DumpQualifiers() + "ptr<" + ref_t.ToString() + ">";
         }
     }
@@ -313,7 +309,7 @@ namespace AST {
     // 
     public class TIncompleteArray : ExprType {
         public TIncompleteArray(ExprType _elem_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(Kind.ARRAY, 0, _elem_type.Alignment, _is_const, _is_volatile) {
+            : base(Kind.ARRAY, 0, _elem_type.alignment, _is_const, _is_volatile) {
             array_elem_type = _elem_type;
         }
 
@@ -325,7 +321,7 @@ namespace AST {
             return base.EqualType(other);
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return array_elem_type.ToString() + "[]";
         }
 
@@ -333,36 +329,40 @@ namespace AST {
     }
 
     public class TArray : ExprType {
-        public TArray(ExprType _elem_type, Int32 _nelems, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(Kind.ARRAY, _elem_type.SizeOf * _nelems, _elem_type.Alignment, _is_const, _is_volatile) {
-            array_elem_type = _elem_type;
-            array_nelems = _nelems;
+        public TArray(ExprType elem_type, Int32 num_elems, Boolean is_const = false, Boolean is_volatile = false)
+            : base(Kind.ARRAY, elem_type.size_of * num_elems, elem_type.alignment, is_const, is_volatile) {
+            this.elem_type = elem_type;
+            this.num_elems = num_elems;
         }
 
-        public readonly ExprType array_elem_type;
-        public readonly Int32    array_nelems;
+        public readonly ExprType elem_type;
+        public readonly Int32    num_elems;
 
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TArray(array_elem_type, array_nelems, _is_const, _is_volatile);
+            return new TArray(elem_type, num_elems, _is_const, _is_volatile);
         }
 
         public override Boolean EqualType(ExprType other) {
-            return other.kind == Kind.ARRAY && ((TArray)other).array_elem_type.EqualType(array_elem_type);
+            return other.kind == Kind.ARRAY && ((TArray)other).elem_type.EqualType(elem_type);
         }
 
-        public override string ToString() {
-            return "arr<" + array_nelems + ", " + array_elem_type.ToString() + ">";
+        public override String ToString() {
+            return $"Arr[{num_elems}, {elem_type.ToString()}]";
         }
 
     }
     
 	public class TIncompleteStruct : ExprType {
-		public TIncompleteStruct(string _name, Boolean _is_const = false, Boolean _is_volatile = false)
-			: base(Kind.INCOMPLETE_STRUCT, 0, 0, _is_const, _is_volatile) {
-			struct_name = _name;
+		public TIncompleteStruct(String name, Boolean is_const = false, Boolean is_volatile = false)
+			: base(Kind.INCOMPLETE_STRUCT, 0, 0, is_const, is_volatile) {
+			this.name = name;
 		}
-		public readonly string struct_name;
-	}
+		public readonly String name;
+
+        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
+            return new TIncompleteStruct(name, is_const, is_volatile);
+        }
+    }
 
     // class TStruct
     // =============
@@ -375,25 +375,25 @@ namespace AST {
             attribs = _attribs;
         }
 
-        public static TStruct Create(List<Tuple<string, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
+        public static TStruct Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
             List<Utils.StoreEntry> attribs = new List<Utils.StoreEntry>();
             Int32 offset = 0;
             Int32 alignment = 0;
-            foreach (Tuple<string, ExprType> _attrib in _attribs) {
-                Int32 curr_align = _attrib.Item2.Alignment;
+            foreach (Tuple<String, ExprType> _attrib in _attribs) {
+                Int32 curr_align = _attrib.Item2.alignment;
                 if (curr_align > alignment) {
                     alignment = curr_align;
                 }
                 offset = Utils.RoundUp(offset, curr_align);
                 attribs.Add(new Utils.StoreEntry(_attrib.Item1, _attrib.Item2, offset));
-                offset += _attrib.Item2.SizeOf;
+                offset += _attrib.Item2.size_of;
             }
             offset = Utils.RoundUp(offset, alignment);
             return new TStruct(attribs, offset, alignment, _is_const, _is_volatile);
         }
         
-        public string Dump(Boolean dump_attribs) {
-            string str = "struct (size = " + SizeOf + ")";
+        public String Dump(Boolean dump_attribs) {
+            String str = "struct (size = " + size_of + ")";
             if (dump_attribs) {
                 str += "\n";
                 foreach (Utils.StoreEntry attrib in attribs) {
@@ -407,8 +407,8 @@ namespace AST {
             return new TStruct(attribs, size_of, alignment, _is_const, _is_volatile);
         }
 
-        public override string ToString() {
-            string str = DumpQualifiers() + "struct { ";
+        public override String ToString() {
+            String str = DumpQualifiers() + "struct { ";
             foreach (Utils.StoreEntry attrib in attribs) {
                 str += attrib.entry_name + " : " + attrib.entry_type.ToString() + "; ";
             }
@@ -426,15 +426,15 @@ namespace AST {
     // stores the names and types of attributes
     // 
     public class TUnion : ExprType {
-        public TUnion(List<Tuple<string, ExprType>> _attribs, Int32 _size_of, Boolean _is_const = false, Boolean _is_volatile = false)
+        public TUnion(List<Tuple<String, ExprType>> _attribs, Int32 _size_of, Boolean _is_const = false, Boolean _is_volatile = false)
             : base(Kind.UNION, _size_of, _size_of, _is_const, _is_volatile) {
             attribs = _attribs;
         }
 
-        public static TUnion Create(List<Tuple<string, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
+        public static TUnion Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
             Int32 size_of;
             if (_attribs.Count != 0) {
-                size_of = _attribs.Max(x => x.Item2.SizeOf);
+                size_of = _attribs.Max(x => x.Item2.size_of);
             } else {
                 size_of = 0;
             }
@@ -442,39 +442,43 @@ namespace AST {
         }
 
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TUnion(attribs, SizeOf, _is_const, _is_volatile);
+            return new TUnion(attribs, size_of, _is_const, _is_volatile);
         }
 
-        public string Dump(Boolean dump_attribs) {
-            string str = "union (size = " + SizeOf + ")";
+        public String Dump(Boolean dump_attribs) {
+            String str = "union (size = " + size_of + ")";
             if (dump_attribs) {
                 str += "\n";
-                foreach (Tuple<string, ExprType> attrib in attribs) {
+                foreach (Tuple<String, ExprType> attrib in attribs) {
                     str += "  " + attrib.Item1 + " : " + attrib.Item2.ToString() + "\n";
                 }
             }
             return str;
         }
 
-        public override string ToString() {
-            string str = DumpQualifiers() + "union { ";
-            foreach (Tuple<string, ExprType> attrib in attribs) {
+        public override String ToString() {
+            String str = DumpQualifiers() + "union { ";
+            foreach (Tuple<String, ExprType> attrib in attribs) {
                 str += attrib.Item1 + " : " + attrib.Item2.ToString() + "; ";
             }
             str += "}";
             return str;
         }
 
-        public readonly List<Tuple<string, ExprType>> attribs;
+        public readonly List<Tuple<String, ExprType>> attribs;
     }
 
 	public class TIncompleteUnion : ExprType {
-		public TIncompleteUnion(string _name, Boolean _is_const = false, Boolean _is_volatile = false)
-			: base(Kind.INCOMPLETE_UNION, 0, 0, _is_const, _is_volatile) {
-			union_name = _name;
+		public TIncompleteUnion(String name, Boolean is_const = false, Boolean is_volatile = false)
+			: base(Kind.INCOMPLETE_UNION, 0, 0, is_const, is_volatile) {
+			this.name = name;
 		}
-		public readonly string union_name;
-	}
+		public readonly String name;
+
+        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volateil) {
+            return new TIncompleteUnion(name, is_const, is_volateil);
+        }
+    }
 
     // class TFunction
     // ===============
@@ -491,17 +495,22 @@ namespace AST {
             ret_type = _ret_type;
             varargs = _varargs;
         }
-        public static TFunction Create(ExprType _ret_type, List<Tuple<string, ExprType>> _args, Boolean _varargs) {
+
+        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
+            return new TFunction(ret_type, args, size_of, alignment, varargs);
+        }
+
+        public static TFunction Create(ExprType _ret_type, List<Tuple<String, ExprType>> _args, Boolean _varargs) {
             List<Utils.StoreEntry> args = new List<Utils.StoreEntry>();
             Int32 regsz = SIZEOF_LONG; // 32-bit machine: Int32 = 4 bytes
             Int32 offset = 2 * regsz;  // first parameter should be at %ebp + 8
             Int32 alignment = regsz;
-            foreach (Tuple<string, ExprType> arg in _args) {
+            foreach (Tuple<String, ExprType> arg in _args) {
                 args.Add(new Utils.StoreEntry(arg.Item1, arg.Item2, offset));
-                offset += arg.Item2.SizeOf;
+                offset += arg.Item2.size_of;
 
                 // even though the args are a bunch of chars, they still need to be 4-byte aligned.
-                Int32 curr_align = Math.Max(regsz, arg.Item2.Alignment);
+                Int32 curr_align = Math.Max(regsz, arg.Item2.alignment);
                 offset = (offset + curr_align - 1) & ~(curr_align - 1);
 
                 if (curr_align > alignment) {
@@ -512,8 +521,8 @@ namespace AST {
             return new TFunction(_ret_type, args, offset, alignment, _varargs);
         }
 
-        public string Dump(Boolean dump_args = false) {
-            string str = "function";
+        public String Dump(Boolean dump_args = false) {
+            String str = "function";
             if (dump_args) {
                 str += "\n";
                 foreach (Utils.StoreEntry arg in args) {
@@ -523,8 +532,8 @@ namespace AST {
             return str;
         }
 
-        public override string ToString() {
-            string str = "";
+        public override String ToString() {
+            String str = "";
             for (Int32 i = 0; i < args.Count; ++i) {
                 if (i != 0) {
                     str += ", ";

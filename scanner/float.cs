@@ -24,8 +24,8 @@ public class TokenFloat : Token {
     public readonly String source;
     public readonly Suffix suffix;
 
-    public override string ToString() {
-        string str = type.ToString();
+    public override String ToString() {
+        String str = type.ToString();
         switch (suffix) {
         case Suffix.F:
             str += "(float)";
@@ -61,7 +61,7 @@ public class FSAFloat : FSA {
         DPL
     };
 
-    private string raw;
+    private String raw;
     private Int64 int_part;
     private Int64 frac_part;
     private Int64 frac_count;

@@ -21,14 +21,14 @@ namespace AST {
     }
 
     public class FuncDef : ExternDecln {
-        public FuncDef(string _name, Decln.SCS _scs, TFunction _type, Stmt _stmt) {
+        public FuncDef(String _name, Decln.SCS _scs, TFunction _type, Stmt _stmt) {
             func_name = _name;
             func_scs  = _scs;
             func_type = _type;
             func_stmt = _stmt;
         }
 
-        public override string ToString() {
+        public override String ToString() {
             return "fn " + func_name + " : " + func_type.ToString();
         }
 
@@ -72,7 +72,7 @@ namespace AST {
             state.NEWLINE();
         }
 
-        public readonly string        func_name;
+        public readonly String        func_name;
         public readonly Decln.SCS func_scs;
         public readonly TFunction     func_type;
         public readonly Stmt          func_stmt;

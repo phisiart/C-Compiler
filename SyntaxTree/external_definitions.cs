@@ -52,7 +52,7 @@ namespace SyntaxTree {
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
-            Tuple<AST.Env, AST.ExprType, string> r_declr = func_declr.WrapExprType(env, base_type);
+            Tuple<AST.Env, AST.ExprType, String> r_declr = func_declr.WrapExprTypeEnv(env, base_type);
             env = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
 
@@ -64,7 +64,7 @@ namespace SyntaxTree {
                 return null;
             }
 
-            string name = r_declr.Item3;
+            String name = r_declr.Item3;
 
             switch (scs) {
             case AST.Decln.SCS.AUTO:

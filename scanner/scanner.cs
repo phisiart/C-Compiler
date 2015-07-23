@@ -16,7 +16,7 @@ public class Scanner {
         };
     }
 
-    public void OpenFile(string file_name) {
+    public void OpenFile(String file_name) {
         if (File.Exists(file_name)) {
             src = File.ReadAllText(file_name);
         } else {
@@ -64,13 +64,13 @@ public class Scanner {
         tokens.Add(new EmptyToken());
     }
 
-    public override string ToString() {
-        string str = "";
+    public override String ToString() {
+        String str = "";
         tokens.ForEach(token => str += token.ToString() + "\n");
         return str;
     }
 
-    public string src;
+    public String src;
     private List<FSA> fsas;
     public List<Token> tokens;
 

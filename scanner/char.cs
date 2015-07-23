@@ -5,14 +5,14 @@
 // A character constant
 // 
 public class TokenCharConst : Token {
-    public TokenCharConst(string _raw, Char _val)
+    public TokenCharConst(String _raw, Char _val)
         : base(TokenType.CHAR) {
         raw = _raw;
         val = _val;
     }
-    public readonly string raw;
+    public readonly String raw;
     public readonly Char val;
-    public override string ToString() {
+    public override String ToString() {
         return type.ToString() + ": " + "\'" + raw + "\'" + "\n\'" + val + "\'";
     }
 }
@@ -26,10 +26,10 @@ public class TokenCharConst : Token {
 // There are multiple ways to represent a character:
 // * A normal character : any character other than \\ \n or <quote>
 //     Note that <quote> might be \' or \" depending on the context.
-//     For example, inside a string, single quote are allowed, which means that the following code is legal:
+//     For example, inside a String, single quote are allowed, which means that the following code is legal:
 //       Char *str = "single quote here >>> ' <<< see that?";
 
-//     However, if we need a double quote inside a string, we have to use an escape character, like this:
+//     However, if we need a double quote inside a String, we have to use an escape character, like this:
 //       Char *str = "double quote needs to be escaped >>> \" <<<";
 //
 //     Inside a Char, double quotes are allowed while single quotes need to be escaped.
@@ -62,11 +62,11 @@ public class FSAChar : FSA {
     }
 
     private State state;
-    private string scanned;
+    private String scanned;
     
     // quote : Char
     // ============
-    // \' in a Char, and \" in a string.
+    // \' in a Char, and \" in a String.
     private Char quote;
 
     public FSAChar(Char _quote) {
@@ -102,10 +102,10 @@ public class FSAChar : FSA {
 
 
 
-    // RetrieveRaw : () -> string
+    // RetrieveRaw : () -> String
     // ==========================
     // 
-    public string RetrieveRaw() {
+    public String RetrieveRaw() {
         return scanned.Substring(0, scanned.Length - 1);
     }
 
@@ -275,7 +275,7 @@ public class FSACharConst : FSA {
 
     private State state;
     private Char val;
-    private string raw;
+    private String raw;
     private FSAChar fsachar;
 
     public FSACharConst() {

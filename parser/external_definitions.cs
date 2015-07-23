@@ -111,7 +111,7 @@ public class _function_definition : ParseRule {
         DeclnSpecs specs;
         Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclnSpecs(new List<StorageClassSpec>(), new List<TypeSpecifier>(), new List<TypeQualifier>());
+            specs = new DeclnSpecs(new List<StorageClassSpec>(), new List<TypeSpec>(), new List<TypeQual>());
             current = begin;
         }
 
