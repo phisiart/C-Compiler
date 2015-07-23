@@ -19,13 +19,15 @@ int a = ceil(3.2);
 
 After lexical analysis, the code will be tranformed into these tokens:
 
-* "int": keyword(int)
-* "a": identifier("a")
-* "=": operator(assignment)
-* "ceil": identifier("ceil")
-* "(": operator(open parenthesis)
-* "3.2": float(3.2, no suffix, indicating that it is a double)
-* ")": operator(close parenthesis)
+| Source | Token kind | Data |
+|:------:|:----------:|:----:|
+| `int`  | Keyword    | int  |
+| `a`    | Identifier | `"a"` |
+| `=`    | Operator   | assignment |
+| `ceil` | Identifier | `"ceil"` |
+| `(`    | Operator   | open parenthesis |
+| `3.2`  | Float      | 3.2, no suffix, indicating that is a double |
+| `)`    | Operator   | close parenthesis |
 
 Note that each token has a type, and some type-specific data: for a keyword, you need to know exactly which keyword it is; for a floating number, you need to know what number it is, and whether it's a float or a double; etc.
 
