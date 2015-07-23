@@ -23,12 +23,14 @@ I thought that the environment shouldn't change (no new type or object introduce
 
 Consider this:
 
-    int size = sizeof(struct A { int a; });
-    // a new type introduced insize a 'sizeof' expression.
-    
-    void *ptr = (struct B { int b; } *)0x0;
-    // a new type introduced insize a type-cast expression.
-    
-    struct A a = { 3 };
-    struct B b = { 4 };
-    // these new types can also be referred to afterwards, but only in the same scope.
+```C
+int size = sizeof(struct A { int a; });
+// a new type introduced insize a 'sizeof' expression.
+
+void *ptr = (struct B { int b; } *)0x0;
+// a new type introduced insize a type-cast expression.
+
+struct A a = { 3 };
+struct B b = { 4 };
+// these new types can also be referred to afterwards, but only in the same scope.
+```
