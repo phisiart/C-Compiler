@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\cgen.cs" />
     <Compile Include="AST\declarations.cs" />
     <Compile Include="AST\environment.cs" />
@@ -79,7 +80,7 @@
     <Compile Include="SyntaxTree\statements.cs" />
     <Compile Include="SyntaxTree\const_expressions.cs" />
     <Compile Include="SyntaxTree\AssignmentOperators.cs" />
-    <Compile Include="SyntaxTree\binary_operators.cs" />
+    <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\unary_operators.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -554,6 +554,7 @@ namespace SyntaxTree {
     public class NullDeclarator : Declr {
         public NullDeclarator() : base("", new List<TypeModifier>()) { }
 
+        [Obsolete]
         public override Tuple<AST.Env, AST.ExprType, String> WrapExprTypeEnv(AST.Env env, AST.ExprType type) {
             return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
         }

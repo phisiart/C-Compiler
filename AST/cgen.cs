@@ -102,19 +102,67 @@ public class CGenState {
     }
 
     public void FSTS(Int32 imm, Reg to) {
-        FSTS(imm.ToString() + "(" + StrReg(to));
+        FSTS($"{imm}({StrReg(to)})");
+    }
+
+    /// <summary>
+    /// FSTPS: pop float from FPU stack, and store to {addr}.
+    /// </summary>
+    /// <param name="addr"></param>
+    public void FSTPS(String addr) {
+        os.WriteLine($"    fstps {addr}");
+    }
+
+    public void FSTPS(Int32 imm, Reg to) {
+        FSTPS($"{imm}({StrReg(to)})");
     }
 
     /// <summary>
     /// FSTL: store double from FPU stack.
     /// </summary>
-    /// <param name="addr"></param>
     public void FSTL(String addr) {
         os.WriteLine("    fstl " + addr);
     }
 
     public void FSTL(Int32 imm, Reg to) {
         FSTL(imm.ToString() + "(" + StrReg(to));
+    }
+
+    /// <summary>
+    /// FSTPL: pop from FPU and store double.
+    /// </summary>
+    public void FSTPL(String addr) {
+        os.WriteLine($"    fstpl {addr}");
+    }
+
+    public void FSTPL(Int32 imm, Reg to) {
+        FSTPL(imm.ToString() + "(" + StrReg(to));
+    }
+
+    /// <summary>
+    /// FADDP: pop operands from %st(0) and %st(1),
+    ///        push addition result back to %st(0).
+    /// </summary>
+    public void FADDP() => os.WriteLine("    faddp");
+
+    /// <summary>
+    /// FSUBP: pop operands from %st(0) and %st(1),
+    ///        push %st(0) / %st(1) back to %st(0).
+    /// </summary>
+    public void FSUBP() => os.WriteLine("    fsubp");
+
+    /// <summary>
+    /// FMULP: pop operands from %st(0) and %st(1), push multiplication result back to %st(0).
+    /// </summary>
+    public void FMULP() {
+        os.WriteLine("    fmulp");
+    }
+
+    /// <summary>
+    /// FDIVP: pop operands from %st(0) and %st(1), push %st(0) / %st(1) back to %st(0).
+    /// </summary>
+    public void FDIVP() {
+        os.WriteLine("    fdivp");
     }
 
     // PUSHL
@@ -282,6 +330,26 @@ public class CGenState {
         }
     }
 
+    public void CGenExpandStackBy4Bytes(String comment = "") {
+        stack_size += 4;
+        SUBL(4, Reg.ESP);
+    }
+
+    public void CGenExpandStackBy8Bytes(String comment = "") {
+        stack_size += 8;
+        SUBL(8, Reg.ESP);
+    }
+
+    public void CGenShrinkStackBy4Bytes(String comment = "") {
+        stack_size -= 4;
+        ADDL(4, Reg.ESP);
+    }
+
+    public void CGenShrinkStackBy8Bytes(String comment = "") {
+        stack_size -= 8;
+        ADDL(8, Reg.ESP);
+    }
+
     public void LEAVE() {
         //os.WriteLine("    leave # pop frame, restore %ebp");
         os.WriteLine("    leave");
@@ -299,6 +367,25 @@ public class CGenState {
     public void COMMENT(String comment) {
         os.WriteLine("    # " + comment);
     }
+
+    /// <summary>
+    /// ADDL: add long
+    /// </summary>
+    public void ADDL(String er, String ee, String comment = "") {
+        os.Write($"    addl {er}, {ee}");
+        if (comment == "") {
+            os.WriteLine();
+        } else {
+            os.WriteLine($" # {comment}");
+        }
+    }
+
+    public void ADDL(Int32 er, Reg ee, String comment = "") {
+        ADDL(er.ToString(), StrReg(ee), comment);
+    }
+
+    public void ADDL(Reg er, Reg ee, String comment = "")
+        => ADDL(StrReg(er), StrReg(ee), comment);
 
     /// <summary>
     /// SUBL: subtract long
@@ -371,6 +458,26 @@ public class CGenState {
     }
 
     /// <summary>
+    /// SARL er, ee (arithmetic shift)
+    /// ee = ee >> er (append sign bit)
+    /// </summary>
+    public void SARL(String er, String ee) {
+        os.WriteLine($"    sarl {er}, {ee}");
+    }
+
+    public void SARL(Reg er, Reg ee) => SARL(StrReg(er), StrReg(ee));
+
+    /// <summary>
+    /// SHRL er, ee (logical shift)
+    /// ee = ee >> er (append 0)
+    /// </summary>
+    public void SHRL(String er, String ee) {
+        os.WriteLine($"    shrl {er}, {ee}");
+    }
+
+    public void SHRL(Reg er, Reg ee) => SHRL(StrReg(er), StrReg(ee));
+
+    /// <summary>
     /// XORL er, ee
     /// ee = ee ^ er
     /// </summary>
@@ -381,6 +488,51 @@ public class CGenState {
     public void XORL(Reg er, Reg ee) {
         XORL(StrReg(er), StrReg(ee));
     }
+
+    /// <summary>
+    /// IMUL: signed multiplication. %edx:%eax = %eax * {addr}.
+    /// </summary>
+    public void IMUL(String addr) {
+        os.WriteLine($"    imul {addr}");
+    }
+
+    public void IMUL(Reg er) {
+        IMUL(StrReg(er));
+    }
+
+    /// <summary>
+    /// MUL: unsigned multiplication. %edx:%eax = %eax * {addr}.
+    /// </summary>
+    public void MUL(String addr) {
+        os.WriteLine($"    mul {addr}");
+    }
+
+    public void MUL(Reg er) {
+        MUL(StrReg(er));
+    }
+
+    /// <summary>
+    /// CLTD: used before division. clear %edx.
+    /// </summary>
+    public void CLTD() => os.WriteLine("    cltd");
+
+    /// <summary>
+    /// IDIVL: signed division. %eax = %edx:%eax / {addr}.
+    /// </summary>
+    public void IDIVL(String addr) {
+        os.WriteLine($"    idivl {addr}");
+    }
+
+    public void IDIVL(Reg er) => IDIVL(StrReg(er));
+
+    /// <summary>
+    /// IDIVL: unsigned division. %eax = %edx:%eax / {addr}.
+    /// </summary>
+    public void DIVL(String addr) {
+        os.WriteLine($"    divl {addr}");
+    }
+
+    public void DIVL(Reg er) => DIVL(StrReg(er));
 
 	public String CGenLongConst(Int32 val) {
 		String name = ".LC" + rodata_idx.ToString();
