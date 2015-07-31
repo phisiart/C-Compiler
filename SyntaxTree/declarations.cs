@@ -282,10 +282,9 @@ namespace SyntaxTree {
         public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
             AST.Expr ast_init = init.GetExpr(env);
 
-            Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprTypeEnv(env, type);
-            env = r_declr.Item1;
+            Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, type);
+            String name = r_declr.Item1;
             type = r_declr.Item2;
-            String name = r_declr.Item3;
 
             return new Tuple<AST.Env, AST.ExprType, AST.Expr, String>(env, type, ast_init, name);
         }
@@ -435,7 +434,7 @@ namespace SyntaxTree {
         // 
         [Obsolete]
         public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType ret_type) {
-            Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> r_params = param_type_list.GetParamTypes(env);
+            Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> r_params = param_type_list.GetParamTypesEnv(env);
             Boolean varargs = r_params.Item1;
             List<Tuple<AST.Env, String, AST.ExprType>> param_types = r_params.Item2;
 
@@ -581,13 +580,14 @@ namespace SyntaxTree {
         // Get Parameter Types
         // ===================
         // 
-        public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypes(AST.Env env) {
+        public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypesEnv(AST.Env env) {
             return Tuple.Create(
                 params_varargs,
                 params_inner_declns.ConvertAll(decln => {
-                    Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDeclnEnv(env);
-                    env = r_decln.Item1;
-                    return r_decln;
+                    Tuple<String, AST.ExprType> r_decln = decln.GetParamDecln(env);
+                    // Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDeclnEnv(env);
+                    // env = r_decln.Item1;
+                    return Tuple.Create(env, r_decln.Item1, r_decln.Item2);
                 })
             );
         }
@@ -914,10 +914,9 @@ namespace SyntaxTree {
 
             List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
             foreach (Declr declr in declrs) {
-                Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprTypeEnv(env, base_type);
-                env = r_declr.Item1;
+                Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, base_type);
+                String name = r_declr.Item1;
                 AST.ExprType type = r_declr.Item2;
-                String name = r_declr.Item3;
                 attribs.Add(new Tuple<String, AST.ExprType>(name, type));
             }
             return new Tuple<AST.Env, List<Tuple<String, AST.ExprType>>>(env, attribs);
@@ -943,12 +942,22 @@ namespace SyntaxTree {
         public readonly Declr decl;
 
         public Tuple<String, AST.ExprType> GetParamDecln(AST.Env env) {
+            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
+            // TODO: check environment
+            AST.Decln.SCS scs = r_specs.Item2;
+            AST.ExprType type = r_specs.Item3;
 
+            Tuple<String, AST.ExprType> r_declr = decl.GetNameAndType(env, type);
+            String name = r_declr.Item1;
+            type = r_declr.Item2;
+
+            return Tuple.Create(name, type);
         }
 
         // Get Parameter Declaration : env -> (env, name, type)
         // ====================================================
         // 
+        [Obsolete]
         public Tuple<AST.Env, String, AST.ExprType> GetParamDeclnEnv(AST.Env env) {
             Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
             env = r_specs.Item1;
@@ -1004,7 +1013,7 @@ namespace SyntaxTree {
         // TODO: check env
         public AST.ExprType GetExprType(AST.Env env) {
             AST.ExprType type = specs.GetExprTypeEnv(env).Item2;
-            return declr.WrapExprTypeEnv(env, type).Item2;
+            return declr.GetNameAndType(env, type).Item2;
         }
 
         [Obsolete]

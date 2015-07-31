@@ -535,46 +535,6 @@ namespace AST {
         protected Expr expr;
     }
 
-    public class Equal : Expr {
-        public Equal(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
-
-    public class Greater : Expr {
-        public Greater(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
-
-    public class LEqual : Expr {
-        public LEqual(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
-
-    public class Less : Expr {
-        public Less(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
-
     /// <summary>
     /// Integral Binary Operation
     /// </summary>
@@ -638,13 +598,4 @@ namespace AST {
         public readonly Expr rhs;
     }
 
-    public class NotEqual : Expr {
-        public NotEqual(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
 }

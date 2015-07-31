@@ -28,6 +28,7 @@ After lexical analysis, the code will be tranformed into these tokens:
 | `(`    | Operator   | open parenthesis |
 | `3.2`  | Float      | 3.2, no suffix, indicating that is a double |
 | `)`    | Operator   | close parenthesis |
+| `;`    | Operator   | semicolon |
 
 Note that each token has a type, and some type-specific data: for a keyword, you need to know exactly which keyword it is; for a floating number, you need to know what number it is, and whether it's a float or a double; etc.
 
@@ -40,6 +41,34 @@ Each kind of token has its unique pattern, making it recognizable by the program
 ### 3. Semantic Analysis - done
 * A type system to perform the C language implicit typecasts and other tasks.
 * An environment system to record the user defined symbols.
+
+### Environment
+To determine the semantics of a piece of code, we must examine it in the context.
+
+Take the following two pieces of code as an example.
+
+Code snippet 1:
+```C
+int a = 3;
+int b = 4;
+a * b;
+```
+
+Code snippet 2:
+```C
+typedef int a;
+a *b;
+```
+
+Both have a line `a * b;`, but they mean very different things. The first is a multiplication expression (though performing the multplication doesn't seem to do any good...), while the second is a declaration of a variable b.
+
+It turns out that the environment only has an impact on **identifiers** - we can't conclude what a given identifier refers to, until we're given an environment. So we need to maintain a data structure to record all user-defined identifiers.
+
+So, where could a new identifier come in?
+
+1. Declaration statements.
+
+    Obviously, the purpose of a declaration is just to introduce a new identifier. 
 
 ### 4. Code Generator - round 20%
 * Generates x86 assembly code.

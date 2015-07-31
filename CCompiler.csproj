@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\cgen.cs" />
+    <Compile Include="AST\ConstExpressions.cs" />
     <Compile Include="AST\declarations.cs" />
     <Compile Include="AST\environment.cs" />
     <Compile Include="AST\expressions.cs" />

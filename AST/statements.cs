@@ -225,16 +225,45 @@ namespace AST {
 	}
 
 	/// <summary>
-	/// If Statement
+	/// If Statement: if (cond) stmt;
+    /// If cond is non-zero, stmt is executed.
+    /// 
+    /// cond must be arithmetic or pointer type.
 	/// </summary>
 	public class IfStmt : Stmt {
-		public IfStmt(Expr _cond, Stmt _stmt) {
-			if_cond = _cond;
-			if_stmt = _stmt;
+		public IfStmt(Expr cond, Stmt stmt) {
+			this.cond = cond;
+			this.stmt = stmt;
 		}
-		public readonly Expr if_cond;
-		public readonly Stmt if_stmt;
-	}
+		public readonly Expr cond;
+		public readonly Stmt stmt;
+
+        public override void CGenStmt(Env env, CGenState state) {
+            switch (cond.type.kind) {
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.ULONG:
+                    // 1. %eax = cond
+                    if (cond.CGenValue(env, state) != Reg.EAX) {
+                        throw new InvalidProgramException();
+                    }
+
+                    // 2. if %eax == 0, jump out to label_idx.
+                    Int32 out_label = state.label_idx;
+                    state.JZ(out_label);
+                    state.label_idx++;
+
+                    // 3. stmt
+                    stmt.CGenStmt(env, state);
+
+                    // 4. print label
+                    state.CGenLabel(out_label);
+
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+    }
 
 	/// <summary>
 	/// If-else Statement

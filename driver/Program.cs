@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     3.25f;
     ""3.0"";
     c;
+    if (3) 4;
 }
                 ";
             scanner.Lex();

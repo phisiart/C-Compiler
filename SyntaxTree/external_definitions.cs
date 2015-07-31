@@ -52,8 +52,8 @@ namespace SyntaxTree {
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
-            Tuple<AST.Env, AST.ExprType, String> r_declr = func_declr.WrapExprTypeEnv(env, base_type);
-            env = r_declr.Item1;
+            Tuple<String, AST.ExprType> r_declr = func_declr.GetNameAndType(env, base_type);
+            String name = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
 
             AST.TFunction func_type;
@@ -63,8 +63,6 @@ namespace SyntaxTree {
                 Log.SemantError("Error: not a function");
                 return null;
             }
-
-            String name = r_declr.Item3;
 
             switch (scs) {
             case AST.Decln.SCS.AUTO:

@@ -51,6 +51,7 @@ public class CGenState {
 		rodata.WriteLine("    section .rodata");
 
 		rodata_idx = 0;
+        label_idx = 2;
         status = Status.NONE;
     }
 
@@ -129,7 +130,7 @@ public class CGenState {
     }
 
     /// <summary>
-    /// FSTPL: pop from FPU and store double.
+    /// FSTPL: pop from FPU and store *double*.
     /// </summary>
     public void FSTPL(String addr) {
         os.WriteLine($"    fstpl {addr}");
@@ -138,6 +139,16 @@ public class CGenState {
     public void FSTPL(Int32 imm, Reg to) {
         FSTPL(imm.ToString() + "(" + StrReg(to));
     }
+
+    /// <summary>
+    /// FSTP: copy %st(0) to dst, then pop %st(0).
+    /// </summary>
+    public void FSTP(String dst) {
+        os.WriteLine($"    fstp {dst}");
+    }
+
+    public void FSTP(Reg dst) => FSTP(StrReg(dst));
+
 
     /// <summary>
     /// FADDP: pop operands from %st(0) and %st(1),
@@ -238,6 +249,8 @@ public class CGenState {
     public void MOVZBL(Int32 offset, Reg from, Reg to) {
         MOVZBL(offset.ToString() + StrReg(from), StrReg(to));
     }
+
+    public void MOVZBL(Reg from, Reg to) => MOVZBL(StrReg(from), StrReg(to));
 
     /// <summary>
     /// MOVSBL: move a byte and sign-extend to a 4-byte long
@@ -534,6 +547,111 @@ public class CGenState {
 
     public void DIVL(Reg er) => DIVL(StrReg(er));
 
+    /// <summary>
+    /// CMPL: compare based on subtraction.
+    /// Note that the order is reversed, i.e. ee comp er.
+    /// </summary>
+    public void CMPL(String er, String ee) {
+        os.WriteLine($"    cmpl {er}, {ee}");
+    }
+
+    public void CMPL(Reg er, Reg ee) => CMPL(StrReg(er), StrReg(ee));
+
+    /// <summary>
+    /// SETE: set if equal to.
+    /// </summary>
+    public void SETE(String dst) {
+        os.WriteLine($"    sete {dst}");
+    }
+
+    public void SETE(Reg dst) => SETE(StrReg(dst));
+
+    /// <summary>
+    /// SETNE: set if not equal to.
+    /// </summary>
+    /// <param name="dst"></param>
+    public void SETNE(String dst) => os.WriteLine($"    setne {dst}");
+    public void SETNE(Reg dst) => SETNE(StrReg(dst));
+
+    /// <summary>
+    /// SETG: set if greater than (signed).
+    /// </summary>
+    public void SETG(String dst) {
+        os.WriteLine($"    setg {dst}");
+    }
+
+    public void SETG(Reg dst) => SETG(StrReg(dst));
+
+    /// <summary>
+    /// SETGE: set if greater or equal to (signed).
+    /// </summary>
+    public void SETGE(String dst) {
+        os.WriteLine($"    setge {dst}");
+    }
+
+    public void SETGE(Reg dst) => SETGE(StrReg(dst));
+
+    /// <summary>
+    /// SETL: set if less than (signed).
+    /// </summary>
+    public void SETL(String dst) {
+        os.WriteLine($"    setl {dst}");
+    }
+
+    public void SETL(Reg dst) => SETL(StrReg(dst));
+
+    /// <summary>
+    /// SETLE: set if less than or equal to (signed).
+    /// </summary>
+    public void SETLE(String dst) {
+        os.WriteLine($"    setle {dst}");
+    }
+
+    public void SETLE(Reg dst) => SETLE(StrReg(dst));
+
+    /// <summary>
+    /// SETB: set if below (unsigned).
+    /// </summary>
+    public void SETB(String dst) {
+        os.WriteLine($"    setb {dst}");
+    }
+
+    public void SETB(Reg dst) => SETB(StrReg(dst));
+
+    /// <summary>
+    /// SETNB: set if not below (unsigned).
+    /// </summary>
+    public void SETNB(String dst) {
+        os.WriteLine($"    setnb {dst}");
+    }
+
+    public void SETNB(Reg dst) => SETNB(StrReg(dst));
+
+    /// <summary>
+    /// SETA: set if above (unsigned).
+    /// </summary>
+    public void SETA(String dst) {
+        os.WriteLine($"    seta {dst}");
+    }
+
+    public void SETA(Reg dst) => SETA(StrReg(dst));
+
+    /// <summary>
+    /// SETNA: set if not above (unsigned).
+    /// </summary>
+    public void SETNA(String dst) {
+        os.WriteLine($"    setna {dst}");
+    }
+
+    public void SETNA(Reg dst) => SETNA(StrReg(dst));
+
+    /// <summary>
+    /// FUCOMIP: unordered comparison: %st(0) vs %st(1).
+    /// </summary>
+    public void FUCOMIP() => os.WriteLine("    fucomip %st(1), %st");
+
+    public void JZ(Int32 label) => os.WriteLine($"    jz .L{label}");
+
 	public String CGenLongConst(Int32 val) {
 		String name = ".LC" + rodata_idx.ToString();
 		rodata.WriteLine("    .align 4");
@@ -561,9 +679,14 @@ public class CGenState {
 		return name;
 	}
 
+    public void CGenLabel(String label) => os.WriteLine($"{label}:");
+
+    public void CGenLabel(Int32 label) => CGenLabel($".L{label}");
+
     private System.IO.StringWriter os;
 	private System.IO.StringWriter rodata;
 	private Int32 rodata_idx;
+    public Int32 label_idx;
 
     private Status status;
     private Int32 stack_size;

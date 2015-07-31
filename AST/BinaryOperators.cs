@@ -516,6 +516,8 @@ namespace AST {
     /// After semantic analysis, only two cases are possible:
     /// 1) long ^ long
     /// 2) ulong ^ ulong
+    /// 
+    /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
     public class Xor : BinaryIntegralOp {
         public Xor(Expr lhs, Expr rhs, ExprType type)
@@ -531,6 +533,8 @@ namespace AST {
     /// After semantic analysis, only two cases are possible:
     /// 1) long | long
     /// 2) ulong | ulong
+    /// 
+    /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
     public class BitwiseOr : BinaryIntegralOp {
         public BitwiseOr(Expr lhs, Expr rhs, ExprType type)
@@ -546,6 +550,8 @@ namespace AST {
     /// After semantic analysis, only two cases are possible:
     /// 1) long & long
     /// 2) ulong & ulong
+    /// 
+    /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
     public class BitwiseAnd : BinaryIntegralOp {
         public BitwiseAnd(Expr lhs, Expr rhs, ExprType type)
@@ -631,7 +637,107 @@ namespace AST {
     }
 
     /// <summary>
-    /// The "greater or equal to" operator can either take
+    /// Binary arithmetic comparison operation.
+    /// 
+    /// After semantic analysis, only four cases are possible:
+    /// 1) long op long
+    /// 2) ulong op ulong
+    /// 3) float op float
+    /// 4) double op double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public abstract class BinaryArithmeticComp : BinaryArithmeticOp {
+        public BinaryArithmeticComp(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public abstract void SetLong(CGenState state);
+        public abstract void SetULong(CGenState state);
+        public abstract void SetFloat(CGenState state);
+        public abstract void SetDouble(CGenState state);
+
+        public override void OperateLong(CGenState state) {
+            state.CMPL(Reg.EBX, Reg.EAX);
+            SetLong(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        public override void OperateULong(CGenState state) {
+            state.CMPL(Reg.EBX, Reg.EAX);
+            SetULong(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        public override void OperateFloat(CGenState state) {
+            // In the beginning, %st(0) = lhs, %st(1) = rhs.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(1)
+            // +-----+
+            // | lhs | <- %st(0)
+            // +-----+
+            // 
+
+            // 1. Do comparison between %st(0) and %st(1).
+            //    Pop one value from FPU stack.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(0)
+            // +-----+
+            // 
+            state.FUCOMIP();
+
+            // 2. Pop another value from FPU stack.
+            // 
+            // float stack:
+            // +-----+ empty
+            // 
+            state.FSTP(Reg.ST0);
+
+            // 3. Set bit based on comparison result.
+            SetFloat(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        public override void OperateDouble(CGenState state) {
+            // In the beginning, %st(0) = lhs, %st(1) = rhs.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(1)
+            // +-----+
+            // | lhs | <- %st(0)
+            // +-----+
+            // 
+
+            // 1. Do comparison between %st(0) and %st(1).
+            //    Pop one value from FPU stack.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(0)
+            // +-----+
+            // 
+            state.FUCOMIP();
+
+            // 2. Pop another value from FPU stack.
+            // 
+            // float stack:
+            // +-----+ empty
+            // 
+            state.FSTP(Reg.ST0);
+
+            // 3. Set bit based on comparison result.
+            SetDouble(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+    }
+
+    /// <summary>
+    /// The "greater than or equal to" operator can either take
     /// 1) integral- or 2) floating-type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
@@ -640,17 +746,133 @@ namespace AST {
     /// 2) ulong >= ulong
     /// 3) float >= float
     /// 4) double >= double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public class GEqual : BinaryArithmeticOp {
+    public class GEqual : BinaryArithmeticComp {
         public GEqual(Expr lhs, Expr rhs, ExprType type)
             : base(lhs, rhs, type) { }
-        public override void OperateLong(CGenState state) {
-        }
-        public override void OperateULong(CGenState state) {
-        }
-        public override void OperateFloat(CGenState state) {
-        }
-        public override void OperateDouble(CGenState state) {
-        }
+
+        public override void SetLong(CGenState state) => state.SETGE(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETNB(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETNB(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETNB(Reg.AL);
+    }
+
+    /// <summary>
+    /// The "greater than" operator can either take
+    /// 1) integral- or 2) floating-type operands.
+    /// 
+    /// After semantic analysis, pointer comparisons are converted into
+    ///   integer comparisons. So in AST, only four cases are possible:
+    /// 1) long > long
+    /// 2) ulong > ulong
+    /// 3) float > float
+    /// 4) double > double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public class Greater : BinaryArithmeticComp {
+        public Greater(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public override void SetLong(CGenState state) => state.SETG(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETA(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETA(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETA(Reg.AL);
+    }
+
+    /// <summary>
+    /// The "less than or equal to" operator can either take
+    /// 1) integral- or 2) floating-type operands.
+    /// 
+    /// After semantic analysis, pointer comparisons are converted into
+    ///   integer comparisons. So in AST, only four cases are possible:
+    /// 1) long <= long
+    /// 2) ulong <= ulong
+    /// 3) float <= float
+    /// 4) double <= double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public class LEqual : BinaryArithmeticComp {
+        public LEqual(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public override void SetLong(CGenState state) => state.SETLE(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETNA(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETNA(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETNA(Reg.AL);
+    }
+
+    /// <summary>
+    /// The "less than" operator can either take
+    /// 1) integral- or 2) floating-type operands.
+    /// 
+    /// After semantic analysis, pointer comparisons are converted into
+    ///   integer comparisons. So in AST, only four cases are possible:
+    /// 1) long < long
+    /// 2) ulong < ulong
+    /// 3) float < float
+    /// 4) double < double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public class Less : BinaryArithmeticComp {
+        public Less(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public override void SetLong(CGenState state) => state.SETL(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETB(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETB(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETB(Reg.AL);
+    }
+
+    /// <summary>
+    /// The "equal to" operator can either take
+    /// 1) integral- or 2) floating-type operands.
+    /// 
+    /// After semantic analysis, pointer comparisons are converted into
+    ///   integer comparisons. So in AST, only four cases are possible:
+    /// 1) long == long
+    /// 2) ulong == ulong
+    /// 3) float == float
+    /// 4) double == double
+    /// 
+    /// It's surprising that the C equal operator doesn't support structs and unions.
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public class Equal : BinaryArithmeticComp {
+        public Equal(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public override void SetLong(CGenState state) => state.SETE(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETE(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETE(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETE(Reg.AL);
+    }
+
+    /// <summary>
+    /// The "not equal to" operator can either take
+    /// 1) integral- or 2) floating-type operands.
+    /// 
+    /// After semantic analysis, pointer comparisons are converted into
+    ///   integer comparisons. So in AST, only four cases are possible:
+    /// 1) long != long
+    /// 2) ulong != ulong
+    /// 3) float != float
+    /// 4) double != double
+    /// 
+    /// It's surprising that the C equal operator doesn't support structs and unions.
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// </summary>
+    public class NotEqual : BinaryArithmeticComp {
+        public NotEqual(Expr lhs, Expr rhs, ExprType type)
+            : base(lhs, rhs, type) { }
+
+        public override void SetLong(CGenState state) => state.SETNE(Reg.AL);
+        public override void SetULong(CGenState state) => state.SETNE(Reg.AL);
+        public override void SetFloat(CGenState state) => state.SETNE(Reg.AL);
+        public override void SetDouble(CGenState state) => state.SETNE(Reg.AL);
     }
 }
