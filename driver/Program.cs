@@ -19,12 +19,17 @@ namespace driver {
 int foo() {
 	return 0;
 }
+struct S {
+    int a;
+};
 int main(int argc, char **argv) {
     int b = 3 * 4;
     char c;
     float local_variable_2;
     double local_variable_3;
     const int * const * volatile a[3][4];
+    struct S s;
+    s;
     b;
     foo();
     3.25f;

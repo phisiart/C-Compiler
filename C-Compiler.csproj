@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{2CCC585A-99DA-4F10-B008-923F77C58E0E}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>CCompiler</RootNamespace>
+    <AssemblyName>C-Compiler</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="AST\BinaryOperators.cs" />
+    <Compile Include="AST\ConstExpressions.cs" />
+    <Compile Include="AST\cgen.cs" />
+    <Compile Include="AST\declarations.cs" />
+    <Compile Include="AST\environment.cs" />
+    <Compile Include="AST\expressions.cs" />
+    <Compile Include="AST\external_declarations.cs" />
+    <Compile Include="AST\statements.cs" />
+    <Compile Include="AST\typecast.cs" />
+    <Compile Include="AST\types.cs" />
+    <Compile Include="AST\utils.cs" />
+    <Compile Include="SyntaxTree\AssignmentOperators.cs" />
+    <Compile Include="SyntaxTree\BinaryOperators.cs" />
+    <Compile Include="SyntaxTree\const_expressions.cs" />
+    <Compile Include="SyntaxTree\declarations.cs" />
+    <Compile Include="SyntaxTree\error.cs" />
+    <Compile Include="SyntaxTree\expressions.cs" />
+    <Compile Include="SyntaxTree\external_definitions.cs" />
+    <Compile Include="SyntaxTree\statements.cs" />
+    <Compile Include="SyntaxTree\unary_operators.cs" />
+    <Compile Include="driver\Program.cs" />
+    <Compile Include="parser\declarations.cs" />
+    <Compile Include="parser\environment.cs" />
+    <Compile Include="parser\expressions.cs" />
+    <Compile Include="parser\external_definitions.cs" />
+    <Compile Include="parser\parser.cs" />
+    <Compile Include="parser\statements.cs" />
+    <Compile Include="scanner\char.cs" />
+    <Compile Include="scanner\float.cs" />
+    <Compile Include="scanner\fsa.cs" />
+    <Compile Include="scanner\identifier.cs" />
+    <Compile Include="scanner\int.cs" />
+    <Compile Include="scanner\keyword.cs" />
+    <Compile Include="scanner\operator.cs" />
+    <Compile Include="scanner\scanner.cs" />
+    <Compile Include="scanner\string.cs" />
+    <Compile Include="scanner\strtable.cs" />
+    <Compile Include="scanner\tokens.cs" />
+    <Compile Include="scanner\utils.cs" />
+    <Compile Include="AST\UnaryOperators.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="scanner\FSAGraphs\README.md" />
+    <None Include="scanner\FSAGraphs\char.dot" />
+    <None Include="scanner\FSAGraphs\char.svg" />
+    <None Include="scanner\FSAGraphs\constchar.dot" />
+    <None Include="scanner\FSAGraphs\constchar.svg" />
+    <None Include="scanner\FSAGraphs\draw_fsas.py" />
+    <None Include="scanner\FSAGraphs\float.dot" />
+    <None Include="scanner\FSAGraphs\float.svg" />
+    <None Include="scanner\FSAGraphs\identifier.dot" />
+    <None Include="scanner\FSAGraphs\identifier.svg" />
+    <None Include="scanner\FSAGraphs\int.dot" />
+    <None Include="scanner\FSAGraphs\int.svg" />
+    <None Include="scanner\FSAGraphs\newline.dot" />
+    <None Include="scanner\FSAGraphs\operator.dot" />
+    <None Include="scanner\FSAGraphs\operator.svg" />
+    <None Include="scanner\FSAGraphs\space.dot" />
+    <None Include="scanner\FSAGraphs\space.svg" />
+    <None Include="scanner\FSAGraphs\string.dot" />
+    <None Include="scanner\FSAGraphs\string.svg" />
+  </ItemGroup>
+</Project>

@@ -12,11 +12,16 @@ public enum Reg {
 
     EBP,
     ESP,
+	EDI,
+	ESI,
 
     AL,
     AX,
+	CL,
 
 	ST0,
+
+	STACK,
 }
 
 public enum CGenReturn {
@@ -32,13 +37,18 @@ public class CGenState {
     }
 
     public static Dictionary<Reg, String> reg_strs = new Dictionary<Reg, String>() {
-        { Reg.EAX, "%eax" },
-        { Reg.ECX, "%ecx" },
-        { Reg.EDX, "%edx" },
-        { Reg.EBX, "%ebx" },
-        { Reg.EBP, "%ebp" },
-        { Reg.ESP, "%esp" },
-		{ Reg.ST0, "%st(0)" },
+		[Reg.EAX] = "%eax",
+		[Reg.ECX] = "%ecx",
+		[Reg.EDX] = "%edx",
+		[Reg.EBX] = "%ebx",
+		[Reg.EBP] = "%ebp",
+		[Reg.ESP] = "%esp",
+		[Reg.EDI] = "%edi",
+		[Reg.ESI] = "%esi",
+		[Reg.AL] = "%al",
+		[Reg.AX] = "%ax",
+		[Reg.CL] = "%cl",
+		[Reg.ST0] = "%st(0)",
     };
 
     public static String StrReg(Reg reg) {
@@ -264,7 +274,7 @@ public class CGenState {
     }
 
     public void MOVSBL(Int32 offset, Reg from, Reg to) {
-        MOVSBL(offset.ToString() + StrReg(from), StrReg(to));
+		MOVSBL($"{offset}({StrReg(from)})", StrReg(to));
     }
 
     /// <summary>
@@ -277,6 +287,8 @@ public class CGenState {
     public void MOVB(Reg from, Int32 imm, Reg to) {
         MOVB(StrReg(from), imm.ToString() + "(" + StrReg(to) + ")");
     }
+
+	public void MOVB(Reg from, Reg to) => MOVB(StrReg(from), StrReg(to));
 
     /// <summary>
     /// MOVW: move a 2-byte word
@@ -322,11 +334,15 @@ public class CGenState {
     // LEA
     // ===
     // 
-    public void LEA(String addr) {
+	public void LEA(String addr, String dst) {
         os.WriteLine("    lea " + addr);
     }
 
-    // CALL
+	public void LEA(String addr, Reg dst) => LEA(addr, StrReg(dst));
+
+	public void LEA(Int32 offset, Reg from, Reg to) => LEA($"{offset}({from.ToString()})", StrReg(to));
+    
+	// CALL
     // ====
     // 
     public void CALL(String addr) {
@@ -336,12 +352,17 @@ public class CGenState {
     // CGenExpandStack
     // ===============
     // 
-    public void CGenExpandStack(Int32 size, String comment = "") {
+    public void CGenExpandStackTo(Int32 size, String comment = "") {
         if (size > stack_size) {
             SUBL(size - stack_size, StrReg(Reg.ESP), comment);
             stack_size = size;
         }
     }
+
+	public void CGenExpandStackBy(Int32 nbytes) {
+		stack_size += nbytes;
+		SUBL(nbytes, Reg.ESP);
+	}
 
     public void CGenExpandStackBy4Bytes(String comment = "") {
         stack_size += 4;
@@ -394,7 +415,7 @@ public class CGenState {
     }
 
     public void ADDL(Int32 er, Reg ee, String comment = "") {
-        ADDL(er.ToString(), StrReg(ee), comment);
+		ADDL($"${er}", StrReg(ee), comment);
     }
 
     public void ADDL(Reg er, Reg ee, String comment = "")
@@ -440,6 +461,11 @@ public class CGenState {
         ANDL(StrReg(er), StrReg(ee));
     }
     
+	public void ANDB(String er, String ee) =>
+        os.WriteLine($"    andb {er}, {ee}");
+
+	public void ANDB(Int32 er, Reg ee) => ANDB($"${er}", StrReg(ee));
+
     /// <summary>
     /// ORL er, ee
     ///     ee = ee | er
@@ -489,6 +515,8 @@ public class CGenState {
     }
 
     public void SHRL(Reg er, Reg ee) => SHRL(StrReg(er), StrReg(ee));
+
+	public void SHRL(Int32 er, Reg ee) => SHRL($"${er}", StrReg(ee));
 
     /// <summary>
     /// XORL er, ee
@@ -651,6 +679,25 @@ public class CGenState {
     public void FUCOMIP() => os.WriteLine("    fucomip %st(1), %st");
 
     public void JZ(Int32 label) => os.WriteLine($"    jz .L{label}");
+
+	public void CLD() => os.WriteLine("    cld");
+
+	/// <summary>
+	/// Fast Memory Copy using assembly.
+	/// Make sure that
+	/// 1) %esi = source address
+	/// 2) %edi = destination address
+	/// 3) %ecx = number of bytes
+	/// </summary>
+	public void MemCpy() {
+		MOVB(Reg.CL, Reg.AL);
+		SHRL(2, Reg.ECX);
+		CLD();
+		os.WriteLine("    rep movsl");
+		MOVB(Reg.AL, Reg.CL);
+		ANDB(3, Reg.CL);
+		os.WriteLine("    rep movsb");
+	}
 
 	public String CGenLongConst(Int32 val) {
 		String name = ".LC" + rodata_idx.ToString();

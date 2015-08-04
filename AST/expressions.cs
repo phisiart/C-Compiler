@@ -51,21 +51,21 @@ namespace AST {
                 state.PUSHL(Reg.EAX);
                 break;
 
-            case ExprType.Kind.FLOAT:
+			case ExprType.Kind.FLOAT:
                 // Float
-                if (ret != Reg.ST0) {
-                    throw new InvalidProgramException("Floats should be returned to %st(0)");
-                }
-                state.CGenExpandStack(4);
+				if (ret != Reg.ST0) {
+					throw new InvalidProgramException("Floats should be returned to %st(0)");
+				}
+                state.CGenExpandStackBy4Bytes();
                 state.FSTS(0, Reg.ESP);
                 break;
 
-            case ExprType.Kind.DOUBLE:
+			case ExprType.Kind.DOUBLE:
                 // Double
-                if (ret != Reg.ST0) {
-                    throw new InvalidProgramException("Doubles should be returned to %st(0)");
-                }
-                state.CGenExpandStack(8);
+				if (ret != Reg.ST0) {
+					throw new InvalidProgramException("Doubles should be returned to %st(0)");
+				}
+				state.CGenExpandStackBy8Bytes();
                 state.FSTL(0, Reg.ESP);
                 break;
 
@@ -126,7 +126,7 @@ namespace AST {
             case Env.EntryKind.GLOBAL:
                 switch (entry.type.kind) {
                 case ExprType.Kind.FUNCTION:
-                    state.LEA(name);
+					state.LEA(name, Reg.EAX);
                     break;
 
                 case ExprType.Kind.CHAR:
@@ -155,7 +155,6 @@ namespace AST {
             }
         }
 
-        // TODO: struct and union
         public override Reg CGenValue(Env env, CGenState state) {
             Env.Entry entry = env.Find(name);
 
@@ -187,9 +186,14 @@ namespace AST {
                     state.FLDL(offset, Reg.EBP);
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT:
-                case ExprType.Kind.UNION:
-                    throw new NotImplementedException();
+				case ExprType.Kind.STRUCT:
+				case ExprType.Kind.UNION:
+					state.LEA(offset, Reg.ESP, Reg.ESI); // source address
+					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
+					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
+					state.MOVL(type.size_of, Reg.ECX); // nbytes
+					state.MemCpy();
+					return Reg.STACK;
 
                 case ExprType.Kind.VOID:
                     state.MOVL(0, Reg.EAX);
@@ -258,7 +262,12 @@ namespace AST {
 
                 case ExprType.Kind.STRUCT:
                 case ExprType.Kind.UNION:
-                    throw new NotImplementedException();
+					state.LEA(name, Reg.ESI); // source address
+					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
+					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
+					state.MOVL(type.size_of, Reg.ECX); // nbytes
+					state.MemCpy();
+					return Reg.STACK;
 
                 case ExprType.Kind.VOID:
                     state.MOVL(0, Reg.EAX);
@@ -445,54 +454,6 @@ namespace AST {
         }
         public readonly Expr attrib_expr;
         public readonly String attrib_name;
-    }
-
-    /// <summary>
-    /// expr++: must be scalar
-    /// </summary>
-    public class PostIncrement : Expr {
-        public PostIncrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
-        }
-        public readonly Expr expr;
-    }
-
-    /// <summary>
-    /// expr--: must be a scalar
-    /// </summary>
-    public class PostDecrement : Expr {
-        public PostDecrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
-        }
-        public readonly Expr expr;
-    }
-
-    /// <summary>
-    /// ++expr: must be a scalar
-    /// </summary>
-    public class PreIncrement : Expr {
-        public PreIncrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
-        }
-        public readonly Expr expr;
-    }
-
-    /// <summary>
-    /// --expr: must be a scalar
-    /// </summary>
-    public class PreDecrement : Expr {
-        public PreDecrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
-        }
-        public readonly Expr expr;
     }
 
     public class Reference : Expr {
