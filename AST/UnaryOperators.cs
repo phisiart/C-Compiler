@@ -6,127 +6,707 @@ using System.Diagnostics;
 
 namespace AST {
 
-    /// <summary>
-    /// expr++: must be integral, float or pointer.
-    /// 
-    /// If expr is an array, it is converted to a pointer in semantic analysis.
-    /// </summary>
-    public class PostIncrement : Expr {
-        public PostIncrement(Expr expr)
+    public abstract class IncDecExpr : Expr {
+        public IncDecExpr(Expr expr)
             : base(expr.type) {
             Debug.Assert(expr.type.IsScalar());
             this.expr = expr;
         }
         public readonly Expr expr;
 
+        // Integral
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // After the calculation, the result should be in %eax,
+        // and memory should be updated.
+        //
+        public abstract void CalcAndSaveLong(CGenState state);
+        public abstract void CalcAndSaveWord(CGenState state);
+        public abstract void CalcAndSaveByte(CGenState state);
+        public abstract void CalcAndSavePtr(CGenState state);
+
+        // Float
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +-------+
+        // | expr  | <- %st(1)
+        // +-------+
+        // |  1.0  | <- %st(0)
+        // +-------+
+        // 
+        // After the calculation, the result should be in %st(0),
+        // and memory should be updated.
+        // 
+        public abstract void CalcAndSaveFloat(CGenState state);
+        public abstract void CalcAndSaveDouble(CGenState state);
+
         public override Reg CGenValue(Env env, CGenState state) {
 
+            // 1. Get the address of expr.
+            // 
+            // regs:
             // %eax = &expr
+            // 
+            // stack:
+            // +-------+
+            // | ..... | <- %esp
+            // +-------+
+            // 
             expr.CGenAddress(env, state);
 
-            // push address
+            // 2. Push address.
+            // 
+            // regs:
+            // %eax = &expr
+            // 
+            // stack:
+            // +-------+
+            // | ..... |
+            // +-------+
+            // | &expr | <- %esp
+            // +-------+
+            // 
             state.PUSHL(Reg.EAX);
 
-            // %eax = expr or %st(0) = expr
+            // 3. Get current value of expr.
+            // 
+            // 1) If expr is an integral or pointer:
+            // 
+            // regs:
+            // %eax = expr
+            // 
+            // stack:
+            // +-------+
+            // | ..... |
+            // +-------+
+            // | &expr | <- %esp
+            // +-------+
+            // 
+            // 
+            // 2) If expr is a float:
+            // 
+            // regs:
+            // %eax = &expr
+            // 
+            // stack:
+            // +-------+
+            // | ..... |
+            // +-------+
+            // | &expr | <- %esp
+            // +-------+
+            // 
+            // float stack:
+            // +-------+
+            // | expr  | <- %st(0)
+            // +-------+
+            // 
             Reg ret = expr.CGenValue(env, state);
 
             switch (ret) {
-            case Reg.EAX:
-                // integral or pointer
+                case Reg.EAX:
+                    // expr is an integral or pointer.
 
-                // pop address to %ecx
-                state.POPL(Reg.ECX);
+                    // 4. Pop address to %ecx.
+                    // 
+                    // regs:
+                    // %eax = expr
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    state.POPL(Reg.ECX);
 
-                // %eax = value (need to modify and save back)
-                // %ebx = value (cache)
-                // %ecx = address
-                state.MOVL(Reg.EAX, Reg.EBX);
+                    // 5. Cache current value of expr in %ebx.
+                    // 
+                    // regs:
+                    // %eax = expr
+                    // %ebx = expr
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    state.MOVL(Reg.EAX, Reg.EBX);
 
-                switch (expr.type.kind) {
-                case ExprType.Kind.CHAR:
-                case ExprType.Kind.UCHAR:
-                    state.ADDL(1, Reg.EAX);
-                    state.MOVB(Reg.AL, 0, Reg.ECX);
-                    break;
+                    // 6. Calculate the new value in %ebx or %eax and save.
+                    //    Set %eax to be the return value.
+                    // 
+                    // regs:
+                    // %eax = expr or (expr +- 1)
+                    // %ebx = (expr +- 1) or expr
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    switch (expr.type.kind) {
+                        case ExprType.Kind.CHAR:
+                        case ExprType.Kind.UCHAR:
+                            CalcAndSaveByte(state);
+                            return Reg.EAX;
 
-                case ExprType.Kind.SHORT:
-                case ExprType.Kind.USHORT:
-                    state.ADDL(1, Reg.EAX);
-                    state.MOVW(Reg.AX, 0, Reg.ECX);
-                    break;
+                        case ExprType.Kind.SHORT:
+                        case ExprType.Kind.USHORT:
+                            CalcAndSaveWord(state);
+                            return Reg.EAX;
 
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                    state.ADDL(1, Reg.EBX);
-                    state.MOVL(Reg.EAX, 0, Reg.ECX);
-                    break;
+                        case ExprType.Kind.LONG:
+                        case ExprType.Kind.ULONG:
+                            CalcAndSaveByte(state);
+                            return Reg.EAX;
 
-                case ExprType.Kind.POINTER:
-                    state.ADDL(expr.type.size_of, Reg.EBX);
-                    state.MOVL(Reg.EAX, 0, Reg.ECX);
-                    break;
+                        case ExprType.Kind.POINTER:
+                            CalcAndSavePtr(state);
+                            return Reg.EAX;
+
+                        default:
+                            throw new InvalidProgramException();
+                    }
+
+                case Reg.ST0:
+                    // expr is a float.
+
+                    // 4. Pop address to %ecx.
+                    // 
+                    // regs:
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    state.POPL(Reg.ECX);
+
+                    // 5. Load 1.0 to FPU stack.
+                    // 
+                    // regs:
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    // float stack:
+                    // +-------+
+                    // | expr  | <- %st(1)
+                    // +-------+
+                    // |  1.0  | <- %st(0)
+                    // +-------+
+                    // 
+                    state.FLD1();
+
+                    // 6. Calculate the new value and save back.
+                    //    Set %st(0) to be the new or original value.
+                    // 
+                    // regs:
+                    // %ecx = &expr
+                    // 
+                    // stack:
+                    // +-------+
+                    // | ..... | <- %esp
+                    // +-------+
+                    // 
+                    // float stack:
+                    // +---------------------+
+                    // | expr or (epxr +- 1) | <- %st(0)
+                    // +---------------------+
+                    // 
+                    switch (expr.type.kind) {
+                        case ExprType.Kind.FLOAT:
+                            CalcAndSaveFloat(state);
+                            return Reg.ST0;
+
+                        case ExprType.Kind.DOUBLE:
+                            CalcAndSaveDouble(state);
+                            return Reg.ST0;
+
+                        default:
+                            throw new InvalidProgramException();
+                    }
 
                 default:
                     throw new InvalidProgramException();
-                }
-
-                // return original value to %eax
-                state.MOVL(Reg.EBX, Reg.EAX);
-
-                break;
-
-            case Reg.ST0:
-                // float
-                switch (expr.type.kind) {
-                case ExprType.Kind.FLOAT:
-                case ExprType.Kind.DOUBLE:
-                default:
-                    throw new InvalidProgramException();
-                }
-
-            default:
-                throw new InvalidProgramException();
             }
 
         }
     }
 
     /// <summary>
+    /// expr++: must be integral, float or pointer.
+    /// 
+    /// If expr is an array, it is converted to a pointer in semantic analysis.
+    /// </summary>
+    public class PostIncrement : IncDecExpr {
+        public PostIncrement(Expr expr)
+            : base(expr) { }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // Calculate the new value in %ebx, and save.
+        // Leave %eax to be the original value.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr + 1
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        public override void CalcAndSaveLong(CGenState state) {
+            state.ADDL(1, Reg.EBX);
+            state.MOVL(Reg.EBX, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveWord(CGenState state) {
+            state.ADDL(1, Reg.EBX);
+            state.MOVW(Reg.BX, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveByte(CGenState state) {
+            state.ADDL(1, Reg.EBX);
+            state.MOVB(Reg.BL, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSavePtr(CGenState state) {
+            state.ADDL(expr.type.size_of, Reg.EBX);
+            state.MOVL(Reg.EBX, 0, Reg.ECX);
+        }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +-------+
+        // | expr  | <- %st(1)
+        // +-------+
+        // |  1.0  | <- %st(0)
+        // +-------+
+        // 
+        // 1. Compute %st(1) + %st(0) and stores in %st(0).
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(1)
+        // +------------+
+        // | expr + 1.0 | <- %st(0)
+        // +------------+
+        // 
+        // 2. Pop result from FPU stack and store in memory.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(0)
+        // +------------+
+        // 
+        public override void CalcAndSaveFloat(CGenState state) {
+            state.FADD(1, 0);
+            state.FSTPS(0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveDouble(CGenState state) {
+            state.FADD(1, 0);
+            state.FSTPL(0, Reg.ECX);
+        }
+    }
+
+    /// <summary>
     /// expr--: must be a scalar
     /// </summary>
-    public class PostDecrement : Expr {
+    public class PostDecrement : IncDecExpr {
         public PostDecrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
+            : base(expr) { }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // Calculate the new value in %ebx, and save.
+        // Leave %eax to be the original value.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr - 1
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        public override void CalcAndSaveLong(CGenState state) {
+            state.SUBL(1, Reg.EBX);
+            state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
-        public readonly Expr expr;
+
+        public override void CalcAndSaveWord(CGenState state) {
+            state.SUBL(1, Reg.EBX);
+            state.MOVW(Reg.BX, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveByte(CGenState state) {
+            state.SUBL(1, Reg.EBX);
+            state.MOVB(Reg.BL, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSavePtr(CGenState state) {
+            state.SUBL(expr.type.size_of, Reg.EBX);
+            state.MOVL(Reg.EBX, 0, Reg.ECX);
+        }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +-------+
+        // | expr  | <- %st(1)
+        // +-------+
+        // |  1.0  | <- %st(0)
+        // +-------+
+        // 
+        // 1. Compute %st(1) - %st(0) and stores in %st(0).
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(1)
+        // +------------+
+        // | expr - 1.0 | <- %st(0)
+        // +------------+
+        // 
+        // 2. Pop result from FPU stack and store in memory.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(0)
+        // +------------+
+        // 
+        public override void CalcAndSaveFloat(CGenState state) {
+            state.FSUB(1, 0);
+            state.FSTPS(0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveDouble(CGenState state) {
+            state.FSUB(1, 0);
+            state.FSTPL(0, Reg.ECX);
+        }
     }
 
     /// <summary>
     /// ++expr: must be a scalar
     /// </summary>
-    public class PreIncrement : Expr {
+    public class PreIncrement : IncDecExpr {
         public PreIncrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
+            : base(expr) { }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // Calculate the new value in %eax, and save.
+        // Leave %eax to be the original value.
+        // 
+        // regs:
+        // %eax = expr + 1
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        public override void CalcAndSaveLong(CGenState state) {
+            state.ADDL(1, Reg.EAX);
+            state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
-        public readonly Expr expr;
 
+        public override void CalcAndSaveWord(CGenState state) {
+            state.ADDL(1, Reg.EAX);
+            state.MOVW(Reg.AX, 0, Reg.ECX);
+        }
 
+        public override void CalcAndSaveByte(CGenState state) {
+            state.ADDL(1, Reg.EAX);
+            state.MOVB(Reg.AL, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSavePtr(CGenState state) {
+            state.ADDL(expr.type.size_of, Reg.EAX);
+            state.MOVL(Reg.EAX, 0, Reg.ECX);
+        }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +-------+
+        // | expr  | <- %st(1)
+        // +-------+
+        // |  1.0  | <- %st(0)
+        // +-------+
+        // 
+        // 1. Compute %st(1) + %st(0) and stores in %st(0).
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(1)
+        // +------------+
+        // | expr + 1.0 | <- %st(0)
+        // +------------+
+        // 
+        // 2. Store %st(0) in memory.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // | expr + 1.0 | <- %st(0)
+        // +------------+
+        // 
+        public override void CalcAndSaveFloat(CGenState state) {
+            state.FADD(1, 0);
+            state.FSTS(0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveDouble(CGenState state) {
+            state.FADD(1, 0);
+            state.FSTL(0, Reg.ECX);
+        }
     }
 
     /// <summary>
     /// --expr: must be a scalar
     /// </summary>
-    public class PreDecrement : Expr {
+    public class PreDecrement : IncDecExpr {
         public PreDecrement(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
-            this.expr = expr;
+            : base(expr) { }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %eax = expr
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // Calculate the new value in %eax, and save.
+        // Leave %eax to be the original value.
+        // 
+        // regs:
+        // %eax = expr - 1
+        // %ebx = expr
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        public override void CalcAndSaveLong(CGenState state) {
+            state.SUBL(1, Reg.EAX);
+            state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
-        public readonly Expr expr;
+
+        public override void CalcAndSaveWord(CGenState state) {
+            state.SUBL(1, Reg.EAX);
+            state.MOVW(Reg.AX, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveByte(CGenState state) {
+            state.SUBL(1, Reg.EAX);
+            state.MOVB(Reg.AL, 0, Reg.ECX);
+        }
+
+        public override void CalcAndSavePtr(CGenState state) {
+            state.SUBL(expr.type.size_of, Reg.EAX);
+            state.MOVL(Reg.EAX, 0, Reg.ECX);
+        }
+
+        // Before the actual calculation, the state is set to this.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +-------+
+        // | expr  | <- %st(1)
+        // +-------+
+        // |  1.0  | <- %st(0)
+        // +-------+
+        // 
+        // 1. Compute %st(1) - %st(0) and stores in %st(0).
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // |    expr    | <- %st(1)
+        // +------------+
+        // | expr - 1.0 | <- %st(0)
+        // +------------+
+        // 
+        // 2. Store %st(0) in memory.
+        // 
+        // regs:
+        // %ecx = &expr
+        // 
+        // stack:
+        // +-------+
+        // | ..... | <- %esp
+        // +-------+
+        // 
+        // float stack:
+        // +------------+
+        // | expr - 1.0 | <- %st(0)
+        // +------------+
+        // 
+        public override void CalcAndSaveFloat(CGenState state) {
+            state.FSUB(1, 0);
+            state.FSTS(0, Reg.ECX);
+        }
+
+        public override void CalcAndSaveDouble(CGenState state) {
+            state.FSUB(1, 0);
+            state.FSTL(0, Reg.ECX);
+        }
     }
 
 }

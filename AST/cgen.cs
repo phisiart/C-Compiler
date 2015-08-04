@@ -17,6 +17,8 @@ public enum Reg {
 
     AL,
     AX,
+    BL,
+    BX,
 	CL,
 
 	ST0,
@@ -47,6 +49,8 @@ public class CGenState {
 		[Reg.ESI] = "%esi",
 		[Reg.AL] = "%al",
 		[Reg.AX] = "%ax",
+        [Reg.BL] = "%bl",
+        [Reg.BX] = "%bx",
 		[Reg.CL] = "%cl",
 		[Reg.ST0] = "%st(0)",
     };
@@ -105,6 +109,11 @@ public class CGenState {
 	}
 
     /// <summary>
+    /// FLD1: load 1.0 to FPU stack.
+    /// </summary>
+    public void FLD1() => os.WriteLine("    fld1");
+
+    /// <summary>
     /// FSTS: store float from FPU stack.
     /// </summary>
     /// <param name="addr"></param>
@@ -119,7 +128,6 @@ public class CGenState {
     /// <summary>
     /// FSTPS: pop float from FPU stack, and store to {addr}.
     /// </summary>
-    /// <param name="addr"></param>
     public void FSTPS(String addr) {
         os.WriteLine($"    fstps {addr}");
     }
@@ -146,9 +154,7 @@ public class CGenState {
         os.WriteLine($"    fstpl {addr}");
     }
 
-    public void FSTPL(Int32 imm, Reg to) {
-        FSTPL(imm.ToString() + "(" + StrReg(to));
-    }
+    public void FSTPL(Int32 imm, Reg to) => FSTPL($"{imm}({StrReg(to)})");
 
     /// <summary>
     /// FSTP: copy %st(0) to dst, then pop %st(0).
@@ -159,12 +165,23 @@ public class CGenState {
 
     public void FSTP(Reg dst) => FSTP(StrReg(dst));
 
+    /// <summary>
+    /// FADD: calculate %st(op1) + %st(op2) and rewrite %st(op2).
+    /// </summary>
+    public void FADD(Int32 op1, Int32 op2) =>
+        os.WriteLine($"    fadd %st({op1}), %st({op2})");
 
     /// <summary>
     /// FADDP: pop operands from %st(0) and %st(1),
     ///        push addition result back to %st(0).
     /// </summary>
     public void FADDP() => os.WriteLine("    faddp");
+
+    /// <summary>
+    /// FADD: calculate %st(op1) + %st(op2) and rewrite %st(op2).
+    /// </summary>
+    public void FSUB(Int32 op1, Int32 op2) =>
+        os.WriteLine($"    fsub %st({op1}), %st({op2})");
 
     /// <summary>
     /// FSUBP: pop operands from %st(0) and %st(1),
@@ -237,13 +254,9 @@ public class CGenState {
         MOVL(StrReg(from), StrReg(to));
     }
 
-    public void MOVL(Reg from, Int32 offset, Reg to) {
-        MOVL(StrReg(from), offset.ToString() + "(" + StrReg(to) + ")");
-    }
+    public void MOVL(Reg from, Int32 offset, Reg to) => MOVL(StrReg(from), $"{offset}({StrReg(to)})");
 
-	public void MOVL(Int32 offset, Reg from, Reg to) {
-		MOVL(offset.ToString() + "(" + StrReg(from) + ")", StrReg(to));
-	}
+    public void MOVL(Int32 offset, Reg from, Reg to) => MOVL($"{offset}({StrReg(to)})", StrReg(to));
 
     /// <summary>
     /// MOVZBL: move a byte and zero-extend to a 4-byte long
