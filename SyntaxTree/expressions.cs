@@ -322,7 +322,7 @@ namespace SyntaxTree {
             }
 
             // make implicit cast
-            args = Enumerable.Zip(args, func_type.args, (arg, entry) => AST.TypeCast.MakeCast(arg, entry.entry_type)).ToList();
+            args = Enumerable.Zip(args, func_type.args, (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)).ToList();
 
             return new AST.FunctionCall(func, func_type, args, func_type.ret_type);
         }
@@ -343,11 +343,11 @@ namespace SyntaxTree {
             switch (expr.type.kind) {
                 case AST.ExprType.Kind.STRUCT:
                     AST.TStruct struct_type = (AST.TStruct)expr.type;
-                    AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.entry_name == attrib);
+                    AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.name == attrib);
                     if (r_struct_find == null) {
                         throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
                     }
-                    return new AST.Attribute(expr, attrib, r_struct_find.entry_type);
+                    return new AST.Attribute(expr, attrib, r_struct_find.type);
 
                 case AST.ExprType.Kind.UNION:
                     AST.TUnion union_type = (AST.TUnion)expr.type;

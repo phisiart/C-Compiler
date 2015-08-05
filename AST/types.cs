@@ -397,7 +397,7 @@ namespace AST {
             if (dump_attribs) {
                 str += "\n";
                 foreach (Utils.StoreEntry attrib in attribs) {
-                    str += "  [base + " + attrib.entry_offset.ToString() + "] " + attrib.entry_name + " : " + attrib.entry_type.ToString() + "\n";
+                    str += "  [base + " + attrib.offset.ToString() + "] " + attrib.name + " : " + attrib.type.ToString() + "\n";
                 }
             }
             return str;
@@ -410,7 +410,7 @@ namespace AST {
         public override String ToString() {
             String str = DumpQualifiers() + "struct { ";
             foreach (Utils.StoreEntry attrib in attribs) {
-                str += attrib.entry_name + " : " + attrib.entry_type.ToString() + "; ";
+                str += attrib.name + " : " + attrib.type.ToString() + "; ";
             }
             str += "}";
             return str;
@@ -526,7 +526,7 @@ namespace AST {
             if (dump_args) {
                 str += "\n";
                 foreach (Utils.StoreEntry arg in args) {
-                    str += "  [%ebp + " + arg.entry_offset.ToString() + "] " + arg.entry_name + " : " + arg.entry_type.ToString() + "\n";
+                    str += "  [%ebp + " + arg.offset.ToString() + "] " + arg.name + " : " + arg.type.ToString() + "\n";
                 }
             }
             return str;
@@ -538,7 +538,7 @@ namespace AST {
                 if (i != 0) {
                     str += ", ";
                 }
-                str += args[i].entry_type.ToString();
+                str += args[i].type.ToString();
             }
             if (args.Count > 0) {
                 str = "(" + str + ")";

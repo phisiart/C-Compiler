@@ -13,13 +13,13 @@ namespace AST {
         // 
         public class StoreEntry {
             public StoreEntry(String name, ExprType type, Int32 offset) {
-                entry_name = name;
-                entry_type = type;
-                entry_offset = offset;
+                this.name = name;
+                this.type = type;
+                this.offset = offset;
             }
-            public readonly String entry_name;
-            public readonly ExprType entry_type;
-            public readonly Int32 entry_offset;
+            public readonly String name;
+            public readonly ExprType type;
+            public readonly Int32 offset;
         }
 
         public static Int32 RoundUp(Int32 value, Int32 alignment) {

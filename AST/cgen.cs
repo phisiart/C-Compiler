@@ -387,6 +387,11 @@ public class CGenState {
         SUBL(nbytes, Reg.ESP);
     }
 
+    public void CGenShrinkStackBy(Int32 nbytes) {
+        stack_size -= nbytes;
+        ADDL(nbytes, Reg.ESP);
+    }
+
     public void CGenExpandStackBy4Bytes(String comment = "") {
         stack_size += 4;
         SUBL(4, Reg.ESP);
@@ -497,6 +502,8 @@ public class CGenState {
     public void ANDL(Reg er, Reg ee) {
         ANDL(StrReg(er), StrReg(ee));
     }
+
+    public void ANDL(Int32 er, Reg ee) => ANDL($"${er}", StrReg(ee));
 
     public void ANDB(String er, String ee) =>
         os.WriteLine($"    andb {er}, {ee}");
@@ -731,6 +738,8 @@ public class CGenState {
 
     public void CLD() => os.WriteLine("    cld");
 
+    public void STD() => os.WriteLine("    std");
+
     /// <summary>
     /// Fast Memory Copy using assembly.
     /// Make sure that
@@ -746,6 +755,30 @@ public class CGenState {
         MOVB(Reg.AL, Reg.CL);
         ANDB(3, Reg.CL);
         os.WriteLine("    rep movsb");
+    }
+
+    /// <summary>
+    /// Fast Memory Copy using assembly.
+    /// Make sure that
+    /// 1) %esi = source address
+    /// 2) %edi = destination address
+    /// 3) %ecx = number of bytes
+    /// </summary>
+    public void MemCpyReversed() {
+        ADDL(Reg.ECX, Reg.ESI);
+        ADDL(Reg.ECX, Reg.EDI);
+        MOVL(Reg.ECX, Reg.EAX);
+
+        ANDL(3, Reg.ECX); // now %ecx = 0, 1, 2, or 3
+        STD();
+        os.WriteLine("    rep movsb");
+
+        MOVL(Reg.EAX, Reg.ECX);
+        ANDL(~3, Reg.ECX);
+        SHRL(2, Reg.ECX);
+        os.WriteLine("    rep movsl");
+
+        CLD();
     }
 
     public String CGenLongConst(Int32 val) {

@@ -169,28 +169,28 @@ namespace AST {
                 Utils.StoreEntry store_entry;
 
                 // search the enum entries
-                if ((store_entry = scope_enum_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryKind.ENUM, store_entry.entry_type, store_entry.entry_offset);
+                if ((store_entry = scope_enum_entries.FindLast(entry => entry.name == name)) != null) {
+                    return new Entry(EntryKind.ENUM, store_entry.type, store_entry.offset);
                 }
 
                 // search the typedef entries
-                if ((store_entry = scope_typedef_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryKind.TYPEDEF, store_entry.entry_type, store_entry.entry_offset);
+                if ((store_entry = scope_typedef_entries.FindLast(entry => entry.name == name)) != null) {
+                    return new Entry(EntryKind.TYPEDEF, store_entry.type, store_entry.offset);
                 }
                 
                 // search the stack entries
-                if ((store_entry = scope_stack_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryKind.STACK, store_entry.entry_type, store_entry.entry_offset);
+                if ((store_entry = scope_stack_entries.FindLast(entry => entry.name == name)) != null) {
+                    return new Entry(EntryKind.STACK, store_entry.type, store_entry.offset);
                 }
 
                 // search the function arguments
-                if ((store_entry = scope_curr_func.args.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryKind.FRAME, store_entry.entry_type, store_entry.entry_offset);
+                if ((store_entry = scope_curr_func.args.FindLast(entry => entry.name == name)) != null) {
+                    return new Entry(EntryKind.FRAME, store_entry.type, store_entry.offset);
                 }
 
                 // search the global entries
-                if ((store_entry = scope_global_entries.FindLast(entry => entry.entry_name == name)) != null) {
-                    return new Entry(EntryKind.GLOBAL, store_entry.entry_type, store_entry.entry_offset);
+                if ((store_entry = scope_global_entries.FindLast(entry => entry.name == name)) != null) {
+                    return new Entry(EntryKind.GLOBAL, store_entry.type, store_entry.offset);
                 }
 
                 return null;
@@ -212,23 +212,23 @@ namespace AST {
                 String str = "";
                 foreach (Utils.StoreEntry entry in scope_curr_func.args) {
                     str += indent;
-                    str += "[%ebp + " + entry.entry_offset + "] " + entry.entry_name + " : " + entry.entry_type.ToString() + "\n";
+                    str += "[%ebp + " + entry.offset + "] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
                 foreach (Utils.StoreEntry entry in scope_global_entries) {
                     str += indent;
-                    str += "[extern] " + entry.entry_name + " : " + entry.entry_type.ToString() + "\n";
+                    str += "[extern] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
                 foreach (Utils.StoreEntry entry in scope_stack_entries) {
                     str += indent;
-                    str += "[%ebp - " + entry.entry_offset + "] " + entry.entry_name + " : " + entry.entry_type.ToString() + "\n";
+                    str += "[%ebp - " + entry.offset + "] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
                 foreach (Utils.StoreEntry entry in scope_typedef_entries) {
                     str += indent;
-                    str += "typedef: " + entry.entry_name + " <- " + entry.entry_type.ToString() + "\n";
+                    str += "typedef: " + entry.name + " <- " + entry.type.ToString() + "\n";
                 }
                 foreach (Utils.StoreEntry entry in scope_enum_entries) {
                     str += indent;
-                    str += entry.entry_name + " = " + entry.entry_offset + "\n";
+                    str += entry.name + " = " + entry.offset + "\n";
                 }
                 return str;
 
