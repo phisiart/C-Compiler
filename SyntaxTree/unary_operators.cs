@@ -248,8 +248,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Logical not
     /// </summary>
-    public class Not : Expr {
-        public Not(Expr expr) {
+    public class LogicalNot : Expr {
+        public LogicalNot(Expr expr) {
             this.expr = expr;
         }
         public readonly Expr expr;

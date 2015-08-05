@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
     ""3.0"";
     c;
     if (3) 4;
+    b++;
 }
                 ";
             scanner.Lex();

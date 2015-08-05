@@ -875,4 +875,224 @@ namespace AST {
         public override void SetFloat(CGenState state) => state.SETNE(Reg.AL);
         public override void SetDouble(CGenState state) => state.SETNE(Reg.AL);
     }
+
+
+    /// <summary>
+    /// lhs && rhs: can only take scalars (to compare with 0).
+    /// 
+    /// After semantic analysis, each operand can only be
+    /// long, ulong, float, double.
+    /// Pointers are casted to ulongs.
+    /// 
+    /// if lhs == 0:
+    ///     return 0
+    /// else:
+    ///     return rhs != 0
+    /// 
+    /// Generate the assembly in this fashion,
+    /// then every route would only have one jump.
+    /// 
+    ///        +---------+   0
+    ///        | cmp lhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 1          |
+    ///             |            |
+    ///        +----+----+   0   |
+    ///        | cmp rhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 1          |
+    ///             |            |
+    ///        +----+----+       |
+    ///        | eax = 1 |       |
+    ///        +---------+       |
+    ///             |            |
+    ///   +---------+            |
+    ///   |                      |
+    ///   |         +------------+ label_reset
+    ///   |         |
+    ///   |    +---------+
+    ///   |    | eax = 0 |
+    ///   |    +---------+
+    ///   |         |
+    ///   +---------+ label_finish
+    ///             |
+    /// 
+    /// </summary>
+    public class LogicalAnd : Expr {
+        public LogicalAnd(Expr lhs, Expr rhs, ExprType type)
+            : base(type) {
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Int32 label_reset = state.label_idx;
+            state.label_idx++;
+            Int32 label_finish = state.label_idx;
+            state.label_idx++;
+
+            Reg ret = lhs.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    state.JZ(label_reset);
+                    break;
+
+                case Reg.ST0:
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    state.JZ(label_reset);
+                    break;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+
+            ret = rhs.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    state.JZ(label_reset);
+                    break;
+
+                case Reg.ST0:
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    state.JZ(label_reset);
+                    break;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+
+            state.MOVL(1, Reg.EAX);
+
+            state.JMP(label_finish);
+
+            state.CGenLabel(label_reset);
+
+            state.MOVL(0, Reg.EAX);
+
+            state.CGenLabel(label_finish);
+
+            return Reg.EAX;
+        }
+    }
+
+    /// <summary>
+    /// lhs || rhs: can only take scalars (to compare with 0).
+    /// 
+    /// After semantic analysis, each operand can only be
+    /// long, ulong, float, double.
+    /// Pointers are casted to ulongs.
+    /// 
+    /// if lhs != 0:
+    ///     return 1
+    /// else:
+    ///     return rhs != 0
+    /// 
+    /// Generate the assembly in this fashion,
+    /// then every route would only have one jump.
+    /// 
+    ///        +---------+   1
+    ///        | cmp lhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 0          |
+    ///             |            |
+    ///        +----+----+   1   |
+    ///        | cmp rhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 0          |
+    ///             |            |
+    ///        +----+----+       |
+    ///        | eax = 0 |       |
+    ///        +---------+       |
+    ///             |            |
+    ///   +---------+            |
+    ///   |                      |
+    ///   |         +------------+ label_set
+    ///   |         |
+    ///   |    +---------+
+    ///   |    | eax = 1 |
+    ///   |    +---------+
+    ///   |         |
+    ///   +---------+ label_finish
+    ///             |
+    /// 
+    /// </summary>
+    public class LogicalOr : Expr {
+        public LogicalOr(Expr _lhs, Expr _rhs, ExprType _type)
+            : base(_type) {
+            lhs = _lhs;
+            rhs = _rhs;
+        }
+
+        public readonly Expr lhs;
+        public readonly Expr rhs;
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Int32 label_set = state.label_idx;
+            state.label_idx++;
+            Int32 label_finish = state.label_idx;
+            state.label_idx++;
+
+            Reg ret = lhs.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    state.JNZ(label_set);
+                    break;
+
+                case Reg.ST0:
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    state.JNZ(label_set);
+                    break;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+
+            ret = rhs.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    state.JNZ(label_set);
+                    break;
+
+                case Reg.ST0:
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    state.JNZ(label_set);
+                    break;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+
+            state.MOVL(0, Reg.EAX);
+
+            state.JMP(label_finish);
+
+            state.CGenLabel(label_set);
+
+            state.MOVL(1, Reg.EAX);
+
+            state.CGenLabel(label_finish);
+
+            return Reg.EAX;
+        }
+    }
+
+
 }

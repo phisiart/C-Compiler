@@ -70,6 +70,33 @@ So, where could a new identifier come in?
 
     Obviously, the purpose of a declaration is just to introduce a new identifier. 
 
+### The conversion between arrays and pointers
+Consider the following declaration:
+
+```C
+int arr[3][2];
+```
+
+This would create an array of arrays, and the memory layout would be:
+
+    arr[0][0] arr[0][1] arr[1][0] arr[1][1] arr[2][0] arr[2][1]
+    
+If the user writes the following expression
+
+```C
+arr[2][1]
+```
+
+then the corresponding element would be visited.
+
+The expression above would be implicitly translated to
+
+```C
+*(*(arr + 2) + 1)
+```
+
+
+
 ### 4. Code Generator - round 20%
 * Generates x86 assembly code.
 

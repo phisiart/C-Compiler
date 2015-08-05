@@ -824,7 +824,7 @@ public class _unary_expression : ParseRule {
                 return -1;
             }
 
-            expr = new Not(expr);
+            expr = new LogicalNot(expr);
             return current;
 
         default:

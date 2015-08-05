@@ -457,106 +457,104 @@ namespace AST {
     }
 
     public class Reference : Expr {
-        public Reference(Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
+        public Reference(Expr expr, ExprType type)
+            : base(type) {
+            this.expr = expr;
         }
-        protected Expr expr;
+        public readonly Expr expr;
     }
 
+    /// <summary>
+    /// *expr: expr must be a pointer.
+    /// 
+    /// Arrays and functions are implicitly converted to pointers.
+    /// 
+    /// This is an lvalue, so it has an address.
+    /// </summary>
     public class Dereference : Expr {
-        public Dereference(Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
+        public Dereference(Expr expr, ExprType type)
+            : base(type) {
+            this.expr = expr;
         }
-        protected Expr expr;
-    }
+        public readonly Expr expr;
 
-    public class Negative : Expr {
-        public Negative(Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
-        }
-        protected Expr expr;
-    }
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            if (ret != Reg.EAX) {
+                throw new InvalidProgramException();
+            }
+            if (expr.type.kind != ExprType.Kind.POINTER) {
+                throw new InvalidProgramException();
+            }
 
-    public class BitwiseNot : Expr {
-        public BitwiseNot(Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
+            ExprType type = ((TPointer)expr.type).ref_t;
+            switch (type.kind) {
+                case ExprType.Kind.ARRAY:
+                case ExprType.Kind.CHAR:
+                case ExprType.Kind.DOUBLE:
+                case ExprType.Kind.FLOAT:
+                case ExprType.Kind.FUNCTION:
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.POINTER:
+                case ExprType.Kind.SHORT:
+                case ExprType.Kind.STRUCT:
+                case ExprType.Kind.UCHAR:
+                case ExprType.Kind.ULONG:
+                case ExprType.Kind.UNION:
+                case ExprType.Kind.USHORT:
+                case ExprType.Kind.VOID:
+                default:
+                    throw new InvalidProgramException();
+            }
         }
-        protected Expr expr;
-    }
 
-    public class LogicalNot : Expr {
-        public LogicalNot(Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
+        public override void CGenAddress(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            if (ret != Reg.EAX) {
+                throw new InvalidProgramException();
+            }
         }
-        protected Expr expr;
     }
 
     /// <summary>
     /// Integral Binary Operation
     /// </summary>
-    public abstract class IntBinOp : Expr {
-        public IntBinOp(Expr lhs, Expr rhs, ExprType type)
-            : base(type) {
-            this.lhs = lhs;
-            this.rhs = rhs;
-        }
+    //public abstract class IntBinOp : Expr {
+    //    public IntBinOp(Expr lhs, Expr rhs, ExprType type)
+    //        : base(type) {
+    //        this.lhs = lhs;
+    //        this.rhs = rhs;
+    //    }
 
-        public readonly Expr lhs;
-        public readonly Expr rhs;
+    //    public readonly Expr lhs;
+    //    public readonly Expr rhs;
 
-        public abstract void CGenOp(CGenState state);
+    //    public abstract void CGenOp(CGenState state);
 
-        public override Reg CGenValue(Env env, CGenState state) {
-            // 1. %eax = lhs
-            Reg ret = lhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
-                throw new InvalidProgramException("lhs operand should return to %eax");
-            }
+    //    public override Reg CGenValue(Env env, CGenState state) {
+    //        // 1. %eax = lhs
+    //        Reg ret = lhs.CGenValue(env, state);
+    //        if (ret != Reg.EAX) {
+    //            throw new InvalidProgramException("lhs operand should return to %eax");
+    //        }
 
-            // 2. pushl %eax
-            state.PUSHL(Reg.EAX);
+    //        // 2. pushl %eax
+    //        state.PUSHL(Reg.EAX);
 
-            //   3. %eax = rhs
-            ret = rhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
-                throw new InvalidProgramException("rhs operand should return to %eax");
-            }
+    //        //   3. %eax = rhs
+    //        ret = rhs.CGenValue(env, state);
+    //        if (ret != Reg.EAX) {
+    //            throw new InvalidProgramException("rhs operand should return to %eax");
+    //        }
 
-            // 4. popl %ebx
-            state.POPL(Reg.EAX);
+    //        // 4. popl %ebx
+    //        state.POPL(Reg.EAX);
 
-            // 5. andl %ebx, %eax
-            state.ANDL(Reg.EBX, Reg.EAX);
+    //        // 5. andl %ebx, %eax
+    //        state.ANDL(Reg.EBX, Reg.EAX);
 
-            return Reg.EAX;
-        }
-    }
-
-    public class LogicalAnd : Expr {
-        public LogicalAnd(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
-
-    public class LogicalOr : Expr {
-        public LogicalOr(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            lhs = _lhs;
-            rhs = _rhs;
-        }
-
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-    }
+    //        return Reg.EAX;
+    //    }
+    //}
 
 }

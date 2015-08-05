@@ -709,4 +709,102 @@ namespace AST {
         }
     }
 
+    public abstract class UnaryArithOp : Expr {
+        public UnaryArithOp(Expr expr, ExprType type)
+            : base(type) {
+            this.expr = expr;
+        }
+        public readonly Expr expr;
+    }
+
+    /// <summary>
+    /// -expr: only takes arithmetic type.
+    /// 
+    /// After semantic analysis, only the following 4 types are possible:
+    /// 1) long
+    /// 2) ulong
+    /// 3) float
+    /// 4) double
+    /// </summary>
+    public class Negative : UnaryArithOp {
+        public Negative(Expr expr, ExprType type)
+            : base(expr, type) { }
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.NEG(Reg.EAX);
+                    return Reg.EAX;
+
+                case Reg.ST0:
+                    state.FCHS();
+                    return Reg.ST0;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+        }
+    }
+
+    /// <summary>
+    /// ~expr: only takes integral type.
+    /// 
+    /// After semantic analysis, only the following 2 types are possible:
+    /// 1) long
+    /// 2) ulong
+    /// </summary>
+    public class BitwiseNot : UnaryArithOp {
+        public BitwiseNot(Expr expr, ExprType type)
+            : base(expr, type) { }
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            if (ret != Reg.EAX) {
+                throw new InvalidProgramException();
+            }
+            state.NOT(Reg.EAX);
+            return Reg.EAX;
+        }
+    }
+
+    /// <summary>
+    /// !expr: only takes scalar type.
+    /// 
+    /// After semantic analysis, only the following 4 types are possible:
+    /// 1) long
+    /// 2) ulong
+    /// 3) float
+    /// 4) double
+    /// 
+    /// Pointers are converted to ulongs.
+    /// </summary>
+    public class LogicalNot : UnaryArithOp {
+        public LogicalNot(Expr expr, ExprType type)
+            : base(expr, type) { }
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    state.SETE(Reg.AL);
+                    state.MOVZBL(Reg.AL, Reg.EAX);
+                    return Reg.EAX;
+
+                case Reg.ST0:
+                    /// Compare expr with 0.0
+                    /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    state.SETE(Reg.AL);
+                    state.MOVZBL(Reg.AL, Reg.EAX);
+                    return Reg.EAX;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+        }
+    }
 }
