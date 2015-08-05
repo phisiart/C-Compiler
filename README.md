@@ -95,8 +95,50 @@ The expression above would be implicitly translated to
 *(*(arr + 2) + 1)
 ```
 
+It is worth our time to figure out what each step means and what each intermediate result's type is.
 
+1. `arr + 2`
+    
+    `arr` is of type `int [3][2]`. Its value is the base address of the array.
+    
+    The standard says you **can** add an integer to a pointer, but it doesn't say you can add an integer to an array. This means that the array needs to be implicitly cast to a pointer `int (*)[2]`.
+    
+    Note: `int (*)[2]` is not equal to `int *[2]`. `int (*)[2]` means "a pointer to int[2]", while `int *[2]` means "an array that has 2 int*'s". This is because the operator `[]` has a higher priority over the operator `*`.
+    
+    A pointer and an array are very different. If you use the `sizeof` operator on a pointer, you would just get 4, since a pointer has the same size as an unsigned integer; if you use the `sizeof` operator on an array, you would get the total size of it.
+    
+    * `sizeof(int (*)[2]` is 4;
+    
+    * `sizeof(int [3][2]` is 3 * 2 * 4 = 24.
+    
+    Now that we've done the implicit type cast, we will perform the actual addition. This is a "pointer + integer" addition, which would be scaled. Since our pointer points to a `int [2]`, the addition would be scaled to `sizeof(int [2])` which is 8.
+    
+    The result is `(base + 2 * 8)`, and has the same pointer type: `int (*)[2]`.
+    
+    ```
+    arr[0][0] arr[0][1] arr[1][0] arr[1][1] arr[2][0] arr[2][1]
+                                            |
+                                            result is this address
+    ```
+    
+2. `*(arr + 2)`
+    
+    The next step is dereference. The type of the result would be `int [2]`, but the value is rather special - still `(base + 2 * 8)`, since the value of an array is just the base address.
+    
+3. `*(arr + 2) + 1`
 
+    This step is pretty much the same. The array is cast into a pointer. This time the pointer has type `int *` so the scale would be 4. The result of this expression is `(base + 2 * 8 + 1 * 4) and has type `int *`.
+    
+    ```
+    arr[0][0] arr[0][1] arr[1][0] arr[1][1] arr[2][0] arr[2][1]
+                                                      |
+                                                      result is this address
+    ```
+    
+4. `*(*(arr + 2) + 1)`
+
+    The final step is dereference. Just pick up the integer according to the address. Farely easy step.
+    
 ### 4. Code Generator - round 20%
 * Generates x86 assembly code.
 
