@@ -26,6 +26,7 @@ namespace AST {
         public virtual Reg CGenValue(Env env, CGenState state) {
             throw new NotImplementedException();
         }
+
         public virtual void CGenAddress(Env env, CGenState state) {
             throw new NotImplementedException();
         }
@@ -81,14 +82,11 @@ namespace AST {
 
             case ExprType.Kind.ERROR:
             case ExprType.Kind.INCOMPLETE_ARRAY:
-            case ExprType.Kind.INCOMPLETE_STRUCT:
-            case ExprType.Kind.INCOMPLETE_UNION:
             case ExprType.Kind.INIT_LIST:
             case ExprType.Kind.VOID:
                 throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
 
-            case ExprType.Kind.STRUCT:
-            case ExprType.Kind.UNION:
+            case ExprType.Kind.STRUCT_OR_UNION:
                 throw new NotImplementedException();
             }
 
@@ -137,10 +135,9 @@ namespace AST {
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.POINTER:
                 case ExprType.Kind.SHORT:
-                case ExprType.Kind.STRUCT:
+                case ExprType.Kind.STRUCT_OR_UNION:
                 case ExprType.Kind.UCHAR:
                 case ExprType.Kind.ULONG:
-                case ExprType.Kind.UNION:
                 case ExprType.Kind.USHORT:
                 case ExprType.Kind.VOID:
                 default:
@@ -186,8 +183,7 @@ namespace AST {
                     state.FLDL(offset, Reg.EBP);
                     return Reg.ST0;
 
-				case ExprType.Kind.STRUCT:
-				case ExprType.Kind.UNION:
+				case ExprType.Kind.STRUCT_OR_UNION:
 					state.LEA(offset, Reg.ESP, Reg.ESI); // source address
 					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
 					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
@@ -260,8 +256,7 @@ namespace AST {
                     state.FLDL(name);
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT:
-                case ExprType.Kind.UNION:
+                case ExprType.Kind.STRUCT_OR_UNION:
 					state.LEA(name, Reg.ESI); // source address
 					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
 					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
@@ -279,8 +274,6 @@ namespace AST {
 
                 case ExprType.Kind.ERROR:
                 case ExprType.Kind.INCOMPLETE_ARRAY:
-                case ExprType.Kind.INCOMPLETE_STRUCT:
-                case ExprType.Kind.INCOMPLETE_UNION:
                 case ExprType.Kind.INIT_LIST:
                 default:
                     throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
@@ -384,8 +377,7 @@ namespace AST {
 
                 return Reg.ST0;
 
-            case ExprType.Kind.STRUCT:
-            case ExprType.Kind.UNION:
+            case ExprType.Kind.STRUCT_OR_UNION:
                 throw new NotImplementedException();
 
             case ExprType.Kind.FUNCTION:
@@ -393,8 +385,6 @@ namespace AST {
             case ExprType.Kind.ARRAY:
             case ExprType.Kind.ERROR:
             case ExprType.Kind.INCOMPLETE_ARRAY:
-            case ExprType.Kind.INCOMPLETE_STRUCT:
-            case ExprType.Kind.INCOMPLETE_UNION:
             case ExprType.Kind.INIT_LIST:
             default:
                 throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());
@@ -467,15 +457,15 @@ namespace AST {
             Int32 size = expr.type.size_of; // size of the struct or union
             Int32 offset;                   // offset inside the pack
             switch (expr.type.kind) {
-                case ExprType.Kind.STRUCT:
-                    TStruct type = (TStruct)expr.type;
-                    Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
-                    offset = entry.offset;
-                    break;
-
-                case ExprType.Kind.UNION:
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    // TODO: complete here.
                     offset = 0;
                     break;
+
+                    //TStruct type = (TStruct)expr.type;
+                    //Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
+                    //offset = entry.offset;
+                    //break;
 
                 default:
                     throw new InvalidProgramException();
@@ -524,16 +514,15 @@ namespace AST {
                     state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT:
-                    state.LEA(offset, Reg.ESP, Reg.ESI);
-                    state.LEA(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4), Reg.ESP, Reg.EDI);
-                    state.MemCpyReversed();
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4));
-                    return Reg.STACK;
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    throw new NotImplementedException("Struct or union might mess up with the stack.");
 
-                case ExprType.Kind.UNION:
-                    // Fuck this.
-                    throw new NotImplementedException();
+                    //state.LEA(offset, Reg.ESP, Reg.ESI);
+                    //state.LEA(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4), Reg.ESP, Reg.EDI);
+                    //state.MemCpyReversed();
+                    //state.CGenShrinkStackBy(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4));
+                    //return Reg.STACK;
+                    
 
                 default:
                     throw new InvalidProgramException();
@@ -545,15 +534,16 @@ namespace AST {
 
             Int32 offset; // offset inside the pack
             switch (expr.type.kind) {
-                case ExprType.Kind.STRUCT:
-                    TStruct type = (TStruct)expr.type;
-                    Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
-                    offset = entry.offset;
-                    break;
-
-                case ExprType.Kind.UNION:
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    // TODO: finish here.
                     offset = 0;
                     break;
+
+                    //TStruct type = (TStruct)expr.type;
+                    //Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
+                    //offset = entry.offset;
+                    //break;
+
 
                 default:
                     throw new InvalidProgramException();
@@ -638,8 +628,7 @@ namespace AST {
                     state.FLDL(0, Reg.EAX);
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT:
-                case ExprType.Kind.UNION:
+                case ExprType.Kind.STRUCT_OR_UNION:
                     // %esi = src address
                     state.MOVL(Reg.EAX, Reg.ESI);
 

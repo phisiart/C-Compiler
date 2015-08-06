@@ -847,7 +847,7 @@ public class _unary_expression : ParseRule {
 // NOTE:
 // this is right-recursive, which is totally fine
 //
-public class _cast_expression : Expr {
+public class _cast_expression : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a");
         Expr expr;

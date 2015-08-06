@@ -668,21 +668,111 @@ namespace SyntaxTree {
         }
     }
 
-
     // StructOrUnionSpec
     // =================
     // a base class of StructSpec and UnionSpec
     // not present in the semant phase
     // 
-    public abstract class StructOrUnionSpecifier : TypeSpec {
-        public StructOrUnionSpecifier(String _name, List<StructDeclaration> _declns) {
-            name = _name;
-            declns = _declns;
+    public abstract class StructOrUnionSpec : TypeSpec {
+        public StructOrUnionSpec(String name, List<StructDeclaration> declns) {
+            this.name = name;
+            this.declns = declns;
         }
         public readonly String name;
         public readonly List<StructDeclaration> declns;
-    }
 
+        public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
+            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+            foreach (StructDeclaration decln in declns) {
+                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
+                env = r_decln.Item1;
+                attribs.AddRange(r_decln.Item2);
+            }
+            return Tuple.Create(env, attribs);
+        }
+
+        public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(Boolean is_struct, AST.Env env, Boolean is_const, Boolean is_volatile) {
+
+            if (name == "") {
+                // If no name is supplied: must be complete.
+                // struct { ... } or union { ... }
+
+                if (declns == null) {
+                    throw new ArgumentNullException("Error: parser should ensure declns != null");
+                }
+
+                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+                env = r_attribs.Item1;
+
+                if (is_struct) {
+                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateStruct("<anonymous>", r_attribs.Item2, is_const, is_volatile));
+                } else {
+                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateUnion("<anonymous>", r_attribs.Item2, is_const, is_volatile));
+                }
+
+            } else {
+                // If a name is supplied, split into 2 cases.
+
+                String typename = is_struct ? $"struct {name}" : $"union {name}";
+
+                if (declns == null) {
+                    // Case 1: If no attribute list supplied, then we are either
+                    //       1) mentioning an already-existed struct/union
+                    //    or 2) creating an incomplete struct/union
+
+                    AST.Env.Entry r_find = env.Find(typename);
+
+                    if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
+                        // If the struct/union is not in the current environment,
+                        // then add an incomplete struct/union into the environment
+                        AST.ExprType type =
+                            is_struct
+                            ? AST.TStructOrUnion.CreateIncompleteStruct(name, is_const, is_volatile)
+                            : AST.TStructOrUnion.CreateIncompleteUnion(name, is_const, is_volatile);
+
+                        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typename, type);
+                        return Tuple.Create(env, type);
+                    }
+
+                    if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
+                        throw new InvalidProgramException(typename + " is not a type? This should be my fault.");
+                    }
+
+                    // If the struct/union is found, return it.
+                    return Tuple.Create(env, r_find.type);
+
+                } else {
+                    // Case 2: If an attribute list is supplied.
+
+                    // 1) Make sure there is no complete struct/union in the current environment.
+                    AST.Env.Entry r_find = env.Find(typename + name);
+                    if (r_find.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)r_find.type).is_complete) {
+                        throw new InvalidOperationException($"Redefining {typename}");
+                    }
+
+                    // 2) Add an incomplete struct/union into the environment.
+                    AST.TStructOrUnion type =
+                        is_struct
+                        ? AST.TStructOrUnion.CreateIncompleteStruct(name, is_const, is_volatile)
+                        : AST.TStructOrUnion.CreateIncompleteUnion(name, is_const, is_volatile);
+                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typename, type);
+
+                    // 3) Iterate over the attributes.
+                    Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+                    env = r_attribs.Item1;
+
+                    // 4) Make the type complete. This would also change the entry inside env.
+                    if (is_struct) {
+                        type.DefineStruct(r_attribs.Item2);
+                    } else {
+                        type.DefineUnion(r_attribs.Item2);
+                    }
+
+                    return new Tuple<AST.Env, AST.ExprType>(env, type);
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Struct Specifier
@@ -703,183 +793,39 @@ namespace SyntaxTree {
     ///        3. iterate over the declns
     ///        4. finish forming a complete struct and add it into the environment
     /// </summary>
-    public class StructSpecifier : StructOrUnionSpecifier {
+    public class StructSpecifier : StructOrUnionSpec {
         public StructSpecifier(String _name, List<StructDeclaration> _declns)
             : base(_name, _declns) { }
 
-        public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDeclaration decln in declns) {
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                attribs.AddRange(r_decln.Item2);
-            }
-            return Tuple.Create(env, attribs);
-        }
-
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-
-            if (name == "") {
-                // if no name supplied
-
-                if (declns == null) {
-                    throw new ArgumentNullException("Error: parser should ensure declns != null");
-                }
-
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                env = r_attribs.Item1;
-
-                return new Tuple<AST.Env, AST.ExprType>(env, AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile));
-
-            } else {
-                // name supplied
-
-                if (declns == null) {
-                    // if no declns supplied, then we are mentioning a struct
-
-                    AST.Env.Entry r_find = env.Find("struct " + name);
-
-                    // if the struct is not in the current environment
-                    if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
-
-                        // add an incomplete struct into the environment
-                        AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
-                        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, incomplete_type);
-
-                        return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
-                    }
-
-                    if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
-                        throw new InvalidOperationException("Error: find struct " + name + " not a type. This should be my fault.");
-                    }
-
-                    return Tuple.Create(env, r_find.type);
-
-                } else {
-                    // declns supplied
-
-                    // 1. make sure there is no complete struct in the current environment
-                    if (env.Find("struct " + name).type.kind == AST.ExprType.Kind.STRUCT) {
-                        throw new InvalidOperationException("Error: re-defining a struct");
-                    }
-
-                    // 2. add an incomplete struct into the environment
-                    AST.TIncompleteStruct incomplete_type = new AST.TIncompleteStruct(name, is_const, is_volatile);
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, incomplete_type);
-
-
-                    // 3. iterate over the attribs
-                    Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                    env = r_attribs.Item1;
-
-                    // 4. create the type
-                    AST.TStruct type = AST.TStruct.Create(r_attribs.Item2, is_const, is_volatile);
-
-                    // 5. add into the environment
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "struct " + name, type);
-
-                    return new Tuple<AST.Env, AST.ExprType>(env, type);
-
-                }
-
-
-            }
-
-        }
-
+        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+            GetExprTypeEnv(true, env, is_const, is_volatile);
     }
 
-
-    // UnionSpec
-    // =========
-    // 
-    public class UnionSpecifier : StructOrUnionSpecifier {
-        public UnionSpecifier(String _name, List<StructDeclaration> _declns)
+    /// <summary>
+    /// Union Specifier
+    /// 
+    /// Specifies a union type.
+    /// 
+    /// if name == "", then
+    ///     the parser ensures that declns != null,
+    ///     and this specifier does not change the environment
+    /// if name != "", then
+    ///     if declns == null
+    ///        this means that this specifier is just mentioning a struct, not defining one, so
+    ///        if the current environment doesn't have this union type, then add an **incomplete** struct
+    ///     if declns != null
+    ///        this means that this specifier is defining a struct, so we need to perform the following steps:
+    ///        1. make sure that the current environment doesn't have a **complete** union of this name
+    ///        2. immediately add an **incomplete** union into the environment
+    ///        3. iterate over the declns
+    ///        4. finish forming a complete union and add it into the environment
+    /// </summary>
+    public class UnionSpec : StructOrUnionSpec {
+        public UnionSpec(String _name, List<StructDeclaration> _declns)
             : base(_name, _declns) { }
 
-        public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDeclaration decln in declns) {
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                attribs.AddRange(r_decln.Item2);
-            }
-            return Tuple.Create(env, attribs);
-        }
-
-        // GetExprType
-        // ===========
-        // input: env, is_const, is_volatile
-        // output: tuple<ExprType, Environment>
-        // 
-        // TODO : UnionSpec.GetExprType(env, is_const, is_volatile) -> (type, env)
-        // 
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-
-            if (name == "") {
-                // if no name supplied
-
-                if (declns == null) {
-                    throw new ArgumentNullException("Error: parser should ensure declns != null");
-                }
-
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                env = r_attribs.Item1;
-
-                return new Tuple<AST.Env, AST.ExprType>(env, AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile));
-
-            } else {
-                // name supplied
-
-                if (declns == null) {
-                    // if no declns supplied, then we are mentioning a union
-
-                    AST.Env.Entry r_find = env.Find("union " + name);
-
-                    // if the struct is not in the current environment
-                    if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
-
-                        // add an incomplete union into the environment
-                        AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
-                        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, incomplete_type);
-
-                        return new Tuple<AST.Env, AST.ExprType>(env, incomplete_type);
-                    }
-
-                    if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
-                        throw new InvalidOperationException("Error: find union " + name + " not a type. This should be my fault.");
-                    }
-
-                    return Tuple.Create(env, r_find.type);
-
-                } else {
-                    // declns supplied
-
-                    // 1. make sure there is no complete struct in the current environment
-                    if (env.Find("union " + name).type.kind == AST.ExprType.Kind.UNION) {
-                        throw new InvalidOperationException("Error: re-defining a union");
-                    }
-
-                    // 2. add an incomplete struct into the environment
-                    AST.TIncompleteUnion incomplete_type = new AST.TIncompleteUnion(name, is_const, is_volatile);
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, incomplete_type);
-
-
-                    // 3. iterate over the attribs
-                    Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                    env = r_attribs.Item1;
-
-                    // 4. create the type
-                    AST.TUnion type = AST.TUnion.Create(r_attribs.Item2, is_const, is_volatile);
-
-                    // 5. add into the environment
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "union " + name, type);
-
-                    return new Tuple<AST.Env, AST.ExprType>(env, type);
-
-                }
-            }
-        }
+        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+            GetExprTypeEnv(false, env, is_const, is_volatile);
 
     }
 

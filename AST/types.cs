@@ -92,22 +92,19 @@ namespace AST {
             FLOAT,
             DOUBLE,
             POINTER,
-            STRUCT,
-            INCOMPLETE_STRUCT,
-            UNION,
-            INCOMPLETE_UNION,
             FUNCTION,
             ARRAY,
             INCOMPLETE_ARRAY,
             INIT_LIST,
+            STRUCT_OR_UNION,
         }
 
         public ExprType(Kind kind, Int32 size_of, Int32 alignment, Boolean is_const, Boolean is_volatile) {
             this.is_const = is_const;
             this.is_volatile = is_volatile;
             this.kind = kind;
-            this.size_of = size_of;
-            this.alignment = alignment;
+            _size_of = size_of;
+            _alignment = alignment;
         }
 
         public static Int32 SIZEOF_CHAR = 1;
@@ -128,7 +125,8 @@ namespace AST {
         public virtual Boolean IsArith() { return false; }
         public virtual Boolean IsIntegral() { return false; }
         public virtual Boolean IsScalar() { return false; }
-        public virtual Boolean EqualType(ExprType other) { return false; }
+        public abstract Boolean EqualType(ExprType other);
+
         public String DumpQualifiers() {
             String str = "";
             if (is_const) {
@@ -140,10 +138,14 @@ namespace AST {
             return str;
         }
 
-        public abstract ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile);
+        public abstract ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile);
 
-        public readonly Int32 size_of;
-        public readonly Int32 alignment;
+        private Int32 _size_of;
+        private Int32 _alignment;
+
+        public virtual Int32 size_of { get { return _size_of; } }
+        public virtual Int32 alignment { get { return _alignment; } }
+
         public readonly Boolean is_const;
         public readonly Boolean is_volatile;
 
@@ -154,6 +156,9 @@ namespace AST {
             : base(Kind.INIT_LIST, 0, 0, true, true) { }
         public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
             throw new InvalidOperationException();
+        }
+        public override Boolean EqualType(ExprType other) {
+            return false;
         }
     }
 
@@ -167,6 +172,8 @@ namespace AST {
         public override String ToString() {
             return DumpQualifiers() + "void";
         }
+        public override Boolean EqualType(ExprType other) => other.kind == Kind.VOID;
+
     }
 
     public abstract class ScalarType : ExprType {
@@ -317,9 +324,7 @@ namespace AST {
             return new TIncompleteArray(array_elem_type, _is_const, _is_volatile);
         }
 
-        public override Boolean EqualType(ExprType other) {
-            return base.EqualType(other);
-        }
+        public override Boolean EqualType(ExprType other) => false;
 
         public override String ToString() {
             return array_elem_type.ToString() + "[]";
@@ -352,131 +357,151 @@ namespace AST {
 
     }
     
-	public class TIncompleteStruct : ExprType {
-		public TIncompleteStruct(String name, Boolean is_const = false, Boolean is_volatile = false)
-			: base(Kind.INCOMPLETE_STRUCT, 0, 0, is_const, is_volatile) {
-			this.name = name;
-		}
-		public readonly String name;
-
-        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
-            return new TIncompleteStruct(name, is_const, is_volatile);
-        }
-    }
-
-    // class TStruct
-    // =============
-    // represets the structure
-    // stores the names, types, and offsets of attributes
-    // 
-    public class TStruct : ExprType {
-        private TStruct(List<Utils.StoreEntry> _attribs, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
-            : base(Kind.STRUCT, _size_of, _alignment, _is_const, _is_volatile) {
-            attribs = _attribs;
+    public class TStructOrUnion : ExprType {
+        private TStructOrUnion(StructOrUnionLayout layout, Boolean is_const, Boolean is_volatile)
+            : base(Kind.STRUCT_OR_UNION, 0, 0, is_const, is_volatile) {
+            this.layout = layout;
         }
 
-        public static TStruct Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
-            List<Utils.StoreEntry> attribs = new List<Utils.StoreEntry>();
-            Int32 offset = 0;
-            Int32 alignment = 0;
-            foreach (Tuple<String, ExprType> _attrib in _attribs) {
-                Int32 curr_align = _attrib.Item2.alignment;
-                if (curr_align > alignment) {
-                    alignment = curr_align;
-                }
-                offset = Utils.RoundUp(offset, curr_align);
-                attribs.Add(new Utils.StoreEntry(_attrib.Item1, _attrib.Item2, offset));
-                offset += _attrib.Item2.size_of;
-            }
-            offset = Utils.RoundUp(offset, alignment);
-            return new TStruct(attribs, offset, alignment, _is_const, _is_volatile);
+        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) =>
+            new TStructOrUnion(layout, is_const, is_volatile);
+
+        public static TStructOrUnion CreateIncompleteStruct(String name, Boolean is_const, Boolean is_volatile) =>
+            new TStructOrUnion(new StructOrUnionLayout($"struct {name}"), is_const, is_volatile);
+
+        public static TStructOrUnion CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
+            new TStructOrUnion(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
+
+        public static TStructOrUnion CreateStruct(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
+            StructOrUnionLayout layout = new StructOrUnionLayout($"struct {name}");
+            layout.DefineStruct(attribs);
+            return new TStructOrUnion(layout, is_const, is_volatile);
         }
-        
+
+        public static TStructOrUnion CreateUnion(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
+            StructOrUnionLayout layout = new StructOrUnionLayout($"union {name}");
+            layout.DefineUnion(attribs);
+            return new TStructOrUnion(layout, is_const, is_volatile);
+        }
+
+        public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) => layout.DefineStruct(attribs);
+
+        public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) => layout.DefineUnion(attribs);
+
         public String Dump(Boolean dump_attribs) {
-            String str = "struct (size = " + size_of + ")";
-            if (dump_attribs) {
-                str += "\n";
-                foreach (Utils.StoreEntry attrib in attribs) {
-                    str += "  [base + " + attrib.offset.ToString() + "] " + attrib.name + " : " + attrib.type.ToString() + "\n";
-                }
-            }
-            return str;
-        }
-
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TStruct(attribs, size_of, alignment, _is_const, _is_volatile);
-        }
-
-        public override String ToString() {
-            String str = DumpQualifiers() + "struct { ";
-            foreach (Utils.StoreEntry attrib in attribs) {
-                str += attrib.name + " : " + attrib.type.ToString() + "; ";
-            }
-            str += "}";
-            return str;
-        }
-
-        public readonly List<Utils.StoreEntry> attribs;
-    }
-
-
-    // class TUnion
-    // ============
-    // represents the union type
-    // stores the names and types of attributes
-    // 
-    public class TUnion : ExprType {
-        public TUnion(List<Tuple<String, ExprType>> _attribs, Int32 _size_of, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(Kind.UNION, _size_of, _size_of, _is_const, _is_volatile) {
-            attribs = _attribs;
-        }
-
-        public static TUnion Create(List<Tuple<String, ExprType>> _attribs, Boolean _is_const = false, Boolean _is_volatile = false) {
-            Int32 size_of;
-            if (_attribs.Count != 0) {
-                size_of = _attribs.Max(x => x.Item2.size_of);
+            if (!is_complete) {
+                return "incompleted type " + layout.typename;
             } else {
-                size_of = 0;
-            }
-            return new TUnion(_attribs, size_of, _is_const, _is_volatile);
-        }
-
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TUnion(attribs, size_of, _is_const, _is_volatile);
-        }
-
-        public String Dump(Boolean dump_attribs) {
-            String str = "union (size = " + size_of + ")";
-            if (dump_attribs) {
-                str += "\n";
-                foreach (Tuple<String, ExprType> attrib in attribs) {
-                    str += "  " + attrib.Item1 + " : " + attrib.Item2.ToString() + "\n";
+                String str = layout.typename + " (size = " + size_of + ")";
+                if (dump_attribs) {
+                    str += "\n";
+                    foreach (Utils.StoreEntry attrib in layout.attribs) {
+                        str += "  [base + " + attrib.offset.ToString() + "] " + attrib.name + " : " + attrib.type.ToString() + "\n";
+                    }
                 }
+                return str;
             }
-            return str;
         }
 
         public override String ToString() {
-            String str = DumpQualifiers() + "union { ";
-            foreach (Tuple<String, ExprType> attrib in attribs) {
-                str += attrib.Item1 + " : " + attrib.Item2.ToString() + "; ";
-            }
-            str += "}";
-            return str;
+            return Dump(false);
+            //String str = DumpQualifiers() + layout.typename + " { ";
+            //foreach (Utils.StoreEntry attrib in layout.attribs) {
+            //    str += attrib.name + " : " + attrib.type.ToString() + "; ";
+            //}
+            //str += "}";
+            //return str;
         }
 
-        public readonly List<Tuple<String, ExprType>> attribs;
-    }
+        public override Boolean EqualType(ExprType other) =>
+            other.kind == Kind.STRUCT_OR_UNION && ReferenceEquals(((TStructOrUnion)other).layout, layout);
 
-	public class TIncompleteUnion : ExprType {
-		public TIncompleteUnion(String name, Boolean is_const = false, Boolean is_volatile = false)
-			: base(Kind.INCOMPLETE_UNION, 0, 0, is_const, is_volatile) {
-			this.name = name;
-		}
-		public readonly String name;
+        public Boolean is_complete { get { return layout.is_complete; } }
 
-        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volateil) {
-            return new TIncompleteUnion(name, is_const, is_volateil);
+        public override Int32 size_of { get { return layout.size_of; } }
+
+        public override Int32 alignment { get { return layout.alignment; } }
+
+        private readonly StructOrUnionLayout layout;
+
+        private class StructOrUnionLayout {
+            public StructOrUnionLayout(String typename = "") {
+                _attribs = null;
+                _size_of = 0;
+                _alignment = 0;
+                _typename = typename;
+            }
+
+            public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) {
+                if (is_complete) {
+                    throw new InvalidOperationException("Redefining a struct.");
+                }
+
+                _attribs = new List<Utils.StoreEntry>();
+                Int32 offset = 0;
+                Int32 struct_alignment = 0;
+                foreach (Tuple<String, ExprType> attrib in attribs) {
+                    String name = attrib.Item1;
+                    ExprType type = attrib.Item2;
+
+                    Int32 attrib_alignment = type.alignment;
+
+                    // All attributes must be aligned.
+                    // This means that the alignment of the struct is the largest attribute alignment.
+                    struct_alignment = Math.Max(struct_alignment, attrib_alignment);
+
+                    // Make sure all attributes are put into aligned places.
+                    offset = Utils.RoundUp(offset, attrib_alignment);
+
+                    _attribs.Add(new Utils.StoreEntry(name, type, offset));
+
+                    offset += type.size_of;
+                }
+
+                _size_of = Utils.RoundUp(offset, struct_alignment);
+                _alignment = struct_alignment;
+            }
+
+            public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) {
+                if (is_complete) {
+                    throw new InvalidOperationException("Redefining a union.");
+                }
+
+                _attribs = attribs
+                    .Select(_ => new Utils.StoreEntry(_.Item1, _.Item2, 0))
+                    .ToList();
+            }
+
+            public IReadOnlyList<Utils.StoreEntry> attribs { get { return _attribs; } }
+
+            public Boolean is_complete { get { return _attribs != null; } }
+
+            public Int32 size_of {
+                get {
+                    if (is_complete) {
+                        return _size_of;
+                    } else {
+                        throw new InvalidOperationException("An incomplete type. Cannot get size.");
+                    }
+                }
+            }
+
+            public Int32 alignment { get { return _alignment; } }
+
+            public String typename { get { return _typename; } }
+
+            /// <summary>
+            /// Private records of all the attribs with their names, types, and offsets.
+            /// </summary>
+            private List<Utils.StoreEntry> _attribs;
+
+            /// <summary>
+            /// _size_of and _alignment can only be changed by defining the layout.
+            /// </summary>
+            private Int32 _size_of;
+            private Int32 _alignment;
+
+            private String _typename;
         }
     }
 
@@ -498,6 +523,10 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
             return new TFunction(ret_type, args, size_of, alignment, varargs);
+        }
+
+        public override Boolean EqualType(ExprType other) {
+            throw new NotImplementedException();
         }
 
         public static TFunction Create(ExprType _ret_type, List<Tuple<String, ExprType>> _args, Boolean _varargs) {

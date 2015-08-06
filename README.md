@@ -81,6 +81,15 @@ Each kind of token has its unique pattern, making it recognizable by the program
 * Conversions between pointers, functions, arrays are not made clear.
 
     I need to read some documents and implement it properly.
+    
+* Initialization lists are not implemented.
+
+### Implicit type conversions
+
+Type conversions are always possible between any two arithmetic types.
+
+https://www.safaribooksonline.com/library/view/c-in-a/0596006977/ch04.html
+
 
 ### Environment
 To determine the semantics of a piece of code, we must examine it in the context.

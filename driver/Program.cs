@@ -39,6 +39,16 @@ int main(int argc, char **argv) {
     b++;
 }
                 ";
+
+            scanner.src =
+                @"
+struct S *a;
+int main() {
+    struct S { int a; };
+    int a;
+    a = 3;
+}
+";
             scanner.Lex();
             Console.WriteLine("Source code:");
             Console.WriteLine("======================");

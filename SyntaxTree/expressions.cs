@@ -21,9 +21,7 @@ namespace SyntaxTree {
 
     public abstract class Expr : PTNode {
 
-        public virtual AST.Expr GetExpr(AST.Env env) {
-            throw new NotImplementedException();
-        }
+        public abstract AST.Expr GetExpr(AST.Env env);
 
         public delegate TValue ConstOperation<TValue>(TValue lhs, TValue rhs);
 
@@ -264,15 +262,9 @@ namespace SyntaxTree {
             switch (true_expr.type.kind) {
                 // 2. if both true_expr and false_expr have struct or union type
                 //    make sure they are compatible
-                case AST.ExprType.Kind.STRUCT:
+                case AST.ExprType.Kind.STRUCT_OR_UNION:
                     if (!true_expr.type.EqualType(false_expr.type)) {
-                        throw new InvalidOperationException("Expected compatible struct types in conditional expression.");
-                    }
-                    return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
-
-                case AST.ExprType.Kind.UNION:
-                    if (!true_expr.type.EqualType(false_expr.type)) {
-                        throw new InvalidOperationException("Expected compatible union types in conditional expression.");
+                        throw new InvalidOperationException("Expected compatible types in conditional expression.");
                     }
                     return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
 
@@ -328,6 +320,7 @@ namespace SyntaxTree {
         }
     }
 
+    // TODO: not implemented.
     public class Attribute : Expr {
         public Attribute(Expr _expr, Variable _attrib) {
             attrib_expr = _expr;
@@ -340,28 +333,30 @@ namespace SyntaxTree {
             AST.Expr expr = attrib_expr.GetExpr(env);
             String attrib = attrib_attrib.name;
 
-            switch (expr.type.kind) {
-                case AST.ExprType.Kind.STRUCT:
-                    AST.TStruct struct_type = (AST.TStruct)expr.type;
-                    AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.name == attrib);
-                    if (r_struct_find == null) {
-                        throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
-                    }
-                    return new AST.Attribute(expr, attrib, r_struct_find.type);
+            throw new NotImplementedException();
 
-                case AST.ExprType.Kind.UNION:
-                    AST.TUnion union_type = (AST.TUnion)expr.type;
+            //switch (expr.type.kind) {
+            //    case AST.ExprType.Kind.STRUCT:
+            //        AST.TStruct struct_type = (AST.TStruct)expr.type;
+            //        AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.name == attrib);
+            //        if (r_struct_find == null) {
+            //            throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
+            //        }
+            //        return new AST.Attribute(expr, attrib, r_struct_find.type);
 
-                    Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
-                    if (r_union_find == null) {
-                        throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
-                    }
-                    return new AST.Attribute(expr, attrib, r_union_find.Item2);
+            //    case AST.ExprType.Kind.UNION:
+            //        AST.TUnion union_type = (AST.TUnion)expr.type;
 
-                default:
-                    throw new InvalidOperationException("Expected a struct or union.");
+            //        Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
+            //        if (r_union_find == null) {
+            //            throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
+            //        }
+            //        return new AST.Attribute(expr, attrib, r_union_find.Item2);
 
-            }
+            //    default:
+            //        throw new InvalidOperationException("Expected a struct or union.");
+
+            //}
         }
     }
 

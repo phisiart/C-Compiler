@@ -295,7 +295,7 @@ public class _type_specifier : ParseRule {
 		Int32 current;
 
         // 1. match struct or union
-        StructOrUnionSpecifier struct_or_union_specifier;
+        StructOrUnionSpec struct_or_union_specifier;
 		if ((current = _struct_or_union_specifier.Parse(src, begin, out struct_or_union_specifier)) != -1) {
             spec = struct_or_union_specifier;
             return current;
@@ -877,7 +877,7 @@ public class _enumeration_constant : ParseRule {
 /// </remarks>
 /// </summary>
 public class _struct_or_union_specifier : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnionSpecifier spec) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StructOrUnionSpec spec) {
 		return Parser.ParseSequence(src, begin, out spec,
 
 			// struct_or_union
@@ -911,7 +911,7 @@ public class _struct_or_union_specifier : ParseRule {
 
 			(Boolean is_union, Tuple<String, List<StructDeclaration>> declns) => {
 				if (is_union) {
-					return new UnionSpecifier(declns.Item1, declns.Item2);
+					return new UnionSpec(declns.Item1, declns.Item2);
 				} else {
 					return new StructSpecifier(declns.Item1, declns.Item2);
 				}

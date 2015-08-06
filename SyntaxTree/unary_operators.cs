@@ -146,16 +146,12 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected a pointer.");
             }
 
-            AST.ExprType ref_type = ((AST.TPointer)expr.type).ref_t;
-            if (ref_type.kind == AST.ExprType.Kind.INCOMPLETE_STRUCT) {
-                AST.Env.Entry r_find = env.Find("struct " + ((AST.TIncompleteStruct)ref_type).name);
-                if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
-                    throw new InvalidOperationException("Cannot find struct.");
-                }
-                ref_type = r_find.type;
+            AST.ExprType type = ((AST.TPointer)expr.type).ref_t;
+            if (type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).is_complete) {
+                throw new InvalidOperationException("Cannot dereference incomplete type.");
             }
 
-            return new AST.Dereference(expr, ref_type);
+            return new AST.Dereference(expr, type);
         }
     }
 
