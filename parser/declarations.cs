@@ -154,7 +154,7 @@ public class _init_declarator : ParseRule {
 			// initializer
 			_initializer.Parse,
 
-			(Boolean _, Expr _init) => _init
+			(Boolean _, Initr _init) => _init
 
 		);
 
@@ -163,10 +163,10 @@ public class _init_declarator : ParseRule {
 			// declarator
 			_declarator.Parse,
 
-			// [ '=' initializer ]?
-			Parser.GetOptionalParser<Expr>(null, InitializerParser),
-
-			(Declr declr, Expr init) => new InitDeclr(declr, init)
+            // [ '=' initializer ]?
+            Parser.GetOptionParser(InitializerParser),
+			
+			(Declr declr, Option<Initr> initr) => new InitDeclr(declr, initr)
 		);
     }
 }
@@ -1080,6 +1080,14 @@ public class _struct_declarator : ParseRule {
 /// <summary>
 /// parameter_declaration
 ///   : declaration_specifiers [ declarator | abstract_declarator ]?
+/// 
+/// int foo(int arg1, int arg2);
+///         ~~~~~~~~
+/// 
+/// int foo(int, int);
+///         ~~~
+/// 
+/// The declarator can be completely omitted.
 /// </summary>
 public class _parameter_declaration : ParseRule {
     public static Boolean Test() {
@@ -1098,16 +1106,16 @@ public class _parameter_declaration : ParseRule {
             // declaration_specifiers
             _declaration_specifiers.Parse,
 
-            // [ 
-            Parser.GetOptionalParser(
-                new Declr("", new List<TypeModifier>()),
+            // [
+            Parser.GetOptionParser(
 
                 // declarator | abstract_declarator
                 Parser.GetChoicesParser(new List<Parser.FParse<Declr>> { _declarator.Parse, _abstract_declarator.Parse })
+            
             ),
             // ]?
 
-            (DeclnSpecs specs, Declr declr) => new ParamDecln(specs, declr)
+            (DeclnSpecs specs, Option<Declr> declr) => new ParamDecln(specs, declr)
         );
     }
 }
@@ -1228,20 +1236,20 @@ public class _direct_abstract_declarator : ParseRule {
 public class _initializer : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("a = 3");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
+        Initr initr;
+        Int32 current = Parse(src, 0, out initr);
         if (current == -1) {
             return false;
         }
 
         src = Parser.GetTokensFromString("{ a = 3, b = 4, c = 5 }");
-        current = Parse(src, 0, out expr);
+        current = Parse(src, 0, out initr);
         if (current == -1) {
             return false;
         }
 
         src = Parser.GetTokensFromString("{ a = 3, b = 4, c = 5, }");
-        current = Parse(src, 0, out expr);
+        current = Parse(src, 0, out initr);
         if (current == -1) {
             return false;
         }
@@ -1249,24 +1257,37 @@ public class _initializer : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Initr initr) {
         // 1. if not start with '{', we have to match assignment_expression
-        if (!Parser.EatOperator(src, ref begin, OperatorVal.LCURL))
-            return _assignment_expression.Parse(src, begin, out expr);
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.LCURL)) {
+            Expr expr;
+            if ((begin = _assignment_expression.Parse(src, begin, out expr)) == -1) {
+                initr = null;
+                return -1;
+            }
+            initr = new InitExpr(expr);
+        }
 
         // 2. if start with '{', match initializer_list
-        if ((begin = _initializer_list.Parse(src, begin, out expr)) == -1)
+        InitList init_list;
+        if ((begin = _initializer_list.Parse(src, begin, out init_list)) == -1) {
+            initr = null;
             return -1;
+        }
+        initr = init_list;
 
         // 3. try to match '}'
-        if (Parser.EatOperator(src, ref begin, OperatorVal.RCURL))
+        if (Parser.EatOperator(src, ref begin, OperatorVal.RCURL)) {
             return begin;
-        
+        }
+
         // 4. if fail, try to match ',' '}'
-        if (!Parser.EatOperator(src, ref begin, OperatorVal.COMMA))
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.COMMA)) {
             return -1;
-        if (!Parser.EatOperator(src, ref begin, OperatorVal.RCURL))
+        }
+        if (!Parser.EatOperator(src, ref begin, OperatorVal.RCURL)) {
             return -1;
+        }
 
         return begin;
     }
@@ -1281,7 +1302,7 @@ public class _initializer : ParseRule {
 public class _initializer_list : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("{1, 2}, {2, 3}");
-        Expr init;
+        InitList init;
         Int32 current = Parse(src, 0, out init);
         if (current == -1) {
             return false;
@@ -1289,14 +1310,14 @@ public class _initializer_list : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-        List<Expr> exprs;
-        if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out exprs, _initializer.Parse, OperatorVal.COMMA)) == -1) {
-            expr = null;
+    public static Int32 Parse(List<Token> src, Int32 begin, out InitList init_list) {
+        List<Initr> initrs;
+        if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out initrs, _initializer.Parse, OperatorVal.COMMA)) == -1) {
+            init_list = null;
             return -1;
         }
 
-        expr = new InitializerList(exprs);
+        init_list = new InitList(initrs);
         return begin;
     }
 }

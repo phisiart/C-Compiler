@@ -82,7 +82,6 @@ namespace AST {
 
             case ExprType.Kind.ERROR:
             case ExprType.Kind.INCOMPLETE_ARRAY:
-            case ExprType.Kind.INIT_LIST:
             case ExprType.Kind.VOID:
                 throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
 
@@ -274,7 +273,6 @@ namespace AST {
 
                 case ExprType.Kind.ERROR:
                 case ExprType.Kind.INCOMPLETE_ARRAY:
-                case ExprType.Kind.INIT_LIST:
                 default:
                     throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
                 }
@@ -385,7 +383,6 @@ namespace AST {
             case ExprType.Kind.ARRAY:
             case ExprType.Kind.ERROR:
             case ExprType.Kind.INCOMPLETE_ARRAY:
-            case ExprType.Kind.INIT_LIST:
             default:
                 throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());
             }

@@ -33,6 +33,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="driver\Option.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\ConstExpressions.cs" />

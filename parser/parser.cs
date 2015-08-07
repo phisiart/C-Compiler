@@ -171,23 +171,22 @@ public class Parser {
             }
         };
     }
-
-    public static FParse<TRet> GetOptionalParser<TRet>(FParse<TRet> Parse) {
-        return delegate (List<Token> src, Int32 begin, out TRet node) {
-            Int32 current;
-            if ((current = Parse(src, begin, out node)) == -1) {
-                // if parsing fails: return default value
-                node = default(TRet);
+    
+    public static FParse<Option<TRet>> GetOptionParser<TRet>(FParse<TRet> Parse) =>
+        delegate (List<Token> src, Int32 begin, out Option<TRet> ret) {
+            TRet node;
+            Int32 current = Parse(src, begin, out node);
+            if (current == -1) {
+                ret = new None<TRet>();
                 return begin;
             } else {
+                ret = new Some<TRet>(node);
                 return current;
             }
         };
-    }
 
-    public static Int32 ParseOptional<TRet>(List<Token> src, Int32 begin, TRet default_val, out TRet node, FParse<TRet> Parse) where TRet : class {
-        return GetOptionalParser(default_val, Parse)(src, begin, out node);
-    }
+    public static Int32 ParseOption<TRet>(List<Token> src, Int32 begin, out Option<TRet> ret, FParse<TRet> Parse) =>
+        GetOptionParser(Parse)(src, begin, out ret);
 
     public static Int32 ParseList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) {
         Int32 current = begin;

@@ -24,11 +24,11 @@ namespace SyntaxTree {
             List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
 
             foreach (InitDeclr init_declr in init_declrs) {
-                Tuple<AST.Env, AST.ExprType, AST.Expr, String> r_declr = init_declr.GetInitDeclr(env, base_type);
+                Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> r_declr = init_declr.GetInitDeclr(env, base_type);
 
                 env = r_declr.Item1;
                 AST.ExprType type = r_declr.Item2;
-                AST.Expr init = r_declr.Item3;
+                Option<AST.Initr> initr = r_declr.Item3;
                 String name = r_declr.Item4;
 
                 // TODO : [finished] add the newly declared object into the environment
@@ -55,7 +55,7 @@ namespace SyntaxTree {
                 }
                 env = env.PushEntry(loc, name, type);
 
-                declns.Add(Tuple.Create(env, new AST.Decln(name, scs, type, init)));
+                declns.Add(Tuple.Create(env, new AST.Decln(name, scs, type, initr)));
 
             }
 
@@ -260,33 +260,32 @@ namespace SyntaxTree {
     // 
     public class InitDeclr : PTNode {
 
-        public InitDeclr(Declr _declr, Expr _init) {
-            if (_declr != null) {
-                declr = _declr;
-            } else {
-                declr = new NullDeclarator();
-            }
-
-            if (_init != null) {
-                init = _init;
-            } else {
-                init = new EmptyExpr();
-            }
+        public InitDeclr(Declr declr, Option<Initr> initr) {
+            this.declr = declr;
+            this.initr = initr;
         }
 
-        public Declr declr;
-        public Expr init;
-
+        public readonly Declr declr; // TODO: should this be optional?
+        public readonly Option<Initr> initr;
 
         // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
-        public Tuple<AST.Env, AST.ExprType, AST.Expr, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
-            AST.Expr ast_init = init.GetExpr(env);
+        public Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
+            String name;
+            Option<AST.Initr> initr;
+
+            Option<Tuple<AST.Env, AST.Initr>> r_initr = this.initr.Map(_ => _.GetInitr(env));
+            if (r_initr.IsSome) {
+                env = r_initr.value.Item1;
+                initr = new Some<AST.Initr>(r_initr.value.Item2);
+            } else {
+                initr = new None<AST.Initr>();
+            }
 
             Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, type);
-            String name = r_declr.Item1;
+            name = r_declr.Item1;
             type = r_declr.Item2;
 
-            return new Tuple<AST.Env, AST.ExprType, AST.Expr, String>(env, type, ast_init, name);
+            return new Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String>(env, type, initr, name);
         }
 
     }
@@ -402,10 +401,7 @@ namespace SyntaxTree {
         public readonly Kind kind;
 
         public abstract AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type);
-
-        [Obsolete]
-        public abstract Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type);
-
+        
     }
 
     public class FunctionModifier : TypeModifier {
@@ -428,23 +424,7 @@ namespace SyntaxTree {
             var args = param_declns.ConvertAll(decln => decln.GetParamDecln(env));
             return AST.TFunction.Create(ret_t, args, has_varargs);
         }
-
-        // Modify Type : (env, type) -> (env, type)
-        // ========================================
-        // 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType ret_type) {
-            Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> r_params = param_type_list.GetParamTypesEnv(env);
-            Boolean varargs = r_params.Item1;
-            List<Tuple<AST.Env, String, AST.ExprType>> param_types = r_params.Item2;
-
-            List<Tuple<String, AST.ExprType>> args = param_types.ConvertAll(arg => {
-                env = arg.Item1;
-                return Tuple.Create(arg.Item2, arg.Item3);
-            });
-
-            return new Tuple<AST.Env, AST.ExprType>(env, AST.TFunction.Create(ret_type, args, varargs));
-        }
+        
     }
 
     public class ArrayModifier : TypeModifier {
@@ -462,24 +442,7 @@ namespace SyntaxTree {
 
             return new AST.TArray(type, ((AST.ConstLong)num_elems).value);
         }
-
-        // Modify Type : (env, type) => (env, type)
-        // ========================================
-        // 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
-            AST.Expr expr_nelems = num_elems.GetExpr(env);
-
-            // Try to cast the 'nelems' expression to a long int.
-            expr_nelems = AST.TypeCast.MakeCast(expr_nelems, new AST.TLong());
-
-            if (!expr_nelems.IsConstExpr()) {
-                throw new InvalidOperationException("Error: size of the array is not a constant.");
-            }
-
-            Int32 nelems = ((AST.ConstLong)expr_nelems).value;
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TArray(type, nelems));
-        }
+        
 
         public readonly Expr num_elems;
     }
@@ -495,16 +458,7 @@ namespace SyntaxTree {
             Boolean is_volatile = type_quals.Contains(TypeQual.VOLATILE);
             return new AST.TPointer(type, is_const, is_volatile);
         }
-
-        // Modify Type : (env, type) => (env, type)
-        // ========================================
-        // 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> ModifyType(AST.Env env, AST.ExprType type) {
-            Boolean is_const = type_quals.Any(x => x == TypeQual.CONST);
-            Boolean is_volatile = type_quals.Any(x => x == TypeQual.VOLATILE);
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TPointer(type, is_const, is_volatile));
-        }
+        
         public readonly List<TypeQual> type_quals;
     }
 
@@ -535,29 +489,8 @@ namespace SyntaxTree {
                     .Aggregate(base_type, (type, modifier) => modifier.GetDecoratedType(env, type))
             );
 
-
-        // TODO : [finished] Declr.WrapExprType(env, type) -> (env, type, name) : wrap up the type
-        [Obsolete]
-        public virtual Tuple<AST.Env, AST.ExprType, String> WrapExprTypeEnv(AST.Env env, AST.ExprType type) {
-            for (int i = inner_declr_modifiers.Count; i-- > 0;) {
-                TypeModifier modifier = inner_declr_modifiers[i];
-
-                Tuple<AST.Env, AST.ExprType> r = modifier.ModifyType(env, type);
-                env = r.Item1;
-                type = r.Item2;
-            }
-            return new Tuple<AST.Env, AST.ExprType, String>(env, type, name);
-        }
     }
-
-    public class NullDeclarator : Declr {
-        public NullDeclarator() : base("", new List<TypeModifier>()) { }
-
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType, String> WrapExprTypeEnv(AST.Env env, AST.ExprType type) {
-            return new Tuple<AST.Env, AST.ExprType, String>(env, type, "");
-        }
-    }
+    
 
     // Parameter Type List
     // ===================
@@ -870,56 +803,55 @@ namespace SyntaxTree {
 
     }
 
-    // Parameter Declaration
-    // =====================
-    // 
+    /// <summary>
+    /// Parameter Declaration.
+    /// 
+    /// int foo(int arg0, int arg1);
+    ///         ~~~~~~~~
+    /// 
+    /// int foo(int, int);
+    ///         ~~~
+    /// 
+    /// The declarator can be completely omitted.
+    /// </summary>
     public class ParamDecln : PTNode {
-        public ParamDecln(DeclnSpecs _specs, Declr _decl) {
-            specs = _specs;
-
-            if (_decl != null) {
-                decl = _decl;
-            } else {
-                decl = new NullDeclarator();
-            }
+        public ParamDecln(DeclnSpecs specs, Option<Declr> declr) {
+            this.specs = specs;
+            this.declr = declr;
         }
 
-        public readonly DeclnSpecs specs;
-        public readonly Declr decl;
+        public readonly DeclnSpecs specs;    // base type
+        public readonly Option<Declr> declr; // type modifiers and name
 
         public Tuple<String, AST.ExprType> GetParamDecln(AST.Env env) {
+
             Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
             // TODO: check environment
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType type = r_specs.Item3;
 
-            Tuple<String, AST.ExprType> r_declr = decl.GetNameAndType(env, type);
-            String name = r_declr.Item1;
-            type = r_declr.Item2;
-
+            String name = "";
+            if (declr.IsSome) {
+                Tuple<String, AST.ExprType> r_declr = declr.value.GetNameAndType(env, type);
+                name = r_declr.Item1;
+                type = r_declr.Item2;
+            }
             return Tuple.Create(name, type);
-        }
-
-        // Get Parameter Declaration : env -> (env, name, type)
-        // ====================================================
-        // 
-        [Obsolete]
-        public Tuple<AST.Env, String, AST.ExprType> GetParamDeclnEnv(AST.Env env) {
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
-            env = r_specs.Item1;
-            AST.Decln.SCS scs = r_specs.Item2;
-            AST.ExprType type = r_specs.Item3;
-
-            Tuple<AST.Env, AST.ExprType, String> r_declr = decl.WrapExprTypeEnv(env, type);
-            env = r_declr.Item1;
-            type = r_declr.Item2;
-            String name = r_declr.Item3;
-
-            return new Tuple<AST.Env, String, AST.ExprType>(env, name, type);
         }
 
     }
 
+    public abstract class Initr : PTNode {
+        public enum Kind {
+            EXPR,
+            INIT_LIST,
+        }
+        public Initr(Kind kind) {
+            this.kind = kind;
+        }
+        public abstract Tuple<AST.Env, AST.Initr> GetInitr(AST.Env env);
+        public readonly Kind kind;
+    }
 
     // Initializer List
     // ================
@@ -930,18 +862,33 @@ namespace SyntaxTree {
     //    
     // 2. aggregate types
     // 3. strings
-    public class InitializerList : Expr {
-        public InitializerList(List<Expr> _exprs) {
-            initlist_exprs = _exprs;
+    public class InitList : Initr {
+        public InitList(List<Initr> initrs)
+            : base(Kind.INIT_LIST) {
+            this.initrs = initrs;
         }
-        public List<Expr> initlist_exprs;
-
-        public override AST.Expr GetExpr(AST.Env env) {
-            throw new InvalidOperationException();
+        public readonly List<Initr> initrs;
+        public override Tuple<AST.Env, AST.Initr> GetInitr(AST.Env env) {
+            List<AST.Initr> initrs = this.initrs.ConvertAll(initr => {
+                Tuple<AST.Env, AST.Initr> r_initr = initr.GetInitr(env);
+                env = r_initr.Item1;
+                return r_initr.Item2;
+            });
+            return new Tuple<AST.Env, AST.Initr>(env, new AST.InitList(initrs));
         }
-
     }
 
+    public class InitExpr : Initr {
+        public InitExpr(Expr expr)
+            : base(Kind.EXPR) {
+            this.expr = expr;
+        }
+        public readonly Expr expr;
+        public override Tuple<AST.Env, AST.Initr> GetInitr(AST.Env env) {
+            // TODO: expr should change env
+            return new Tuple<AST.Env, AST.Initr>(env, new AST.InitExpr(expr.GetExpr(env)));
+        }
+    }
 
     // Type Name
     // =========
@@ -961,13 +908,7 @@ namespace SyntaxTree {
             AST.ExprType type = specs.GetExprTypeEnv(env).Item2;
             return declr.GetNameAndType(env, type).Item2;
         }
-
-        [Obsolete]
-        public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> r_specs = specs.GetExprTypeEnv(env);
-            Tuple<AST.Env, AST.ExprType, String> r_declr = declr.WrapExprTypeEnv(r_specs.Item1, r_specs.Item2);
-            return Tuple.Create(r_declr.Item1, r_declr.Item2);
-        }
+        
     }
 
 }

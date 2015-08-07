@@ -95,6 +95,8 @@ namespace AST {
             FUNCTION,
             ARRAY,
             INCOMPLETE_ARRAY,
+
+            [Obsolete]
             INIT_LIST,
             STRUCT_OR_UNION,
         }
@@ -151,6 +153,7 @@ namespace AST {
 
     }
 
+    [Obsolete]
     public class TInitList : ExprType {
         public TInitList()
             : base(Kind.INIT_LIST, 0, 0, true, true) { }

@@ -14,61 +14,87 @@ namespace AST {
             TYPEDEF,
         }
 
-        public Decln(String name, SCS scs, ExprType type, Expr init) {
-            decln_name = name;
-            decln_scs  = scs;
-            decln_type = type;
-            decln_init = init;
+        public Decln(String name, SCS scs, ExprType type, Option<Initr> initr) {
+            this.name = name;
+            this.scs  = scs;
+            this.type = type;
+            this.initr = initr;
         }
 
         public override String ToString() {
-            String str = "[" + decln_scs.ToString() + "] ";
-            str += decln_name;
-            str += " : " + decln_type.ToString();
+            String str = "[" + scs.ToString() + "] ";
+            str += name;
+            str += " : " + type.ToString();
             return str;
         }
 
         public void CGenExternDecln(Env env, CGenState state) {
             state.CGenExpandStackTo(env.GetStackOffset(), ToString());
-            if (decln_init.type.kind != ExprType.Kind.VOID) {
-                // need initialization
+            //if (initr.type.kind != ExprType.Kind.VOID) {
+            //    // need initialization
 
-                Env.Entry entry = env.Find(decln_name);
-                switch (entry.kind) {
-                case Env.EntryKind.STACK:
-                    // %eax = <decln_init>
-                    decln_init.CGenValue(env, state);
+            //    Env.Entry entry = env.Find(name);
+            //    switch (entry.kind) {
+            //    case Env.EntryKind.STACK:
+            //        // %eax = <decln_init>
+            //        initr.CGenValue(env, state);
 
-                    // -<offset>(%ebp) = %eax
-                    state.MOVL(Reg.EAX, -entry.offset, Reg.EBP);
+            //        // -<offset>(%ebp) = %eax
+            //        state.MOVL(Reg.EAX, -entry.offset, Reg.EBP);
 
-                    break;
-                case Env.EntryKind.GLOBAL:
-                    // TODO : extern decln global
-                    break;
-                case Env.EntryKind.ENUM:
-                case Env.EntryKind.FRAME:
-                case Env.EntryKind.NOT_FOUND:
-                case Env.EntryKind.TYPEDEF:
-                default:
+            //        break;
+            //    case Env.EntryKind.GLOBAL:
+            //        // TODO : extern decln global
+            //        break;
+            //    case Env.EntryKind.ENUM:
+            //    case Env.EntryKind.FRAME:
+            //    case Env.EntryKind.NOT_FOUND:
+            //    case Env.EntryKind.TYPEDEF:
+            //    default:
+            //        throw new NotImplementedException();
+            //    }
+
+
+            //}
+        }
+
+        public void What(ExprType type, Initr initr) {
+            switch (type.kind) {
+                case ExprType.Kind.ARRAY:
                     throw new NotImplementedException();
-                }
-
-
             }
         }
 
-        private readonly String     decln_name;
-        private readonly SCS        decln_scs;
-        private readonly ExprType   decln_type;
-        private readonly Expr       decln_init;
+        private readonly String         name;
+        private readonly SCS            scs;
+        private readonly ExprType       type;
+        private readonly Option<Initr>  initr;
     }
 
-    public class InitList : Expr {
-        public InitList(List<Expr> _exprs) :
-            base(new TInitList()) {
-            initlist_exprs = _exprs;
+    public class Initr {
+        public Initr(Kind kind) {
+            this.kind = kind;
         }
-        public readonly List<Expr> initlist_exprs;
+        public enum Kind {
+            EXPR,
+            INIT_LIST,
+        }
+        public readonly Kind kind;
+    }
+
+    public class InitExpr : Initr {
+        public InitExpr(Expr expr)
+            : base(Kind.EXPR) {
+            this.expr = expr;
+        }
+        public readonly Expr expr;
+    }
+
+    public class InitList : Initr {
+        public InitList(List<Initr> initrs) :
+            base(Kind.INIT_LIST) {
+            this.initrs = initrs;
+        }
+        public readonly List<Initr> initrs;
     }
 }
