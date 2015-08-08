@@ -265,7 +265,7 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr() && offset.IsConstExpr()) {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.size_of;
+                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
             }
@@ -273,7 +273,7 @@ namespace SyntaxTree {
             AST.Expr base_addr = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile));
             AST.Expr scale = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.size_of),
+                new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf),
                 new AST.TLong(offset.type.is_const, offset.type.is_volatile)
             );
             AST.ExprType add_type = new AST.TLong(offset.type.is_const, offset.type.is_volatile);
@@ -345,7 +345,7 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr() && offset.IsConstExpr()) {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.size_of;
+                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
             }
@@ -355,7 +355,7 @@ namespace SyntaxTree {
                     AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.size_of),
+                        new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf),
                         new AST.TLong(offset.type.is_const, offset.type.is_volatile)
                     ),
                     new AST.TLong(offset.type.is_const, offset.type.is_volatile)
@@ -381,7 +381,7 @@ namespace SyntaxTree {
                         throw new InvalidOperationException("The 2 pointers don't match.");
                     }
 
-                    Int32 scale = lhs_t.ref_t.size_of;
+                    Int32 scale = lhs_t.ref_t.SizeOf;
 
                     if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
                         return new AST.ConstLong((Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale);

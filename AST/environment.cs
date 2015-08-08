@@ -114,8 +114,8 @@ namespace AST {
                 Scope scope = new Scope(this);
                 switch (loc) {
                 case EntryKind.STACK:
-                    scope.scope_stack_offset += type.size_of;
-                    scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.alignment);
+                    scope.scope_stack_offset += type.SizeOf;
+                    scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.Alignment);
                     scope.scope_stack_entries.Add(new Utils.StoreEntry(name, type, scope.scope_stack_offset));
                     break;
                 case EntryKind.GLOBAL:

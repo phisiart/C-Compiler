@@ -309,7 +309,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(expr.type.size_of, Reg.EBX);
+            state.ADDL(expr.type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -421,7 +421,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(expr.type.size_of, Reg.EBX);
+            state.SUBL(expr.type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -533,7 +533,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(expr.type.size_of, Reg.EAX);
+            state.ADDL(expr.type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 
@@ -645,7 +645,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(expr.type.size_of, Reg.EAX);
+            state.SUBL(expr.type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 

@@ -53,7 +53,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.ExprType type = type_name.GetExprType(env);
-            return new AST.ConstULong((UInt32)type.size_of);
+            return new AST.ConstULong((UInt32)type.SizeOf);
         }
     }
     
@@ -68,7 +68,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
-            return new AST.ConstULong((UInt32)expr.type.size_of);
+            return new AST.ConstULong((UInt32)expr.type.SizeOf);
         }
     }
 
@@ -147,7 +147,7 @@ namespace SyntaxTree {
             }
 
             AST.ExprType type = ((AST.TPointer)expr.type).ref_t;
-            if (type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).is_complete) {
+            if (type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).IsComplete) {
                 throw new InvalidOperationException("Cannot dereference incomplete type.");
             }
 

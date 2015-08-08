@@ -101,7 +101,7 @@ namespace AST {
     ///    char a[2] = "abc";       // warning in gcc; error in MSVC
     ///    If the aggregate contains members that are aggregates or unions, or if the first member of a union is an aggregate or union, the rules apply recursively to the subaggregates or contained unions. If the initializer of a subaggregate or contained union begins with a left brace, the initializers enclosed by that brace and its matching right brace initialize the members of the subaggregate or the first member of the contained union. Otherwise, only enough initializers from the list are taken to account for the members of the first subaggregate or the first member of the contained union; any remaining initializers are left to initialize the next member of the aggregate of which the current subaggregate or contained union is a part.
     /// </summary>
-    public class Initr {
+    public abstract class Initr {
         public Initr(Kind kind) {
             this.kind = kind;
         }
@@ -110,6 +110,11 @@ namespace AST {
             INIT_LIST,
         }
         public readonly Kind kind;
+
+        public abstract Initr ConformType(MemberIterator iter);
+
+        public Initr ConformType(ExprType type) => ConformType(new MemberIterator(type));
+
     }
 
     public class InitExpr : Initr {
@@ -118,6 +123,12 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+
+        public override Initr ConformType(MemberIterator iter) {
+            iter.Read(this.expr.type);
+            Expr expr = TypeCast.MakeCast(this.expr, iter.CurType);
+            return new InitExpr(expr);
+        }
     }
 
     public class InitList : Initr {
@@ -126,54 +137,170 @@ namespace AST {
             this.initrs = initrs;
         }
         public readonly List<Initr> initrs;
+
+        public override Initr ConformType(MemberIterator iter) {
+            iter.InBrace();
+            List<Initr> initrs = new List<Initr>();
+            for (Int32 i = 0; i < this.initrs.Count; ++i) {
+                initrs.Add(this.initrs[i].ConformType(iter));
+                if (i != this.initrs.Count - 1) {
+                    iter.Next();
+                }
+            }
+            iter.OutBrace();
+            return new InitList(initrs);
+        }
     }
 
     public class MemberIterator {
-        public class Record {
-            public Record(ExprType type, Int32 idx) {
-                this.type = type;
-                this.idx = idx;
-            }
-            public readonly ExprType type;
-            public readonly Int32 idx;
-        }
-
         public MemberIterator(ExprType type) {
-            _records = new List<Record>();
-            _records.Add(new Record(type, 0));
-            _brace_level = 0;
+            trace = new List<Status>();
+            trace.Add(new Status(type));
         }
 
+        public class Status {
+            public Status(ExprType base_type) {
+                this.base_type = base_type;
+                indices = new List<Int32>();
+            }
+
+            public ExprType CurType { get { return GetType(base_type, indices); } }
+
+            public ExprType GetType(ExprType base_type, IReadOnlyList<Int32> indices) {
+                ExprType type = base_type;
+                foreach (Int32 index in indices) {
+                    switch (type.kind) {
+                        case ExprType.Kind.ARRAY:
+                            type = ((TArray)type).elem_type;
+                            break;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            type = ((TStructOrUnion)type).Attribs[index].type;
+                            break;
+                        default:
+                            throw new InvalidOperationException("Not an aggregate type.");
+                    }
+                }
+                return type;
+            }
+
+            public List<ExprType> GetTypes(ExprType base_type, IReadOnlyList<Int32> indices) {
+                List<ExprType> types = new List<ExprType> { base_type };
+                foreach (Int32 index in indices) {
+                    switch (base_type.kind) {
+                        case ExprType.Kind.ARRAY:
+                            base_type = ((TArray)base_type).elem_type;
+                            break;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            base_type = ((TStructOrUnion)base_type).Attribs[index].type;
+                            break;
+                        default:
+                            throw new InvalidOperationException("Not an aggregate type.");
+                    }
+                    types.Add(base_type);
+                }
+                return types;
+            }
+
+            public void Next() {
+                List<ExprType> types = GetTypes(base_type, indices);
+                do {
+                    Int32 index = indices.Last();
+                    indices.RemoveAt(indices.Count - 1);
+
+                    types.RemoveAt(types.Count - 1);
+                    ExprType type = types.Last();
+
+                    switch (type.kind) {
+                        case ExprType.Kind.ARRAY:
+                            // TODO: what if incomplete?
+                            if (index < ((TArray)type).num_elems - 1) {
+                                indices.Add(index + 1);
+                            }
+                            return;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
+                                indices.Add(index + 1);
+                            }
+                            return;
+                        default:
+                            break;
+                    }
+                } while (true);
+            }
+
+            public void Read(ExprType type) {
+                switch (type.kind) {
+                    case ExprType.Kind.STRUCT_OR_UNION:
+                        ReadStruct((TStructOrUnion)type);
+                        return;
+                    default:
+                        if (type.IsScalar()) {
+                            ReadScalar((ScalarType)type);
+                            return;
+                        }
+                        throw new InvalidOperationException("Type not match.");
+                }
+            }
+
+            public void ReadScalar(ScalarType type) {
+                while (!CurType.IsScalar()) {
+                    switch (CurType.kind) {
+                        case ExprType.Kind.ARRAY:
+                            indices.Add(0);
+                            break;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            indices.Add(0);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Cannot find matching struct.");
+                    }
+                }
+                //if (!CurType.EqualType(type)) {
+                //    throw new InvalidOperationException("Type not match.");
+                //}
+            }
+
+            public void ReadStruct(TStructOrUnion type) {
+                while (true) {
+                    switch (CurType.kind) {
+                        case ExprType.Kind.ARRAY:
+                            indices.Add(0);
+                            break;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            if (CurType.EqualType(type)) {
+                                return;
+                            }
+                            indices.Add(0);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Cannot find matching struct.");
+                    }
+                }
+            }
+
+            public readonly ExprType base_type;
+            public readonly List<Int32> indices;
+        }
+
+        public ExprType CurType { get { return trace.Last().CurType; } }
+        public void Next() => trace.Last().Next();
+        public void Read(ExprType type) => trace.Last().Read(type);
         public void InBrace() {
-            Record record;
-            switch (cur_type.kind) {
+            trace.Add(new Status(trace.Last().CurType));
+            switch (CurType.kind) {
                 case ExprType.Kind.ARRAY:
-                    record = new Record(((TArray)cur_type).elem_type, 0);
+                    trace.Last().indices.Add(0);
                     break;
                 case ExprType.Kind.STRUCT_OR_UNION:
-                    record = new Record(((TStructOrUnion)cur_type).attribs[0].type, 0);
+                    trace.Last().indices.Add(0);
                     break;
                 default:
-                    throw new InvalidProgramException();
+                    break;
+                    // throw new InvalidOperationException("Invalid brace.");
             }
-            _records.Add(record);
-            _brace_level++;
         }
+        public void OutBrace() => trace.RemoveAt(trace.Count - 1);
 
-        public void OutBrace() {
-            Record cur_record = records.Last();
-            _records.RemoveAt(_records.Count - 1);
-
-        }
-
-        private Int32 _brace_level;
-        public Int32 brace_level { get { return _brace_level; } }
-
-        private readonly List<Record> _records;
-        public IReadOnlyList<Record> records { get { return _records; } }
-
-        public ExprType cur_type { get { return records.Last().type; } }
-
-        public Int32 cur_idx { get { return records.Last().idx; } }
+        public readonly List<Status> trace;
     }
 }

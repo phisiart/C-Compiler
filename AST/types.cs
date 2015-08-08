@@ -145,8 +145,8 @@ namespace AST {
         private Int32 _size_of;
         private Int32 _alignment;
 
-        public virtual Int32 size_of { get { return _size_of; } }
-        public virtual Int32 alignment { get { return _alignment; } }
+        public virtual Int32 SizeOf { get { return _size_of; } }
+        public virtual Int32 Alignment { get { return _alignment; } }
 
         public readonly Boolean is_const;
         public readonly Boolean is_volatile;
@@ -319,7 +319,7 @@ namespace AST {
     // 
     public class TIncompleteArray : ExprType {
         public TIncompleteArray(ExprType _elem_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(Kind.ARRAY, 0, _elem_type.alignment, _is_const, _is_volatile) {
+            : base(Kind.ARRAY, 0, _elem_type.Alignment, _is_const, _is_volatile) {
             array_elem_type = _elem_type;
         }
 
@@ -338,7 +338,7 @@ namespace AST {
 
     public class TArray : ExprType {
         public TArray(ExprType elem_type, Int32 num_elems, Boolean is_const = false, Boolean is_volatile = false)
-            : base(Kind.ARRAY, elem_type.size_of * num_elems, elem_type.alignment, is_const, is_volatile) {
+            : base(Kind.ARRAY, elem_type.SizeOf * num_elems, elem_type.Alignment, is_const, is_volatile) {
             this.elem_type = elem_type;
             this.num_elems = num_elems;
         }
@@ -392,10 +392,10 @@ namespace AST {
         public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) => layout.DefineUnion(attribs);
 
         public String Dump(Boolean dump_attribs) {
-            if (!is_complete) {
-                return "incompleted type " + layout.typename;
+            if (!IsComplete) {
+                return "incompleted type " + layout.TypeName;
             } else {
-                String str = layout.typename + " (size = " + size_of + ")";
+                String str = layout.TypeName + " (size = " + SizeOf + ")";
                 if (dump_attribs) {
                     str += "\n";
                     foreach (Utils.StoreEntry attrib in layout.attribs) {
@@ -419,18 +419,20 @@ namespace AST {
         public override Boolean EqualType(ExprType other) =>
             other.kind == Kind.STRUCT_OR_UNION && ReferenceEquals(((TStructOrUnion)other).layout, layout);
 
-        public Boolean is_complete { get { return layout.is_complete; } }
+        public Boolean IsComplete { get { return layout.IsComplete; } }
 
-        public override Int32 size_of { get { return layout.size_of; } }
+        public override Int32 SizeOf { get { return layout.SizeOf; } }
 
-        public override Int32 alignment { get { return layout.alignment; } }
+        public override Int32 Alignment { get { return layout.Alignment; } }
 
-        public IReadOnlyList<Utils.StoreEntry> attribs { get { return layout.attribs; } }
+        public Boolean IsStruct { get { return layout.IsStruct; } }
+
+        public IReadOnlyList<Utils.StoreEntry> Attribs { get { return layout.attribs; } }
 
         private readonly StructOrUnionLayout layout;
 
         private class StructOrUnionLayout {
-            public StructOrUnionLayout(String typename = "") {
+            public StructOrUnionLayout(String typename) {
                 _attribs = null;
                 _size_of = 0;
                 _alignment = 0;
@@ -438,7 +440,7 @@ namespace AST {
             }
 
             public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) {
-                if (is_complete) {
+                if (IsComplete) {
                     throw new InvalidOperationException("Redefining a struct.");
                 }
 
@@ -449,7 +451,7 @@ namespace AST {
                     String name = attrib.Item1;
                     ExprType type = attrib.Item2;
 
-                    Int32 attrib_alignment = type.alignment;
+                    Int32 attrib_alignment = type.Alignment;
 
                     // All attributes must be aligned.
                     // This means that the alignment of the struct is the largest attribute alignment.
@@ -460,7 +462,7 @@ namespace AST {
 
                     _attribs.Add(new Utils.StoreEntry(name, type, offset));
 
-                    offset += type.size_of;
+                    offset += type.SizeOf;
                 }
 
                 _size_of = Utils.RoundUp(offset, struct_alignment);
@@ -468,7 +470,7 @@ namespace AST {
             }
 
             public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) {
-                if (is_complete) {
+                if (IsComplete) {
                     throw new InvalidOperationException("Redefining a union.");
                 }
 
@@ -479,11 +481,13 @@ namespace AST {
 
             public IReadOnlyList<Utils.StoreEntry> attribs { get { return _attribs; } }
 
-            public Boolean is_complete { get { return _attribs != null; } }
+            public Boolean IsStruct { get { return TypeName.StartsWith("struct"); } }
 
-            public Int32 size_of {
+            public Boolean IsComplete { get { return _attribs != null; } }
+
+            public Int32 SizeOf {
                 get {
-                    if (is_complete) {
+                    if (IsComplete) {
                         return _size_of;
                     } else {
                         throw new InvalidOperationException("An incomplete type. Cannot get size.");
@@ -491,9 +495,9 @@ namespace AST {
                 }
             }
 
-            public Int32 alignment { get { return _alignment; } }
+            public Int32 Alignment { get { return _alignment; } }
 
-            public String typename { get { return _typename; } }
+            public String TypeName { get { return _typename; } }
 
             /// <summary>
             /// Private records of all the attribs with their names, types, and offsets.
@@ -527,7 +531,7 @@ namespace AST {
         }
 
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
-            return new TFunction(ret_type, args, size_of, alignment, varargs);
+            return new TFunction(ret_type, args, SizeOf, Alignment, varargs);
         }
 
         public override Boolean EqualType(ExprType other) {
@@ -541,10 +545,10 @@ namespace AST {
             Int32 alignment = regsz;
             foreach (Tuple<String, ExprType> arg in _args) {
                 args.Add(new Utils.StoreEntry(arg.Item1, arg.Item2, offset));
-                offset += arg.Item2.size_of;
+                offset += arg.Item2.SizeOf;
 
                 // even though the args are a bunch of chars, they still need to be 4-byte aligned.
-                Int32 curr_align = Math.Max(regsz, arg.Item2.alignment);
+                Int32 curr_align = Math.Max(regsz, arg.Item2.Alignment);
                 offset = (offset + curr_align - 1) & ~(curr_align - 1);
 
                 if (curr_align > alignment) {

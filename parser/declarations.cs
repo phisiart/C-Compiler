@@ -1266,6 +1266,7 @@ public class _initializer : ParseRule {
                 return -1;
             }
             initr = new InitExpr(expr);
+            return begin;
         }
 
         // 2. if start with '{', match initializer_list

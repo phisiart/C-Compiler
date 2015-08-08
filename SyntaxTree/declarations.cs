@@ -285,6 +285,8 @@ namespace SyntaxTree {
             name = r_declr.Item1;
             type = r_declr.Item2;
 
+            initr = initr.Map(_ => _.ConformType(type));
+
             return new Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String>(env, type, initr, name);
         }
 
@@ -679,7 +681,7 @@ namespace SyntaxTree {
 
                     // 1) Make sure there is no complete struct/union in the current environment.
                     AST.Env.Entry r_find = env.Find(typename + name);
-                    if (r_find.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)r_find.type).is_complete) {
+                    if (r_find.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)r_find.type).IsComplete) {
                         throw new InvalidOperationException($"Redefining {typename}");
                     }
 

@@ -184,9 +184,9 @@ namespace AST {
 
 				case ExprType.Kind.STRUCT_OR_UNION:
 					state.LEA(offset, Reg.ESP, Reg.ESI); // source address
-					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
+					state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
 					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-					state.MOVL(type.size_of, Reg.ECX); // nbytes
+					state.MOVL(type.SizeOf, Reg.ECX); // nbytes
 					state.MemCpy();
 					return Reg.STACK;
 
@@ -257,9 +257,9 @@ namespace AST {
 
                 case ExprType.Kind.STRUCT_OR_UNION:
 					state.LEA(name, Reg.ESI); // source address
-					state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
+					state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
 					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-					state.MOVL(type.size_of, Reg.ECX); // nbytes
+					state.MOVL(type.SizeOf, Reg.ECX); // nbytes
 					state.MemCpy();
 					return Reg.STACK;
 
@@ -451,7 +451,7 @@ namespace AST {
                 throw new InvalidProgramException();
             }
 
-            Int32 size = expr.type.size_of; // size of the struct or union
+            Int32 size = expr.type.SizeOf; // size of the struct or union
             Int32 offset;                   // offset inside the pack
             switch (expr.type.kind) {
                 case ExprType.Kind.STRUCT_OR_UNION:
@@ -630,11 +630,11 @@ namespace AST {
                     state.MOVL(Reg.EAX, Reg.ESI);
 
                     // %edi = dst address
-                    state.CGenExpandStackBy(Utils.RoundUp(type.size_of, 4));
+                    state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
                     state.LEA(0, Reg.ESP, Reg.EDI);
 
                     // %ecx = nbytes
-                    state.MOVL(type.size_of, Reg.ECX);
+                    state.MOVL(type.SizeOf, Reg.ECX);
 
                     state.MemCpy();
 

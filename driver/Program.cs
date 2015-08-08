@@ -42,11 +42,18 @@ int main(int argc, char **argv) {
 
             scanner.src =
                 @"
-struct S *a;
+struct B {
+    int b1;
+    int b2;
+};
+struct A {
+    int a1;
+    int a2;
+    struct B b;
+};
+
 int main() {
-    struct S { int a; };
-    int a;
-    a = 3;
+    struct A a = { 1, 1, { {1} , 1 } };
 }
 ";
             scanner.Lex();
@@ -66,6 +73,16 @@ int main() {
 			}
 
             Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
+
+            //AST.TStructOrUnion type = (AST.TStructOrUnion)ast.Item1.Find("struct A").type;
+            //AST.MemberIterator iter = new AST.MemberIterator(type);
+            //iter.Read(new AST.TLong());
+            //iter.Next();
+            //iter.Read(new AST.TLong());
+            //iter.Next();
+            //iter.Read(new AST.TLong());
+            //iter.Next();
+            //iter.Read(new AST.TLong());
 
             CGenState state = new CGenState();
             ast.Item2.CodeGenerate(state);
