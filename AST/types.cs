@@ -425,6 +425,8 @@ namespace AST {
 
         public override Int32 alignment { get { return layout.alignment; } }
 
+        public IReadOnlyList<Utils.StoreEntry> attribs { get { return layout.attribs; } }
+
         private readonly StructOrUnionLayout layout;
 
         private class StructOrUnionLayout {
