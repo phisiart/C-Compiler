@@ -523,22 +523,23 @@ namespace AST {
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
     public class TFunction : ExprType {
-        public TFunction(ExprType _ret_type, List<Utils.StoreEntry> _args, Int32 _size_of, Int32 _alignment, Boolean _varargs)
-            : base(Kind.FUNCTION, _size_of, _alignment, true, false) {
-            args = _args;
-            ret_type = _ret_type;
-            varargs = _varargs;
+        protected TFunction(ExprType ret_type, List<Utils.StoreEntry> args, Int32 arg_size, Int32 alignment, Boolean is_varargs)
+            : base(Kind.FUNCTION, arg_size, alignment, true, false) {
+            this.args = args;
+            this.arg_size = arg_size;
+            this.ret_type = ret_type;
+            this.is_varargs = is_varargs;
         }
 
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
-            return new TFunction(ret_type, args, SizeOf, Alignment, varargs);
+            return new TFunction(ret_type, args, SizeOf, Alignment, is_varargs);
         }
 
         public override Boolean EqualType(ExprType other) {
             throw new NotImplementedException();
         }
 
-        public static TFunction Create(ExprType _ret_type, List<Tuple<String, ExprType>> _args, Boolean _varargs) {
+        public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> _args, Boolean is_varargs) {
             List<Utils.StoreEntry> args = new List<Utils.StoreEntry>();
             Int32 regsz = SIZEOF_LONG; // 32-bit machine: Int32 = 4 bytes
             Int32 offset = 2 * regsz;  // first parameter should be at %ebp + 8
@@ -556,7 +557,7 @@ namespace AST {
                 }
             }
 
-            return new TFunction(_ret_type, args, offset, alignment, _varargs);
+            return new TFunction(ret_type, args, offset - 2 * regsz, alignment, is_varargs);
         }
 
         public String Dump(Boolean dump_args = false) {
@@ -584,9 +585,19 @@ namespace AST {
             return str + " -> " + ret_type;
         }
 
-        public readonly Boolean                varargs;
+        public readonly Boolean                is_varargs;
         public readonly ExprType               ret_type;
         public readonly List<Utils.StoreEntry> args;
+        public readonly Int32                  arg_size;
+        public Int32 HeaderSize {
+            get {
+                if (ret_type.kind == Kind.STRUCT_OR_UNION) {
+                    return Utils.RoundUp(arg_size + ret_type.SizeOf, SIZEOF_LONG);
+                } else {
+                    return arg_size;
+                }
+            }
+        }
     }
 
     // class TEmptyFunction

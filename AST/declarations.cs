@@ -29,7 +29,7 @@ namespace AST {
         }
 
         public void CGenExternDecln(Env env, CGenState state) {
-            state.CGenExpandStackTo(env.GetStackOffset(), ToString());
+            state.CGenExpandStackTo(env.StackSize, ToString());
             //if (initr.type.kind != ExprType.Kind.VOID) {
             //    // need initialization
 

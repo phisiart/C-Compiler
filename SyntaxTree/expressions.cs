@@ -20,141 +20,7 @@ namespace SyntaxTree {
     // I let long = int, long double = double
 
     public abstract class Expr : PTNode {
-
         public abstract AST.Expr GetExpr(AST.Env env);
-
-        public delegate TValue ConstOperation<TValue>(TValue lhs, TValue rhs);
-
-        public delegate Int32 ConstLogialOperation<TValue>(TValue lhs, TValue rhs);
-
-        public delegate TRet BinExprConstructor<TRet>(AST.Expr lhs, AST.Expr rhs, AST.ExprType type);
-
-        public delegate AST.Expr UnaryExprConstructor(AST.Expr expr);
-
-		public static Tuple<AST.Env, AST.Expr> GetIntegralBinOpExprEnv<TRet>(
-			AST.Env env,
-			AST.Expr lhs,
-			AST.Expr rhs,
-			ConstOperation<UInt32> uint32_op,
-			ConstOperation<Int32> int32_op,
-			BinExprConstructor<TRet> construct
-		) where TRet : AST.Expr {
-
-			Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-			lhs = r_cast.Item1;
-			rhs = r_cast.Item2;
-
-			Boolean c1 = lhs.type.is_const;
-			Boolean c2 = rhs.type.is_const;
-			Boolean v1 = lhs.type.is_volatile;
-			Boolean v2 = rhs.type.is_volatile;
-			Boolean is_const = c1 || c2;
-			Boolean is_volatile = v1 || v2;
-
-			AST.ExprType.Kind enum_type = r_cast.Item3;
-
-			AST.Expr expr;
-			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-				switch (enum_type) {
-				case AST.ExprType.Kind.ULONG:
-					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
-					break;
-				case AST.ExprType.Kind.LONG:
-					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
-					break;
-				default:
-					Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-					return null;
-				}
-
-			} else {
-				switch (enum_type) {
-				case AST.ExprType.Kind.ULONG:
-					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
-					break;
-				case AST.ExprType.Kind.LONG:
-					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
-					break;
-				default:
-					Log.SemantError("Error: usual arithmetic conversion returns invalid type.");
-					return null;
-				}
-			}
-
-			return new Tuple<AST.Env, AST.Expr>(env, expr);
-		}
-
-        /// <summary>
-        /// Gets an arithmetic binary operation expression
-        /// from two **semanted** expressions.
-        /// </summary>
-        public static Tuple<AST.Env, AST.Expr> GetArithmeticBinOpExpr<TRet>(
-			AST.Env env,
-			AST.Expr lhs,
-			AST.Expr rhs,
-			ConstOperation<Double> double_op,
-			ConstOperation<Single> float_op,
-			ConstOperation<UInt32> uint32_op,
-			ConstOperation<Int32>  int32_op,
-			BinExprConstructor<TRet> construct
-		) where TRet : AST.Expr {
-
-			Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-			lhs = r_cast.Item1;
-			rhs = r_cast.Item2;
-
-			Boolean c1 = lhs.type.is_const;
-			Boolean c2 = rhs.type.is_const;
-			Boolean v1 = lhs.type.is_volatile;
-			Boolean v2 = rhs.type.is_volatile;
-			Boolean is_const = c1 || c2;
-			Boolean is_volatile = v1 || v2;
-
-			AST.ExprType.Kind enum_type = r_cast.Item3;
-
-			AST.Expr expr;
-			if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
-				switch (enum_type) {
-				case AST.ExprType.Kind.DOUBLE:
-					expr = new AST.ConstDouble(double_op(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
-					break;
-				case AST.ExprType.Kind.FLOAT:
-					expr = new AST.ConstFloat(float_op(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
-					break;
-				case AST.ExprType.Kind.ULONG:
-					expr = new AST.ConstULong(uint32_op(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
-					break;
-				case AST.ExprType.Kind.LONG:
-					expr = new AST.ConstLong(int32_op(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
-					break;
-				default:
-					throw new InvalidOperationException("Error: usual arithmetic conversion returns invalid type.");
-				}
-
-			} else {
-				switch (enum_type) {
-				case AST.ExprType.Kind.DOUBLE:
-					expr = construct(lhs, rhs, new AST.TDouble(is_const, is_volatile));
-					break;
-				case AST.ExprType.Kind.FLOAT:
-					expr = construct(lhs, rhs, new AST.TFloat(is_const, is_volatile));
-					break;
-				case AST.ExprType.Kind.ULONG:
-					expr = construct(lhs, rhs, new AST.TULong(is_const, is_volatile));
-					break;
-				case AST.ExprType.Kind.LONG:
-					expr = construct(lhs, rhs, new AST.TLong(is_const, is_volatile));
-					break;
-				default:
-					throw new InvalidOperationException("Error: usual arithmetic conversion returns invalid type.");
-				}
-			}
-
-			return new Tuple<AST.Env, AST.Expr>(env, expr);
-		}
-
-		public delegate Tuple<AST.Env, AST.Expr> BinOpExprMaker(AST.Env env, AST.Expr lvalue, AST.Expr rvalue);
-
     }
 
     /// <summary>
@@ -320,43 +186,29 @@ namespace SyntaxTree {
         }
     }
 
-    // TODO: not implemented.
+    /// <summary>
+    /// expr.attrib: get an attribute from a struct or union
+    /// </summary>
     public class Attribute : Expr {
-        public Attribute(Expr _expr, Variable _attrib) {
-            attrib_expr = _expr;
-            attrib_attrib = _attrib;
+        public Attribute(Expr expr, Variable attrib) {
+            this.expr = expr;
+            this.attrib = attrib;
         }
-        public readonly Expr attrib_expr;
-        public readonly Variable attrib_attrib;
+        public readonly Expr expr;
+        public readonly Variable attrib;
 
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.Expr expr = attrib_expr.GetExpr(env);
-            String attrib = attrib_attrib.name;
+            AST.Expr expr = this.expr.GetExpr(env);
+            String name = this.attrib.name;
 
-            throw new NotImplementedException();
+            if (expr.type.kind != AST.ExprType.Kind.STRUCT_OR_UNION) {
+                throw new InvalidOperationException("Must get the attribute from a struct or union.");
+            }
 
-            //switch (expr.type.kind) {
-            //    case AST.ExprType.Kind.STRUCT:
-            //        AST.TStruct struct_type = (AST.TStruct)expr.type;
-            //        AST.Utils.StoreEntry r_struct_find = struct_type.attribs.Find(entry => entry.name == attrib);
-            //        if (r_struct_find == null) {
-            //            throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
-            //        }
-            //        return new AST.Attribute(expr, attrib, r_struct_find.type);
+            AST.Utils.StoreEntry entry = ((AST.TStructOrUnion)expr.type).Attribs.First(_ => _.name == name);
+            AST.ExprType type = entry.type;
 
-            //    case AST.ExprType.Kind.UNION:
-            //        AST.TUnion union_type = (AST.TUnion)expr.type;
-
-            //        Tuple<String, AST.ExprType> r_union_find = union_type.attribs.Find(entry => entry.Item1 == attrib);
-            //        if (r_union_find == null) {
-            //            throw new InvalidOperationException($"Cannot find attribute \"{attrib}\"");
-            //        }
-            //        return new AST.Attribute(expr, attrib, r_union_find.Item2);
-
-            //    default:
-            //        throw new InvalidOperationException("Expected a struct or union.");
-
-            //}
+            return new AST.Attribute(expr, name, type);
         }
     }
 

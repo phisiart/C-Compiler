@@ -103,7 +103,7 @@ public class _primary_expression : ParseRule {
 
         // 3. match String literal
         if (src[begin].type == TokenType.STRING) {
-            expr = new StringLiteral(((TokenString)src[begin]).val);
+            expr = new StringLiteral(((TokenString)src[begin]).raw);
             return begin + 1;
         }
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+
 
 namespace AST {
     // Expr 
@@ -39,54 +41,54 @@ namespace AST {
             Reg ret = CGenValue(env, state);
 
             switch (type.kind) {
-            case ExprType.Kind.CHAR:
-            case ExprType.Kind.UCHAR:
-            case ExprType.Kind.SHORT:
-            case ExprType.Kind.USHORT:
-            case ExprType.Kind.LONG:
-            case ExprType.Kind.ULONG:
-                // Integral
-                if (ret != Reg.EAX) {
-                    throw new InvalidProgramException("Integral values should be returned to %eax");
-                }
-                state.PUSHL(Reg.EAX);
-                break;
+                case ExprType.Kind.CHAR:
+                case ExprType.Kind.UCHAR:
+                case ExprType.Kind.SHORT:
+                case ExprType.Kind.USHORT:
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.ULONG:
+                    // Integral
+                    if (ret != Reg.EAX) {
+                        throw new InvalidProgramException("Integral values should be returned to %eax");
+                    }
+                    state.CGenPushLong(Reg.EAX);
+                    break;
 
-			case ExprType.Kind.FLOAT:
-                // Float
-				if (ret != Reg.ST0) {
-					throw new InvalidProgramException("Floats should be returned to %st(0)");
-				}
-                state.CGenExpandStackBy4Bytes();
-                state.FSTS(0, Reg.ESP);
-                break;
+                case ExprType.Kind.FLOAT:
+                    // Float
+                    if (ret != Reg.ST0) {
+                        throw new InvalidProgramException("Floats should be returned to %st(0)");
+                    }
+                    state.CGenExpandStackBy4Bytes();
+                    state.FSTS(0, Reg.ESP);
+                    break;
 
-			case ExprType.Kind.DOUBLE:
-                // Double
-				if (ret != Reg.ST0) {
-					throw new InvalidProgramException("Doubles should be returned to %st(0)");
-				}
-				state.CGenExpandStackBy8Bytes();
-                state.FSTL(0, Reg.ESP);
-                break;
+                case ExprType.Kind.DOUBLE:
+                    // Double
+                    if (ret != Reg.ST0) {
+                        throw new InvalidProgramException("Doubles should be returned to %st(0)");
+                    }
+                    state.CGenExpandStackBy8Bytes();
+                    state.FSTL(0, Reg.ESP);
+                    break;
 
-            case ExprType.Kind.ARRAY:
-            case ExprType.Kind.FUNCTION:
-            case ExprType.Kind.POINTER:
-                // Pointer
-                if (ret != Reg.EAX) {
-                    throw new InvalidProgramException("Pointer values should be returned to %eax");
-                }
-                state.PUSHL(Reg.EAX);
-                break;
+                case ExprType.Kind.ARRAY:
+                case ExprType.Kind.FUNCTION:
+                case ExprType.Kind.POINTER:
+                    // Pointer
+                    if (ret != Reg.EAX) {
+                        throw new InvalidProgramException("Pointer values should be returned to %eax");
+                    }
+                    state.CGenPushLong(Reg.EAX);
+                    break;
 
-            case ExprType.Kind.ERROR:
-            case ExprType.Kind.INCOMPLETE_ARRAY:
-            case ExprType.Kind.VOID:
-                throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
+                case ExprType.Kind.ERROR:
+                case ExprType.Kind.INCOMPLETE_ARRAY:
+                case ExprType.Kind.VOID:
+                    throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
 
-            case ExprType.Kind.STRUCT_OR_UNION:
-                throw new NotImplementedException();
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    throw new NotImplementedException();
             }
 
         }
@@ -115,39 +117,23 @@ namespace AST {
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(name);
+            Int32 offset = entry.offset;
+
             switch (entry.kind) {
-            case Env.EntryKind.FRAME:
-                break;
-            case Env.EntryKind.STACK:
-                break;
-            case Env.EntryKind.GLOBAL:
-                switch (entry.type.kind) {
-                case ExprType.Kind.FUNCTION:
-					state.LEA(name, Reg.EAX);
-                    break;
+                case Env.EntryKind.FRAME:
+                case Env.EntryKind.STACK:
+                    state.LEA(offset, Reg.EBP, Reg.EAX);
+                    return;
 
-                case ExprType.Kind.CHAR:
-                case ExprType.Kind.DOUBLE:
-                case ExprType.Kind.ERROR:
-                case ExprType.Kind.FLOAT:
+                case Env.EntryKind.GLOBAL:
+                    state.LEA(name, Reg.EAX);
+                    return;
 
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.POINTER:
-                case ExprType.Kind.SHORT:
-                case ExprType.Kind.STRUCT_OR_UNION:
-                case ExprType.Kind.UCHAR:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.USHORT:
-                case ExprType.Kind.VOID:
+                case Env.EntryKind.ENUM:
+                case Env.EntryKind.NOT_FOUND:
+                case Env.EntryKind.TYPEDEF:
                 default:
-                    throw new NotImplementedException();
-                }
-                break;
-            case Env.EntryKind.ENUM:
-            case Env.EntryKind.NOT_FOUND:
-            case Env.EntryKind.TYPEDEF:
-            default:
-                throw new InvalidProgramException("cannot get the address of " + entry.kind);
+                    throw new InvalidProgramException("cannot get the address of " + entry.kind);
             }
         }
 
@@ -155,132 +141,156 @@ namespace AST {
             Env.Entry entry = env.Find(name);
 
             Int32 offset = entry.offset;
-            if (entry.kind == Env.EntryKind.STACK) {
-                offset = -offset;
-            }
+            //if (entry.kind == Env.EntryKind.STACK) {
+            //    offset = -offset;
+            //}
 
             switch (entry.kind) {
-            case Env.EntryKind.ENUM:
-                // enum constant : just an integer
-                state.MOVL(offset, Reg.EAX);
-                return Reg.EAX;
-
-            case Env.EntryKind.FRAME:
-            case Env.EntryKind.STACK:
-                switch (type.kind) {
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.POINTER:
-                    state.MOVL(offset, Reg.EBP, Reg.EAX);
+                case Env.EntryKind.ENUM:
+                    // 1. If the variable is an enum constant,
+                    //    return the value in %eax.
+                    state.MOVL(offset, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.FLOAT:
-                    state.FLDS(offset, Reg.EBP);
-                    return Reg.ST0;
+                case Env.EntryKind.FRAME:
+                case Env.EntryKind.STACK:
+                    // 2. If the variable is a function argument or a local variable,
+                    //    the address would be offset(%ebp).
+                    switch (type.kind) {
+                        case ExprType.Kind.LONG:
+                        case ExprType.Kind.ULONG:
+                        case ExprType.Kind.POINTER:
+                            // %eax = offset(%ebp)
+                            state.MOVL(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
 
-                case ExprType.Kind.DOUBLE:
-                    state.FLDL(offset, Reg.EBP);
-                    return Reg.ST0;
+                        case ExprType.Kind.FLOAT:
+                            // %st(0) = offset(%ebp)
+                            state.FLDS(offset, Reg.EBP);
+                            return Reg.ST0;
 
-				case ExprType.Kind.STRUCT_OR_UNION:
-					state.LEA(offset, Reg.ESP, Reg.ESI); // source address
-					state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
-					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-					state.MOVL(type.SizeOf, Reg.ECX); // nbytes
-					state.MemCpy();
-					return Reg.STACK;
+                        case ExprType.Kind.DOUBLE:
+                            // %st(0) = offset(%ebp)
+                            state.FLDL(offset, Reg.EBP);
+                            return Reg.ST0;
 
-                case ExprType.Kind.VOID:
-                    state.MOVL(0, Reg.EAX);
-                    return Reg.EAX;
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            // %eax = address
+                            state.LEA(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
 
-                case ExprType.Kind.FUNCTION:
-                    state.MOVL(name, Reg.EAX);
-                    return Reg.EAX;
+                            //state.LEA(offset, Reg.EBP, Reg.ESI); // source address
+                            //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                            //state.LEA(0, Reg.ESP, Reg.EDI); // destination address
+                            //state.MOVL(type.SizeOf, Reg.ECX); // nbytes
+                            //state.CGenMemCpy();
+                            //return Reg.STACK;
 
-                case ExprType.Kind.CHAR:
-                    state.MOVSBL(offset, Reg.EBP, Reg.EAX);
-                    return Reg.EAX;
+                        case ExprType.Kind.VOID:
+                            throw new InvalidProgramException("How could a variable be void?");
+                            // %eax = $0
+                            // state.MOVL(0, Reg.EAX);
+                            // return Reg.EAX;
 
-                case ExprType.Kind.UCHAR:
-                    state.MOVZBL(offset, Reg.EBP, Reg.EAX);
-                    return Reg.EAX;
+                        case ExprType.Kind.FUNCTION:
+                            throw new InvalidProgramException("How could a variable be a function designator?");
+                            // %eax = function_name
+                            // state.MOVL(name, Reg.EAX);
+                            // return Reg.EAX;
 
-                case ExprType.Kind.SHORT:
-                    state.MOVSWL(offset, Reg.EBP, Reg.EAX);
-                    return Reg.EAX;
+                        case ExprType.Kind.CHAR:
+                            // %eax = [char -> long](off(%ebp))
+                            state.MOVSBL(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
 
-                case ExprType.Kind.USHORT:
-                    state.MOVZWL(offset, Reg.EBP, Reg.EAX);
-                    return Reg.EAX;
+                        case ExprType.Kind.UCHAR:
+                            // %eax = [uchar -> ulong](off(%ebp))
+                            state.MOVZBL(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
 
-                case ExprType.Kind.ERROR:
+                        case ExprType.Kind.SHORT:
+                            // %eax = [short -> long](off(%ebp))
+                            state.MOVSWL(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.USHORT:
+                            // %eax = [ushort -> ulong](off(%ebp))
+                            state.MOVZWL(offset, Reg.EBP, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.ARRAY:
+                            // %eax = (off(%ebp))
+                            state.LEA(offset, Reg.EBP, Reg.EAX); // source address
+                            return Reg.EAX;
+
+                        default:
+                            throw new InvalidOperationException($"Cannot get value of {type.kind}");
+                    }
+
+                case Env.EntryKind.GLOBAL:
+                    switch (type.kind) {
+                        case ExprType.Kind.CHAR:
+                            state.MOVSBL(name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.UCHAR:
+                            state.MOVZBL(name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.SHORT:
+                            state.MOVSWL(name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.USHORT:
+                            state.MOVZWL(name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.LONG:
+                        case ExprType.Kind.ULONG:
+                        case ExprType.Kind.POINTER:
+                            state.MOVL(name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.FUNCTION:
+                            state.MOVL("$" + name, Reg.EAX);
+                            return Reg.EAX;
+
+                        case ExprType.Kind.FLOAT:
+                            state.FLDS(name);
+                            return Reg.ST0;
+
+                        case ExprType.Kind.DOUBLE:
+                            state.FLDL(name);
+                            return Reg.ST0;
+
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            state.MOVL($"${name}", Reg.EAX);
+                            return Reg.EAX;
+
+                            //state.LEA(name, Reg.ESI); // source address
+                            //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                            //state.LEA(0, Reg.ESP, Reg.EDI); // destination address
+                            //state.MOVL(type.SizeOf, Reg.ECX); // nbytes
+                            //state.CGenMemCpy();
+                            //return Reg.STACK;
+
+                        case ExprType.Kind.VOID:
+                            throw new InvalidProgramException("How could a variable be void?");
+                            //state.MOVL(0, Reg.EAX);
+                            //return Reg.EAX;
+
+                        case ExprType.Kind.ARRAY:
+                            state.MOVL($"${name}", Reg.EAX);
+                            return Reg.EAX;
+
+                        default:
+                            throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
+                    }
+
+                case Env.EntryKind.TYPEDEF:
+                case Env.EntryKind.NOT_FOUND:
                 default:
-                    throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
-                }
-
-            case Env.EntryKind.GLOBAL:
-                switch (type.kind) {
-                case ExprType.Kind.CHAR:
-                    state.MOVSBL(name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.UCHAR:
-                    state.MOVZBL(name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.SHORT:
-                    state.MOVSWL(name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.USHORT:
-                    state.MOVZWL(name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.POINTER:
-                    state.MOVL(name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.FUNCTION:
-                    state.MOVL("$" + name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.FLOAT:
-                    state.FLDS(name);
-                    return Reg.ST0;
-
-                case ExprType.Kind.DOUBLE:
-                    state.FLDL(name);
-                    return Reg.ST0;
-
-                case ExprType.Kind.STRUCT_OR_UNION:
-					state.LEA(name, Reg.ESI); // source address
-					state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
-					state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-					state.MOVL(type.SizeOf, Reg.ECX); // nbytes
-					state.MemCpy();
-					return Reg.STACK;
-
-                case ExprType.Kind.VOID:
-                    state.MOVL(0, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.ARRAY:
-                    state.MOVL("$" + name, Reg.EAX);
-                    return Reg.EAX;
-
-                case ExprType.Kind.ERROR:
-                case ExprType.Kind.INCOMPLETE_ARRAY:
-                default:
-                    throw new InvalidProgramException("cannot get the value of a " + type.kind.ToString());
-                }
-
-            case Env.EntryKind.TYPEDEF:
-            case Env.EntryKind.NOT_FOUND:
-            default:
-                throw new InvalidProgramException("cannot get the value of a " + entry.kind.ToString());
+                    throw new InvalidProgramException("cannot get the value of a " + entry.kind.ToString());
             }
         }
     }
@@ -317,74 +327,74 @@ namespace AST {
             lvalue.CGenAddress(env, state);
 
             // 2. push %eax
-            state.PUSHL(Reg.EAX);
+            Int32 pos = state.CGenPushLong(Reg.EAX);
 
             Reg ret = rvalue.CGenValue(env, state);
             switch (lvalue.type.kind) {
-            case ExprType.Kind.CHAR:
-            case ExprType.Kind.UCHAR:
-                // pop %ebx
-                // now %ebx = %lhs
-                state.POPL(Reg.EBX);
+                case ExprType.Kind.CHAR:
+                case ExprType.Kind.UCHAR:
+                    // pop %ebx
+                    // now %ebx = %lhs
+                    state.CGenPopLong(pos, Reg.EBX);
 
-                // *%ebx = %al
-                state.MOVB(Reg.AL, 0, Reg.EBX);
+                    // *%ebx = %al
+                    state.MOVB(Reg.AL, 0, Reg.EBX);
 
-                return Reg.EAX;
+                    return Reg.EAX;
 
-            case ExprType.Kind.SHORT:
-            case ExprType.Kind.USHORT:
-                // pop %ebx
-                // now %ebx = %lhs
-                state.POPL(Reg.EBX);
+                case ExprType.Kind.SHORT:
+                case ExprType.Kind.USHORT:
+                    // pop %ebx
+                    // now %ebx = %lhs
+                    state.CGenPopLong(pos, Reg.EBX);
 
-                // *%ebx = %al
-                state.MOVW(Reg.AX, 0, Reg.EBX);
+                    // *%ebx = %al
+                    state.MOVW(Reg.AX, 0, Reg.EBX);
 
-                return Reg.EAX;
+                    return Reg.EAX;
 
-            case ExprType.Kind.LONG:
-            case ExprType.Kind.ULONG:
-            case ExprType.Kind.POINTER:
-                // pop %ebx
-                // now %ebx = %lhs
-                state.POPL(Reg.EBX);
+                case ExprType.Kind.LONG:
+                case ExprType.Kind.ULONG:
+                case ExprType.Kind.POINTER:
+                    // pop %ebx
+                    // now %ebx = %lhs
+                    state.CGenPopLong(pos, Reg.EBX);
 
-                // *%ebx = %al
-                state.MOVL(Reg.EAX, 0, Reg.EBX);
+                    // *%ebx = %al
+                    state.MOVL(Reg.EAX, 0, Reg.EBX);
 
-                return Reg.EAX;
+                    return Reg.EAX;
 
-            case ExprType.Kind.FLOAT:
-                // pop %ebx
-                // now %ebx = %lhs
-                state.POPL(Reg.EBX);
+                case ExprType.Kind.FLOAT:
+                    // pop %ebx
+                    // now %ebx = %lhs
+                    state.CGenPopLong(pos, Reg.EBX);
 
-                // *%ebx = %st(0)
-                state.FSTS(0, Reg.EBX);
+                    // *%ebx = %st(0)
+                    state.FSTS(0, Reg.EBX);
 
-                return Reg.ST0;
+                    return Reg.ST0;
 
-            case ExprType.Kind.DOUBLE:
-                // pop %ebx
-                // now %ebx = %lhs
-                state.POPL(Reg.EBX);
+                case ExprType.Kind.DOUBLE:
+                    // pop %ebx
+                    // now %ebx = %lhs
+                    state.CGenPopLong(pos, Reg.EBX);
 
-                // *%ebx = %st(0)
-                state.FSTL(0, Reg.EBX);
+                    // *%ebx = %st(0)
+                    state.FSTL(0, Reg.EBX);
 
-                return Reg.ST0;
+                    return Reg.ST0;
 
-            case ExprType.Kind.STRUCT_OR_UNION:
-                throw new NotImplementedException();
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    throw new NotImplementedException();
 
-            case ExprType.Kind.FUNCTION:
-            case ExprType.Kind.VOID:
-            case ExprType.Kind.ARRAY:
-            case ExprType.Kind.ERROR:
-            case ExprType.Kind.INCOMPLETE_ARRAY:
-            default:
-                throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());
+                case ExprType.Kind.FUNCTION:
+                case ExprType.Kind.VOID:
+                case ExprType.Kind.ARRAY:
+                case ExprType.Kind.ERROR:
+                case ExprType.Kind.INCOMPLETE_ARRAY:
+                default:
+                    throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());
             }
         }
     }
@@ -402,15 +412,15 @@ namespace AST {
     }
 
     public class FunctionCall : Expr {
-        public FunctionCall(Expr _function, TFunction _func_type, List<Expr> _arguments, ExprType _type)
-            : base(_type) {
-            call_func = _function;
-            call_func_type = _func_type;
-            call_args = _arguments;
+        public FunctionCall(Expr func, TFunction func_type, List<Expr> args, ExprType type)
+            : base(type) {
+            this.func = func;
+            this.func_type = func_type;
+            this.args = args;
         }
-        public readonly Expr call_func;
-        public readonly TFunction call_func_type;
-        public readonly List<Expr> call_args;
+        public readonly Expr func;
+        public readonly TFunction func_type;
+        public readonly List<Expr> args;
 
         public override void CGenAddress(Env env, CGenState state) {
             throw new Exception("Error: cannot get the address of a function call.");
@@ -418,16 +428,78 @@ namespace AST {
 
         public override Reg CGenValue(Env env, CGenState state) {
 
+            state.NEWLINE();
+            state.COMMENT($"Before pushing header, stack size = {state.StackSize}.");
+            state.COMMENT($"Pushing a header of {func_type.HeaderSize} bytes");
+            state.CGenExpandStackBy(func_type.HeaderSize);
+            state.COMMENT($"Header would be in [{-state.StackSize}, {-state.StackSize + func_type.HeaderSize})");
+            state.NEWLINE();
+
+            Int32 header_base = -state.StackSize;
+
             // Push the arguments onto the stack in reverse order
-            for (Int32 i = call_args.Count; i-- > 0; ) {
-                Expr arg = call_args[i];
-                arg.CGenPush(env, state);
+            for (Int32 i = args.Count; i-- > 0;) {
+                Expr arg = args[i];
+                Int32 pos = header_base + func_type.args[i].offset - 2 * ExprType.SIZEOF_LONG;
+
+                state.COMMENT($"Argument {i} is at {pos}");
+
+                Reg ret = arg.CGenValue(env, state);
+                switch (arg.type.kind) {
+                    case ExprType.Kind.ARRAY:
+                    case ExprType.Kind.CHAR:
+                    case ExprType.Kind.UCHAR:
+                    case ExprType.Kind.SHORT:
+                    case ExprType.Kind.USHORT:
+                    case ExprType.Kind.LONG:
+                    case ExprType.Kind.ULONG:
+                    case ExprType.Kind.POINTER:
+                        if (ret != Reg.EAX) {
+                            throw new InvalidProgramException();
+                        }
+                        state.MOVL(Reg.EAX, pos, Reg.EBP);
+                        break;
+
+                    case ExprType.Kind.DOUBLE:
+                        if (ret != Reg.ST0) {
+                            throw new InvalidProgramException();
+                        }
+                        state.FSTPL(pos, Reg.EBP);
+                        break;
+
+                    case ExprType.Kind.FLOAT:
+                        if (ret != Reg.ST0) {
+                            throw new InvalidProgramException();
+                        }
+                        state.FSTPL(pos, Reg.EBP);
+                        break;
+
+                    case ExprType.Kind.STRUCT_OR_UNION:
+                        if (ret != Reg.EAX) {
+                            throw new InvalidProgramException();
+                        }
+                        state.MOVL(Reg.EAX, Reg.ESI);
+                        state.LEA(pos, Reg.EBP, Reg.EDI);
+                        state.MOVL(arg.type.SizeOf, Reg.ECX);
+                        state.CGenMemCpy();
+                        break;
+
+                    default:
+                        throw new InvalidProgramException();
+                }
+
+                state.NEWLINE();
+
             }
 
+            state.CGenForceStackSizeTo(-header_base);
+
             // Get function address
-            call_func.CGenAddress(env, state);
+            func.CGenAddress(env, state);
 
             state.CALL("*%eax");
+
+            state.NEWLINE();
 
             return Reg.EAX;
         }
@@ -446,80 +518,61 @@ namespace AST {
         public readonly String name;
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = expr.CGenValue(env, state);
-            if (ret != Reg.STACK) {
+
+            // %eax is the address of the struct/union
+            if (expr.CGenValue(env, state) != Reg.EAX) {
                 throw new InvalidProgramException();
             }
 
-            Int32 size = expr.type.SizeOf; // size of the struct or union
-            Int32 offset;                   // offset inside the pack
-            switch (expr.type.kind) {
-                case ExprType.Kind.STRUCT_OR_UNION:
-                    // TODO: complete here.
-                    offset = 0;
-                    break;
-
-                    //TStruct type = (TStruct)expr.type;
-                    //Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
-                    //offset = entry.offset;
-                    //break;
-
-                default:
-                    throw new InvalidProgramException();
+            if (expr.type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+                throw new InvalidProgramException();
             }
+
+            // size of the struct or union
+            Int32 struct_size = expr.type.SizeOf;
+
+            // offset inside the pack
+            Int32 attrib_offset = ((TStructOrUnion)expr.type)
+                        .Attribs
+                        .First(_ => _.name == name)
+                        .offset;
 
             // can't be a function designator.
             switch (type.kind) {
                 case ExprType.Kind.ARRAY:
-                    // TODO: how to handle this?
-                    throw new NotImplementedException("I've not figured out how to do this.");
+                case ExprType.Kind.STRUCT_OR_UNION:
+                    state.ADDL(attrib_offset, Reg.EAX);
+                    return Reg.EAX;
 
                 case ExprType.Kind.CHAR:
-                    state.MOVSBL(offset, Reg.EAX, Reg.EAX);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.MOVSBL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
                 case ExprType.Kind.UCHAR:
-                    state.MOVZBL(offset, Reg.EAX, Reg.EAX);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.MOVZBL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
                 case ExprType.Kind.SHORT:
-                    state.MOVSWL(offset, Reg.EAX, Reg.EAX);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.MOVSWL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
                 case ExprType.Kind.USHORT:
-                    state.MOVZWL(offset, Reg.EAX, Reg.EAX);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.MOVZWL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
                 case ExprType.Kind.POINTER:
-                    state.MOVL(offset, Reg.EAX, Reg.EAX);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.MOVL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
                 case ExprType.Kind.FLOAT:
-                    state.FLDS(offset, Reg.ST0);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.FLDS(attrib_offset, Reg.EAX);
                     return Reg.ST0;
 
                 case ExprType.Kind.DOUBLE:
-                    state.FLDL(offset, Reg.ST0);
-                    state.CGenShrinkStackBy(Utils.RoundUp(size, 4));
+                    state.FLDL(attrib_offset, Reg.EAX);
                     return Reg.ST0;
-
-                case ExprType.Kind.STRUCT_OR_UNION:
-                    throw new NotImplementedException("Struct or union might mess up with the stack.");
-
-                    //state.LEA(offset, Reg.ESP, Reg.ESI);
-                    //state.LEA(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4), Reg.ESP, Reg.EDI);
-                    //state.MemCpyReversed();
-                    //state.CGenShrinkStackBy(Utils.RoundUp(size, 4) - Utils.RoundUp(type.size_of, 4));
-                    //return Reg.STACK;
-                    
 
                 default:
                     throw new InvalidProgramException();
@@ -527,24 +580,18 @@ namespace AST {
         }
 
         public override void CGenAddress(Env env, CGenState state) {
+            if (expr.type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+                throw new InvalidProgramException();
+            }
+
+            // %eax = address of struct or union
             expr.CGenAddress(env, state);
 
-            Int32 offset; // offset inside the pack
-            switch (expr.type.kind) {
-                case ExprType.Kind.STRUCT_OR_UNION:
-                    // TODO: finish here.
-                    offset = 0;
-                    break;
-
-                    //TStruct type = (TStruct)expr.type;
-                    //Utils.StoreEntry entry = type.attribs.Find(_ => _.name == name);
-                    //offset = entry.offset;
-                    //break;
-
-
-                default:
-                    throw new InvalidProgramException();
-            }
+            // offset inside the pack
+            Int32 offset = ((TStructOrUnion)expr.type)
+                        .Attribs
+                        .First(_ => _.name == name)
+                        .offset;
 
             state.ADDL(offset, Reg.EAX);
         }
@@ -626,19 +673,20 @@ namespace AST {
                     return Reg.ST0;
 
                 case ExprType.Kind.STRUCT_OR_UNION:
-                    // %esi = src address
-                    state.MOVL(Reg.EAX, Reg.ESI);
+                    //// %esi = src address
+                    //state.MOVL(Reg.EAX, Reg.ESI);
 
-                    // %edi = dst address
-                    state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
-                    state.LEA(0, Reg.ESP, Reg.EDI);
+                    //// %edi = dst address
+                    //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                    //state.LEA(0, Reg.ESP, Reg.EDI);
 
-                    // %ecx = nbytes
-                    state.MOVL(type.SizeOf, Reg.ECX);
+                    //// %ecx = nbytes
+                    //state.MOVL(type.SizeOf, Reg.ECX);
 
-                    state.MemCpy();
+                    //state.CGenMemCpy();
 
-                    return Reg.STACK;
+                    //return Reg.STACK;
+                    return Reg.EAX;
 
                 case ExprType.Kind.VOID:
                 default:
@@ -653,46 +701,5 @@ namespace AST {
             }
         }
     }
-
-    /// <summary>
-    /// Integral Binary Operation
-    /// </summary>
-    //public abstract class IntBinOp : Expr {
-    //    public IntBinOp(Expr lhs, Expr rhs, ExprType type)
-    //        : base(type) {
-    //        this.lhs = lhs;
-    //        this.rhs = rhs;
-    //    }
-
-    //    public readonly Expr lhs;
-    //    public readonly Expr rhs;
-
-    //    public abstract void CGenOp(CGenState state);
-
-    //    public override Reg CGenValue(Env env, CGenState state) {
-    //        // 1. %eax = lhs
-    //        Reg ret = lhs.CGenValue(env, state);
-    //        if (ret != Reg.EAX) {
-    //            throw new InvalidProgramException("lhs operand should return to %eax");
-    //        }
-
-    //        // 2. pushl %eax
-    //        state.PUSHL(Reg.EAX);
-
-    //        //   3. %eax = rhs
-    //        ret = rhs.CGenValue(env, state);
-    //        if (ret != Reg.EAX) {
-    //            throw new InvalidProgramException("rhs operand should return to %eax");
-    //        }
-
-    //        // 4. popl %ebx
-    //        state.POPL(Reg.EAX);
-
-    //        // 5. andl %ebx, %eax
-    //        state.ANDL(Reg.EBX, Reg.EAX);
-
-    //        return Reg.EAX;
-    //    }
-    //}
 
 }

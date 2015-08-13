@@ -23,6 +23,7 @@ public enum Reg {
 
     ST0,
 
+    [Obsolete]
     STACK,
 }
 
@@ -55,14 +56,12 @@ public class CGenState {
         [Reg.ST0] = "%st(0)",
     };
 
-    public static String StrReg(Reg reg) {
-        return reg_strs[reg];
-    }
+    public static String RegToString(Reg reg) => reg_strs[reg];
 
     public CGenState() {
         os = new System.IO.StringWriter();
         rodata = new System.IO.StringWriter();
-        rodata.WriteLine("    section .rodata");
+        rodata.WriteLine("    .section .rodata");
 
         rodata_idx = 0;
         label_idx = 2;
@@ -76,12 +75,12 @@ public class CGenState {
         }
     }
 
-    public void GLOBL(String name) {
-        os.WriteLine("    .globl " + name);
-    }
+    public void GLOBL(String name) => os.WriteLine("    .globl " + name);
 
-    public void CGenFuncName(String name) {
+    public void CGenFuncStart(String name) {
         os.WriteLine(name + ":");
+        PUSHL(Reg.EBP);
+        MOVL(Reg.ESP, Reg.EBP);
         stack_size = 0;
     }
 
@@ -93,25 +92,17 @@ public class CGenState {
     /// <summary>
     /// FLDS: load float to FPU stack.
     /// </summary>
-    public void FLDS(String addr) {
-        os.WriteLine("    flds " + addr);
-    }
+    public void FLDS(String src) => os.WriteLine($"    flds {src}");
 
-    public void FLDS(Int32 imm, Reg from) {
-        FLDS(imm.ToString() + "(" + StrReg(from));
-    }
+    public void FLDS(Int32 imm, Reg src) => FLDS($"{imm}({RegToString(src)})");
 
     /// <summary>
     /// FLDL: load double to FPU stack.
     /// </summary>
     /// <param name="addr">Address.</param>
-    public void FLDL(String addr) {
-        os.WriteLine("    fldl " + addr);
-    }
+    public void FLDL(String addr) => os.WriteLine($"    fldl {addr}");
 
-    public void FLDL(Int32 imm, Reg from) {
-        FLDL(imm.ToString() + "(" + StrReg(from));
-    }
+    public void FLDL(Int32 imm, Reg from) => FLDL($"{imm}({RegToString(from)})");
 
     /// <summary>
     /// FLD1: push 1.0 to FPU stack.
@@ -127,59 +118,42 @@ public class CGenState {
     /// FSTS: store float from FPU stack.
     /// </summary>
     /// <param name="addr"></param>
-    public void FSTS(String addr) {
-        os.WriteLine("    fsts " + addr);
-    }
+    public void FSTS(String addr) => os.WriteLine($"    fsts {addr}");
 
-    public void FSTS(Int32 imm, Reg to) {
-        FSTS($"{imm}({StrReg(to)})");
-    }
+    public void FSTS(Int32 imm, Reg to) => FSTS($"{imm}({RegToString(to)})");
 
     /// <summary>
     /// FSTPS: pop float from FPU stack, and store to {addr}.
     /// </summary>
-    public void FSTPS(String addr) {
-        os.WriteLine($"    fstps {addr}");
-    }
+    public void FSTPS(String addr) => os.WriteLine($"    fstps {addr}");
 
-    public void FSTPS(Int32 imm, Reg to) {
-        FSTPS($"{imm}({StrReg(to)})");
-    }
+    public void FSTPS(Int32 imm, Reg to) => FSTPS($"{imm}({RegToString(to)})");
 
     /// <summary>
     /// FSTL: store double from FPU stack.
     /// </summary>
-    public void FSTL(String addr) {
-        os.WriteLine("    fstl " + addr);
-    }
+    public void FSTL(String addr) => os.WriteLine("    fstl {addr}");
 
-    public void FSTL(Int32 imm, Reg to) {
-        FSTL(imm.ToString() + "(" + StrReg(to));
-    }
+    public void FSTL(Int32 imm, Reg to) => FSTL($"{imm}({RegToString(to)})");
 
     /// <summary>
     /// FSTPL: pop from FPU and store *double*.
     /// </summary>
-    public void FSTPL(String addr) {
-        os.WriteLine($"    fstpl {addr}");
-    }
+    public void FSTPL(String addr) => os.WriteLine($"    fstpl {addr}");
 
-    public void FSTPL(Int32 imm, Reg to) => FSTPL($"{imm}({StrReg(to)})");
+    public void FSTPL(Int32 imm, Reg to) => FSTPL($"{imm}({RegToString(to)})");
 
     /// <summary>
     /// FSTP: copy %st(0) to dst, then pop %st(0).
     /// </summary>
-    public void FSTP(String dst) {
-        os.WriteLine($"    fstp {dst}");
-    }
+    public void FSTP(String dst) => os.WriteLine($"    fstp {dst}");
 
-    public void FSTP(Reg dst) => FSTP(StrReg(dst));
+    public void FSTP(Reg dst) => FSTP(RegToString(dst));
 
     /// <summary>
     /// FADD: calculate %st(op1) + %st(op2) and rewrite %st(op2).
     /// </summary>
-    public void FADD(Int32 op1, Int32 op2) =>
-        os.WriteLine($"    fadd %st({op1}), %st({op2})");
+    public void FADD(Int32 op1, Int32 op2) => os.WriteLine($"    fadd %st({op1}), %st({op2})");
 
     /// <summary>
     /// FADDP: pop operands from %st(0) and %st(1),
@@ -190,8 +164,7 @@ public class CGenState {
     /// <summary>
     /// FADD: calculate %st(op1) + %st(op2) and rewrite %st(op2).
     /// </summary>
-    public void FSUB(Int32 op1, Int32 op2) =>
-        os.WriteLine($"    fsub %st({op1}), %st({op2})");
+    public void FSUB(Int32 op1, Int32 op2) => os.WriteLine($"    fsub %st({op1}), %st({op2})");
 
     /// <summary>
     /// FSUBP: pop operands from %st(0) and %st(1),
@@ -202,116 +175,84 @@ public class CGenState {
     /// <summary>
     /// FMULP: pop operands from %st(0) and %st(1), push multiplication result back to %st(0).
     /// </summary>
-    public void FMULP() {
-        os.WriteLine("    fmulp");
-    }
+    public void FMULP() => os.WriteLine("    fmulp");
 
     /// <summary>
     /// FDIVP: pop operands from %st(0) and %st(1), push %st(0) / %st(1) back to %st(0).
     /// </summary>
-    public void FDIVP() {
-        os.WriteLine("    fdivp");
-    }
+    public void FDIVP() => os.WriteLine("    fdivp");
 
-    // PUSHL
-    // =====
-    public void PUSHL(String reg) {
-        os.WriteLine("    pushl " + reg);
-    }
+    /// <summary>
+    /// PUSHL: push long into stack.
+    /// </summary>
+    /// <remarks>
+    /// PUSHL changes the size of the stack, which should be tracked carefully.
+    /// So, PUSHL is set private. Consider using <see cref="CGenPushLong"/>
+    /// </remarks>
+    private void PUSHL(String src) => os.WriteLine($"    pushl {src}");
 
-    public void PUSHL(Reg reg) {
-        PUSHL(StrReg(reg));
-    }
+    private void PUSHL(Reg src) => PUSHL(RegToString(src));
 
-    public void PUSHL(Int32 imm) {
-        PUSHL("$" + imm.ToString());
-    }
+    private void PUSHL(Int32 imm) => PUSHL($"${imm}");
 
-    //public void PUSHL(Int32 offset, Reg reg) {
-    //    PUSHL(offset.ToString() + "(" + StrReg(reg) + ")");
-    //}
+    /// <summary>
+    /// POPL: pop long from stack.
+    /// </summary>
+    /// <remarks>
+    /// POPL changes the size of the stack, which should be tracked carefully.
+    /// So, POPL is set private. Consider using <see cref="CGenPopLong"/>
+    /// </remarks>
+    private void POPL(String dst) => os.WriteLine($"    popl {dst}");
 
-    // POPL
-    // ====
-    public void POPL(String addr) {
-        os.WriteLine("    popl " + addr);
-    }
-
-    public void POPL(Reg reg) {
-        POPL(StrReg(reg));
-    }
+    private void POPL(Reg dst) => POPL(RegToString(dst));
 
     /// <summary>
     /// MOVL: move a 4-byte long
     /// </summary>
-    public void MOVL(String from, String to) {
-        os.WriteLine("    movl " + from + ", " + to);
-    }
+    public void MOVL(String src, String dst) => os.WriteLine($"    movl {src}, {dst}");
 
-    public void MOVL(String from, Reg to) {
-        MOVL(from, StrReg(to));
-    }
+    public void MOVL(String src, Reg dst) => MOVL(src, RegToString(dst));
 
-    public void MOVL(Int32 imm, String to) {
-        MOVL("$" + imm.ToString(), to);
-    }
+    public void MOVL(Int32 imm, String dst) => MOVL($"${imm}", dst);
 
-    public void MOVL(Int32 imm, Reg to) {
-        MOVL("$" + imm.ToString(), StrReg(to));
-    }
+    public void MOVL(Int32 imm, Reg dst) => MOVL($"${imm}", RegToString(dst));
 
-    public void MOVL(Reg from, Reg to) {
-        MOVL(StrReg(from), StrReg(to));
-    }
+    public void MOVL(Reg src, Reg dst) => MOVL(RegToString(src), RegToString(dst));
 
-    public void MOVL(Reg from, Int32 offset, Reg to) => MOVL(StrReg(from), $"{offset}({StrReg(to)})");
+    public void MOVL(Reg src, Int32 offset, Reg dst) => MOVL(RegToString(src), $"{offset}({RegToString(dst)})");
 
-    public void MOVL(Int32 offset, Reg from, Reg to) => MOVL($"{offset}({StrReg(to)})", StrReg(to));
+    public void MOVL(Int32 offset, Reg src, Reg dst) => MOVL($"{offset}({RegToString(src)})", RegToString(dst));
 
     /// <summary>
     /// MOVZBL: move a byte and zero-extend to a 4-byte long
     /// </summary>
-	public void MOVZBL(String from, String to) {
-        os.WriteLine("    movzbl " + from + ", " + to);
-    }
+	public void MOVZBL(String src, String dst) => os.WriteLine($"    movzbl {src}, {dst}");
 
-    public void MOVZBL(String from, Reg to) {
-        MOVZBL(from, StrReg(to));
-    }
+    public void MOVZBL(String src, Reg dst) => MOVZBL(src, RegToString(dst));
 
-    public void MOVZBL(Int32 offset, Reg from, Reg to) {
-        MOVZBL(offset.ToString() + StrReg(from), StrReg(to));
-    }
+    public void MOVZBL(Int32 offset, Reg src, Reg dst) => MOVZBL($"{offset}({RegToString(src)})", RegToString(dst));
 
-    public void MOVZBL(Reg from, Reg to) => MOVZBL(StrReg(from), StrReg(to));
+    public void MOVZBL(Reg src, Reg dst) => MOVZBL(RegToString(src), RegToString(dst));
 
     /// <summary>
     /// MOVSBL: move a byte and sign-extend to a 4-byte long
     /// </summary>
-	public void MOVSBL(String from, String to) {
-        os.WriteLine("    movsbl " + from + ", " + to);
-    }
+	public void MOVSBL(String src, String dst) => os.WriteLine($"    movsbl {src}, {dst}");
 
-    public void MOVSBL(String from, Reg to) {
-        MOVSBL(from, StrReg(to));
-    }
+    public void MOVSBL(String src, Reg dst) => MOVSBL(src, RegToString(dst));
 
-    public void MOVSBL(Int32 offset, Reg from, Reg to) {
-        MOVSBL($"{offset}({StrReg(from)})", StrReg(to));
-    }
+    public void MOVSBL(Int32 offset, Reg src, Reg dst) => MOVSBL($"{offset}({RegToString(src)})", RegToString(dst));
 
     /// <summary>
     /// MOVB: move a byte
     /// </summary>
-	public void MOVB(String from, String to) {
-        os.WriteLine("    movb " + from + ", " + to);
-    }
+	public void MOVB(String src, String dst) => os.WriteLine($"    movb {src}, {dst}");
 
     public void MOVB(Reg from, Int32 imm, Reg to) {
-        MOVB(StrReg(from), imm.ToString() + "(" + StrReg(to) + ")");
+        MOVB(RegToString(from), imm.ToString() + "(" + RegToString(to) + ")");
     }
 
-    public void MOVB(Reg from, Reg to) => MOVB(StrReg(from), StrReg(to));
+    public void MOVB(Reg from, Reg to) => MOVB(RegToString(from), RegToString(to));
 
     /// <summary>
     /// MOVW: move a 2-byte word
@@ -321,7 +262,7 @@ public class CGenState {
     }
 
     public void MOVW(Reg from, Int32 imm, Reg to) {
-        MOVW(StrReg(from), imm.ToString() + "(" + StrReg(to) + ")");
+        MOVW(RegToString(from), imm.ToString() + "(" + RegToString(to) + ")");
     }
 
     /// <summary>
@@ -332,11 +273,11 @@ public class CGenState {
     }
 
     public void MOVZWL(String from, Reg to) {
-        MOVZWL(from, StrReg(to));
+        MOVZWL(from, RegToString(to));
     }
 
     public void MOVZWL(Int32 offset, Reg from, Reg to) {
-        MOVZWL(offset.ToString() + StrReg(from), StrReg(to));
+        MOVZWL(offset.ToString() + RegToString(from), RegToString(to));
     }
 
     /// <summary>
@@ -347,23 +288,21 @@ public class CGenState {
     }
 
     public void MOVSWL(String from, Reg to) {
-        MOVSWL(from, StrReg(to));
+        MOVSWL(from, RegToString(to));
     }
 
     public void MOVSWL(Int32 offset, Reg from, Reg to) {
-        MOVSWL(offset.ToString() + StrReg(from), StrReg(to));
+        MOVSWL(offset.ToString() + RegToString(from), RegToString(to));
     }
 
     // LEA
     // ===
     // 
-    public void LEA(String addr, String dst) {
-        os.WriteLine("    lea " + addr);
-    }
+    public void LEA(String addr, String dst) => os.WriteLine($"    lea {addr}, {dst}");
 
-    public void LEA(String addr, Reg dst) => LEA(addr, StrReg(dst));
+    public void LEA(String addr, Reg dst) => LEA(addr, RegToString(dst));
 
-    public void LEA(Int32 offset, Reg from, Reg to) => LEA($"{offset}({from.ToString()})", StrReg(to));
+    public void LEA(Int32 offset, Reg src, Reg dst) => LEA($"{offset}({RegToString(src)})", RegToString(dst));
 
     // CALL
     // ====
@@ -377,7 +316,7 @@ public class CGenState {
     // 
     public void CGenExpandStackTo(Int32 size, String comment = "") {
         if (size > stack_size) {
-            SUBL(size - stack_size, StrReg(Reg.ESP), comment);
+            SUBL(size - stack_size, RegToString(Reg.ESP), comment);
             stack_size = size;
         }
     }
@@ -385,6 +324,11 @@ public class CGenState {
     public void CGenExpandStackBy(Int32 nbytes) {
         stack_size += nbytes;
         SUBL(nbytes, Reg.ESP);
+    }
+
+    public void CGenForceStackSizeTo(Int32 nbytes) {
+        stack_size = nbytes;
+        LEA(-nbytes, Reg.EBP, Reg.ESP);
     }
 
     public void CGenShrinkStackBy(Int32 nbytes) {
@@ -435,14 +379,14 @@ public class CGenState {
     /// </summary>
     public void NEG(String addr) => os.WriteLine($"    neg {addr}");
 
-    public void NEG(Reg dst) => NEG(StrReg(dst));
+    public void NEG(Reg dst) => NEG(RegToString(dst));
 
     /// <summary>
     /// NOT: bitwise not
     /// </summary>
     public void NOT(String addr) => os.WriteLine($"    not {addr}");
 
-    public void NOT(Reg dst) => NOT(StrReg(dst));
+    public void NOT(Reg dst) => NOT(RegToString(dst));
 
     /// <summary>
     /// ADDL: add long
@@ -456,18 +400,15 @@ public class CGenState {
         }
     }
 
-    public void ADDL(Int32 er, Reg ee, String comment = "") {
-        ADDL($"${er}", StrReg(ee), comment);
-    }
+    public void ADDL(Int32 er, Reg ee, String comment = "") => ADDL($"${er}", RegToString(ee), comment);
 
-    public void ADDL(Reg er, Reg ee, String comment = "")
-        => ADDL(StrReg(er), StrReg(ee), comment);
+    public void ADDL(Reg er, Reg ee, String comment = "") => ADDL(RegToString(er), RegToString(ee), comment);
 
     /// <summary>
     /// SUBL: subtract long
     /// </summary>
     public void SUBL(String er, String ee, String comment = "") {
-        os.Write("    subl " + er + ", " + ee);
+        os.Write($"    subl {er}, {ee}");
         if (comment == "") {
             os.WriteLine();
         } else {
@@ -475,17 +416,11 @@ public class CGenState {
         }
     }
 
-    public void SUBL(Int32 er, String ee, String comment = "") {
-        SUBL(er.ToString(), ee, comment);
-    }
+    private void SUBL(Int32 er, String ee, String comment = "") => SUBL($"${er}", ee, comment);
 
-    public void SUBL(Int32 er, Reg ee, String comment = "") {
-        SUBL(er.ToString(), StrReg(ee), comment);
-    }
+    public void SUBL(Int32 er, Reg ee, String comment = "") => SUBL($"${er}", RegToString(ee), comment);
 
-    public void SUBL(Reg er, Reg ee, String comment = "") {
-        SUBL(StrReg(er), StrReg(ee), comment);
-    }
+    public void SUBL(Reg er, Reg ee, String comment = "") => SUBL(RegToString(er), RegToString(ee), comment);
 
     public override String ToString() {
         return os.ToString() + rodata.ToString();
@@ -495,20 +430,15 @@ public class CGenState {
     /// ANDL er, ee
     /// ee = er & ee
     /// </summary>
-    public void ANDL(String er, String ee) {
-        os.WriteLine("    andl " + er + ", " + ee);
-    }
+    public void ANDL(String er, String ee) => os.WriteLine($"    andl {er}, {ee}");
 
-    public void ANDL(Reg er, Reg ee) {
-        ANDL(StrReg(er), StrReg(ee));
-    }
+    public void ANDL(Reg er, Reg ee) => ANDL(RegToString(er), RegToString(ee));
 
-    public void ANDL(Int32 er, Reg ee) => ANDL($"${er}", StrReg(ee));
+    public void ANDL(Int32 er, Reg ee) => ANDL($"${er}", RegToString(ee));
 
-    public void ANDB(String er, String ee) =>
-        os.WriteLine($"    andb {er}, {ee}");
+    public void ANDB(String er, String ee) => os.WriteLine($"    andb {er}, {ee}");
 
-    public void ANDB(Int32 er, Reg ee) => ANDB($"${er}", StrReg(ee));
+    public void ANDB(Int32 er, Reg ee) => ANDB($"${er}", RegToString(ee));
 
     /// <summary>
     /// ORL er, ee
@@ -524,7 +454,7 @@ public class CGenState {
     }
 
     public void ORL(Reg er, Reg ee, String comment = "") {
-        ORL(StrReg(er), StrReg(ee), comment);
+        ORL(RegToString(er), RegToString(ee), comment);
     }
 
     /// <summary>
@@ -537,7 +467,7 @@ public class CGenState {
     }
 
     public void SALL(Reg er, Reg ee) {
-        SALL(StrReg(er), StrReg(ee));
+        SALL(RegToString(er), RegToString(ee));
     }
 
     /// <summary>
@@ -548,7 +478,7 @@ public class CGenState {
         os.WriteLine($"    sarl {er}, {ee}");
     }
 
-    public void SARL(Reg er, Reg ee) => SARL(StrReg(er), StrReg(ee));
+    public void SARL(Reg er, Reg ee) => SARL(RegToString(er), RegToString(ee));
 
     /// <summary>
     /// SHRL er, ee (logical shift)
@@ -558,9 +488,9 @@ public class CGenState {
         os.WriteLine($"    shrl {er}, {ee}");
     }
 
-    public void SHRL(Reg er, Reg ee) => SHRL(StrReg(er), StrReg(ee));
+    public void SHRL(Reg er, Reg ee) => SHRL(RegToString(er), RegToString(ee));
 
-    public void SHRL(Int32 er, Reg ee) => SHRL($"${er}", StrReg(ee));
+    public void SHRL(Int32 er, Reg ee) => SHRL($"${er}", RegToString(ee));
 
     /// <summary>
     /// XORL er, ee
@@ -571,7 +501,7 @@ public class CGenState {
     }
 
     public void XORL(Reg er, Reg ee) {
-        XORL(StrReg(er), StrReg(ee));
+        XORL(RegToString(er), RegToString(ee));
     }
 
     /// <summary>
@@ -582,7 +512,7 @@ public class CGenState {
     }
 
     public void IMUL(Reg er) {
-        IMUL(StrReg(er));
+        IMUL(RegToString(er));
     }
 
     /// <summary>
@@ -593,7 +523,7 @@ public class CGenState {
     }
 
     public void MUL(Reg er) {
-        MUL(StrReg(er));
+        MUL(RegToString(er));
     }
 
     /// <summary>
@@ -608,7 +538,7 @@ public class CGenState {
         os.WriteLine($"    idivl {addr}");
     }
 
-    public void IDIVL(Reg er) => IDIVL(StrReg(er));
+    public void IDIVL(Reg er) => IDIVL(RegToString(er));
 
     /// <summary>
     /// IDIVL: unsigned division. %eax = %edx:%eax / {addr}.
@@ -617,7 +547,7 @@ public class CGenState {
         os.WriteLine($"    divl {addr}");
     }
 
-    public void DIVL(Reg er) => DIVL(StrReg(er));
+    public void DIVL(Reg er) => DIVL(RegToString(er));
 
     /// <summary>
     /// CMPL: compare based on subtraction.
@@ -627,7 +557,7 @@ public class CGenState {
         os.WriteLine($"    cmpl {er}, {ee}");
     }
 
-    public void CMPL(Reg er, Reg ee) => CMPL(StrReg(er), StrReg(ee));
+    public void CMPL(Reg er, Reg ee) => CMPL(RegToString(er), RegToString(ee));
 
     /// <summary>
     /// TESTL: used like testl %eax, %eax: compare %eax with zero.
@@ -636,7 +566,7 @@ public class CGenState {
         os.WriteLine($"    testl {er}, {ee}");
     }
 
-    public void TESTL(Reg er, Reg ee) => TESTL(StrReg(er), StrReg(ee));
+    public void TESTL(Reg er, Reg ee) => TESTL(RegToString(er), RegToString(ee));
 
     /// <summary>
     /// SETE: set if equal to.
@@ -645,13 +575,13 @@ public class CGenState {
         os.WriteLine($"    sete {dst}");
     }
 
-    public void SETE(Reg dst) => SETE(StrReg(dst));
+    public void SETE(Reg dst) => SETE(RegToString(dst));
 
     /// <summary>
     /// SETNE: set if not equal to.
     /// </summary>
     public void SETNE(String dst) => os.WriteLine($"    setne {dst}");
-    public void SETNE(Reg dst) => SETNE(StrReg(dst));
+    public void SETNE(Reg dst) => SETNE(RegToString(dst));
 
     /// <summary>
     /// SETG: set if greater than (signed).
@@ -660,7 +590,7 @@ public class CGenState {
         os.WriteLine($"    setg {dst}");
     }
 
-    public void SETG(Reg dst) => SETG(StrReg(dst));
+    public void SETG(Reg dst) => SETG(RegToString(dst));
 
     /// <summary>
     /// SETGE: set if greater or equal to (signed).
@@ -669,7 +599,7 @@ public class CGenState {
         os.WriteLine($"    setge {dst}");
     }
 
-    public void SETGE(Reg dst) => SETGE(StrReg(dst));
+    public void SETGE(Reg dst) => SETGE(RegToString(dst));
 
     /// <summary>
     /// SETL: set if less than (signed).
@@ -678,7 +608,7 @@ public class CGenState {
         os.WriteLine($"    setl {dst}");
     }
 
-    public void SETL(Reg dst) => SETL(StrReg(dst));
+    public void SETL(Reg dst) => SETL(RegToString(dst));
 
     /// <summary>
     /// SETLE: set if less than or equal to (signed).
@@ -687,7 +617,7 @@ public class CGenState {
         os.WriteLine($"    setle {dst}");
     }
 
-    public void SETLE(Reg dst) => SETLE(StrReg(dst));
+    public void SETLE(Reg dst) => SETLE(RegToString(dst));
 
     /// <summary>
     /// SETB: set if below (unsigned).
@@ -696,7 +626,7 @@ public class CGenState {
         os.WriteLine($"    setb {dst}");
     }
 
-    public void SETB(Reg dst) => SETB(StrReg(dst));
+    public void SETB(Reg dst) => SETB(RegToString(dst));
 
     /// <summary>
     /// SETNB: set if not below (unsigned).
@@ -705,7 +635,7 @@ public class CGenState {
         os.WriteLine($"    setnb {dst}");
     }
 
-    public void SETNB(Reg dst) => SETNB(StrReg(dst));
+    public void SETNB(Reg dst) => SETNB(RegToString(dst));
 
     /// <summary>
     /// SETA: set if above (unsigned).
@@ -714,7 +644,7 @@ public class CGenState {
         os.WriteLine($"    seta {dst}");
     }
 
-    public void SETA(Reg dst) => SETA(StrReg(dst));
+    public void SETA(Reg dst) => SETA(RegToString(dst));
 
     /// <summary>
     /// SETNA: set if not above (unsigned).
@@ -723,7 +653,7 @@ public class CGenState {
         os.WriteLine($"    setna {dst}");
     }
 
-    public void SETNA(Reg dst) => SETNA(StrReg(dst));
+    public void SETNA(Reg dst) => SETNA(RegToString(dst));
 
     /// <summary>
     /// FUCOMIP: unordered comparison: %st(0) vs %st(1).
@@ -740,6 +670,65 @@ public class CGenState {
 
     public void STD() => os.WriteLine("    std");
 
+    public Int32 CGenPushLong(Reg src) {
+        PUSHL(src);
+        stack_size += 4;
+        return stack_size;
+    }
+
+    public Int32 CGenPushLong(Int32 imm) {
+        PUSHL(imm);
+        stack_size += 4;
+        return stack_size;
+    }
+
+    public void CGenPopLong(Int32 saved_size, Reg dst) {
+        if (stack_size == saved_size) {
+            POPL(dst);
+            stack_size -= 4;
+        } else {
+            MOVL(-saved_size, Reg.EBP, dst);
+        }
+    }
+
+    public Int32 CGenPushFloat() {
+        CGenExpandStackBy4Bytes();
+        FSTS(0, Reg.ESP);
+        return stack_size;
+    }
+
+    public Int32 CGenPushFloatP() {
+        CGenExpandStackBy4Bytes();
+        FSTPS(0, Reg.ESP);
+        return stack_size;
+    }
+
+    public Int32 CGenPushDouble() {
+        CGenExpandStackBy8Bytes();
+        FSTL(0, Reg.ESP);
+        return stack_size;
+    }
+
+    public Int32 CGenPushDoubleP() {
+        CGenExpandStackBy8Bytes();
+        FSTPL(0, Reg.ESP);
+        return stack_size;
+    }
+
+    public void CGenPopDouble(Int32 saved_size) {
+        FLDL(-saved_size, Reg.EBP);
+        if (saved_size == stack_size) {
+            CGenShrinkStackBy8Bytes();
+        }
+    }
+
+    public void CGenPopFloat(Int32 saved_size) {
+        FLDL(-saved_size, Reg.EBP);
+        if (saved_size == stack_size) {
+            CGenShrinkStackBy4Bytes();
+        }
+    }
+
     /// <summary>
     /// Fast Memory Copy using assembly.
     /// Make sure that
@@ -747,7 +736,7 @@ public class CGenState {
     /// 2) %edi = destination address
     /// 3) %ecx = number of bytes
     /// </summary>
-    public void MemCpy() {
+    public void CGenMemCpy() {
         MOVB(Reg.CL, Reg.AL);
         SHRL(2, Reg.ECX);
         CLD();
@@ -764,7 +753,7 @@ public class CGenState {
     /// 2) %edi = destination address
     /// 3) %ecx = number of bytes
     /// </summary>
-    public void MemCpyReversed() {
+    public void CGenMemCpyReversed() {
         ADDL(Reg.ECX, Reg.ESI);
         ADDL(Reg.ECX, Reg.EDI);
         MOVL(Reg.ECX, Reg.EAX);
@@ -819,5 +808,11 @@ public class CGenState {
 
     private Status status;
     private Int32 stack_size;
+
+    public Int32 StackSize {
+        get {
+            return stack_size;
+        }
+    }
 
 }

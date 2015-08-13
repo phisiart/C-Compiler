@@ -8,9 +8,6 @@ namespace SyntaxTree {
         public virtual Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             throw new NotImplementedException();
         }
-//		public virtual AST.Stmt Semant(ref AST.Env env, AST.Stmt parent) {
-//			throw new NotImplementedException();
-//		}
     }
 
 
@@ -84,9 +81,6 @@ namespace SyntaxTree {
 
         }
 
-//		public override AST.Stmt Semant(ref AST.Env env, AST.Stmt parent) {
-//			return new AST.CompoundStmt(ref env, stmt_declns, stmt_stmts);
-//		}
     }
 
 

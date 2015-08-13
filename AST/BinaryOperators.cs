@@ -32,9 +32,7 @@ namespace AST {
         public abstract void OperateLong(CGenState state);
         public abstract void OperateULong(CGenState state);
 
-        public Reg CGenLong(Env env, CGenState state) {
-            Reg ret;
-
+        public void CGenPrepareWord(Env env, CGenState state) {
             // 1. Load lhs to EAX.
             // 
             // regs:
@@ -45,8 +43,7 @@ namespace AST {
             // | ... | <- %esp
             // +-----+
             // 
-            ret = lhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
+            if (lhs.CGenValue(env, state) != Reg.EAX) {
                 throw new InvalidOperationException();
             }
 
@@ -62,7 +59,7 @@ namespace AST {
             // | lhs | <- %esp has decreased by 4
             // +-----+
             // 
-            state.PUSHL(Reg.EAX);
+            Int32 stack_size = state.CGenPushLong(Reg.EAX);
 
             // 3. Load rhs to EAX.
             // 
@@ -76,8 +73,7 @@ namespace AST {
             // | lhs | <- %esp
             // +-----+
             // 
-            ret = rhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
+            if (rhs.CGenValue(env, state) != Reg.EAX) {
                 throw new InvalidOperationException();
             }
 
@@ -93,100 +89,18 @@ namespace AST {
             // +-----+
             // 
             state.MOVL(Reg.EAX, Reg.EBX);
-            state.POPL(Reg.EAX);
+            state.CGenPopLong(stack_size, Reg.EAX);
+        }
 
-            // 5. Perform operation. Result will be stored in EAX.
-            // 
-            // regs:
-            // %eax = ans
-            // %ebx = lhs
-            // 
-            // stack:
-            // +-----+
-            // | ... | <- %esp
-            // +-----+
-            // 
+        public Reg CGenLong(Env env, CGenState state) {
+            CGenPrepareWord(env, state);
             OperateLong(state);
-
             return Reg.EAX;
         }
 
         public Reg CGenULong(Env env, CGenState state) {
-            Reg ret;
-
-            // 1. Load lhs to EAX.
-            // 
-            // regs:
-            // %eax = lhs
-            // 
-            // stack:
-            // +-----+
-            // | ... | <- %esp
-            // +-----+
-            // 
-            ret = lhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
-                throw new InvalidOperationException();
-            }
-
-            // 2. Push lhs to stack.
-            // 
-            // regs:
-            // %eax = lhs
-            // 
-            // stack:
-            // +-----+
-            // | ... |
-            // +-----+
-            // | lhs | <- %esp has decreased by 4
-            // +-----+
-            // 
-            state.PUSHL(Reg.EAX);
-
-            // 3. Load rhs to EAX.
-            // 
-            // regs:
-            // %eax = rhs
-            // 
-            // stack:
-            // +-----+
-            // | ... |
-            // +-----+
-            // | lhs | <- %esp
-            // +-----+
-            // 
-            ret = rhs.CGenValue(env, state);
-            if (ret != Reg.EAX) {
-                throw new InvalidOperationException();
-            }
-
-            // 4. Move rhs into EAX. Pop lhs from stack, into EAX.
-            // 
-            // regs:
-            // %eax = lhs
-            // %ebx = rhs
-            // 
-            // stack:
-            // +-----+
-            // | ... | <- %esp has moved back.
-            // +-----+
-            // 
-            state.MOVL(Reg.EBX, Reg.EAX);
-            state.POPL(Reg.EAX);
-
-            // 5. Perform operation. Result will be stored in EAX.
-            // 
-            // regs:
-            // %eax = ans
-            // %ebx = lhs
-            // 
-            // stack:
-            // +-----+
-            // | ... | <- %esp
-            // +-----+
-            // 
+            CGenPrepareWord(env, state);
             OperateULong(state);
-
             return Reg.EAX;
         }
 
@@ -264,8 +178,7 @@ namespace AST {
             // float stack:
             // +-----+    empty
             // 
-            state.CGenExpandStackBy4Bytes();
-            state.FSTPS(0, Reg.ESP);
+            Int32 stack_size = state.CGenPushFloatP();
 
             // 3. Load rhs to ST0. Now the float stack should only contain one element.
             //
@@ -301,8 +214,7 @@ namespace AST {
             // | lhs | <- %st(0)
             // +-----+
             // 
-            state.FLDS(0, Reg.ESP);
-            state.CGenShrinkStackBy4Bytes();
+            state.CGenPopFloat(stack_size);
 
             // 5. Perform operation. FPU would pop both operands and push answer back in.
             //
@@ -355,8 +267,7 @@ namespace AST {
             // float stack:
             // +-----+    empty
             // 
-            state.CGenExpandStackBy8Bytes();
-            state.FSTPL(0, Reg.ESP);
+            Int32 stack_size = state.CGenPushDoubleP();
 
             // 3. Load rhs to ST0. Now the float stack should only contain one element.
             //
@@ -392,8 +303,7 @@ namespace AST {
             // | lhs | <- %st(0)
             // +-----+
             // 
-            state.FLDL(0, Reg.ESP);
-            state.CGenShrinkStackBy8Bytes();
+            state.CGenPopDouble(stack_size);
 
             // 5. Perform operation. FPU would pop both operands and push answer back in.
             //

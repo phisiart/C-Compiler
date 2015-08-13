@@ -59,9 +59,7 @@ namespace AST {
             default:
                 throw new InvalidOperationException();
             }
-            state.CGenFuncName(func_name);
-            state.PUSHL(Reg.EBP);
-            state.MOVL(Reg.ESP, Reg.EBP);
+            state.CGenFuncStart(func_name);
 
             func_stmt.CGenStmt(env, state);
 

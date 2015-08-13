@@ -56,24 +56,24 @@ namespace AST {
                           TFunction curr_func,
                           List<Utils.StoreEntry> typedef_entries,
                           List<Utils.StoreEntry> enum_entries) {
-                scope_stack_entries = stack_entries;
-                scope_stack_offset = stack_offset;
-                scope_global_entries = global_entries;
-                scope_curr_func = curr_func;
-                scope_typedef_entries = typedef_entries;
-                scope_enum_entries = enum_entries;
+                locals = stack_entries;
+                esp_pos = stack_offset;
+                globals = global_entries;
+                func = curr_func;
+                typedefs = typedef_entries;
+                enums = enum_entries;
             }
 
             // copy constructor
             // ================
             // 
             private Scope(Scope other)
-                : this(new List<Utils.StoreEntry>(other.scope_stack_entries),
-                       other.scope_stack_offset,
-                       new List<Utils.StoreEntry>(other.scope_global_entries),
-                       other.scope_curr_func,
-                       new List<Utils.StoreEntry>(other.scope_typedef_entries),
-                       new List<Utils.StoreEntry>(other.scope_enum_entries)) {}
+                : this(new List<Utils.StoreEntry>(other.locals),
+                       other.esp_pos,
+                       new List<Utils.StoreEntry>(other.globals),
+                       other.func,
+                       new List<Utils.StoreEntry>(other.typedefs),
+                       new List<Utils.StoreEntry>(other.enums)) {}
 
             // empty Scope
             // ===========
@@ -96,9 +96,9 @@ namespace AST {
             // 
             public Scope InScope() {
                 return new Scope(new List<Utils.StoreEntry>(),
-                                 scope_stack_offset,
+                                 esp_pos,
                                  new List<Utils.StoreEntry>(),
-                                 scope_curr_func,
+                                 func,
                                  new List<Utils.StoreEntry>(),
                                  new List<Utils.StoreEntry>());
             }
@@ -114,15 +114,14 @@ namespace AST {
                 Scope scope = new Scope(this);
                 switch (loc) {
                 case EntryKind.STACK:
-                    scope.scope_stack_offset += type.SizeOf;
-                    scope.scope_stack_offset = Utils.RoundUp(scope.scope_stack_offset, type.Alignment);
-                    scope.scope_stack_entries.Add(new Utils.StoreEntry(name, type, scope.scope_stack_offset));
+                    scope.esp_pos -= Utils.RoundUp(type.SizeOf, 4);
+                    scope.locals.Add(new Utils.StoreEntry(name, type, scope.esp_pos));
                     break;
                 case EntryKind.GLOBAL:
-                    scope.scope_global_entries.Add(new Utils.StoreEntry(name, type, 0));
+                    scope.globals.Add(new Utils.StoreEntry(name, type, 0));
                     break;
                 case EntryKind.TYPEDEF:
-                    scope.scope_typedef_entries.Add(new Utils.StoreEntry(name, type, 0));
+                    scope.typedefs.Add(new Utils.StoreEntry(name, type, 0));
                     break;
                 default:
                     return null;
@@ -139,7 +138,7 @@ namespace AST {
             // 
             public Scope PushEnum(String name, ExprType type, Int32 value) {
                 Scope scope = new Scope(this);
-                scope.scope_enum_entries.Add(new Utils.StoreEntry(name, type, value));
+                scope.enums.Add(new Utils.StoreEntry(name, type, value));
                 return scope;
             }
 
@@ -149,12 +148,12 @@ namespace AST {
             // set the current function
             public Scope SetCurrentFunction(TFunction type) {
                 return new Scope(
-                    scope_stack_entries,
-                    scope_stack_offset,
-                    scope_global_entries,
+                    locals,
+                    esp_pos,
+                    globals,
                     type,
-                    scope_typedef_entries,
-                    scope_enum_entries
+                    typedefs,
+                    enums
                 );
             }
 
@@ -169,27 +168,27 @@ namespace AST {
                 Utils.StoreEntry store_entry;
 
                 // search the enum entries
-                if ((store_entry = scope_enum_entries.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = enums.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.ENUM, store_entry.type, store_entry.offset);
                 }
 
                 // search the typedef entries
-                if ((store_entry = scope_typedef_entries.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = typedefs.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.TYPEDEF, store_entry.type, store_entry.offset);
                 }
                 
                 // search the stack entries
-                if ((store_entry = scope_stack_entries.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = locals.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.STACK, store_entry.type, store_entry.offset);
                 }
 
                 // search the function arguments
-                if ((store_entry = scope_curr_func.args.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = func.args.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.FRAME, store_entry.type, store_entry.offset);
                 }
 
                 // search the global entries
-                if ((store_entry = scope_global_entries.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = globals.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.GLOBAL, store_entry.type, store_entry.offset);
                 }
 
@@ -210,23 +209,23 @@ namespace AST {
                 }
 
                 String str = "";
-                foreach (Utils.StoreEntry entry in scope_curr_func.args) {
+                foreach (Utils.StoreEntry entry in func.args) {
                     str += indent;
                     str += "[%ebp + " + entry.offset + "] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
-                foreach (Utils.StoreEntry entry in scope_global_entries) {
+                foreach (Utils.StoreEntry entry in globals) {
                     str += indent;
                     str += "[extern] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
-                foreach (Utils.StoreEntry entry in scope_stack_entries) {
+                foreach (Utils.StoreEntry entry in locals) {
                     str += indent;
                     str += "[%ebp - " + entry.offset + "] " + entry.name + " : " + entry.type.ToString() + "\n";
                 }
-                foreach (Utils.StoreEntry entry in scope_typedef_entries) {
+                foreach (Utils.StoreEntry entry in typedefs) {
                     str += indent;
                     str += "typedef: " + entry.name + " <- " + entry.type.ToString() + "\n";
                 }
-                foreach (Utils.StoreEntry entry in scope_enum_entries) {
+                foreach (Utils.StoreEntry entry in enums) {
                     str += indent;
                     str += entry.name + " = " + entry.offset + "\n";
                 }
@@ -238,12 +237,12 @@ namespace AST {
             // ================================================================
             //  private members
             // ================================================================
-            public readonly List<Utils.StoreEntry> scope_stack_entries;
-            public readonly TFunction              scope_curr_func;
-            public readonly List<Utils.StoreEntry> scope_global_entries;
-            public readonly List<Utils.StoreEntry> scope_typedef_entries;
-            public readonly List<Utils.StoreEntry> scope_enum_entries;
-            public Int32 scope_stack_offset;
+            public readonly List<Utils.StoreEntry> locals;
+            public readonly TFunction              func;
+            public readonly List<Utils.StoreEntry> globals;
+            public readonly List<Utils.StoreEntry> typedefs;
+            public readonly List<Utils.StoreEntry> enums;
+            public Int32 esp_pos;
 
         }
 
@@ -334,7 +333,7 @@ namespace AST {
         // return the type of the current function
         // 
         public TFunction GetCurrentFunction() {
-            return env_scopes.Peek().scope_curr_func;
+            return env_scopes.Peek().func;
         }
 
         // GetStackOffset
@@ -343,8 +342,10 @@ namespace AST {
         // output: Int32
         // return the current stack size
         // 
-        public Int32 GetStackOffset() {
-            return env_scopes.Peek().scope_stack_offset;
+        public Int32 StackSize {
+            get {
+                return -env_scopes.Peek().esp_pos;
+            }
         }
 
         public Entry Find(String name) {

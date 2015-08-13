@@ -85,7 +85,7 @@ namespace AST {
             // | &expr | <- %esp
             // +-------+
             // 
-            state.PUSHL(Reg.EAX);
+            Int32 stack_size = state.CGenPushLong(Reg.EAX);
 
             // 3. Get current value of expr.
             // 
@@ -136,7 +136,7 @@ namespace AST {
                     // | ..... | <- %esp
                     // +-------+
                     // 
-                    state.POPL(Reg.ECX);
+                    state.CGenPopLong(stack_size, Reg.ECX);
 
                     // 5. Cache current value of expr in %ebx.
                     // 
@@ -202,7 +202,7 @@ namespace AST {
                     // | ..... | <- %esp
                     // +-------+
                     // 
-                    state.POPL(Reg.ECX);
+                    state.CGenPopLong(stack_size, Reg.ECX);
 
                     // 5. Load 1.0 to FPU stack.
                     // 

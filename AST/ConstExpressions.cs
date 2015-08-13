@@ -30,9 +30,8 @@ namespace AST {
             return Reg.EAX;
         }
 
-        public override void CGenPush(Env env, CGenState state) {
-            state.PUSHL(value);
-        }
+        public override void CGenPush(Env env, CGenState state) =>
+            state.CGenPushLong(value);
     }
 
     public class ConstULong : ConstExpr {
@@ -49,9 +48,8 @@ namespace AST {
             return Reg.EAX;
         }
 
-        public override void CGenPush(Env env, CGenState state) {
-            state.PUSHL((Int32)value);
-        }
+        public override void CGenPush(Env env, CGenState state) =>
+            state.CGenPushLong((Int32)value);
     }
 
     public class ConstPtr : ConstExpr {
@@ -68,9 +66,9 @@ namespace AST {
             return Reg.EAX;
         }
 
-        public override void CGenPush(Env env, CGenState state) {
-            state.PUSHL((Int32)value);
-        }
+        public override void CGenPush(Env env, CGenState state) =>
+            state.CGenPushLong((Int32)value);
+        
     }
 
     public class ConstFloat : ConstExpr {
@@ -125,7 +123,7 @@ namespace AST {
 
         public override Reg CGenValue(Env env, CGenState state) {
             String name = state.CGenString(value);
-            state.MOVL(name, Reg.EAX);
+            state.LEA(name, Reg.EAX);
             return Reg.EAX;
         }
     }

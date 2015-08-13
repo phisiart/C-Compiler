@@ -22,6 +22,7 @@ int foo() {
 struct S {
     int a;
 };
+int printf(char *s, int);
 int main(int argc, char **argv) {
     int b = 3 * 4;
     char c;
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
     3.25f;
     ""3.0"";
     c;
+    printf(""%d"", 3);
     if (3) 4;
     b++;
 }
@@ -54,6 +56,19 @@ struct A {
 
 int main() {
     struct A a = { 1, 1, { {1} , 1 } };
+}
+";
+
+            scanner.src = @"
+int printf(char *, int);
+int main() {
+    int a;
+    struct S {
+        int member;
+    } s;
+    a = 1;
+    printf(""%d\n"", a - 1);
+    printf(""%d\n"", s.member = 10);
 }
 ";
             scanner.Lex();
