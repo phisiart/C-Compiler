@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 public class Scanner {
     public Scanner() {
@@ -66,7 +67,7 @@ public class Scanner {
 
     public override String ToString() {
         String str = "";
-        tokens.ForEach(token => str += token.ToString() + "\n");
+        tokens.ForEach(token => str += $"{token}\n");
         return str;
     }
 
