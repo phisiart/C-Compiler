@@ -61,13 +61,14 @@ int main() {
 
             scanner.src = @"
 int printf(char *, int);
+int i;
 int main() {
     int a;
     struct S {
         int member;
     } s;
     a = 1;
-    printf(""%d\n"", a - 1);
+    printf(""%d\n"", (char)a - 1);
     printf(""%d\n"", s.member = 10);
 }
 ";

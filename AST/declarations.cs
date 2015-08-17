@@ -16,7 +16,7 @@ namespace AST {
 
         public Decln(String name, SCS scs, ExprType type, Option<Initr> initr) {
             this.name = name;
-            this.scs  = scs;
+            this.scs = scs;
             this.type = type;
             this.initr = initr;
         }
@@ -28,34 +28,183 @@ namespace AST {
             return str;
         }
 
-        public void CGenExternDecln(Env env, CGenState state) {
-            state.CGenExpandStackTo(env.StackSize, ToString());
-            //if (initr.type.kind != ExprType.Kind.VOID) {
-            //    // need initialization
+        // * function;
+        // * extern function;
+        // * static function;
+        // * obj;
+        // * obj = init;
+        // * static obj;
+        // * static obj = init;
+        // * extern obj;
+        // * extern obj = init;
+        public void CGenDecln(Env env, CGenState state) {
 
-            //    Env.Entry entry = env.Find(name);
-            //    switch (entry.kind) {
-            //    case Env.EntryKind.STACK:
-            //        // %eax = <decln_init>
-            //        initr.CGenValue(env, state);
+            if (env.IsGlobal()) {
 
-            //        // -<offset>(%ebp) = %eax
-            //        state.MOVL(Reg.EAX, -entry.offset, Reg.EBP);
+                if (this.initr.IsSome) {
+                    Initr initr = this.initr.value;
+                    switch (scs) {
+                        case SCS.AUTO:
+                            state.GLOBL(name);
+                            break;
 
-            //        break;
-            //    case Env.EntryKind.GLOBAL:
-            //        // TODO : extern decln global
-            //        break;
-            //    case Env.EntryKind.ENUM:
-            //    case Env.EntryKind.FRAME:
-            //    case Env.EntryKind.NOT_FOUND:
-            //    case Env.EntryKind.TYPEDEF:
-            //    default:
-            //        throw new NotImplementedException();
-            //    }
+                        case SCS.EXTERN:
+                            throw new InvalidProgramException();
 
+                        case SCS.STATIC:
+                            break;
 
-            //}
+                        case SCS.TYPEDEF:
+                            throw new InvalidProgramException();
+
+                        default:
+                            throw new InvalidProgramException();
+                    }
+
+                    state.DATA();
+
+                    state.ALIGN(ExprType.ALIGN_LONG);
+
+                    state.CGenLabel(name);
+
+                    Int32 last = 0;
+                    initr.Iterate(type, (Int32 offset, Expr expr) => {
+                        if (offset > last) {
+                            state.ZERO(offset - last);
+                        }
+
+                        if (!expr.IsConstExpr()) {
+                            throw new InvalidOperationException("Cannot initialize with non-const expression.");
+                        }
+
+                        switch (expr.type.kind) {
+                            // TODO: without const char/short, how do I initialize?
+                            case ExprType.Kind.CHAR:
+                            case ExprType.Kind.UCHAR:
+                            case ExprType.Kind.SHORT:
+                            case ExprType.Kind.USHORT:
+                                throw new NotImplementedException();
+                            case ExprType.Kind.LONG:
+                                state.LONG(((ConstLong)expr).value);
+                                break;
+
+                            case ExprType.Kind.ULONG:
+                                state.LONG((Int32)((ConstULong)expr).value);
+                                break;
+
+                            case ExprType.Kind.POINTER:
+                                state.LONG((Int32)((ConstPtr)expr).value);
+                                break;
+
+                            case ExprType.Kind.FLOAT:
+                                byte[] float_bytes = BitConverter.GetBytes(((ConstFloat)expr).value);
+                                Int32 intval = BitConverter.ToInt32(float_bytes, 0);
+                                state.LONG(intval);
+                                break;
+
+                            case ExprType.Kind.DOUBLE:
+                                byte[] double_bytes = BitConverter.GetBytes(((ConstDouble)expr).value);
+                                Int32 first_int = BitConverter.ToInt32(double_bytes, 0);
+                                Int32 second_int = BitConverter.ToInt32(double_bytes, 4);
+                                state.LONG(first_int);
+                                state.LONG(second_int);
+                                break;
+
+                            default:
+                                throw new InvalidProgramException();
+                        }
+
+                        last = offset + expr.type.SizeOf;
+                    });
+
+                } else {
+
+                    switch (scs) {
+                        case SCS.AUTO:
+                            // .comm name,size,align
+                            break;
+
+                        case SCS.EXTERN:
+                            break;
+
+                        case SCS.STATIC:
+                            // .local name
+                            // .comm name,size,align
+                            state.LOCAL(name);
+                            break;
+
+                        case SCS.TYPEDEF:
+                            throw new InvalidProgramException();
+
+                        default:
+                            throw new InvalidProgramException();
+                    }
+
+                    state.COMM(name, type.SizeOf, ExprType.ALIGN_LONG);
+                    
+                }
+
+            } else {
+                // stack object
+
+                state.CGenExpandStackTo(env.StackSize, ToString());
+
+                Int32 stack_size = env.StackSize;
+
+                // pos should be equal to stack_size, but whatever...
+                Int32 pos = env.Find(name).offset;
+                if (this.initr.IsNone) {
+                    return;
+                }
+
+                Initr initr = this.initr.value;
+                initr.Iterate(type, (Int32 offset, Expr expr) => {
+                    Reg ret = expr.CGenValue(env, state);
+                    switch (expr.type.kind) {
+                        case ExprType.Kind.CHAR:
+                        case ExprType.Kind.UCHAR:
+                            state.MOVB(Reg.EAX, pos + offset, Reg.EBP);
+                            break;
+
+                        case ExprType.Kind.SHORT:
+                        case ExprType.Kind.USHORT:
+                            state.MOVW(Reg.EAX, pos + offset, Reg.EBP);
+                            break;
+
+                        case ExprType.Kind.DOUBLE:
+                            state.FSTPL(pos + offset, Reg.EBP);
+                            break;
+
+                        case ExprType.Kind.FLOAT:
+                            state.FSTPS(pos + offset, Reg.EBP);
+                            break;
+
+                        case ExprType.Kind.LONG:
+                        case ExprType.Kind.ULONG:
+                        case ExprType.Kind.POINTER:
+                            state.MOVL(Reg.EAX, pos + offset, Reg.EBP);
+                            break;
+
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            state.MOVL(Reg.EAX, Reg.ESI);
+                            state.LEA(pos + offset, Reg.EBP, Reg.EDI);
+                            state.MOVL(expr.type.SizeOf, Reg.ECX);
+                            state.CGenMemCpy();
+                            break;
+
+                        case ExprType.Kind.ARRAY:
+                        case ExprType.Kind.FUNCTION:
+                            throw new InvalidProgramException($"How could a {expr.type.kind} be in a init list?");
+
+                        default:
+                            throw new InvalidProgramException();
+                    }
+
+                    state.CGenForceStackSizeTo(stack_size);
+
+                });
+
+            } // stack object
         }
 
         public void What(ExprType type, Initr initr) {
@@ -65,10 +214,10 @@ namespace AST {
             }
         }
 
-        private readonly String         name;
-        private readonly SCS            scs;
-        private readonly ExprType       type;
-        private readonly Option<Initr>  initr;
+        private readonly String name;
+        private readonly SCS scs;
+        private readonly ExprType type;
+        private readonly Option<Initr> initr;
     }
 
     /// <summary>
@@ -115,6 +264,9 @@ namespace AST {
 
         public Initr ConformType(ExprType type) => ConformType(new MemberIterator(type));
 
+        public abstract void Iterate(MemberIterator iter, Action<Int32, Expr> action);
+
+        public void Iterate(ExprType type, Action<Int32, Expr> action) => Iterate(new MemberIterator(type), action);
     }
 
     public class InitExpr : Initr {
@@ -128,6 +280,14 @@ namespace AST {
             iter.Read(this.expr.type);
             Expr expr = TypeCast.MakeCast(this.expr, iter.CurType);
             return new InitExpr(expr);
+        }
+
+        public override void Iterate(MemberIterator iter, Action<Int32, Expr> action) {
+            iter.Read(this.expr.type);
+            Int32 offset = iter.CurOffset;
+            ExprType type = iter.CurType;
+            Expr expr = this.expr;
+            action(offset, expr);
         }
     }
 
@@ -150,6 +310,17 @@ namespace AST {
             iter.OutBrace();
             return new InitList(initrs);
         }
+
+        public override void Iterate(MemberIterator iter, Action<Int32, Expr> action) {
+            iter.InBrace();
+            for (Int32 i = 0; i < initrs.Count; ++i) {
+                initrs[i].Iterate(iter, action);
+                if (i != initrs.Count - 1) {
+                    iter.Next();
+                }
+            }
+            iter.OutBrace();
+        }
     }
 
     public class MemberIterator {
@@ -165,6 +336,28 @@ namespace AST {
             }
 
             public ExprType CurType { get { return GetType(base_type, indices); } }
+
+            public Int32 CurOffset {
+                get {
+                    Int32 offset = 0;
+                    ExprType type = base_type;
+                    foreach (Int32 index in indices) {
+                        switch (type.kind) {
+                            case ExprType.Kind.ARRAY:
+                                type = ((TArray)type).elem_type;
+                                offset += index * type.SizeOf;
+                                break;
+                            case ExprType.Kind.STRUCT_OR_UNION:
+                                type = ((TStructOrUnion)type).Attribs[index].type;
+                                offset += ((TStructOrUnion)type).Attribs[index].offset;
+                                break;
+                            default:
+                                throw new InvalidOperationException("Not an aggregate type.");
+                        }
+                    }
+                    return offset;
+                }
+            }
 
             public ExprType GetType(ExprType base_type, IReadOnlyList<Int32> indices) {
                 ExprType type = base_type;
@@ -242,7 +435,7 @@ namespace AST {
                 }
             }
 
-            public void ReadScalar(ScalarType type) {
+            private void ReadScalar(ScalarType type) {
                 while (!CurType.IsScalar()) {
                     switch (CurType.kind) {
                         case ExprType.Kind.ARRAY:
@@ -260,7 +453,7 @@ namespace AST {
                 //}
             }
 
-            public void ReadStruct(TStructOrUnion type) {
+            private void ReadStruct(TStructOrUnion type) {
                 while (true) {
                     switch (CurType.kind) {
                         case ExprType.Kind.ARRAY:
@@ -283,6 +476,11 @@ namespace AST {
         }
 
         public ExprType CurType { get { return trace.Last().CurType; } }
+        public Int32 CurOffset {
+            get {
+                return trace.Select(_ => _.CurOffset).Sum();
+            }
+        }
         public void Next() => trace.Last().Next();
         public void Read(ExprType type) => trace.Last().Read(type);
         public void InBrace() {

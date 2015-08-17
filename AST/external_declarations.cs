@@ -10,29 +10,27 @@ namespace AST {
 
         public void CodeGenerate(CGenState state) {
             foreach (Tuple<Env, ExternDecln> decln in declns) {
-                decln.Item2.CGenExternDecln(decln.Item1, state);
+                decln.Item2.CGenDecln(decln.Item1, state);
             }
 
         }
     }
 
     public interface ExternDecln {
-        void CGenExternDecln(Env env, CGenState state);
+        void CGenDecln(Env env, CGenState state);
     }
 
     public class FuncDef : ExternDecln {
-        public FuncDef(String _name, Decln.SCS _scs, TFunction _type, Stmt _stmt) {
-            func_name = _name;
-            func_scs  = _scs;
-            func_type = _type;
-            func_stmt = _stmt;
+        public FuncDef(String name, Decln.SCS scs, TFunction type, Stmt stmt) {
+            this.name = name;
+            this.scs  = scs;
+            this.type = type;
+            this.stmt = stmt;
         }
 
-        public override String ToString() {
-            return "fn " + func_name + " : " + func_type.ToString();
-        }
+        public override String ToString() => $"fn {name}: {type}";
 
-        public void CGenExternDecln(Env env, CGenState state) {
+        public void CGenDecln(Env env, CGenState state) {
             //     .text
             //     [.globl <func>]
             // <func>:
@@ -40,14 +38,14 @@ namespace AST {
             //     movl %esp, %ebp
             // 
             state.TEXT();
-            Env.Entry entry = env.Find(func_name);
+            Env.Entry entry = env.Find(name);
             state.COMMENT(ToString());
             switch (entry.kind) {
             case Env.EntryKind.GLOBAL:
-                switch (func_scs) {
+                switch (scs) {
                 case Decln.SCS.AUTO:
                 case Decln.SCS.EXTERN:
-                    state.GLOBL(func_name);
+                    state.GLOBL(name);
                     break;
                 case Decln.SCS.STATIC:
                     // static definition
@@ -59,9 +57,9 @@ namespace AST {
             default:
                 throw new InvalidOperationException();
             }
-            state.CGenFuncStart(func_name);
+            state.CGenFuncStart(name);
 
-            func_stmt.CGenStmt(env, state);
+            stmt.CGenStmt(env, state);
 
             //     leave
             //     ret
@@ -70,9 +68,9 @@ namespace AST {
             state.NEWLINE();
         }
 
-        public readonly String        func_name;
-        public readonly Decln.SCS func_scs;
-        public readonly TFunction     func_type;
-        public readonly Stmt          func_stmt;
+        public readonly String      name;
+        public readonly Decln.SCS   scs;
+        public readonly TFunction   type;
+        public readonly Stmt        stmt;
     }
 }

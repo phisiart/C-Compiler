@@ -33,7 +33,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AST\X86State.cs" />
     <Compile Include="driver\Option.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
@@ -51,7 +50,6 @@
     <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
     <Compile Include="SyntaxTree\declarations.cs" />
-    <Compile Include="SyntaxTree\error.cs" />
     <Compile Include="SyntaxTree\expressions.cs" />
     <Compile Include="SyntaxTree\external_definitions.cs" />
     <Compile Include="SyntaxTree\statements.cs" />

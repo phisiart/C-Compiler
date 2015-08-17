@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace AST {
     public class TypeCast : Expr {
-        public enum EnumTypeCast {
+        public enum Kind {
             NOP,
             INT8_TO_INT16,
             INT8_TO_INT32,
@@ -29,12 +29,55 @@ namespace AST {
         }
 
         public readonly Expr expr;
-        public readonly EnumTypeCast cast;
+        public readonly Kind kind;
 
-        public TypeCast(EnumTypeCast _cast, Expr _expr, ExprType _type)
-            : base(_type) {
-            expr = _expr;
-            cast = _cast;
+        public TypeCast(Kind kind, Expr expr, ExprType type)
+            : base(type) {
+            this.expr = expr;
+            this.kind = kind;
+        }
+
+        public override Reg CGenValue(Env env, CGenState state) {
+            Reg ret = expr.CGenValue(env, state);
+            switch (kind) {
+                case Kind.DOUBLE_TO_FLOAT:
+                case Kind.FLOAT_TO_DOUBLE:
+                case Kind.PRESERVE_INT16:
+                case Kind.PRESERVE_INT8:
+                case Kind.NOP:
+                    return ret;
+
+                case Kind.DOUBLE_TO_INT32:
+                case Kind.FLOAT_TO_INT32:
+                    state.CGenConvertFloatToLong();
+                    return Reg.EAX;
+
+                case Kind.INT32_TO_DOUBLE:
+                case Kind.INT32_TO_FLOAT:
+                    state.CGenConvertLongToFloat();
+                    return Reg.ST0;
+
+                case Kind.INT16_TO_INT32:
+                    state.MOVSWL(Reg.AX, Reg.EAX);
+                    return ret;
+                
+                case Kind.INT8_TO_INT16:
+                case Kind.INT8_TO_INT32:
+                    state.MOVSBL(Reg.AL, Reg.EAX);
+                    return ret;
+                
+                case Kind.UINT16_TO_UINT32:
+                    state.MOVZWL(Reg.AX, Reg.EAX);
+                    return ret;
+
+                case Kind.UINT8_TO_UINT16:
+                case Kind.UINT8_TO_UINT32:
+                    state.MOVZBL(Reg.AL, Reg.EAX);
+                    return ret;
+
+                default:
+                    throw new InvalidProgramException();
+            }
         }
 
         public static Boolean EqualType(ExprType t1, ExprType t2) {
@@ -56,22 +99,22 @@ namespace AST {
                 switch (to) {
                 case ExprType.Kind.SHORT:
                 case ExprType.Kind.USHORT:
-                    return new TypeCast(EnumTypeCast.INT8_TO_INT16, expr, type);
+                    return new TypeCast(Kind.INT8_TO_INT16, expr, type);
 
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
-                    return new TypeCast(EnumTypeCast.INT8_TO_INT32, expr, type);
+                    return new TypeCast(Kind.INT8_TO_INT32, expr, type);
 
                 case ExprType.Kind.UCHAR:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
 
                 case ExprType.Kind.FLOAT:
                     // char -> long -> float
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, new TypeCast(EnumTypeCast.INT8_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_FLOAT, new TypeCast(Kind.INT8_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 case ExprType.Kind.DOUBLE:
                     // char -> long -> double
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, new TypeCast(EnumTypeCast.INT8_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.INT8_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                 
                 default:
                     Debug.Assert(false);
@@ -82,22 +125,22 @@ namespace AST {
                 switch (to) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.UCHAR:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    return new TypeCast(Kind.PRESERVE_INT8, expr, type);
 
                 case ExprType.Kind.USHORT:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
                     
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
-                    return new TypeCast(EnumTypeCast.INT16_TO_INT32, expr, type);
+                    return new TypeCast(Kind.INT16_TO_INT32, expr, type);
 
                 case ExprType.Kind.FLOAT:
                     // short -> long -> float
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, new TypeCast(EnumTypeCast.INT16_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_FLOAT, new TypeCast(Kind.INT16_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 case ExprType.Kind.DOUBLE:
                     // short -> long -> double
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, new TypeCast(EnumTypeCast.INT16_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.INT16_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 default:
                     Debug.Assert(false);
@@ -110,49 +153,49 @@ namespace AST {
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(SByte)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                     }
 
                 case ExprType.Kind.UCHAR:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(Byte)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                     }
 
                 case ExprType.Kind.SHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(Int16)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                     }
 
                 case ExprType.Kind.USHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(UInt16)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                     }
 
                 case ExprType.Kind.ULONG:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.NOP, expr, type);
+                        return new TypeCast(Kind.NOP, expr, type);
                     }
 
                 case ExprType.Kind.FLOAT:
                     if (expr.IsConstExpr()) {
                         return new ConstFloat((Single)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                        return new TypeCast(Kind.INT32_TO_FLOAT, expr, type);
                     }
 
                 case ExprType.Kind.DOUBLE:
                     if (expr.IsConstExpr()) {
                         return new ConstDouble((Double)((ConstLong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                        return new TypeCast(Kind.INT32_TO_DOUBLE, expr, type);
                     }
 
                 default:
@@ -183,23 +226,23 @@ namespace AST {
             case ExprType.Kind.UCHAR:
                 switch (to) {
                 case ExprType.Kind.CHAR:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
 
                 case ExprType.Kind.SHORT:
                 case ExprType.Kind.USHORT:
-                    return new TypeCast(EnumTypeCast.UINT8_TO_UINT16, expr, type);
+                    return new TypeCast(Kind.UINT8_TO_UINT16, expr, type);
 
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
-                    return new TypeCast(EnumTypeCast.UINT8_TO_UINT32, expr, type);
+                    return new TypeCast(Kind.UINT8_TO_UINT32, expr, type);
 
                 case ExprType.Kind.FLOAT:
                     // uchar -> ulong -> long -> float
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, new TypeCast(EnumTypeCast.UINT8_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_FLOAT, new TypeCast(Kind.UINT8_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 case ExprType.Kind.DOUBLE:
                     // uchar -> ulong -> long -> double
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, new TypeCast(EnumTypeCast.UINT8_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.UINT8_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 default:
                     Debug.Assert(false);
@@ -210,22 +253,22 @@ namespace AST {
                 switch (to) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.UCHAR:
-                    return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                    return new TypeCast(Kind.PRESERVE_INT8, expr, type);
 
                 case ExprType.Kind.USHORT:
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
 
                 case ExprType.Kind.LONG:
                 case ExprType.Kind.ULONG:
-                    return new TypeCast(EnumTypeCast.UINT16_TO_UINT32, expr, type);
+                    return new TypeCast(Kind.UINT16_TO_UINT32, expr, type);
 
                 case ExprType.Kind.FLOAT:
                     // ushort -> ulong -> long -> float
-                    return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, new TypeCast(EnumTypeCast.UINT16_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_FLOAT, new TypeCast(Kind.UINT16_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 case ExprType.Kind.DOUBLE:
                     // ushort -> ulong -> long -> double
-                    return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, new TypeCast(EnumTypeCast.UINT16_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                    return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.UINT16_TO_UINT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
                 default:
                     Debug.Assert(false);
@@ -238,49 +281,49 @@ namespace AST {
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(SByte)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                     }
 
                 case ExprType.Kind.UCHAR:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(Byte)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                     }
 
                 case ExprType.Kind.SHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(Int16)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                     }
 
                 case ExprType.Kind.USHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(UInt16)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, expr, type);
+                        return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                     }
 
                 case ExprType.Kind.LONG:
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.NOP, expr, type);
+                        return new TypeCast(Kind.NOP, expr, type);
                     }
                     
                 case ExprType.Kind.FLOAT:
                     if (expr.IsConstExpr()) {
                         return new ConstFloat((Single)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.INT32_TO_FLOAT, expr, type);
+                        return new TypeCast(Kind.INT32_TO_FLOAT, expr, type);
                     }
 
                 case ExprType.Kind.DOUBLE:
                     if (expr.IsConstExpr()) {
                         return new ConstDouble((Double)((ConstULong)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.INT32_TO_DOUBLE, expr, type);
+                        return new TypeCast(Kind.INT32_TO_DOUBLE, expr, type);
                     }
 
                 default:
@@ -315,42 +358,42 @@ namespace AST {
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(SByte)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT8, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                        return new TypeCast(Kind.PRESERVE_INT8, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                     }
 
                 case ExprType.Kind.SHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)(Int16)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                        return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                     }
 
                 case ExprType.Kind.USHORT:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(UInt16)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                        return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                     }
 
                 case ExprType.Kind.LONG:
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, type);
+                        return new TypeCast(Kind.FLOAT_TO_INT32, expr, type);
                     }
 
                 case ExprType.Kind.ULONG:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.FLOAT_TO_INT32, expr, type);
+                        return new TypeCast(Kind.FLOAT_TO_INT32, expr, type);
                     }
 
                 case ExprType.Kind.DOUBLE:
                     if (expr.IsConstExpr()) {
                         return new ConstDouble((Double)((ConstFloat)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.FLOAT_TO_DOUBLE, expr, type);
+                        return new TypeCast(Kind.FLOAT_TO_DOUBLE, expr, type);
                     }
 
                 default:
@@ -381,14 +424,14 @@ namespace AST {
                     if (expr.IsConstExpr()) {
                         return new ConstLong((Int32)((ConstDouble)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, type);
+                        return new TypeCast(Kind.DOUBLE_TO_INT32, expr, type);
                     }
 
                 case ExprType.Kind.ULONG:
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)((ConstDouble)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, type);
+                        return new TypeCast(Kind.DOUBLE_TO_INT32, expr, type);
                     }
 
                 case ExprType.Kind.USHORT:
@@ -396,14 +439,14 @@ namespace AST {
                     if (expr.IsConstExpr()) {
                         return new ConstULong((UInt32)(UInt16)((ConstDouble)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.PRESERVE_INT16, new TypeCast(EnumTypeCast.DOUBLE_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
+                        return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.DOUBLE_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                     }
 
                 case ExprType.Kind.FLOAT:
                     if (expr.IsConstExpr()) {
                         return new ConstFloat((Single)((ConstDouble)expr).value);
                     } else {
-                        return new TypeCast(EnumTypeCast.DOUBLE_TO_FLOAT, expr, type);
+                        return new TypeCast(Kind.DOUBLE_TO_FLOAT, expr, type);
                     }
 
                 default:
@@ -440,7 +483,7 @@ namespace AST {
                 if (expr.IsConstExpr()) {
                     return new ConstPtr(((ConstPtr)expr).value, type);
                 } else {
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
                 }
             }
 
@@ -450,7 +493,7 @@ namespace AST {
                 if (expr.IsConstExpr()) {
                     expr = new ConstULong(((ConstPtr)expr).value);
                 } else {
-                    expr = new TypeCast(EnumTypeCast.NOP, expr, new TULong(type.is_const, type.is_volatile));
+                    expr = new TypeCast(Kind.NOP, expr, new TULong(type.is_const, type.is_volatile));
                 }
                 return UnsignedIntegralToArith(expr, type);
             }
@@ -480,7 +523,7 @@ namespace AST {
                 if (expr.IsConstExpr()) {
                     return new ConstPtr(((ConstPtr)expr).value, type);
                 } else {
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
                 }
             }
 
@@ -507,7 +550,7 @@ namespace AST {
                 if (expr.IsConstExpr()) {
                     return new ConstPtr(((ConstULong)expr).value, type);
                 } else {
-                    return new TypeCast(EnumTypeCast.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type);
                 }
                 
             }

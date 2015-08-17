@@ -84,13 +84,13 @@ namespace SyntaxTree {
     /// </summary>
     public class DeclnSpecs : PTNode {
         public DeclnSpecs(
-            List<StorageClassSpec> _scs,
-            List<TypeSpec> _typespecs,
-            List<TypeQual> _typequals
+            List<StorageClassSpec> scss,
+            List<TypeSpec> type_specs,
+            List<TypeQual> type_quals
         ) {
-            scss = _scs;
-            type_quals = _typequals;
-            type_specs = _typespecs;
+            this.scss = scss;
+            this.type_quals = type_quals;
+            this.type_specs = type_specs;
         }
 
         public readonly List<StorageClassSpec> scss;
@@ -540,23 +540,22 @@ namespace SyntaxTree {
     /// }
     /// </summary>
     public class EnumSpecifier : TypeSpec {
-        public EnumSpecifier(String _name, List<Enumerator> _enum_list) {
-            spec_name = _name;
-            spec_enums = _enum_list;
+        public EnumSpecifier(String name, List<Enumerator> enums) {
+            this.name = name;
+            this.enums = enums;
         }
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            if (spec_enums == null) {
+            if (enums == null) {
                 // if there is no content in this enum type, we must find it's definition in the environment
-                AST.Env.Entry entry = env.Find("enum " + spec_name);
+                AST.Env.Entry entry = env.Find($"enum {name}");
                 if (entry == null || entry.kind != AST.Env.EntryKind.TYPEDEF) {
-                    Log.SemantError("Error: type 'enum " + spec_name + " ' has not been defined.");
-                    return null;
+                    throw new InvalidOperationException($"Type 'enum {name}' has not been defined.");
                 }
             } else {
                 // so there are something in this enum type, we need to put this type into the environment
                 Int32 idx = 0;
-                foreach (Enumerator elem in spec_enums) {
+                foreach (Enumerator elem in enums) {
                     Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
                     env = r_enum.Item1;
                     String name = r_enum.Item2;
@@ -564,14 +563,14 @@ namespace SyntaxTree {
                     env = env.PushEnum(name, new AST.TLong(), idx);
                     idx++;
                 }
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + spec_name, new AST.TLong());
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + name, new AST.TLong());
             }
 
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
         }
 
-        public readonly String spec_name;
-        public readonly List<Enumerator> spec_enums;
+        public readonly String name;
+        public readonly List<Enumerator> enums;
 
     }
 

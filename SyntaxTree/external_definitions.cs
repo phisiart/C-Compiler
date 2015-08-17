@@ -33,26 +33,26 @@ namespace SyntaxTree {
     // ===================
     // 
     public class FunctionDefinition : ExternalDeclaration {
-        public FunctionDefinition(DeclnSpecs _specs, Declr _decl, CompoundStatement _stmt) {
-            func_specs = _specs;
-            func_declr = _decl;
-            func_stmt = _stmt;
+        public FunctionDefinition(DeclnSpecs specs, Declr declr, CompoundStatement stmt) {
+            this.specs = specs;
+            this.declr = declr;
+            this.stmt = stmt;
         }
 
-        public readonly DeclnSpecs func_specs;
-        public readonly Declr func_declr;
-        public readonly CompoundStatement func_stmt;
+        public readonly DeclnSpecs specs;
+        public readonly Declr declr;
+        public readonly CompoundStatement stmt;
 
         // Get Function Definition
         // =======================
         // 
         public Tuple<AST.Env, AST.FuncDef> GetFuncDef(AST.Env env) {
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = func_specs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
             env = r_specs.Item1;
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
-            Tuple<String, AST.ExprType> r_declr = func_declr.GetNameAndType(env, base_type);
+            Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, base_type);
             String name = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
 
@@ -60,24 +60,22 @@ namespace SyntaxTree {
             if (type.kind == AST.ExprType.Kind.FUNCTION) {
                 func_type = (AST.TFunction)type;
             } else {
-                Log.SemantError("Error: not a function");
-                return null;
+                throw new InvalidOperationException($"{name} is not a function.");
             }
 
             switch (scs) {
-            case AST.Decln.SCS.AUTO:
-            case AST.Decln.SCS.EXTERN:
-            case AST.Decln.SCS.STATIC:
-                env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
-                break;
-            default:
-                Log.SemantError("Error: invalid storage class specifier for function definition.");
-                return null;
+                case AST.Decln.SCS.AUTO:
+                case AST.Decln.SCS.EXTERN:
+                case AST.Decln.SCS.STATIC:
+                    env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
+                    break;
+                default:
+                    throw new InvalidOperationException("Invalid storage class specifier for function definition.");
             }
 
             env = env.SetCurrentFunction(func_type);
 
-            Tuple<AST.Env, AST.Stmt> r_stmt = func_stmt.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
             env = r_stmt.Item1;
             AST.Stmt stmt = r_stmt.Item2;
 

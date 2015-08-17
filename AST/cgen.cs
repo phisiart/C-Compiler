@@ -66,6 +66,7 @@ public class CGenState {
         rodata_idx = 0;
         label_idx = 2;
         status = Status.NONE;
+        label_packs = new Stack<LabelPack>();
     }
 
     public void TEXT() {
@@ -75,7 +76,29 @@ public class CGenState {
         }
     }
 
-    public void GLOBL(String name) => os.WriteLine("    .globl " + name);
+    public void DATA() {
+        if (status != Status.DATA) {
+            os.WriteLine("    .data");
+            status = Status.DATA;
+        }
+    }
+
+    public void GLOBL(String name) => os.WriteLine($"    .globl {name}");
+
+    public void LOCAL(String name) => os.WriteLine($"    .local {name}");
+
+    public void ALIGN(Int32 align) => os.WriteLine($"    .align {align}");
+
+    public void COMM(String name, Int32 size, Int32 align) => os.WriteLine($"    .comm {name},{size},{align}");
+
+    public void BYTE(Int32 value) => os.WriteLine($"    .byte {value}");
+
+    public void ZERO(Int32 size) => os.WriteLine($"    .zero {size}");
+
+    public void VALUE(Int32 value) => os.WriteLine($"    .value {value}");
+
+    public void LONG(Int32 value) => os.WriteLine($"    .long {value}");
+
 
     public void CGenFuncStart(String name) {
         os.WriteLine(name + ":");
@@ -243,6 +266,8 @@ public class CGenState {
 
     public void MOVSBL(Int32 offset, Reg src, Reg dst) => MOVSBL($"{offset}({RegToString(src)})", RegToString(dst));
 
+    public void MOVSBL(Reg src, Reg dst) => MOVSBL(RegToString(src), RegToString(dst));
+
     /// <summary>
     /// MOVB: move a byte
     /// </summary>
@@ -280,6 +305,8 @@ public class CGenState {
         MOVZWL(offset.ToString() + RegToString(from), RegToString(to));
     }
 
+    public void MOVZWL(Reg src, Reg dst) => MOVZWL(RegToString(src), RegToString(dst));
+
     /// <summary>
     /// MOVSWL: move a 2-byte word and sign-extend to a 4-byte long
     /// </summary>
@@ -294,6 +321,8 @@ public class CGenState {
     public void MOVSWL(Int32 offset, Reg from, Reg to) {
         MOVSWL(offset.ToString() + RegToString(from), RegToString(to));
     }
+
+    public void MOVSWL(Reg src, Reg dst) => MOVSWL(RegToString(src), RegToString(dst));
 
     // LEA
     // ===
@@ -559,6 +588,8 @@ public class CGenState {
 
     public void CMPL(Reg er, Reg ee) => CMPL(RegToString(er), RegToString(ee));
 
+    public void CMPL(Reg er, Int32 imm) => CMPL(RegToString(er), $"${imm}");
+
     /// <summary>
     /// TESTL: used like testl %eax, %eax: compare %eax with zero.
     /// </summary>
@@ -729,6 +760,28 @@ public class CGenState {
         }
     }
 
+    private void FISTL(String dst) => os.WriteLine($"    fistl {dst}");
+
+    private void FISTL(Int32 offset, Reg dst) => FISTL($"{offset}({RegToString(dst)})");
+
+    private void FILDL(String dst) => os.WriteLine($"    fildl {dst}");
+
+    private void FILDL(Int32 offset, Reg dst) => FILDL($"{offset}({RegToString(dst)})");
+
+    public void CGenConvertFloatToLong() {
+        CGenExpandStackBy4Bytes();
+        FISTL(0, Reg.ESP);
+        MOVL(0, Reg.ESP, Reg.EAX);
+        CGenShrinkStackBy4Bytes();
+    }
+
+    public void CGenConvertLongToFloat() {
+        CGenExpandStackBy4Bytes();
+        MOVL(Reg.EAX, 0, Reg.ESP);
+        FILDL(0, Reg.ESP);
+        CGenShrinkStackBy4Bytes();
+    }
+
     /// <summary>
     /// Fast Memory Copy using assembly.
     /// Make sure that
@@ -813,6 +866,70 @@ public class CGenState {
         get {
             return stack_size;
         }
+    }
+
+    public Int32 RequestLabel() {
+        return label_idx++;
+    }
+
+
+    //private Stack<Int32> _continue_labels;
+    //private Stack<Int32> _break_labels;
+
+    private struct LabelPack {
+        public LabelPack(Int32 continue_label, Int32 break_label, Int32 default_label, Dictionary<Int32, Int32> value_to_label) {
+            this.continue_label = continue_label;
+            this.break_label = break_label;
+            this.default_label = default_label;
+            this.value_to_label = value_to_label;
+        }
+        public readonly Int32 continue_label;
+        public readonly Int32 break_label;
+        public readonly Int32 default_label;
+        public readonly Dictionary<Int32, Int32> value_to_label;
+    }
+
+    private Stack<LabelPack> label_packs;
+
+    public Int32 ContinueLabel {
+        get {
+            return label_packs.First(_ => _.continue_label != -1).continue_label;
+        }
+    }
+
+    public Int32 BreakLabel {
+        get {
+            return label_packs.First(_ => _.break_label != -1).break_label;
+        }
+    }
+
+    public Int32 DefaultLabel {
+        get {
+            Int32 ret = label_packs.First().default_label;
+            if (ret == -1) {
+                throw new InvalidOperationException("Not in a switch statement.");
+            }
+            return ret;
+        }
+    }
+
+    public Int32 CaseLabel(Int32 value) =>
+        label_packs.First().value_to_label[value];
+
+    public void InLoop(Int32 continue_label, Int32 break_label) {
+        label_packs.Push(new LabelPack(continue_label, break_label, -1, new Dictionary<int, int>()));
+        //_continue_labels.Push(continue_label);
+        //_break_labels.Push(break_label);
+    }
+
+    public void InSwitch(Int32 break_label, Int32 default_label, Dictionary<Int32, Int32> value_to_label) {
+        label_packs.Push(new LabelPack(-1, break_label, default_label, new Dictionary<int, int>()));
+    }
+
+    public void OutLabels() {
+        label_packs.Pop();
+        //_continue_labels.Pop();
+        //_break_labels.Pop();
     }
 
 }

@@ -25,9 +25,7 @@ namespace AST {
         public virtual Boolean IsConstExpr() {
             return false;
         }
-        public virtual Reg CGenValue(Env env, CGenState state) {
-            throw new NotImplementedException();
-        }
+        public abstract Reg CGenValue(Env env, CGenState state);
 
         public virtual void CGenAddress(Env env, CGenState state) {
             throw new NotImplementedException();
@@ -400,15 +398,65 @@ namespace AST {
     }
 
     public class ConditionalExpr : Expr {
-        public ConditionalExpr(Expr _cond, Expr _true_expr, Expr _false_expr, ExprType _type)
-            : base(_type) {
-            cond_cond = _cond;
-            cond_true_expr = _true_expr;
-            cond_false_expr = _false_expr;
+        public ConditionalExpr(Expr cond, Expr true_expr, Expr false_expr, ExprType type)
+            : base(type) {
+            this.cond = cond;
+            this.true_expr = true_expr;
+            this.false_expr = false_expr;
         }
-        public readonly Expr cond_cond;
-        public readonly Expr cond_true_expr;
-        public readonly Expr cond_false_expr;
+        public readonly Expr cond;
+        public readonly Expr true_expr;
+        public readonly Expr false_expr;
+
+        // 
+        //          test cond
+        //          jz false ---+
+        //          true_expr   |
+        // +------- jmp finish  |
+        // |    false: <--------+
+        // |        false_expr
+        // +--> finish:
+        // 
+        public override Reg CGenValue(Env env, CGenState state) {
+            Int32 stack_size = state.StackSize;
+            Reg ret = cond.CGenValue(env, state);
+            state.CGenForceStackSizeTo(stack_size);
+
+            // test cond
+            switch (ret) {
+                case Reg.EAX:
+                    state.TESTL(Reg.EAX, Reg.EAX);
+                    break;
+
+                case Reg.ST0:
+                    /// Compare expr with 0.0
+                    /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
+                    state.FLDZ();
+                    state.FUCOMIP();
+                    state.FSTP(Reg.ST0);
+                    break;
+
+                default:
+                    throw new InvalidProgramException();
+            }
+
+            Int32 false_label = state.RequestLabel();
+            Int32 finish_label = state.RequestLabel();
+
+            state.JZ(false_label);
+
+            true_expr.CGenValue(env, state);
+
+            state.JMP(finish_label);
+
+            state.CGenLabel(false_label);
+
+            ret = false_expr.CGenValue(env, state);
+
+            state.CGenLabel(finish_label);
+
+            return ret;
+        }
     }
 
     public class FunctionCall : Expr {
