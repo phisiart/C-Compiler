@@ -120,6 +120,8 @@ namespace AST {
 
                 } else {
 
+                    // Global without initialization.
+
                     switch (scs) {
                         case SCS.AUTO:
                             // .comm name,size,align
@@ -142,7 +144,9 @@ namespace AST {
                             throw new InvalidProgramException();
                     }
 
-                    state.COMM(name, type.SizeOf, ExprType.ALIGN_LONG);
+                    if (type.kind != ExprType.Kind.FUNCTION) {
+                        state.COMM(name, type.SizeOf, ExprType.ALIGN_LONG);
+                    }
                     
                 }
 

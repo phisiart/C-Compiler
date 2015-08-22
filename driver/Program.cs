@@ -94,6 +94,20 @@ Node *cons(int value, Node *tl) {
     return hd;
 }
 
+void print_list(Node *hd) {
+    Node *cur;
+    for (cur = hd; cur != (void *)0; cur = cur->next) {
+        printf(""%d\t"", cur->value);
+    }
+}
+
+void print_list_recursive(Node *hd) {
+    if (hd != (void *)0) {
+        printf(""%d\t"", hd->value);
+        print_list_recursive(hd->next);
+    }
+}
+
 int main() {
     Node *hd = cons(0, (void *)0);
     printf(""%d\n"", hd->value);

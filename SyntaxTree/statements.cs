@@ -40,6 +40,8 @@ namespace SyntaxTree {
         public ReturnStatement(Expr _expr) {
             ret_expr = _expr;
         }
+
+        // TODO: change this into Option. Currently parser might give null.
         public readonly Expr ret_expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
@@ -180,6 +182,8 @@ namespace SyntaxTree {
             for_loop = _loop;
             for_body = _body;
         }
+
+        // TODO: change these into Option's. Currently parser might give null.
         public readonly Expr for_init;
         public readonly Expr for_cond;
         public readonly Expr for_loop;

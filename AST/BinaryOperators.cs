@@ -105,7 +105,7 @@ namespace AST {
         }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            switch (type.kind) {
+            switch (lhs.type.kind) {
                 case ExprType.Kind.LONG:
                     if (lhs.type.kind != ExprType.Kind.LONG || rhs.type.kind != ExprType.Kind.LONG) {
                         throw new InvalidOperationException();

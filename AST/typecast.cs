@@ -491,7 +491,7 @@ namespace AST {
                 } else {
                     expr = new TypeCast(Kind.NOP, expr, new TULong(type.is_const, type.is_volatile));
                 }
-                return UnsignedIntegralToArith(expr, type);
+                return MakeCast(expr, type);
             }
 
             throw new InvalidOperationException("Casting from a pointer to an unsupported type.");
