@@ -72,6 +72,11 @@ int main() {
     printf(""%d\n"", s.member = 10);
 }
 ";
+            scanner.src = @"
+int main() {
+    int arr[] = { 1, 2, 3 };
+}
+";
             scanner.Lex();
             Console.WriteLine("Source code:");
             Console.WriteLine("======================");

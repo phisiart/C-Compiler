@@ -24,17 +24,6 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// An empty expression
-    /// used in [], and empty initialization
-    /// </summary>
-    public class EmptyExpr : Expr {
-        public EmptyExpr() { }
-        public override AST.Expr GetExpr(AST.Env env) {
-            return new AST.EmptyExpr();
-        }
-    }
-
-    /// <summary>
     /// Only a name
     /// </summary>
     public class Variable : Expr {
@@ -44,11 +33,15 @@ namespace SyntaxTree {
 		public readonly String name;
 
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.Env.Entry entry = env.Find(name);
+            Option<AST.Env.Entry> entry_opt = env.Find(name);
             
+            if (entry_opt.IsNone) {
+                throw new InvalidOperationException($"Cannot find variable '{name}'");
+            }
+
+            AST.Env.Entry entry = entry_opt.Value;
+
             switch (entry.kind) {
-                case AST.Env.EntryKind.NOT_FOUND:
-                    throw new InvalidOperationException($"Cannot find variable '{name}'");
                 case AST.Env.EntryKind.TYPEDEF:
                     throw new InvalidOperationException($"Expected a variable '{name}', not a typedef.");
                 case AST.Env.EntryKind.ENUM:
@@ -105,7 +98,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr cond = cond_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar condition in conditional expression.");
             }
 
@@ -114,7 +107,7 @@ namespace SyntaxTree {
 
             // 1. if both true_expr and false_Expr have arithmetic types:
             //    perform usual arithmetic conversion
-            if (true_expr.type.IsArith() && false_expr.type.IsArith()) {
+            if (true_expr.type.IsArith && false_expr.type.IsArith) {
                 var r_cast = AST.TypeCast.UsualArithmeticConversion(true_expr, false_expr);
                 true_expr = r_cast.Item1;
                 false_expr = r_cast.Item2;

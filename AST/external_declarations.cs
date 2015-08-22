@@ -38,7 +38,7 @@ namespace AST {
             //     movl %esp, %ebp
             // 
             state.TEXT();
-            Env.Entry entry = env.Find(name);
+            Env.Entry entry = env.Find(name).Value;
             state.COMMENT(ToString());
             switch (entry.kind) {
             case Env.EntryKind.GLOBAL:

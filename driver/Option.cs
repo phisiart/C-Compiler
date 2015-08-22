@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 public abstract class Option<T> {
     public Option<O> Map<O>(Converter<T, O> Convert) {
         if (IsSome) {
-            return new Some<O>(Convert(value));
+            return new Some<O>(Convert(Value));
         } else {
             return new None<O>();
         }
     }
-    public abstract T value { get; }
+    public abstract T Value { get; }
     public abstract Boolean IsSome { get; }
     public abstract Boolean IsNone { get; }
 }
 
 public sealed class None<T> : Option<T> {
-    public override T value {
+    public override T Value {
         get {
             throw new NotSupportedException("No value in None.");
         }
     }
-    public override Boolean IsSome { get { return false; } }
-    public override Boolean IsNone { get { return true; } }
+    public override Boolean IsSome => false;
+    public override Boolean IsNone => true;
 }
 
 public sealed class Some<T> : Option<T> {
@@ -35,7 +35,7 @@ public sealed class Some<T> : Option<T> {
         }
         _value = value;
     }
-    public override T value { get { return _value; } }
-    public override Boolean IsSome { get { return true; } }
-    public override Boolean IsNone { get { return false; } }
+    public override T Value => _value;
+    public override Boolean IsSome => true;
+    public override Boolean IsNone => false;
 }

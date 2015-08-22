@@ -15,7 +15,6 @@ namespace AST {
         //   GLOBAL: this is a global symbol
         // 
         public enum EntryKind {
-            NOT_FOUND,
             ENUM,
             TYPEDEF,
             STACK,
@@ -348,14 +347,14 @@ namespace AST {
             }
         }
 
-        public Entry Find(String name) {
+        public Option<Entry> Find(String name) {
             Entry entry = null;
             foreach (Scope scope in env_scopes) {
                 if ((entry = scope.Find(name)) != null) {
-                    return entry;
+                    return new Some<Entry>(entry);
                 }
             }
-			return new Entry(EntryKind.NOT_FOUND, new TVoid(), 0);
+			return new None<Entry>();
         }
 
         public Entry FindInCurrentScope(String name) {

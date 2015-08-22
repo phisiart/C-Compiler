@@ -9,7 +9,7 @@ namespace AST {
     public abstract class IncDecExpr : Expr {
         public IncDecExpr(Expr expr)
             : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar());
+            Debug.Assert(expr.type.IsScalar);
             this.expr = expr;
         }
         public readonly Expr expr;

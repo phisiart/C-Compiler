@@ -293,7 +293,7 @@ namespace SyntaxTree {
 
             // 2. ptr + int
             if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!rhs.type.IsIntegral()) {
+                if (!rhs.type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
                 rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
@@ -302,7 +302,7 @@ namespace SyntaxTree {
 
             // 3. int + ptr
             if (rhs.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!lhs.type.IsIntegral()) {
+                if (!lhs.type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
                 lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, lhs.type.is_volatile));
@@ -399,7 +399,7 @@ namespace SyntaxTree {
                 }
 
                 // 2. ptr - integral
-                if (!rhs.type.IsIntegral()) {
+                if (!rhs.type.IsIntegral) {
                     throw new InvalidOperationException("Expected an integral.");
                 }
                 rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));

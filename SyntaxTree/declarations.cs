@@ -14,8 +14,10 @@ namespace SyntaxTree {
         public readonly DeclnSpecs decln_specs;
         public readonly IEnumerable<InitDeclr> init_declrs;
 
+        [Checked]
         public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
 
+            // Get storage class, and base type.
             Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = decln_specs.GetSCSType(env);
             env = r_specs.Item1;
             AST.Decln.SCS scs = r_specs.Item2;
@@ -23,38 +25,41 @@ namespace SyntaxTree {
 
             List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
 
+            // For each init declarators, we'll generate a declaration.
             foreach (InitDeclr init_declr in init_declrs) {
-                Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> r_declr = init_declr.GetInitDeclr(env, base_type);
 
+                // Get the final type, name, and initializer.
+                Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> r_declr = init_declr.GetInitDeclr(env, base_type);
                 env = r_declr.Item1;
                 AST.ExprType type = r_declr.Item2;
                 Option<AST.Initr> initr = r_declr.Item3;
                 String name = r_declr.Item4;
 
-                // TODO : [finished] add the newly declared object into the environment
-                AST.Env.EntryKind loc;
+                // Insert the new symbol into the environment.
+                AST.Env.EntryKind kind;
                 switch (scs) {
                     case AST.Decln.SCS.AUTO:
                         if (env.IsGlobal()) {
-                            loc = AST.Env.EntryKind.GLOBAL;
+                            kind = AST.Env.EntryKind.GLOBAL;
                         } else {
-                            loc = AST.Env.EntryKind.STACK;
+                            kind = AST.Env.EntryKind.STACK;
                         }
                         break;
                     case AST.Decln.SCS.EXTERN:
-                        loc = AST.Env.EntryKind.GLOBAL;
+                        kind = AST.Env.EntryKind.GLOBAL;
                         break;
                     case AST.Decln.SCS.STATIC:
-                        loc = AST.Env.EntryKind.GLOBAL;
+                        kind = AST.Env.EntryKind.GLOBAL;
                         break;
                     case AST.Decln.SCS.TYPEDEF:
-                        loc = AST.Env.EntryKind.TYPEDEF;
+                        kind = AST.Env.EntryKind.TYPEDEF;
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
-                env = env.PushEntry(loc, name, type);
+                env = env.PushEntry(kind, name, type);
 
+                // Generate the declaration.
                 declns.Add(Tuple.Create(env, new AST.Decln(name, scs, type, initr)));
 
             }
@@ -62,13 +67,16 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>>(env, declns);
         }
 
+        // Simply change the Decln's to ExternDecln's.
+        [Checked]
         public override Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
             Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_declns = GetDeclns(env);
             env = r_declns.Item1;
-            List<Tuple<AST.Env, AST.ExternDecln>> declns = new List<Tuple<AST.Env, AST.ExternDecln>>();
-            foreach (Tuple<AST.Env, AST.Decln> decln in r_declns.Item2) {
-                declns.Add(new Tuple<AST.Env, AST.ExternDecln>(decln.Item1, decln.Item2));
-            }
+
+            List<Tuple<AST.Env, AST.ExternDecln>> declns = r_declns
+                .Item2
+                .ConvertAll(_ => new Tuple<AST.Env, AST.ExternDecln>(_.Item1, _.Item2));
+
             return new Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>>(env, declns);
         }
 
@@ -265,29 +273,53 @@ namespace SyntaxTree {
             this.initr = initr;
         }
 
-        public readonly Declr declr; // TODO: should this be optional?
+        public readonly Declr declr;
         public readonly Option<Initr> initr;
 
-        // TODO : InitDeclr.GetInitDeclr(env, type) -> (env, type, expr) : change the type corresponding to init expression
         public Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
             String name;
-            Option<AST.Initr> initr;
+            Option<AST.Initr> initr_opt;
 
+            // Get the initializer list.
             Option<Tuple<AST.Env, AST.Initr>> r_initr = this.initr.Map(_ => _.GetInitr(env));
             if (r_initr.IsSome) {
-                env = r_initr.value.Item1;
-                initr = new Some<AST.Initr>(r_initr.value.Item2);
+                env = r_initr.Value.Item1;
+                initr_opt = new Some<AST.Initr>(r_initr.Value.Item2);
             } else {
-                initr = new None<AST.Initr>();
+                initr_opt = new None<AST.Initr>();
             }
 
+            // Get the declarator.
             Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, type);
             name = r_declr.Item1;
             type = r_declr.Item2;
 
-            initr = initr.Map(_ => _.ConformType(type));
+            // Implicit cast the initializer.
+            initr_opt = initr_opt.Map(_ => _.ConformType(type));
 
-            return new Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String>(env, type, initr, name);
+            // If the object is an incomplete list, we must determine the length based on the initializer.
+            if (type.kind == AST.ExprType.Kind.INCOMPLETE_ARRAY) {
+                if (initr_opt.IsNone) {
+                    throw new InvalidOperationException("Cannot determine the length of the array.");
+                }
+
+                // Now we need to determine the length.
+                // Find the last element in the init list.
+                Int32 last_offset = -1;
+                initr_opt.Value.Iterate(type, (offset, _) => { last_offset = offset; });
+
+                if (last_offset == -1) {
+                    throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
+                }
+
+                AST.ExprType elem_type = ((AST.TIncompleteArray)type).elem_type;
+
+                Int32 num_elems = 1 + last_offset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
+
+                type = new AST.TArray(elem_type, num_elems, type.is_const, type.is_volatile);
+            }
+
+            return new Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String>(env, type, initr_opt, name);
         }
 
     }
@@ -362,11 +394,13 @@ namespace SyntaxTree {
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
 
-            AST.Env.Entry entry = env.Find(name);
+            Option<AST.Env.Entry> entry_opt = env.Find(name);
 
-            if (entry.kind == AST.Env.EntryKind.NOT_FOUND) {
+            if (entry_opt.IsNone) {
                 throw new InvalidOperationException($"Cannot find name \"{name}\".");
             }
+
+            AST.Env.Entry entry = entry_opt.Value;
 
             if (entry.kind != AST.Env.EntryKind.TYPEDEF) {
                 throw new InvalidOperationException($"\"{name}\" is not a typedef.");
@@ -430,13 +464,18 @@ namespace SyntaxTree {
     }
 
     public class ArrayModifier : TypeModifier {
-        public ArrayModifier(Expr num_elems)
+        public ArrayModifier(Option<Expr> num_elems_opt)
             : base(Kind.ARRAY) {
-            this.num_elems = num_elems;
+            this.num_elems_opt = num_elems_opt;
         }
 
         public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
-            AST.Expr num_elems = AST.TypeCast.MakeCast(this.num_elems.GetExpr(env), new AST.TLong(true, true));
+
+            if (num_elems_opt.IsNone) {
+                return new AST.TIncompleteArray(type);
+            }
+
+            AST.Expr num_elems = AST.TypeCast.MakeCast(num_elems_opt.Value.GetExpr(env), new AST.TLong(true, true));
 
             if (!num_elems.IsConstExpr()) {
                 throw new InvalidOperationException("Expected constant length.");
@@ -446,7 +485,7 @@ namespace SyntaxTree {
         }
         
 
-        public readonly Expr num_elems;
+        public readonly Option<Expr> num_elems_opt;
     }
 
     public class PointerModifier : TypeModifier {
@@ -458,6 +497,9 @@ namespace SyntaxTree {
         public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
             Boolean is_const = type_quals.Contains(TypeQual.CONST);
             Boolean is_volatile = type_quals.Contains(TypeQual.VOLATILE);
+            if (!type.IsComplete) {
+                throw new InvalidOperationException("The type a pointer points to must be complete.");
+            }
             return new AST.TPointer(type, is_const, is_volatile);
         }
         
@@ -548,8 +590,8 @@ namespace SyntaxTree {
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
             if (enums == null) {
                 // if there is no content in this enum type, we must find it's definition in the environment
-                AST.Env.Entry entry = env.Find($"enum {name}");
-                if (entry == null || entry.kind != AST.Env.EntryKind.TYPEDEF) {
+                Option<AST.Env.Entry> entry_opt = env.Find($"enum {name}");
+                if (entry_opt.IsNone || entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
                     throw new InvalidOperationException($"Type 'enum {name}' has not been defined.");
                 }
             } else {
@@ -654,9 +696,9 @@ namespace SyntaxTree {
                     //       1) mentioning an already-existed struct/union
                     //    or 2) creating an incomplete struct/union
 
-                    AST.Env.Entry r_find = env.Find(typename);
+                    Option<AST.Env.Entry> entry_opt = env.Find(typename);
 
-                    if (r_find.kind == AST.Env.EntryKind.NOT_FOUND) {
+                    if (entry_opt.IsNone) {
                         // If the struct/union is not in the current environment,
                         // then add an incomplete struct/union into the environment
                         AST.ExprType type =
@@ -668,19 +710,19 @@ namespace SyntaxTree {
                         return Tuple.Create(env, type);
                     }
 
-                    if (r_find.kind != AST.Env.EntryKind.TYPEDEF) {
+                    if (entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
                         throw new InvalidProgramException(typename + " is not a type? This should be my fault.");
                     }
 
                     // If the struct/union is found, return it.
-                    return Tuple.Create(env, r_find.type);
+                    return Tuple.Create(env, entry_opt.Value.type);
 
                 } else {
                     // Case 2: If an attribute list is supplied.
 
                     // 1) Make sure there is no complete struct/union in the current environment.
-                    AST.Env.Entry r_find = env.Find(typename + name);
-                    if (r_find.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)r_find.type).IsComplete) {
+                    Option<AST.Env.Entry> entry_opt = env.Find(typename);
+                    if (entry_opt.IsSome && entry_opt.Value.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)entry_opt.Value.type).IsComplete) {
                         throw new InvalidOperationException($"Redefining {typename}");
                     }
 
@@ -833,7 +875,7 @@ namespace SyntaxTree {
 
             String name = "";
             if (declr.IsSome) {
-                Tuple<String, AST.ExprType> r_declr = declr.value.GetNameAndType(env, type);
+                Tuple<String, AST.ExprType> r_declr = declr.Value.GetNameAndType(env, type);
                 name = r_declr.Item1;
                 type = r_declr.Item2;
             }

@@ -118,7 +118,7 @@ namespace SyntaxTree {
 
             cond = while_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -157,7 +157,7 @@ namespace SyntaxTree {
 
             cond = do_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -195,7 +195,7 @@ namespace SyntaxTree {
 
             cond = for_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -248,7 +248,7 @@ namespace SyntaxTree {
 
 			cond = if_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
 				throw new InvalidOperationException("Error: expected scalar type");
 			}
 
@@ -278,7 +278,7 @@ namespace SyntaxTree {
 
 			cond = if_cond.GetExpr(env);
 
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
 				throw new InvalidOperationException("Error: expected scalar type");
 			}
 

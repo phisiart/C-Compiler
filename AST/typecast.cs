@@ -488,7 +488,7 @@ namespace AST {
             }
 
             // if we are casting to an integral
-            if (type.IsIntegral()) {
+            if (type.IsIntegral) {
                 // pointer -> ulong -> whatever integral
                 if (expr.IsConstExpr()) {
                     expr = new ConstULong(((ConstPtr)expr).value);
@@ -527,7 +527,7 @@ namespace AST {
                 }
             }
 
-            if (expr.type.IsIntegral()) {
+            if (expr.type.IsIntegral) {
                 // if we are casting from an integral
 
                 // whatever integral -> ulong

@@ -23,7 +23,7 @@ namespace AST {
         }
         public readonly Int32 value;
 
-        public override String ToString() => $"int({value})";
+        public override String ToString() => $"{value}";
 
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL(value, Reg.EAX);
@@ -41,7 +41,7 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-        public override String ToString() => $"uint({value})";
+        public override String ToString() => $"{value}u";
 
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL((Int32)value, Reg.EAX);

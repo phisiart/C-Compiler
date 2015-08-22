@@ -33,6 +33,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Option.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />

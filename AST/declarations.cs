@@ -42,7 +42,7 @@ namespace AST {
             if (env.IsGlobal()) {
 
                 if (this.initr.IsSome) {
-                    Initr initr = this.initr.value;
+                    Initr initr = this.initr.Value;
                     switch (scs) {
                         case SCS.AUTO:
                             state.GLOBL(name);
@@ -152,12 +152,12 @@ namespace AST {
                 Int32 stack_size = env.StackSize;
 
                 // pos should be equal to stack_size, but whatever...
-                Int32 pos = env.Find(name).offset;
+                Int32 pos = env.Find(name).Value.offset;
                 if (this.initr.IsNone) {
                     return;
                 }
 
-                Initr initr = this.initr.value;
+                Initr initr = this.initr.Value;
                 initr.Iterate(type, (Int32 offset, Expr expr) => {
                     Reg ret = expr.CGenValue(env, state);
                     switch (expr.type.kind) {
@@ -207,13 +207,6 @@ namespace AST {
             } // stack object
         }
 
-        public void What(ExprType type, Initr initr) {
-            switch (type.kind) {
-                case ExprType.Kind.ARRAY:
-                    throw new NotImplementedException();
-            }
-        }
-
         private readonly String name;
         private readonly SCS scs;
         private readonly ExprType type;
@@ -251,14 +244,12 @@ namespace AST {
     ///    If the aggregate contains members that are aggregates or unions, or if the first member of a union is an aggregate or union, the rules apply recursively to the subaggregates or contained unions. If the initializer of a subaggregate or contained union begins with a left brace, the initializers enclosed by that brace and its matching right brace initialize the members of the subaggregate or the first member of the contained union. Otherwise, only enough initializers from the list are taken to account for the members of the first subaggregate or the first member of the contained union; any remaining initializers are left to initialize the next member of the aggregate of which the current subaggregate or contained union is a part.
     /// </summary>
     public abstract class Initr {
-        public Initr(Kind kind) {
-            this.kind = kind;
-        }
+        public Initr() { }
         public enum Kind {
             EXPR,
             INIT_LIST,
         }
-        public readonly Kind kind;
+        public abstract Kind kind { get; }
 
         public abstract Initr ConformType(MemberIterator iter);
 
@@ -270,32 +261,31 @@ namespace AST {
     }
 
     public class InitExpr : Initr {
-        public InitExpr(Expr expr)
-            : base(Kind.EXPR) {
+        public InitExpr(Expr expr) {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public override Kind kind => Kind.EXPR;
 
         public override Initr ConformType(MemberIterator iter) {
-            iter.Read(this.expr.type);
+            iter.Locate(this.expr.type);
             Expr expr = TypeCast.MakeCast(this.expr, iter.CurType);
             return new InitExpr(expr);
         }
 
         public override void Iterate(MemberIterator iter, Action<Int32, Expr> action) {
-            iter.Read(this.expr.type);
+            iter.Locate(this.expr.type);
             Int32 offset = iter.CurOffset;
-            ExprType type = iter.CurType;
             Expr expr = this.expr;
             action(offset, expr);
         }
     }
 
     public class InitList : Initr {
-        public InitList(List<Initr> initrs) :
-            base(Kind.INIT_LIST) {
+        public InitList(List<Initr> initrs) {
             this.initrs = initrs;
         }
+        public override Kind kind => Kind.INIT_LIST;
         public readonly List<Initr> initrs;
 
         public override Initr ConformType(MemberIterator iter) {
@@ -325,8 +315,7 @@ namespace AST {
 
     public class MemberIterator {
         public MemberIterator(ExprType type) {
-            trace = new List<Status>();
-            trace.Add(new Status(type));
+            trace = new List<Status> { new Status(type) };
         }
 
         public class Status {
@@ -335,67 +324,87 @@ namespace AST {
                 indices = new List<Int32>();
             }
 
-            public ExprType CurType { get { return GetType(base_type, indices); } }
+            public ExprType CurType => GetType(base_type, indices);
 
-            public Int32 CurOffset {
-                get {
-                    Int32 offset = 0;
-                    ExprType type = base_type;
-                    foreach (Int32 index in indices) {
-                        switch (type.kind) {
-                            case ExprType.Kind.ARRAY:
-                                type = ((TArray)type).elem_type;
-                                offset += index * type.SizeOf;
-                                break;
-                            case ExprType.Kind.STRUCT_OR_UNION:
-                                type = ((TStructOrUnion)type).Attribs[index].type;
-                                offset += ((TStructOrUnion)type).Attribs[index].offset;
-                                break;
-                            default:
-                                throw new InvalidOperationException("Not an aggregate type.");
-                        }
-                    }
-                    return offset;
+            public Int32 CurOffset => GetOffset(base_type, indices);
+
+            //public List<Tuple<ExprType, Int32>> GetPath(ExprType base_type, IReadOnlyList<Int32> indices) {
+            //    ExprType type = base_type;
+            //    List<Tuple<ExprType, Int32>> path = new List<Tuple<ExprType, int>>();
+            //    foreach (Int32 index in indices) {
+            //        switch (type.kind) {
+            //            case ExprType.Kind.ARRAY:
+            //                type = ((TArray)type).elem_type;
+            //                break;
+            //            case ExprType.Kind.INCOMPLETE_ARRAY:
+            //            case ExprType.Kind.STRUCT_OR_UNION:
+            //            default:
+            //                throw new InvalidProgramException("Not an aggregate type.");
+            //        }
+            //    }
+            //}
+
+            public static ExprType GetType(ExprType from_type, Int32 to_index) {
+                switch (from_type.kind) {
+                    case ExprType.Kind.ARRAY:
+                        return ((TArray)from_type).elem_type;
+
+                    case ExprType.Kind.INCOMPLETE_ARRAY:
+                        return ((TIncompleteArray)from_type).elem_type;
+
+                    case ExprType.Kind.STRUCT_OR_UNION:
+                        return ((TStructOrUnion)from_type).Attribs[to_index].type;
+
+                    default:
+                        throw new InvalidProgramException("Not an aggregate type.");
                 }
             }
 
-            public ExprType GetType(ExprType base_type, IReadOnlyList<Int32> indices) {
-                ExprType type = base_type;
-                foreach (Int32 index in indices) {
-                    switch (type.kind) {
-                        case ExprType.Kind.ARRAY:
-                            type = ((TArray)type).elem_type;
-                            break;
-                        case ExprType.Kind.STRUCT_OR_UNION:
-                            type = ((TStructOrUnion)type).Attribs[index].type;
-                            break;
-                        default:
-                            throw new InvalidOperationException("Not an aggregate type.");
-                    }
+            public static ExprType GetType(ExprType base_type, IReadOnlyList<Int32> indices) =>
+                indices.Aggregate(base_type, GetType);
+
+            public static Int32 GetOffset(ExprType from_type, Int32 to_index) {
+                switch (from_type.kind) {
+                    case ExprType.Kind.ARRAY:
+                        return to_index * ((TArray)from_type).elem_type.SizeOf;
+
+                    case ExprType.Kind.INCOMPLETE_ARRAY:
+                        return to_index * ((TIncompleteArray)from_type).elem_type.SizeOf;
+
+                    case ExprType.Kind.STRUCT_OR_UNION:
+                        return ((TStructOrUnion)from_type).Attribs[to_index].offset;
+
+                    default:
+                        throw new InvalidProgramException("Not an aggregate type.");
                 }
-                return type;
+            }
+
+            public static Int32 GetOffset(ExprType base_type, IReadOnlyList<Int32> indices) {
+                Int32 offset = 0;
+                ExprType from_type = base_type;
+                foreach (Int32 to_index in indices) {
+                    offset += GetOffset(from_type, to_index);
+                    from_type = GetType(from_type, to_index);
+                }
+                return offset;
             }
 
             public List<ExprType> GetTypes(ExprType base_type, IReadOnlyList<Int32> indices) {
                 List<ExprType> types = new List<ExprType> { base_type };
-                foreach (Int32 index in indices) {
-                    switch (base_type.kind) {
-                        case ExprType.Kind.ARRAY:
-                            base_type = ((TArray)base_type).elem_type;
-                            break;
-                        case ExprType.Kind.STRUCT_OR_UNION:
-                            base_type = ((TStructOrUnion)base_type).Attribs[index].type;
-                            break;
-                        default:
-                            throw new InvalidOperationException("Not an aggregate type.");
-                    }
-                    types.Add(base_type);
+                ExprType from_type = base_type;
+                foreach (Int32 to_index in indices) {
+                    from_type = GetType(from_type, to_index);
+                    types.Add(from_type);
                 }
                 return types;
             }
 
             public void Next() {
+
+                // From base_type to CurType.
                 List<ExprType> types = GetTypes(base_type, indices);
+
+                // We try to jump as many levels out as we can.
                 do {
                     Int32 index = indices.Last();
                     indices.RemoveAt(indices.Count - 1);
@@ -405,69 +414,70 @@ namespace AST {
 
                     switch (type.kind) {
                         case ExprType.Kind.ARRAY:
-                            // TODO: what if incomplete?
                             if (index < ((TArray)type).num_elems - 1) {
+                                // There are more elements in the array.
                                 indices.Add(index + 1);
-                            }
-                            return;
-                        case ExprType.Kind.STRUCT_OR_UNION:
-                            if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
-                                indices.Add(index + 1);
-                            }
-                            return;
-                        default:
-                            break;
-                    }
-                } while (true);
-            }
-
-            public void Read(ExprType type) {
-                switch (type.kind) {
-                    case ExprType.Kind.STRUCT_OR_UNION:
-                        ReadStruct((TStructOrUnion)type);
-                        return;
-                    default:
-                        if (type.IsScalar()) {
-                            ReadScalar((ScalarType)type);
-                            return;
-                        }
-                        throw new InvalidOperationException("Type not match.");
-                }
-            }
-
-            private void ReadScalar(ScalarType type) {
-                while (!CurType.IsScalar()) {
-                    switch (CurType.kind) {
-                        case ExprType.Kind.ARRAY:
-                            indices.Add(0);
-                            break;
-                        case ExprType.Kind.STRUCT_OR_UNION:
-                            indices.Add(0);
-                            break;
-                        default:
-                            throw new InvalidOperationException("Cannot find matching struct.");
-                    }
-                }
-                //if (!CurType.EqualType(type)) {
-                //    throw new InvalidOperationException("Type not match.");
-                //}
-            }
-
-            private void ReadStruct(TStructOrUnion type) {
-                while (true) {
-                    switch (CurType.kind) {
-                        case ExprType.Kind.ARRAY:
-                            indices.Add(0);
-                            break;
-                        case ExprType.Kind.STRUCT_OR_UNION:
-                            if (CurType.EqualType(type)) {
                                 return;
                             }
-                            indices.Add(0);
                             break;
+
+                        case ExprType.Kind.INCOMPLETE_ARRAY:
+                            indices.Add(index + 1);
+                            return;
+
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                            if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
+                                // There are more members in the struct.
+                                // (not union, since we can only initialize the first member of a union)
+                                indices.Add(index + 1);
+                                return;
+                            }
+                            break;
+
                         default:
-                            throw new InvalidOperationException("Cannot find matching struct.");
+                            break;
                     }
+
+                } while (indices.Any());
+            }
+
+            /// <summary>
+            /// Read an expression in the initializer list, locate the corresponding position.
+            /// </summary>
+            public void Locate(ExprType type) {
+                switch (type.kind) {
+                    case ExprType.Kind.STRUCT_OR_UNION:
+                        LocateStruct((TStructOrUnion)type);
+                        return;
+                    default:
+                        // Even if the expression is of array type, treat it as a scalar (pointer).
+                        LocateScalar();
+                        return;
+                }
+            }
+
+            /// <summary>
+            /// Try to match a scalar.
+            /// This step doesn't check what scalar it is. Further steps would perform implicit conversions.
+            /// </summary>
+            private void LocateScalar() {
+                while (!CurType.IsScalar) {
+                    indices.Add(0);
+                }
+            }
+
+            /// <summary>
+            /// Try to match a given struct.
+            /// Go down to find the first element of the same struct type.
+            /// </summary>
+            private void LocateStruct(TStructOrUnion type) {
+                while (!CurType.EqualType(type)) {
+                    if (CurType.IsScalar) {
+                        throw new InvalidOperationException("Trying to match a struct or union, but found a scalar.");
+                    }
+
+                    // Go down one level.
+                    indices.Add(0);
                 }
             }
 
@@ -475,28 +485,26 @@ namespace AST {
             public readonly List<Int32> indices;
         }
 
-        public ExprType CurType { get { return trace.Last().CurType; } }
-        public Int32 CurOffset {
-            get {
-                return trace.Select(_ => _.CurOffset).Sum();
-            }
-        }
+        public ExprType CurType => trace.Last().CurType;
+
+        public Int32 CurOffset => trace.Select(_ => _.CurOffset).Sum();
+
         public void Next() => trace.Last().Next();
-        public void Read(ExprType type) => trace.Last().Read(type);
+
+        public void Locate(ExprType type) => trace.Last().Locate(type);
+
         public void InBrace() {
+
+            /// Push the current position into the stack, so that we can get back by <see cref="OutBrace"/>
             trace.Add(new Status(trace.Last().CurType));
-            switch (CurType.kind) {
-                case ExprType.Kind.ARRAY:
-                    trace.Last().indices.Add(0);
-                    break;
-                case ExprType.Kind.STRUCT_OR_UNION:
-                    trace.Last().indices.Add(0);
-                    break;
-                default:
-                    break;
-                    // throw new InvalidOperationException("Invalid brace.");
+
+            // For aggregate types, go inside and locate the first member.
+            if (!CurType.IsScalar) {
+                trace.Last().indices.Add(0);
             }
+            
         }
+
         public void OutBrace() => trace.RemoveAt(trace.Count - 1);
 
         public readonly List<Status> trace;

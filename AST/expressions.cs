@@ -94,18 +94,6 @@ namespace AST {
         public readonly ExprType type;
     }
 
-    public class EmptyExpr : Expr {
-        public EmptyExpr() : base(new TVoid()) {
-        }
-        public override Reg CGenValue(Env env, CGenState state) {
-            state.MOVL(0, Reg.EAX);
-            return Reg.EAX;
-        }
-        public override void CGenAddress(Env env, CGenState state) {
-            state.MOVL(0, Reg.EAX);
-        }
-    }
-
     public class Variable : Expr {
         public Variable(ExprType _type, String _name)
             : base(_type) {
@@ -114,7 +102,7 @@ namespace AST {
         public readonly String name;
 
         public override void CGenAddress(Env env, CGenState state) {
-            Env.Entry entry = env.Find(name);
+            Env.Entry entry = env.Find(name).Value;
             Int32 offset = entry.offset;
 
             switch (entry.kind) {
@@ -128,7 +116,6 @@ namespace AST {
                     return;
 
                 case Env.EntryKind.ENUM:
-                case Env.EntryKind.NOT_FOUND:
                 case Env.EntryKind.TYPEDEF:
                 default:
                     throw new InvalidProgramException("cannot get the address of " + entry.kind);
@@ -136,7 +123,7 @@ namespace AST {
         }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Env.Entry entry = env.Find(name);
+            Env.Entry entry = env.Find(name).Value;
 
             Int32 offset = entry.offset;
             //if (entry.kind == Env.EntryKind.STACK) {
@@ -286,7 +273,6 @@ namespace AST {
                     }
 
                 case Env.EntryKind.TYPEDEF:
-                case Env.EntryKind.NOT_FOUND:
                 default:
                     throw new InvalidProgramException("cannot get the value of a " + entry.kind.ToString());
             }

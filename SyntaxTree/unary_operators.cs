@@ -14,7 +14,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsScalar()) {
+            if (!expr.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -34,7 +34,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsScalar()) {
+            if (!expr.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -84,7 +84,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsScalar()) {
+            if (!expr.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -104,7 +104,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsScalar()) {
+            if (!expr.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -167,7 +167,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsArith()) {
+            if (!expr.type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
@@ -187,7 +187,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsArith()) {
+            if (!expr.type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
@@ -222,7 +222,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsIntegral()) {
+            if (!expr.type.IsIntegral) {
                 throw new InvalidOperationException("Expected integral type.");
             }
 
@@ -253,7 +253,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
-            if (!expr.type.IsArith()) {
+            if (!expr.type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 

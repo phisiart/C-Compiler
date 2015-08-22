@@ -51,6 +51,16 @@ namespace AST {
      * <scalar>     : <arithmetic>, <pointer>
      * <aggregate> : <array>, <struct>, <union>
 
+       function
+
+       void
+
+       array
+
+       struct
+
+       union
+
        scalar
          |
          +--- pointer
@@ -95,9 +105,6 @@ namespace AST {
             FUNCTION,
             ARRAY,
             INCOMPLETE_ARRAY,
-
-            [Obsolete]
-            INIT_LIST,
             STRUCT_OR_UNION,
         }
 
@@ -124,9 +131,10 @@ namespace AST {
         public static Int32 ALIGN_POINTER = 4;
 
         public readonly Kind kind;
-        public virtual Boolean IsArith() { return false; }
-        public virtual Boolean IsIntegral() { return false; }
-        public virtual Boolean IsScalar() { return false; }
+        public virtual Boolean IsArith => false;
+        public virtual Boolean IsIntegral => false;
+        public virtual Boolean IsScalar => false;
+        public virtual Boolean IsComplete => true;
         public abstract Boolean EqualType(ExprType other);
 
         public String DumpQualifiers() {
@@ -153,18 +161,6 @@ namespace AST {
 
     }
 
-    [Obsolete]
-    public class TInitList : ExprType {
-        public TInitList()
-            : base(Kind.INIT_LIST, 0, 0, true, true) { }
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            throw new InvalidOperationException();
-        }
-        public override Boolean EqualType(ExprType other) {
-            return false;
-        }
-    }
-
     public class TVoid : ExprType {
         public TVoid(Boolean _is_const = false, Boolean _is_volatile = false)
             : base(Kind.VOID, 0, 0, _is_const, _is_volatile) {
@@ -182,17 +178,13 @@ namespace AST {
     public abstract class ScalarType : ExprType {
         public ScalarType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
-        public override Boolean IsScalar() {
-            return true;
-        }
+        public override Boolean IsScalar => true;
     }
 
     public abstract class ArithmeticType : ScalarType {
         public ArithmeticType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
-        public override Boolean IsArith() {
-            return true;
-        }
+        public override Boolean IsArith => true;
         public override Boolean EqualType(ExprType other) {
             return kind == other.kind;
         }
@@ -201,9 +193,7 @@ namespace AST {
     public abstract class IntegralType : ArithmeticType {
         public IntegralType(Kind _expr_type, Int32 _size_of, Int32 _alignment, Boolean _is_const, Boolean _is_volatile)
             : base(_expr_type, _size_of, _alignment, _is_const, _is_volatile) { }
-        public override Boolean IsIntegral() {
-            return true;
-        }
+        public override Boolean IsIntegral => true;
     }
 
     public class TChar : IntegralType {
@@ -318,22 +308,26 @@ namespace AST {
     // ================
     // 
     public class TIncompleteArray : ExprType {
-        public TIncompleteArray(ExprType _elem_type, Boolean _is_const = false, Boolean _is_volatile = false)
-            : base(Kind.ARRAY, 0, _elem_type.Alignment, _is_const, _is_volatile) {
-            array_elem_type = _elem_type;
+        public TIncompleteArray(ExprType elem_type, Boolean is_const = false, Boolean is_volatile = false)
+            : base(Kind.INCOMPLETE_ARRAY, 0, elem_type.Alignment, is_const, is_volatile) {
+            this.elem_type = elem_type;
         }
 
-        public override ExprType GetQualifiedType(Boolean _is_const, Boolean _is_volatile) {
-            return new TIncompleteArray(array_elem_type, _is_const, _is_volatile);
+        public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
+            return new TIncompleteArray(elem_type, is_const, is_volatile);
         }
 
         public override Boolean EqualType(ExprType other) => false;
 
+        public override Boolean IsComplete => false;
+
+        public ExprType Complete(Int32 num_elems) => new TArray(elem_type, num_elems, is_const, is_volatile);
+
         public override String ToString() {
-            return array_elem_type.ToString() + "[]";
+            return elem_type.ToString() + "[]";
         }
 
-        public readonly ExprType array_elem_type;
+        public readonly ExprType elem_type;
     }
 
     public class TArray : ExprType {
@@ -419,7 +413,7 @@ namespace AST {
         public override Boolean EqualType(ExprType other) =>
             other.kind == Kind.STRUCT_OR_UNION && ReferenceEquals(((TStructOrUnion)other).layout, layout);
 
-        public Boolean IsComplete { get { return layout.IsComplete; } }
+        public override Boolean IsComplete => layout.IsComplete;
 
         public override Int32 SizeOf { get { return layout.SizeOf; } }
 

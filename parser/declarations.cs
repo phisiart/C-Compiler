@@ -648,11 +648,14 @@ public class _direct_declarator : ParseRule {
         }
 
         // match constant_expression, if fail, just put null
-        Expr nelems;
+        Expr num_elems;
+        Option<Expr> num_elems_opt;
         Int32 saved = begin;
-        if ((begin = _constant_expression.Parse(src, begin, out nelems)) == -1) {
-            nelems = new EmptyExpr();
+        if ((begin = _constant_expression.Parse(src, begin, out num_elems)) == -1) {
+            num_elems_opt = new None<Expr>();
             begin = saved;
+        } else {
+            num_elems_opt = new Some<Expr>(num_elems);
         }
 
         // match ']'
@@ -661,7 +664,7 @@ public class _direct_declarator : ParseRule {
             return -1;
         }
 
-        modifier = new ArrayModifier(nelems);
+        modifier = new ArrayModifier(num_elems_opt);
         return begin;
     }
 

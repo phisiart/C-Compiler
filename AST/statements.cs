@@ -208,7 +208,7 @@ namespace AST {
     public class WhileStmt : Stmt {
         public override Kind kind => Kind.WHILE;
         public WhileStmt(Expr cond, Stmt body) {
-            if (!cond.type.IsScalar()) {
+            if (!cond.type.IsScalar) {
                 throw new InvalidProgramException();
             }
             this.cond = cond;
