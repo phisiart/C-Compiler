@@ -67,6 +67,7 @@ public class CGenState {
         label_idx = 2;
         status = Status.NONE;
         label_packs = new Stack<LabelPack>();
+        return_label = -1;
     }
 
     public void TEXT() {
@@ -891,17 +892,11 @@ public class CGenState {
 
     private Stack<LabelPack> label_packs;
 
-    public Int32 ContinueLabel {
-        get {
-            return label_packs.First(_ => _.continue_label != -1).continue_label;
-        }
-    }
+    public Int32 ContinueLabel =>
+        label_packs.First(_ => _.continue_label != -1).continue_label;
 
-    public Int32 BreakLabel {
-        get {
-            return label_packs.First(_ => _.break_label != -1).break_label;
-        }
-    }
+    public Int32 BreakLabel =>
+        label_packs.First(_ => _.break_label != -1).break_label;
 
     public Int32 DefaultLabel {
         get {
@@ -932,4 +927,20 @@ public class CGenState {
         //_break_labels.Pop();
     }
 
+    private Int32 return_label;
+    public Int32 ReturnLabel {
+        get {
+            if (return_label == -1) {
+                throw new InvalidOperationException("Not inside a function.");
+            }
+            return return_label;
+        }
+    }
+    public void InFunction() {
+        return_label = RequestLabel();
+    }
+
+    public void OutFunction() {
+        return_label = -1;
+    }
 }

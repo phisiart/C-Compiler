@@ -333,7 +333,7 @@ namespace SyntaxTree {
 				//env = r_expr.Item1;
 
 				case_expr = AST.TypeCast.MakeCast(case_expr, new AST.TLong());
-				if (!case_expr.IsConstExpr()) {
+				if (!case_expr.IsConstExpr) {
 					throw new InvalidOperationException("case expr not const");
 				}
 				Int32 case_value = ((AST.ConstLong)case_expr).value;

@@ -91,7 +91,6 @@ namespace AST {
 
     public abstract class ExprType {
         public enum Kind {
-            ERROR,
             VOID,
             CHAR,
             UCHAR,

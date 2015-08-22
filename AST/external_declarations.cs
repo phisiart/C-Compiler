@@ -58,8 +58,12 @@ namespace AST {
                 throw new InvalidOperationException();
             }
             state.CGenFuncStart(name);
+            state.InFunction();
 
             stmt.CGenStmt(env, state);
+
+            state.CGenLabel(state.ReturnLabel);
+            state.OutFunction();
 
             //     leave
             //     ret

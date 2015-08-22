@@ -77,6 +77,30 @@ int main() {
     int arr[] = { 1, 2, 3 };
 }
 ";
+
+            scanner.src = @"
+int printf(char *, int);
+void *malloc(unsigned int nbytes);
+
+typedef struct Node {
+    int value;
+    struct Node *next;
+} Node;
+
+Node *cons(int value, Node *tl) {
+    Node *hd = malloc(sizeof(struct Node));
+    hd->value = value;
+    hd->next = tl;
+    return hd;
+}
+
+int main() {
+    Node *hd = cons(0, (void *)0);
+    printf(""%d\n"", hd->value);
+    return 0;
+}
+";
+
             scanner.Lex();
             Console.WriteLine("Source code:");
             Console.WriteLine("======================");
@@ -88,7 +112,7 @@ int main() {
 
             List<Token> tokens = scanner.tokens;
 
-            SyntaxTree.TranslationUnit unit;
+            SyntaxTree.TranslnUnit unit;
 			if (_translation_unit.Parse(tokens, 0, out unit) != tokens.Count - 1) {
 				throw new InvalidOperationException("Error: not finished parsing");
 			}

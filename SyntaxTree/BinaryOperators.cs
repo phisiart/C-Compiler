@@ -42,7 +42,7 @@ namespace SyntaxTree {
             Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.ULONG:
                         return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
@@ -92,7 +92,7 @@ namespace SyntaxTree {
             Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.DOUBLE:
                         return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
@@ -154,7 +154,7 @@ namespace SyntaxTree {
             Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+            if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.DOUBLE:
                         return new AST.ConstLong(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
@@ -263,7 +263,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException();
             }
 
-            if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+            if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
                 Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
@@ -343,7 +343,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
-            if (ptr.IsConstExpr() && offset.IsConstExpr()) {
+            if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
                 Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
@@ -383,7 +383,7 @@ namespace SyntaxTree {
 
                     Int32 scale = lhs_t.ref_t.SizeOf;
 
-                    if (lhs.IsConstExpr() && rhs.IsConstExpr()) {
+                    if (lhs.IsConstExpr && rhs.IsConstExpr) {
                         return new AST.ConstLong((Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale);
                     }
 

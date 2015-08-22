@@ -22,9 +22,7 @@ namespace AST {
         public Expr(ExprType _type) {
             type = _type;
         }
-        public virtual Boolean IsConstExpr() {
-            return false;
-        }
+        public virtual Boolean IsConstExpr => false;
         public abstract Reg CGenValue(Env env, CGenState state);
 
         public virtual void CGenAddress(Env env, CGenState state) {
@@ -80,7 +78,6 @@ namespace AST {
                     state.CGenPushLong(Reg.EAX);
                     break;
 
-                case ExprType.Kind.ERROR:
                 case ExprType.Kind.INCOMPLETE_ARRAY:
                 case ExprType.Kind.VOID:
                     throw new InvalidProgramException(type.kind.ToString() + " can't be pushed onto the stack");
@@ -375,7 +372,6 @@ namespace AST {
                 case ExprType.Kind.FUNCTION:
                 case ExprType.Kind.VOID:
                 case ExprType.Kind.ARRAY:
-                case ExprType.Kind.ERROR:
                 case ExprType.Kind.INCOMPLETE_ARRAY:
                 default:
                     throw new InvalidProgramException("cannot assign to a " + type.kind.ToString());

@@ -149,13 +149,16 @@ namespace SyntaxTree {
         }
     }
 
+    /// <summary>
+    /// Function call: func(args)
+    /// </summary>
     public class FunctionCall : Expr {
-        public FunctionCall(Expr func, IEnumerable<Expr> args) {
+        public FunctionCall(Expr func, IReadOnlyList<Expr> args) {
             this.func = func;
             this.args = args;
         }
         public readonly Expr func;
-        public readonly IEnumerable<Expr> args;
+        public readonly IReadOnlyList<Expr> args;
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr func = this.func.GetExpr(env);
@@ -164,6 +167,8 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected a function in function call.");
             }
 
+            // TODO: deal with function pointer.
+
             AST.TFunction func_type = (AST.TFunction)(func.type);
 
             var args = this.args.Select(_ => _.GetExpr(env)).ToList();
@@ -171,6 +176,8 @@ namespace SyntaxTree {
             if (args.Count() != func_type.args.Count) {
                 throw new InvalidOperationException("Number of arguments mismatch.");
             }
+
+            // TODO: deal with varargs.
 
             // make implicit cast
             args = Enumerable.Zip(args, func_type.args, (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)).ToList();

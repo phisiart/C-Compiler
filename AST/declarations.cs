@@ -55,7 +55,8 @@ namespace AST {
                             break;
 
                         case SCS.TYPEDEF:
-                            throw new InvalidProgramException();
+                            // Ignore.
+                            break;
 
                         default:
                             throw new InvalidProgramException();
@@ -73,7 +74,7 @@ namespace AST {
                             state.ZERO(offset - last);
                         }
 
-                        if (!expr.IsConstExpr()) {
+                        if (!expr.IsConstExpr) {
                             throw new InvalidOperationException("Cannot initialize with non-const expression.");
                         }
 
@@ -134,7 +135,8 @@ namespace AST {
                             break;
 
                         case SCS.TYPEDEF:
-                            throw new InvalidProgramException();
+                            // Ignore.
+                            break;
 
                         default:
                             throw new InvalidProgramException();

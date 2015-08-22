@@ -191,7 +191,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
-            if (expr.IsConstExpr()) {
+            if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:
                         return new AST.ConstLong(-((AST.ConstLong)expr).value);
@@ -226,7 +226,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected integral type.");
             }
 
-            if (expr.IsConstExpr()) {
+            if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:
                         return new AST.ConstLong(~((AST.ConstLong)expr).value);
@@ -257,7 +257,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
-            if (expr.IsConstExpr()) {
+            if (expr.IsConstExpr) {
                 Boolean is_zero;
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:

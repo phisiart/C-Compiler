@@ -9,7 +9,7 @@ using SyntaxTree;
 public class _translation_unit : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
-        TranslationUnit unit;
+        TranslnUnit unit;
         Int32 current = Parse(src, 0, out unit);
         if (current == -1) {
             return false;
@@ -30,11 +30,11 @@ public class _translation_unit : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 pos, out TranslationUnit unit) {
-        List<ExternalDeclaration> list;
+    public static Int32 Parse(List<Token> src, Int32 pos, out TranslnUnit unit) {
+        List<ExternDecln> list;
         Int32 current;
         if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
-            unit = new TranslationUnit(list);
+            unit = new TranslnUnit(list);
             return current;
         } else {
             unit = null;
@@ -47,7 +47,7 @@ public class _translation_unit : ParseRule {
 public class _external_declaration : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("int a;");
-        ExternalDeclaration node;
+        ExternDecln node;
         Int32 current = Parse(src, 0, out node);
         if (current == -1) {
             return false;
@@ -62,8 +62,8 @@ public class _external_declaration : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 pos, out ExternalDeclaration node) {
-        return Parser.Parse2Choices<ExternalDeclaration, FunctionDefinition, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
+    public static Int32 Parse(List<Token> src, Int32 pos, out ExternDecln node) {
+        return Parser.Parse2Choices<ExternDecln, FuncDef, Decln>(src, pos, out node, _function_definition.Parse, _declaration.Parse);
     }
 }
 
@@ -97,7 +97,7 @@ public class _external_declaration : ParseRule {
 public class _function_definition : ParseRule {
     public static Boolean Test() {
         var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");
-        FunctionDefinition def;
+        FuncDef def;
         Int32 current = Parse(src, 0, out def);
         if (current == -1) {
             return false;
@@ -106,7 +106,7 @@ public class _function_definition : ParseRule {
         return true;
     }
     
-    public static Int32 Parse(List<Token> src, Int32 begin, out FunctionDefinition def) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out FuncDef def) {
         // try to match declaration_specifiers, if not found, create an empty one.
         DeclnSpecs specs;
         Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
@@ -131,7 +131,7 @@ public class _function_definition : ParseRule {
             return -1;
         }
 
-        def = new FunctionDefinition(specs, decl, stmt);
+        def = new FuncDef(specs, decl, stmt);
         return current;
     }
 }

@@ -9,7 +9,7 @@ namespace AST {
         public ConstExpr(ExprType type)
             : base(type) { }
 
-        public override Boolean IsConstExpr() => true;
+        public override Boolean IsConstExpr => true;
 
         public override void CGenAddress(Env env, CGenState state) {
             throw new InvalidOperationException("Cannot get the address of a constant");
@@ -59,7 +59,7 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-        public override String ToString() => $"{type}({value})";
+        public override String ToString() => $"({type} *)0x{value.ToString("X8")}";
 
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL((Int32)value, Reg.EAX);
@@ -78,7 +78,7 @@ namespace AST {
         }
         public readonly Single value;
 
-        public override String ToString() => $"float({value})";
+        public override String ToString() => $"{value}f";
 
         /// <summary>
         /// flds addr
@@ -99,7 +99,7 @@ namespace AST {
         }
         public readonly Double value;
 
-        public override String ToString() => $"double({value})";
+        public override String ToString() => $"{value}";
 
         /// <summary>
         /// fldl addr
@@ -120,6 +120,8 @@ namespace AST {
             this.value = value;
         }
         public readonly String value;
+
+        public override String ToString() => $"\"{value}\"";
 
         public override Reg CGenValue(Env env, CGenState state) {
             String name = state.CGenString(value);

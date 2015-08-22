@@ -5,7 +5,7 @@ using System.Linq;
 namespace SyntaxTree {
 
     // the declaration of an object
-    public class Decln : ExternalDeclaration {
+    public class Decln : ExternDecln {
         public Decln(DeclnSpecs decln_specs, IEnumerable<InitDeclr> init_declrs) {
             this.decln_specs = decln_specs;
             this.init_declrs = init_declrs;
@@ -134,7 +134,12 @@ namespace SyntaxTree {
 
                 var basic_specs = type_specs.Select(spec => spec.kind);
 
-                switch (GetBasicType(basic_specs)) {
+                var basic_type = GetBasicType(basic_specs);
+
+                switch (basic_type) {
+                    case AST.ExprType.Kind.VOID:
+                        return Tuple.Create(env, (AST.ExprType)new AST.TVoid(is_const, is_volatile));
+
                     case AST.ExprType.Kind.CHAR:
                         return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
 
@@ -477,7 +482,7 @@ namespace SyntaxTree {
 
             AST.Expr num_elems = AST.TypeCast.MakeCast(num_elems_opt.Value.GetExpr(env), new AST.TLong(true, true));
 
-            if (!num_elems.IsConstExpr()) {
+            if (!num_elems.IsConstExpr) {
                 throw new InvalidOperationException("Expected constant length.");
             }
 
@@ -497,9 +502,12 @@ namespace SyntaxTree {
         public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
             Boolean is_const = type_quals.Contains(TypeQual.CONST);
             Boolean is_volatile = type_quals.Contains(TypeQual.VOLATILE);
-            if (!type.IsComplete) {
-                throw new InvalidOperationException("The type a pointer points to must be complete.");
-            }
+
+            // This is commented out, for incomplete struct declaration.
+            //if (!type.IsComplete) {
+            //    throw new InvalidOperationException("The type a pointer points to must be complete.");
+            //}
+
             return new AST.TPointer(type, is_const, is_volatile);
         }
         
@@ -507,18 +515,15 @@ namespace SyntaxTree {
     }
 
     public class Declr : PTNode {
-        public Declr(String name, List<TypeModifier> modifiers) {
-            inner_declr_modifiers = modifiers;
+        public Declr(String name, IReadOnlyList<TypeModifier> modifiers) {
+            declr_modifiers = modifiers;
             this.name = name;
         }
 
         public Declr()
             : this("", new List<TypeModifier>()) { }
 
-        public IReadOnlyList<TypeModifier> declr_modifiers {
-            get { return inner_declr_modifiers; }
-        }
-        private readonly List<TypeModifier> inner_declr_modifiers;
+        public readonly IReadOnlyList<TypeModifier> declr_modifiers;
         public readonly String name;
 
         /// <summary>
@@ -635,7 +640,7 @@ namespace SyntaxTree {
             init = enum_init.GetExpr(env);
 
             init = AST.TypeCast.MakeCast(init, new AST.TLong());
-            if (!init.IsConstExpr()) {
+            if (!init.IsConstExpr) {
                 throw new InvalidOperationException("Error: expected constant integer");
             }
             Int32 init_idx = ((AST.ConstLong)init).value;
