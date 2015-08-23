@@ -9,7 +9,7 @@ using SyntaxTree;
 //          | iteration_statement
 //          | jump_statement
 public class _statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
         Int32 current = _labeled_statement.Parse(src, begin, out stmt);
         if (current != -1) {
@@ -53,7 +53,7 @@ public class _statement : ParseRule {
 //               | break ;
 //               | return <expression>? ;
 public class _jump_statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
 
         if (src[begin].type != TokenType.KEYWORD) {
@@ -120,11 +120,11 @@ public class _compound_statement : ParseRule {
             current = saved;
         }
 
-        List<Statement> stmt_list;
+        List<Stmt> stmt_list;
         saved = current;
         current = _statement_list.Parse(src, current, out stmt_list);
         if (current == -1) {
-            stmt_list = new List<Statement>();
+            stmt_list = new List<Stmt>();
             current = saved;
         }
 
@@ -170,7 +170,7 @@ public class _declaration_list : ParseRule {
 ///   : [statement]+
 /// </summary>
 public class _statement_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Statement> stmts) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Stmt> stmts) {
         return Parser.ParseNonEmptyList(src, begin, out stmts, _statement.Parse);
     }
 }
@@ -178,7 +178,7 @@ public class _statement_list : ParseRule {
 
 // expression_statement: <expression>? ;
 public class _expression_statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
         Expr expr;
         Int32 current = _expression.Parse(src, begin, out expr);
@@ -202,7 +202,7 @@ public class _expression_statement : ParseRule {
 //                    | do statement while ( expression ) ;
 //                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
 public class _iteration_statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
         Int32 current;
         if (Parser.IsKeyword(src[begin], KeywordVal.WHILE)) {
@@ -215,7 +215,7 @@ public class _iteration_statement : ParseRule {
                 return -1;
             }
 
-            Statement body;
+            Stmt body;
             current = _statement.Parse(src, current, out body);
             if (current == -1) {
                 return -1;
@@ -228,7 +228,7 @@ public class _iteration_statement : ParseRule {
             // do
             current = begin + 1;
 
-            Statement body;
+            Stmt body;
             current = _statement.Parse(src, current, out body);
             if (current == -1) {
                 return -1;
@@ -253,13 +253,18 @@ public class _iteration_statement : ParseRule {
             }
 
             // match init
-            Expr init;
+            Option<Expr> init_opt;
+            // Expr init;
             Int32 saved = current;
-            current = _expression.Parse(src, current, out init);
-            if (current == -1) {
-                init = null;
-                current = saved;
-            }
+            current = Parser.ParseOption(src, current, out init_opt, _expression.Parse);
+            //current = _expression.Parse(src, current, out init);
+            //if (current == -1) {
+            //    init = null;
+            //    init_opt = new None<Expr>();
+            //    current = saved;
+            //} else {
+            //    init_opt = new Some<Expr>(init);
+            //}
 
             // match ';'
             if (!Parser.EatOperator(src, ref current, OperatorVal.SEMICOLON)) {
@@ -267,13 +272,15 @@ public class _iteration_statement : ParseRule {
             }
 
             // match cond
-            Expr cond;
-            saved = current;
-            current = _expression.Parse(src, current, out cond);
-            if (current == -1) {
-                init = null;
-                current = saved;
-            }
+            Option<Expr> cond_opt;
+            current = Parser.ParseOption(src, current, out cond_opt, _expression.Parse);
+            //Expr cond;
+            //saved = current;
+            //current = _expression.Parse(src, current, out cond);
+            //if (current == -1) {
+            //    init = null;
+            //    current = saved;
+            //}
 
             // match ';'
             if (!Parser.EatOperator(src, ref current, OperatorVal.SEMICOLON)) {
@@ -281,26 +288,28 @@ public class _iteration_statement : ParseRule {
             }
 
             // match loop
-            Expr loop;
-            saved = current;
-            current = _expression.Parse(src, current, out loop);
-            if (current == -1) {
-                init = null;
-                current = saved;
-            }
+            Option<Expr> loop_opt;
+            current = Parser.ParseOption(src, current, out loop_opt, _expression.Parse);
+            //Expr loop;
+            //saved = current;
+            //current = _expression.Parse(src, current, out loop);
+            //if (current == -1) {
+            //    init = null;
+            //    current = saved;
+            //}
 
             // match ')'
             if (!Parser.EatOperator(src, ref current, OperatorVal.RPAREN)) {
                 return -1;
             }
 
-            Statement body;
+            Stmt body;
             current = _statement.Parse(src, current, out body);
             if (current == -1) {
                 return -1;
             }
 
-            stmt = new ForStatement(init, cond, loop, body);
+            stmt = new ForStmt(init_opt, cond_opt, loop_opt, body);
             return current;
 
         } else {
@@ -315,7 +324,7 @@ public class _iteration_statement : ParseRule {
 //                    | switch ( expression ) statement
 public class _selection_statement : ParseRule {
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
 
         Int32 current;
@@ -343,7 +352,7 @@ public class _selection_statement : ParseRule {
             if (current == -1) {
                 return -1;
             }
-            Statement true_stmt;
+            Stmt true_stmt;
             current = _statement.Parse(src, current, out true_stmt);
             if (current == -1) {
                 return -1;
@@ -353,7 +362,7 @@ public class _selection_statement : ParseRule {
                 return current;
             }
             current++;
-            Statement false_stmt;
+            Stmt false_stmt;
             current = _statement.Parse(src, current, out false_stmt);
             if (current == -1) {
                 return -1;
@@ -372,7 +381,7 @@ public class _selection_statement : ParseRule {
 //                   | case constant_expression : statement
 //                   | default : statement
 public class _labeled_statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Statement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
 
         Int32 current;

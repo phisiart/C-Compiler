@@ -163,13 +163,23 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr func = this.func.GetExpr(env);
 
-            if (func.type.kind != AST.ExprType.Kind.FUNCTION) {
-                throw new InvalidOperationException("Expected a function in function call.");
+            AST.TFunction func_type;
+            switch (func.type.kind) {
+                case AST.ExprType.Kind.FUNCTION:
+                    func_type = func.type as AST.TFunction;
+                    break;
+
+                case AST.ExprType.Kind.POINTER:
+                    var ref_t = (func.type as AST.TPointer).ref_t;
+                    if (!(ref_t is AST.TFunction)) {
+                        throw new InvalidOperationException("Expected a function pointer.");
+                    }
+                    func_type = ref_t as AST.TFunction;
+                    break;
+
+                default:
+                    throw new InvalidOperationException("Expected a function in function call.");
             }
-
-            // TODO: deal with function pointer.
-
-            AST.TFunction func_type = (AST.TFunction)(func.type);
 
             var args = this.args.Select(_ => _.GetExpr(env)).ToList();
 

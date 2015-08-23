@@ -336,20 +336,20 @@ namespace AST {
     // 
     public class ForStmt : Stmt {
         public override Kind kind => Kind.FOR;
-        public ForStmt(Expr init, Expr cond, Expr loop, Stmt body) {
+        public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
             this.init = init;
             this.cond = cond;
             this.loop = loop;
             this.body = body;
         }
-        public readonly Expr init;
-        public readonly Expr cond;
-        public readonly Expr loop;
+        public readonly Option<Expr> init;
+        public readonly Option<Expr> cond;
+        public readonly Option<Expr> loop;
         public readonly Stmt body;
 
         public override void CGenStmt(Env env, CGenState state) {
             // init
-            CGenExprStmt(env, init, state);
+            init.Map(_ => CGenExprStmt(env, _, state));
 
             Int32 start_label = state.RequestLabel();
             Int32 finish_label = state.RequestLabel();
@@ -359,9 +359,12 @@ namespace AST {
             state.CGenLabel(start_label);
 
             // test cont
-            Reg ret = CGenExprStmt(env, cond, state);
-            CGenTest(env, ret, state);
-
+            cond.Map(_ => {
+                Reg ret = CGenExprStmt(env, _, state);
+                CGenTest(env, ret, state);
+                return ret;
+            });
+            
             // jz finish
             state.JZ(finish_label);
 
@@ -374,7 +377,7 @@ namespace AST {
             state.CGenLabel(continue_label);
 
             // loop
-            CGenExprStmt(env, loop, state);
+            loop.Map(_ => CGenExprStmt(env, _, state));
 
             // jmp start
             state.JMP(start_label);

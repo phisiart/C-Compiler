@@ -525,7 +525,13 @@ namespace AST {
             state.CGenForceStackSizeTo(-header_base);
 
             // Get function address
-            func.CGenAddress(env, state);
+            if (func.type is TFunction) {
+                func.CGenAddress(env, state);
+            } else if (func.type is TPointer) {
+                func.CGenValue(env, state);
+            } else {
+                throw new InvalidProgramException();
+            }
 
             state.CALL("*%eax");
 

@@ -4,14 +4,14 @@ using System.Linq;
 
 namespace SyntaxTree {
 
-    public class Statement : PTNode {
+    public class Stmt : PTNode {
         public virtual Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             throw new NotImplementedException();
         }
     }
 
 
-    public class GotoStatement : Statement {
+    public class GotoStatement : Stmt {
         public GotoStatement(String _label) {
             goto_label = _label;
         }
@@ -22,43 +22,43 @@ namespace SyntaxTree {
     }
 
 
-    public class ContinueStatement : Statement {
+    public class ContinueStatement : Stmt {
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			return new Tuple<AST.Env, AST.Stmt>(env, new AST.ContStmt());
 		}
     }
 
 
-    public class BreakStatement : Statement {
+    public class BreakStatement : Stmt {
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			return new Tuple<AST.Env, AST.Stmt>(env, new AST.BreakStmt());
 		}
     }
 
 
-    public class ReturnStatement : Statement {
-        public ReturnStatement(Expr _expr) {
-            ret_expr = _expr;
+    public class ReturnStatement : Stmt {
+        public ReturnStatement(Expr expr) {
+            this.expr = expr;
         }
 
         // TODO: change this into Option. Currently parser might give null.
-        public readonly Expr ret_expr;
+        public readonly Expr expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr expr = ret_expr.GetExpr(env);
+            AST.Expr expr = this.expr.GetExpr(env);
             expr = AST.TypeCast.MakeCast(expr, env.GetCurrentFunction().ret_type);
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
         }
     }
 
 
-    public class CompoundStatement : Statement {
-        public CompoundStatement(List<Decln> _decl_list, List<Statement> _stmt_list) {
+    public class CompoundStatement : Stmt {
+        public CompoundStatement(List<Decln> _decl_list, List<Stmt> _stmt_list) {
             stmt_declns = _decl_list;
             stmt_stmts = _stmt_list;
         }
         public readonly List<Decln> stmt_declns;
-        public readonly List<Statement> stmt_stmts;
+        public readonly List<Stmt> stmt_stmts;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             env = env.InScope();
@@ -71,7 +71,7 @@ namespace SyntaxTree {
                 declns.AddRange(r_decln.Item2);
             }
 
-            foreach (Statement stmt in stmt_stmts) {
+            foreach (Stmt stmt in stmt_stmts) {
                 Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
                 env = r_stmt.Item1;
                 stmts.Add(r_stmt);
@@ -86,7 +86,7 @@ namespace SyntaxTree {
     }
 
 
-    public class ExpressionStatement : Statement {
+    public class ExpressionStatement : Stmt {
         public ExpressionStatement(Expr _expr) {
             stmt_expr = _expr;
         }
@@ -106,13 +106,13 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class WhileStatement : Statement {
-        public WhileStatement(Expr _cond, Statement _body) {
+    public class WhileStatement : Stmt {
+        public WhileStatement(Expr _cond, Stmt _body) {
             while_cond = _cond;
             while_body = _body;
         }
         public readonly Expr while_cond;
-        public readonly Statement while_body;
+        public readonly Stmt while_body;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             AST.Expr cond;
@@ -141,12 +141,12 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class DoWhileStatement : Statement {
-        public DoWhileStatement(Statement _body, Expr _cond) {
+    public class DoWhileStatement : Stmt {
+        public DoWhileStatement(Stmt _body, Expr _cond) {
             do_body = _body;
             do_cond = _cond;
         }
-        public readonly Statement do_body;
+        public readonly Stmt do_body;
         public readonly Expr do_cond;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
@@ -175,37 +175,36 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class ForStatement : Statement {
-        public ForStatement(Expr _init, Expr _cond, Expr _loop, Statement _body) {
-            for_init = _init;
-            for_cond = _cond;
-            for_loop = _loop;
-            for_body = _body;
+    public class ForStmt : Stmt {
+        public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
+            this.init = init;
+            this.cond = cond;
+            this.loop = loop;
+            this.body = body;
         }
 
-        // TODO: change these into Option's. Currently parser might give null.
-        public readonly Expr for_init;
-        public readonly Expr for_cond;
-        public readonly Expr for_loop;
-        public readonly Statement for_body;
+        public readonly Option<Expr> init;
+        public readonly Option<Expr> cond;
+        public readonly Option<Expr> loop;
+        public readonly Stmt body;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr init;
-            AST.Expr cond;
-            AST.Expr loop;
+            Option<AST.Expr> init;
+            Option<AST.Expr> cond;
+            Option<AST.Expr> loop;
             AST.Stmt body;
 
-            init = for_init.GetExpr(env);
+            init = this.init.Map(_ => _.GetExpr(env));
 
-            cond = for_cond.GetExpr(env);
+            cond = this.cond.Map(_ => _.GetExpr(env));
 
-            if (!cond.type.IsScalar) {
+            if (cond.IsSome && !cond.Value.type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
-            loop = for_loop.GetExpr(env);
+            loop = this.loop.Map(_ => _.GetExpr(env));
 
-            Tuple<AST.Env, AST.Stmt> r_body = for_body.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_body = this.body.GetStmt(env);
             env = r_body.Item1;
             body = r_body.Item2;
 
@@ -215,13 +214,13 @@ namespace SyntaxTree {
     }
 
 
-    public class SwitchStatement : Statement {
-        public SwitchStatement(Expr _expr, Statement _stmt) {
+    public class SwitchStatement : Stmt {
+        public SwitchStatement(Expr _expr, Stmt _stmt) {
             switch_expr = _expr;
             switch_stmt = _stmt;
         }
         public readonly Expr switch_expr;
-        public readonly Statement switch_stmt;
+        public readonly Stmt switch_stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			AST.Expr expr;
@@ -238,13 +237,13 @@ namespace SyntaxTree {
     }
 
 
-    public class IfStatement : Statement {
-        public IfStatement(Expr _cond, Statement _stmt) {
+    public class IfStatement : Stmt {
+        public IfStatement(Expr _cond, Stmt _stmt) {
             if_cond = _cond;
             if_stmt = _stmt;
         }
         public readonly Expr if_cond;
-        public readonly Statement if_stmt;
+        public readonly Stmt if_stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			AST.Expr cond;
@@ -265,15 +264,15 @@ namespace SyntaxTree {
     }
 
     
-    public class IfElseStatement : Statement {
-        public IfElseStatement(Expr _cond, Statement _true_stmt, Statement _false_stmt) {
+    public class IfElseStatement : Stmt {
+        public IfElseStatement(Expr _cond, Stmt _true_stmt, Stmt _false_stmt) {
             if_cond = _cond;
             if_true_stmt = _true_stmt;
             if_false_stmt = _false_stmt;
         }
         public readonly Expr if_cond;
-        public readonly Statement if_true_stmt;
-        public readonly Statement if_false_stmt;
+        public readonly Stmt if_true_stmt;
+        public readonly Stmt if_false_stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			AST.Expr cond;
@@ -299,13 +298,13 @@ namespace SyntaxTree {
     }
 
 
-	public class LabeledStatement : Statement {
-        public LabeledStatement(String _label, Statement _stmt) {
+	public class LabeledStatement : Stmt {
+        public LabeledStatement(String _label, Stmt _stmt) {
             label = _label;
             stmt = _stmt;
         }
         public readonly String label;
-        public readonly Statement stmt;
+        public readonly Stmt stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
@@ -315,14 +314,15 @@ namespace SyntaxTree {
     }
 
 
-	public class CaseStatement : Statement {
-        public CaseStatement(Expr _expr, Statement _stmt) {
+	public class CaseStatement : Stmt {
+        public CaseStatement(Expr _expr, Stmt _stmt) {
             expr = _expr;
             stmt = _stmt;
         }
         // expr == null means 'default'
+        // TODO: change this to Option
         public readonly Expr expr;
-        public readonly Statement stmt;
+        public readonly Stmt stmt;
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			if (expr == null) {

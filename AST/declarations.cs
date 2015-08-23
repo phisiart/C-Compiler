@@ -56,7 +56,7 @@ namespace AST {
 
                         case SCS.TYPEDEF:
                             // Ignore.
-                            break;
+                            return;
 
                         default:
                             throw new InvalidProgramException();
@@ -138,7 +138,7 @@ namespace AST {
 
                         case SCS.TYPEDEF:
                             // Ignore.
-                            break;
+                            return;
 
                         default:
                             throw new InvalidProgramException();

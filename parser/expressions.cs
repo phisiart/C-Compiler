@@ -145,8 +145,13 @@ public class _expression : ParseRule {
             expr = null;
             return -1;
         } else {
-            expr = new AssignmentList(assign_exprs);
-            return begin;
+            if (assign_exprs.Count == 1) {
+                expr = assign_exprs[0];
+                return begin;
+            } else {
+                expr = new AssignmentList(assign_exprs);
+                return begin;
+            }
         }
     }
 }
