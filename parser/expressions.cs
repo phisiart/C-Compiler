@@ -473,7 +473,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new FunctionCall(expr, args);
+                expr = new FuncCall(expr, args);
                 break;
 
             case OperatorVal.PERIOD:

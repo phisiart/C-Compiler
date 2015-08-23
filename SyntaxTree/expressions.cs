@@ -69,7 +69,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             List<AST.Expr> exprs = assign_exprs.ConvertAll(expr => expr.GetExpr(env));
-            return new AST.AssignmentList(exprs, exprs.FindLast(_ => true).type);
+            return new AST.AssignList(exprs, exprs.FindLast(_ => true).type);
         }
 	}
 
@@ -152,8 +152,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Function call: func(args)
     /// </summary>
-    public class FunctionCall : Expr {
-        public FunctionCall(Expr func, IReadOnlyList<Expr> args) {
+    public class FuncCall : Expr {
+        public FuncCall(Expr func, IReadOnlyList<Expr> args) {
             this.func = func;
             this.args = args;
         }
@@ -192,7 +192,7 @@ namespace SyntaxTree {
             // make implicit cast
             args = Enumerable.Zip(args, func_type.args, (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)).ToList();
 
-            return new AST.FunctionCall(func, func_type, args, func_type.ret_type);
+            return new AST.FuncCall(func, func_type, args, func_type.ret_type);
         }
     }
 

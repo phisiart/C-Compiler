@@ -33,6 +33,7 @@ namespace AST {
         /// The default implementation of CGenPush uses CGenValue.
         /// </summary>
         // TODO: struct and union
+        [Obsolete]
         public virtual void CGenPush(Env env, CGenState state) {
             Reg ret = CGenValue(env, state);
 
@@ -276,8 +277,8 @@ namespace AST {
         }
     }
 
-    public class AssignmentList : Expr {
-        public AssignmentList(List<Expr> _exprs, ExprType _type)
+    public class AssignList : Expr {
+        public AssignList(List<Expr> _exprs, ExprType _type)
             : base(_type) {
             exprs = _exprs;
         }
@@ -292,8 +293,8 @@ namespace AST {
         }
     }
 
-    public class Assignment : Expr {
-        public Assignment(Expr _lvalue, Expr _rvalue, ExprType _type)
+    public class Assign : Expr {
+        public Assign(Expr _lvalue, Expr _rvalue, ExprType _type)
             : base(_type) {
             lvalue = _lvalue;
             rvalue = _rvalue;
@@ -301,7 +302,6 @@ namespace AST {
         public readonly Expr lvalue;
         public readonly Expr rvalue;
 
-        // TODO: struct and union
         public override Reg CGenValue(Env env, CGenState state) {
 
             // 1. %eax = &lhs
@@ -338,7 +338,7 @@ namespace AST {
                 case ExprType.Kind.ULONG:
                 case ExprType.Kind.POINTER:
                     // pop %ebx
-                    // now %ebx = %lhs
+                    // now %ebx = &lhs
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %al
@@ -348,7 +348,7 @@ namespace AST {
 
                 case ExprType.Kind.FLOAT:
                     // pop %ebx
-                    // now %ebx = %lhs
+                    // now %ebx = &lhs
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %st(0)
@@ -358,7 +358,7 @@ namespace AST {
 
                 case ExprType.Kind.DOUBLE:
                     // pop %ebx
-                    // now %ebx = %lhs
+                    // now %ebx = &lhs
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %st(0)
@@ -367,7 +367,22 @@ namespace AST {
                     return Reg.ST0;
 
                 case ExprType.Kind.STRUCT_OR_UNION:
-                    throw new NotImplementedException();
+                    // pop %edi
+                    // now %edi = &lhs
+                    state.CGenPopLong(pos, Reg.EDI);
+
+                    // %esi = &rhs
+                    state.MOVL(Reg.EAX, Reg.ESI);
+
+                    // %ecx = nbytes
+                    state.MOVL(lvalue.type.SizeOf, Reg.ECX);
+
+                    state.CGenMemCpy();
+
+                    // %eax = &lhs
+                    state.MOVL(Reg.EDI, Reg.EAX);
+
+                    return Reg.EAX;
 
                 case ExprType.Kind.FUNCTION:
                 case ExprType.Kind.VOID:
@@ -441,8 +456,8 @@ namespace AST {
         }
     }
 
-    public class FunctionCall : Expr {
-        public FunctionCall(Expr func, TFunction func_type, List<Expr> args, ExprType type)
+    public class FuncCall : Expr {
+        public FuncCall(Expr func, TFunction func_type, List<Expr> args, ExprType type)
             : base(type) {
             this.func = func;
             this.func_type = func_type;

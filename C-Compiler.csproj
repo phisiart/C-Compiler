@@ -99,4 +99,7 @@
     <None Include="Scanner\FSAGraphs\string.dot" />
     <None Include="Scanner\FSAGraphs\string.svg" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestPrograms\LinkedList.c" />
+  </ItemGroup>
 </Project>

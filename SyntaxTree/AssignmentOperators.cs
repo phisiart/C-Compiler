@@ -21,7 +21,7 @@ namespace SyntaxTree {
             AST.Expr lhs = this.lhs.GetExpr(env);
             AST.Expr rhs = this.rhs.GetExpr(env);
             rhs = AST.TypeCast.MakeCast(rhs, lhs.type);
-            return new AST.Assignment(lhs, rhs, lhs.type);
+            return new AST.Assign(lhs, rhs, lhs.type);
         }
 	}
 

@@ -30,6 +30,7 @@ namespace AST {
             return Reg.EAX;
         }
 
+        [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
             state.CGenPushLong(value);
     }
@@ -48,6 +49,7 @@ namespace AST {
             return Reg.EAX;
         }
 
+        [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
             state.CGenPushLong((Int32)value);
     }
@@ -66,6 +68,7 @@ namespace AST {
             return Reg.EAX;
         }
 
+        [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
             state.CGenPushLong((Int32)value);
         
