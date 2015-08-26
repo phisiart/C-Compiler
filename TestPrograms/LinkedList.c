@@ -1,4 +1,4 @@
-﻿int printf(char *, int);
+﻿int printf(char *, ...);
 void *malloc(unsigned int nbytes);
 
 typedef struct Node {

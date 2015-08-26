@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
                 Compiler compiler = Compiler.FromSrc(src);
                 Console.WriteLine(compiler.assembly);
             } else {
-                Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
+                // Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
                 Compiler compiler = Compiler.FromFile(args[0]);
                 Console.WriteLine(compiler.assembly);
             }
