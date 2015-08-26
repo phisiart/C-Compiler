@@ -14,9 +14,11 @@ namespace driver {
     class Program {
         static void Main(String[] args) {
 
-            if (args.Count() == 0) {
+            if (!args.Any()) {
                 String src = @"
-int main() {
+int printf(char *, ...);
+int main(int argc, char **argv) {
+    printf(""%d"", argc);
     return 0;
 }
 ";

@@ -22,9 +22,7 @@ public enum Reg {
     CL,
 
     ST0,
-
-    [Obsolete]
-    STACK,
+    
 }
 
 public enum CGenReturn {
@@ -354,6 +352,11 @@ public class CGenState {
     public void CGenExpandStackBy(Int32 nbytes) {
         stack_size += nbytes;
         SUBL(nbytes, Reg.ESP);
+    }
+
+    public void CGenExpandStackWithAlignment(Int32 nbytes, Int32 align) {
+        nbytes = AST.Utils.RoundUp(stack_size + nbytes, align) - stack_size;
+        CGenExpandStackBy(nbytes);
     }
 
     public void CGenForceStackSizeTo(Int32 nbytes) {

@@ -181,18 +181,30 @@ namespace SyntaxTree {
                     throw new InvalidOperationException("Expected a function in function call.");
             }
 
+            // Get arguments passed into the function.
             var args = this.args.Select(_ => _.GetExpr(env)).ToList();
 
-            if (args.Count() != func_type.args.Count) {
+            Int32 num_args_prototype = func_type.args.Count;
+            Int32 num_args_actual = args.Count;
+
+            // If this function doesn't take varargs, make sure the number of arguments match that in the prototype.
+            if (!func_type.is_varargs && num_args_actual != num_args_prototype) {
                 throw new InvalidOperationException("Number of arguments mismatch.");
             }
 
-            // TODO: deal with varargs.
+            // Anyway, you can't call a function with fewer arguments than the prototype.
+            if (num_args_actual < num_args_prototype) {
+                throw new InvalidOperationException("Too few arguments.");
+            }
 
-            // make implicit cast
-            args = Enumerable.Zip(args, func_type.args, (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)).ToList();
+            // Make implicit cast.
+            args = Enumerable.Zip(
+                args.GetRange(0, num_args_prototype),
+                func_type.args,
+                (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)
+            ).Concat(args.GetRange(num_args_prototype, num_args_actual - num_args_prototype)).ToList();
 
-            return new AST.FuncCall(func, func_type, args, func_type.ret_type);
+            return new AST.FuncCall(func, func_type, args);
         }
     }
 

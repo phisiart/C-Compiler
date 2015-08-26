@@ -12,9 +12,7 @@ public class TokenCharConst : Token {
     }
     public readonly String raw;
     public readonly Char value;
-    public override String ToString() {
-        return type.ToString() + ": " + "\'" + raw + "\'" + "\n\'" + value + "\'";
-    }
+    public override String ToString() => $"{type}: '{raw}'";
 }
 
 // FSAChar

@@ -457,15 +457,15 @@ namespace AST {
     }
 
     public class FuncCall : Expr {
-        public FuncCall(Expr func, TFunction func_type, List<Expr> args, ExprType type)
-            : base(type) {
+        public FuncCall(Expr func, TFunction func_type, List<Expr> args)
+            : base(func_type.ret_type) {
             this.func = func;
             this.func_type = func_type;
             this.args = args;
         }
         public readonly Expr func;
         public readonly TFunction func_type;
-        public readonly List<Expr> args;
+        public readonly IReadOnlyList<Expr> args;
 
         public override void CGenAddress(Env env, CGenState state) {
             throw new Exception("Error: cannot get the address of a function call.");
@@ -473,19 +473,87 @@ namespace AST {
 
         public override Reg CGenValue(Env env, CGenState state) {
 
+            // GCC's IA-32 calling convention
+            // Caller is responsible to push all arguments to the stack in reverse order.
+            // Each argument is at least aligned to 4 bytes - even a char would take 4 bytes.
+            // The return value is stored in %eax, or %st(0), if it is a scalar.
+            // 
+            // The stack would look like this after pushing all the arguments:
+            // +--------+
+            // |  ....  |
+            // +--------+
+            // |  argn  |
+            // +--------+
+            // |  ....  |
+            // +--------+
+            // |  arg2  |
+            // +--------+
+            // |  arg1  |
+            // +--------+ <- %esp before call
+            //
+            // Things are different with structs and unions.
+            // Since structs may not fit in 4 bytes, it has to be returned in memory.
+            // Caller allocates a chunk of memory for the struct and push the address of it as an extra argument.
+            // Callee returns %eax with that address.
+            // 
+            // The stack would look like this after pushing all the arguments:
+            //      +--------+
+            // +--> | struct | <- struct should be returned here.
+            // |    +--------+
+            // |    |  argn  |
+            // |    +--------+
+            // |    |  ....  |
+            // |    +--------+
+            // |    |  arg2  |
+            // |    +--------+
+            // |    |  arg1  |
+            // |    +--------+
+            // +----|  addr  | <- %esp before call
+            //      +--------+
+            // 
+
             state.NEWLINE();
-            state.COMMENT($"Before pushing header, stack size = {state.StackSize}.");
-            state.COMMENT($"Pushing a header of {func_type.HeaderSize} bytes");
-            state.CGenExpandStackBy(func_type.HeaderSize);
-            state.COMMENT($"Header would be in [{-state.StackSize}, {-state.StackSize + func_type.HeaderSize})");
+            state.COMMENT($"Before pushing the arguments, stack size = {state.StackSize}.");
+
+            var r_pack = Utils.PackArguments(args.Select(_ => _.type).ToList());
+            Int32 pack_size = r_pack.Item1;
+            IReadOnlyList<Int32> offsets = r_pack.Item2;
+
+            if (type is TStructOrUnion) {
+                // If the function returns a struct
+
+                // Allocate space for return value.
+                state.COMMENT("Allocate space for returning stack.");
+                state.CGenExpandStackWithAlignment(type.SizeOf, type.Alignment);
+
+                // Temporarily store the address in %eax.
+                state.MOVL(Reg.ESP, Reg.EAX);
+
+                // add an extra argument and move all other arguments upwards.
+                pack_size += ExprType.SIZEOF_POINTER;
+                offsets = offsets.Select(_ => _ + ExprType.SIZEOF_POINTER).ToList();
+            }
+
+            // Allocate space for arguments.
+            // If returning struct, the extra pointer is included.
+            state.COMMENT($"Arguments take {pack_size} bytes.");
+            state.CGenExpandStackBy(pack_size);
             state.NEWLINE();
 
+            // Store the address as the first argument.
+            if (type is TStructOrUnion) {
+                state.COMMENT("Putting extra argument for struct return address.");
+                state.MOVL(Reg.EAX, 0, Reg.ESP);
+                state.NEWLINE();
+            }
+
+            // This is the stack size before calling the function.
             Int32 header_base = -state.StackSize;
 
             // Push the arguments onto the stack in reverse order
             for (Int32 i = args.Count; i-- > 0;) {
                 Expr arg = args[i];
-                Int32 pos = header_base + func_type.args[i].offset - 2 * ExprType.SIZEOF_LONG;
+                Int32 pos = header_base + offsets[i];
 
                 state.COMMENT($"Argument {i} is at {pos}");
 
@@ -537,6 +605,8 @@ namespace AST {
 
             }
 
+            // When evaluating arguments, the stack might be changed.
+            // We must restore the stack.
             state.CGenForceStackSizeTo(-header_base);
 
             // Get function address
@@ -550,9 +620,14 @@ namespace AST {
 
             state.CALL("*%eax");
 
+            state.COMMENT("Function returned.");
             state.NEWLINE();
 
-            return Reg.EAX;
+            if (type.kind == ExprType.Kind.FLOAT || type.kind == ExprType.Kind.DOUBLE) {
+                return Reg.ST0;
+            } else {
+                return Reg.EAX;
+            }
         }
     }
 

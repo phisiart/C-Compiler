@@ -516,16 +516,15 @@ namespace AST {
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
     public class TFunction : ExprType {
-        protected TFunction(ExprType ret_type, List<Utils.StoreEntry> args, Int32 arg_size, Int32 alignment, Boolean is_varargs)
-            : base(Kind.FUNCTION, arg_size, alignment, true, false) {
+        protected TFunction(ExprType ret_type, List<Utils.StoreEntry> args, Boolean is_varargs)
+            : base(Kind.FUNCTION, SIZEOF_POINTER, SIZEOF_POINTER, true, false) {
             this.args = args;
-            this.arg_size = arg_size;
             this.ret_type = ret_type;
             this.is_varargs = is_varargs;
         }
 
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) {
-            return new TFunction(ret_type, args, SizeOf, Alignment, is_varargs);
+            return new TFunction(ret_type, args, is_varargs);
         }
 
         public override Boolean EqualType(ExprType other) {
@@ -533,24 +532,22 @@ namespace AST {
         }
 
         public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> _args, Boolean is_varargs) {
-            List<Utils.StoreEntry> args = new List<Utils.StoreEntry>();
-            Int32 regsz = SIZEOF_LONG; // 32-bit machine: Int32 = 4 bytes
-            Int32 offset = 2 * regsz;  // first parameter should be at %ebp + 8
-            Int32 alignment = regsz;
-            foreach (Tuple<String, ExprType> arg in _args) {
-                args.Add(new Utils.StoreEntry(arg.Item1, arg.Item2, offset));
-                offset += arg.Item2.SizeOf;
-
-                // even though the args are a bunch of chars, they still need to be 4-byte aligned.
-                Int32 curr_align = Math.Max(regsz, arg.Item2.Alignment);
-                offset = (offset + curr_align - 1) & ~(curr_align - 1);
-
-                if (curr_align > alignment) {
-                    alignment = curr_align;
-                }
+            Tuple<Int32, IReadOnlyList<Int32>> r_pack = Utils.PackArguments(_args.ConvertAll(_ => _.Item2));
+            IReadOnlyList<Int32> offsets = r_pack.Item2;
+            if (ret_type is TStructOrUnion) {
+                offsets = offsets.Select(_ => _ + 3 * SIZEOF_POINTER).ToList();
+            } else {
+                offsets = offsets.Select(_ => _ + 2 * SIZEOF_POINTER).ToList();
             }
-
-            return new TFunction(ret_type, args, offset - 2 * regsz, alignment, is_varargs);
+            return new TFunction(
+                ret_type,
+                Enumerable.Zip(
+                    _args,
+                    offsets,
+                    (name_type, offset) => new Utils.StoreEntry(name_type.Item1, name_type.Item2, offset)
+                ).ToList(),
+                is_varargs
+            );
         }
 
         public String Dump(Boolean dump_args = false) {
@@ -558,7 +555,7 @@ namespace AST {
             if (dump_args) {
                 str += "\n";
                 foreach (Utils.StoreEntry arg in args) {
-                    str += "  [%ebp + " + arg.offset.ToString() + "] " + arg.name + " : " + arg.type.ToString() + "\n";
+                    str += $"  [%ebp + {arg.offset}] {arg.name} : {arg.type}\n";
                 }
             }
             return str;
@@ -582,15 +579,6 @@ namespace AST {
         public readonly ExprType               ret_type;
         public readonly List<Utils.StoreEntry> args;
         public readonly Int32                  arg_size;
-        public Int32 HeaderSize {
-            get {
-                if (ret_type.kind == Kind.STRUCT_OR_UNION) {
-                    return Utils.RoundUp(arg_size + ret_type.SizeOf, SIZEOF_LONG);
-                } else {
-                    return arg_size;
-                }
-            }
-        }
     }
 
     // class TEmptyFunction
@@ -598,7 +586,7 @@ namespace AST {
     // defines an empty function: no arguments, returns void
     // 
     public class TEmptyFunction : TFunction {
-        public TEmptyFunction() : base(new TVoid(), new List<Utils.StoreEntry>(), 0, 0, false) {
+        public TEmptyFunction() : base(new TVoid(), new List<Utils.StoreEntry>(), false) {
         }
     }
 

@@ -182,32 +182,28 @@ namespace AST {
         }
         public readonly Expr expr;
 
-        // TODO: return struct
         public override void CGenStmt(Env env, CGenState state) {
             ExprType ret_type = env.GetCurrentFunction().ret_type;
 
             Int32 stack_size = state.StackSize;
-            Reg ret = expr.CGenValue(env, state);
+
+            // Evaluate the value.
+            expr.CGenValue(env, state);
+
+            // If the function returns a struct, copy it to the address given by 8(%ebp).
+            if (expr.type is TStructOrUnion) {
+                state.MOVL(Reg.EAX, Reg.ESI);
+                state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
+                state.MOVL(expr.type.SizeOf, Reg.ECX);
+                state.CGenMemCpy();
+                state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EAX);
+            }
+
+            // Restore stack size.
             state.CGenForceStackSizeTo(stack_size);
 
-            switch (ret_type.kind) {
-                case ExprType.Kind.CHAR:
-                case ExprType.Kind.DOUBLE:
-                case ExprType.Kind.FLOAT:
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.POINTER:
-                case ExprType.Kind.SHORT:
-                case ExprType.Kind.UCHAR:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.USHORT:
-                    state.JMP(state.ReturnLabel);
-                    return;
-
-                case ExprType.Kind.STRUCT_OR_UNION:
-                case ExprType.Kind.VOID:
-                default:
-                    throw new NotImplementedException();
-            }
+            // Jump to end of the function.
+            state.JMP(state.ReturnLabel);
         }
     }
 

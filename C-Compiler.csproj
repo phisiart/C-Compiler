@@ -45,7 +45,7 @@
     <Compile Include="AST\expressions.cs" />
     <Compile Include="AST\external_declarations.cs" />
     <Compile Include="AST\statements.cs" />
-    <Compile Include="AST\typecast.cs" />
+    <Compile Include="AST\TypeCast.cs" />
     <Compile Include="AST\types.cs" />
     <Compile Include="AST\utils.cs" />
     <Compile Include="SyntaxTree\AssignmentOperators.cs" />
@@ -101,5 +101,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestPrograms\LinkedList.c" />
+    <Content Include="TestPrograms\StructReturn.c" />
   </ItemGroup>
 </Project>
