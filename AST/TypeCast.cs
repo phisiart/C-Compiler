@@ -549,6 +549,13 @@ namespace AST {
                 if (!expr.type.EqualType((type as TPointer).ref_t)) {
                     throw new InvalidOperationException("Casting from an incompatible function.");
                 }
+
+                // TODO: only allow compatible type?
+                return new TypeCast(Kind.NOP, expr, type);
+
+            } else if (expr.type is TArray) {
+
+                // TODO: allow any pointer type to cast to?
                 return new TypeCast(Kind.NOP, expr, type);
             }
 
