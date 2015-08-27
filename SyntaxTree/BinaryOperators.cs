@@ -291,6 +291,14 @@ namespace SyntaxTree {
             AST.Expr lhs = this.lhs.GetExpr(env);
             AST.Expr rhs = this.rhs.GetExpr(env);
 
+            if (lhs.type is AST.TArray) {
+                lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
+            }
+
+            if (rhs.type is AST.TArray) {
+                rhs = AST.TypeCast.MakeCast(rhs, new AST.TPointer((rhs.type as AST.TArray).elem_type, rhs.type.is_const, rhs.type.is_volatile));
+            }
+
             // 2. ptr + int
             if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
                 if (!rhs.type.IsIntegral) {
@@ -367,6 +375,14 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr lhs = this.lhs.GetExpr(env);
             AST.Expr rhs = this.rhs.GetExpr(env);
+
+            if (lhs.type is AST.TArray) {
+                lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
+            }
+
+            if (rhs.type is AST.TArray) {
+                rhs = AST.TypeCast.MakeCast(rhs, new AST.TPointer((rhs.type as AST.TArray).elem_type, rhs.type.is_const, rhs.type.is_volatile));
+            }
 
             Boolean is_const = lhs.type.is_const || rhs.type.is_const;
             Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;

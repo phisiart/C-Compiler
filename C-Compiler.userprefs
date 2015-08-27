@@ -1,1 +1,12 @@
-﻿<Properties StartupItem="C-Compiler.csproj" />
+﻿<Properties StartupItem="C-Compiler.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Driver/Compiler.cs">
+    <Files>
+      <File FileName="Driver/Compiler.cs" Line="38" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

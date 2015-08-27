@@ -19,6 +19,7 @@
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>../../TestPrograms/FunctionPointer.c</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -98,6 +99,10 @@
     <None Include="Scanner\FSAGraphs\space.svg" />
     <None Include="Scanner\FSAGraphs\string.dot" />
     <None Include="Scanner\FSAGraphs\string.svg" />
+    <None Include="TestPrograms\clean_all.py" />
+    <None Include="TestPrograms\FloatCalculation.c" />
+    <None Include="TestPrograms\FunctionPointer.c" />
+    <None Include="TestPrograms\test_all.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestPrograms\LinkedList.c" />
