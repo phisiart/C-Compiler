@@ -528,7 +528,11 @@ namespace AST {
         }
 
         public override Boolean EqualType(ExprType other) {
-            throw new NotImplementedException();
+            return (other is TFunction)
+                && (other as TFunction).is_varargs == is_varargs
+                && (other as TFunction).ret_type.EqualType(ret_type)
+                && (other as TFunction).args.Count == args.Count
+                && (other as TFunction).args.Zip(args, (entry1, entry2) => entry1.type.EqualType(entry2.type)).All(_ => _); 
         }
 
         public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> _args, Boolean is_varargs) {

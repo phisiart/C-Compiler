@@ -154,7 +154,7 @@ public class CGenState {
     /// <summary>
     /// FSTL: store double from FPU stack.
     /// </summary>
-    public void FSTL(String addr) => os.WriteLine("    fstl {addr}");
+    public void FSTL(String addr) => os.WriteLine($"    fstl {addr}");
 
     public void FSTL(Int32 imm, Reg to) => FSTL($"{imm}({RegToString(to)})");
 

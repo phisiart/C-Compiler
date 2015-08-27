@@ -545,6 +545,11 @@ namespace AST {
                     return new TypeCast(Kind.NOP, expr, type);
                 }
 
+            } else if (expr.type is TFunction) {
+                if (!expr.type.EqualType((type as TPointer).ref_t)) {
+                    throw new InvalidOperationException("Casting from an incompatible function.");
+                }
+                return new TypeCast(Kind.NOP, expr, type);
             }
 
             throw new InvalidOperationException("Error: casting from an unsupported type to pointer.");

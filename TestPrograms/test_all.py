@@ -22,6 +22,6 @@ for file_name in file_names:
     os.system('./%s.gcc > %s.gcc.out' % (test_name, test_name))
     os.system('./%s > %s.out' % (test_name, test_name))
     if open('%s.gcc.out' % test_name).read() == open('%s.out' % test_name).read():
-        print("   Output correct ^_^")
+        print("    Output correct ^_^")
     else:
-        print("   Output incorrect T_T")
+        print("    Output incorrect T_T")
