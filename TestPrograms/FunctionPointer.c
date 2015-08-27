@@ -19,7 +19,7 @@ int main() {
     fp(1, 2);
     (*fp)(1, 2);
     
-    qsort(arr, sizeof(arr) / sizeof(int), sizeof(int), awesome_cmp);
+    qsort(arr, sizeof(arr) / sizeof(int), sizeof(int), &awesome_cmp);
 
     for (i = 0; i < sizeof(arr) / sizeof(int); ++i) {
         printf("%d\t", arr[i]);
