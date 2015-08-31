@@ -70,27 +70,14 @@ namespace AST {
             }
         }
 
-        //		public Stmt(Stmt _parent) {
-        //			stmt_parent = _parent;
-        //		}
-        //
-        //		public Stmt() : this(null) {
-        //			// this(null);
-        //		}
-
-        //		public readonly Stmt stmt_parent;
     }
 
     /// <summary>
     /// Goto Statement
     /// </summary>
     public class GotoStmt : Stmt {
-
         public override Kind kind => Kind.GOTO;
 
-        //		public GotoStmt(Env _env, Stmt _parent, String _label) : base(_parent) {
-        //			stmt_label = _label;
-        //		}
         public GotoStmt(String label) {
             this.label = label;
         }
@@ -101,17 +88,13 @@ namespace AST {
     /// Labeled Statement
     /// </summary>
     public class LabeledStmt : Stmt {
-        //		public LabeledStmt(ref Env _env, Stmt _parent, String _label, SyntaxTree.Statement _stmt) : base(_parent) {
-        //			stmt_label = _label;
-        //			stmt_stmt = _stmt.Semant(ref _env, this);
-        //		}
         public override Kind kind => Kind.LABELED;
-        public LabeledStmt(String _label, Stmt _stmt) {
-            stmt_label = _label;
-            stmt_stmt = _stmt;
+        public LabeledStmt(String label, Stmt stmt) {
+            this.label = label;
+            this.stmt = stmt;
         }
-        public readonly String stmt_label;
-        public readonly Stmt stmt_stmt;
+        public readonly String label;
+        public readonly Stmt stmt;
     }
 
     /// <summary>
@@ -144,13 +127,13 @@ namespace AST {
     public class ExprStmt : Stmt {
         public override Kind kind => Kind.EXPR;
         public ExprStmt(Expr expr) {
-            stmt_expr = expr;
+            this.expr = expr;
         }
-        public readonly Expr stmt_expr;
+        public readonly Expr expr;
 
         public override void CGenStmt(Env env, CGenState state) {
             Int32 stack_size = state.StackSize;
-            stmt_expr.CGenValue(env, state);
+            expr.CGenValue(env, state);
             state.CGenForceStackSizeTo(stack_size);
         }
     }

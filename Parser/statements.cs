@@ -72,10 +72,12 @@ public class _jump_statement : ParseRule {
             current++;
             break;
         case KeywordVal.CONTINUE:
-            current++;
+            // current++;
+            stmt = new ContinueStatement();
             break;
         case KeywordVal.BREAK:
-            current++;
+            // current++;
+            stmt = new BreakStatement();
             break;
         case KeywordVal.RETURN:
             Int32 saved = current;
@@ -331,6 +333,7 @@ public class _selection_statement : ParseRule {
         Expr expr;
         if (Parser.IsKeyword(src[begin], KeywordVal.SWITCH)) {
             // switch
+
             current = begin + 1;
             current = Parser.ParseParenExpr(src, current, out expr);
             if (current == -1) {

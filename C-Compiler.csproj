@@ -19,7 +19,7 @@
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>../../TestPrograms/FunctionPointer.c</Commandlineparameters>
+    <Commandlineparameters>../../TestPrograms/SwitchStmt.c</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -41,7 +41,6 @@
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\ConstExpressions.cs" />
     <Compile Include="AST\cgen.cs" />
-    <Compile Include="AST\declarations.cs" />
     <Compile Include="AST\environment.cs" />
     <Compile Include="AST\expressions.cs" />
     <Compile Include="AST\external_declarations.cs" />
@@ -77,6 +76,7 @@
     <Compile Include="Scanner\tokens.cs" />
     <Compile Include="Scanner\utils.cs" />
     <Compile Include="AST\UnaryOperators.cs" />
+    <Compile Include="AST\Declarations.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

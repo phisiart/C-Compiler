@@ -1,8 +1,13 @@
 ﻿<Properties StartupItem="C-Compiler.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Driver/Compiler.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="AST/statements.cs">
     <Files>
-      <File FileName="Driver/Compiler.cs" Line="38" Column="1" />
+      <File FileName="Driver/Compiler.cs" Line="41" Column="5" />
+      <File FileName="AST/types.cs" Line="1" Column="1" />
+      <File FileName="SyntaxTree/declarations.cs" Line="19" Column="13" />
+      <File FileName="AST/Declarations.cs" Line="508" Column="3" />
+      <File FileName="AST/environment.cs" Line="1" Column="1" />
+      <File FileName="AST/statements.cs" Line="136" Column="13" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
