@@ -5,7 +5,6 @@ int main() {
     if (a > b) {
         a = 3;
         printf("a > b\n");
-        break;
     } else {
         printf("a <= b\n");
     }

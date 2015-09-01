@@ -3,6 +3,8 @@
 import os
 import os.path
 
+os.system("xbuild ../C-Compiler.csproj")
+
 file_names = [file_name for file_name in os.listdir('.') if file_name.endswith('.c')]
 
 for file_name in file_names:

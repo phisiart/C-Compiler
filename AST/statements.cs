@@ -449,7 +449,7 @@ namespace AST {
 
             // 3. Make the Jump list.
             foreach (KeyValuePair<Int32, Int32> value_label_pair in value_to_label) {
-                state.CMPL(Reg.EAX, value_label_pair.Key);
+                state.CMPL(value_label_pair.Key, Reg.EAX);
                 state.JZ(value_label_pair.Value);
             }
             state.JMP(label_default);

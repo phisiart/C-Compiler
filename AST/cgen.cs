@@ -592,7 +592,7 @@ public class CGenState {
 
     public void CMPL(Reg er, Reg ee) => CMPL(RegToString(er), RegToString(ee));
 
-    public void CMPL(Reg er, Int32 imm) => CMPL(RegToString(er), $"${imm}");
+    public void CMPL(Int32 imm, Reg ee) => CMPL($"${imm}", RegToString(ee));
 
     /// <summary>
     /// TESTL: used like testl %eax, %eax: compare %eax with zero.
@@ -921,7 +921,7 @@ public class CGenState {
     }
 
     public void InSwitch(Int32 break_label, Int32 default_label, Dictionary<Int32, Int32> value_to_label) {
-        label_packs.Push(new LabelPack(-1, break_label, default_label, new Dictionary<int, int>()));
+        label_packs.Push(new LabelPack(-1, break_label, default_label, value_to_label));
     }
 
     public void OutLabels() {
