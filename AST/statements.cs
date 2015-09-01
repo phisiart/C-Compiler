@@ -36,12 +36,13 @@ namespace AST {
             IF,
             IF_ELSE,
         }
-        public abstract Kind kind {
-            get;
-        }
+        public abstract Kind kind { get; }
+
         public virtual void CGenStmt(Env env, CGenState state) {
             throw new NotImplementedException();
         }
+
+        public abstract void Accept(StmtVisitor visitor);
 
         public Reg CGenExprStmt(Env env, Expr expr, CGenState state) {
             Int32 stack_size = state.StackSize;
@@ -81,6 +82,10 @@ namespace AST {
         public GotoStmt(String label) {
             this.label = label;
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
+
         public readonly String label;
     }
 
@@ -93,6 +98,10 @@ namespace AST {
             this.label = label;
             this.stmt = stmt;
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
+
         public readonly String label;
         public readonly Stmt stmt;
     }
@@ -102,11 +111,17 @@ namespace AST {
     /// </summary>
     public class ContStmt : Stmt {
         public override Kind kind => Kind.CONT;
+
         public ContStmt() { }
+
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.ContinueLabel;
             state.JMP(label);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
+
     }
 
     /// <summary>
@@ -114,11 +129,16 @@ namespace AST {
     /// </summary>
     public class BreakStmt : Stmt {
         public override Kind kind => Kind.BREAK;
+
         public BreakStmt() { }
+
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.BreakLabel;
             state.JMP(label);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -136,6 +156,9 @@ namespace AST {
             expr.CGenValue(env, state);
             state.CGenForceStackSizeTo(stack_size);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     public class CompoundStmt : Stmt {
@@ -156,6 +179,9 @@ namespace AST {
                 stmt.Item2.CGenStmt(stmt.Item1, state);
             }
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     public class ReturnStmt : Stmt {
@@ -188,6 +214,9 @@ namespace AST {
             // Jump to end of the function.
             state.JMP(state.ReturnLabel);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -244,6 +273,9 @@ namespace AST {
             state.CGenLabel(finish_label);
 
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -293,6 +325,9 @@ namespace AST {
 
             state.CGenLabel(finish_label);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -364,6 +399,9 @@ namespace AST {
             // finish:
             state.CGenLabel(finish_label);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -412,11 +450,8 @@ namespace AST {
             }
 
             // Track all case values.
-            List<Int32> values =
-                stmts
-                .FindAll(_ => _.Item2.kind == Kind.CASE)
-                .Select(_ => ((CaseStmt)_.Item2).value)
-                .ToList();
+            IReadOnlyList<Int32> values = CaseLabelsGrabber.GrabLabels(this);
+
             // Make sure there are no duplicates.
             if (values.Distinct().Count() != values.Count) {
                 throw new InvalidOperationException("case labels not unique.");
@@ -467,6 +502,9 @@ namespace AST {
             // 6. Restore stack size.
             state.CGenForceStackSizeTo(saved_stack_size);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -486,6 +524,9 @@ namespace AST {
             state.CGenLabel(label);
             stmt.CGenStmt(env, state);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     public class DefaultStmt : Stmt {
@@ -500,6 +541,9 @@ namespace AST {
             state.CGenLabel(label);
             stmt.CGenStmt(env, state);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -534,6 +578,9 @@ namespace AST {
 
             state.CGenLabel(finish_label);
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
     /// <summary>
@@ -585,6 +632,9 @@ namespace AST {
             state.CGenLabel(finish_label);
 
         }
+
+        public override void Accept(StmtVisitor visitor) =>
+            visitor.Visit(this);
     }
 
 }

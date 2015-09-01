@@ -912,10 +912,11 @@ public class CGenState {
     }
 
     public Int32 CaseLabel(Int32 value) =>
-        label_packs.First().value_to_label[value];
+        label_packs.First(_ => _.value_to_label != null).value_to_label[value];
+        // label_packs.First().value_to_label[value];
 
     public void InLoop(Int32 continue_label, Int32 break_label) {
-        label_packs.Push(new LabelPack(continue_label, break_label, -1, new Dictionary<int, int>()));
+        label_packs.Push(new LabelPack(continue_label, break_label, -1, null));
         //_continue_labels.Push(continue_label);
         //_break_labels.Push(break_label);
     }
