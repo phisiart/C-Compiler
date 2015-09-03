@@ -535,8 +535,8 @@ namespace AST {
                 && (other as TFunction).args.Zip(args, (entry1, entry2) => entry1.type.EqualType(entry2.type)).All(_ => _); 
         }
 
-        public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> _args, Boolean is_varargs) {
-            Tuple<Int32, IReadOnlyList<Int32>> r_pack = Utils.PackArguments(_args.ConvertAll(_ => _.Item2));
+        public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> args, Boolean is_varargs) {
+            Tuple<Int32, IReadOnlyList<Int32>> r_pack = Utils.PackArguments(args.ConvertAll(_ => _.Item2));
             IReadOnlyList<Int32> offsets = r_pack.Item2;
             if (ret_type is TStructOrUnion) {
                 offsets = offsets.Select(_ => _ + 3 * SIZEOF_POINTER).ToList();
@@ -546,7 +546,7 @@ namespace AST {
             return new TFunction(
                 ret_type,
                 Enumerable.Zip(
-                    _args,
+                    args,
                     offsets,
                     (name_type, offset) => new Utils.StoreEntry(name_type.Item1, name_type.Item2, offset)
                 ).ToList(),

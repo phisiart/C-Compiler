@@ -1,17 +1,16 @@
 ﻿<Properties StartupItem="C-Compiler.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="AST/statements.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="AST/expressions.cs">
     <Files>
-      <File FileName="Driver/Compiler.cs" Line="19" Column="1" />
-      <File FileName="AST/types.cs" Line="1" Column="1" />
+      <File FileName="AST/cgen.cs" Line="931" Column="31" />
+      <File FileName="AST/StmtVisitor.cs" Line="24" Column="5" />
+      <File FileName="AST/statements.cs" Line="590" Column="17" />
+      <File FileName="AST/utils.cs" Line="28" Column="9" />
+      <File FileName="AST/UnaryOperators.cs" Line="1" Column="1" />
+      <File FileName="AST/TypeCast.cs" Line="1" Column="1" />
+      <File FileName="AST/expressions.cs" Line="393" Column="14" />
       <File FileName="AST/Declarations.cs" Line="508" Column="3" />
-      <File FileName="AST/environment.cs" Line="1" Column="1" />
-      <File FileName="Parser/statements.cs" Line="380" Column="2" />
-      <File FileName="SyntaxTree/statements.cs" Line="98" Column="10" />
-      <File FileName="AST/statements.cs" Line="81" Column="40" />
-      <File FileName="AST/external_declarations.cs" Line="59" Column="14" />
-      <File FileName="AST/cgen.cs" Line="644" Column="6" />
-      <File FileName="AST/StmtVisitor.cs" Line="8" Column="2" />
+      <File FileName="AST/external_declarations.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

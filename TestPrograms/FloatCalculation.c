@@ -9,7 +9,8 @@ int main() {
     d1 = 1.23456789;
     d2 = 2.3456789;
     printf("lf\n", f1 + f2);
-    printf("lf\n", d1 + d2);
-    printf("lf\n", f1 + d1);
+    printf("lf\n", d1 / d2);
+    printf("lf\n", f1 * d1);
+    printf("lf\n", f2 - d2);
     return 0;
 }
