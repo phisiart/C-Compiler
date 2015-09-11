@@ -1,20 +1,40 @@
 ﻿<Properties StartupItem="C-Compiler.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="AST/expressions.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="SyntaxTree/unary_operators.cs">
     <Files>
-      <File FileName="AST/cgen.cs" Line="931" Column="31" />
-      <File FileName="AST/StmtVisitor.cs" Line="24" Column="5" />
-      <File FileName="AST/statements.cs" Line="590" Column="17" />
-      <File FileName="AST/utils.cs" Line="28" Column="9" />
+      <File FileName="AST/cgen.cs" Line="1" Column="1" />
+      <File FileName="AST/StmtVisitor.cs" Line="1" Column="1" />
+      <File FileName="AST/statements.cs" Line="1" Column="1" />
+      <File FileName="AST/utils.cs" Line="1" Column="1" />
       <File FileName="AST/UnaryOperators.cs" Line="1" Column="1" />
       <File FileName="AST/TypeCast.cs" Line="1" Column="1" />
-      <File FileName="AST/expressions.cs" Line="393" Column="14" />
-      <File FileName="AST/Declarations.cs" Line="508" Column="3" />
+      <File FileName="AST/expressions.cs" Line="393" Column="17" />
+      <File FileName="AST/Declarations.cs" Line="1" Column="1" />
       <File FileName="AST/external_declarations.cs" Line="1" Column="1" />
+      <File FileName="SyntaxTree/BinaryOperators.cs" Line="431" Column="53" />
+      <File FileName="SyntaxTree/ConstExpressions.cs" Line="67" Column="48" />
+      <File FileName="SyntaxTree/expressions.cs" Line="52" Column="66" />
+      <File FileName="SyntaxTree/unary_operators.cs" Line="303" Column="10" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.ItemProperties.C-Compiler>
+    <MonoDevelop.Ide.CustomExecutionModes>
+      <Data Name="StructReturn" Id="7d56aa15-f70e-43bb-919b-ebd90378bc0a" ModeId="Default">
+        <CommandData>
+          <Item Key="MonoDevelop.Ide.Execution.CustomArgsCustomizer">
+            <Value Arguments="../../TestPrograms/StructReturn.c" ctype="CustomArgsExecutionModeData">
+              <EnvironmentVariables />
+            </Value>
+          </Item>
+          <Item Key="MonoDevelop.Ide.Execution.MonoExecutionCustomizer">
+            <Value ctype="MonoExecutionParameters" />
+          </Item>
+        </CommandData>
+      </Data>
+    </MonoDevelop.Ide.CustomExecutionModes>
+  </MonoDevelop.Ide.ItemProperties.C-Compiler>
 </Properties>

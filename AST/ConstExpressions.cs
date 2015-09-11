@@ -6,8 +6,13 @@ namespace AST {
     /// Constant expression. Cannot get the address.
     /// </summary>
     public abstract class ConstExpr : Expr {
-        public ConstExpr(ExprType type)
-            : base(type) { }
+        public ConstExpr(ExprType type, Env env)
+            : base(type) {
+            this._env = env;
+        }
+
+        public override Env Env => _env;
+        private Env _env;
 
         public override Boolean IsConstExpr => true;
 
@@ -17,8 +22,8 @@ namespace AST {
     }
 
     public class ConstLong : ConstExpr {
-        public ConstLong(Int32 value)
-            : base(new TLong(true)) {
+        public ConstLong(Int32 value, Env env)
+            : base(new TLong(true), env) {
             this.value = value;
         }
         public readonly Int32 value;
@@ -36,8 +41,8 @@ namespace AST {
     }
 
     public class ConstULong : ConstExpr {
-        public ConstULong(UInt32 value)
-            : base(new TULong(true)) {
+        public ConstULong(UInt32 value, Env env)
+            : base(new TULong(true), env) {
             this.value = value;
         }
         public readonly UInt32 value;
@@ -55,8 +60,8 @@ namespace AST {
     }
 
     public class ConstPtr : ConstExpr {
-        public ConstPtr(UInt32 value, ExprType type)
-            : base(type) {
+        public ConstPtr(UInt32 value, ExprType type, Env env)
+            : base(type, env) {
             this.value = value;
         }
         public readonly UInt32 value;
@@ -75,8 +80,8 @@ namespace AST {
     }
 
     public class ConstFloat : ConstExpr {
-        public ConstFloat(Single value)
-            : base(new TFloat(true)) {
+        public ConstFloat(Single value, Env env)
+            : base(new TFloat(true), env) {
             this.value = value;
         }
         public readonly Single value;
@@ -96,8 +101,8 @@ namespace AST {
     }
 
     public class ConstDouble : ConstExpr {
-        public ConstDouble(Double value)
-            : base(new TDouble(true)) {
+        public ConstDouble(Double value, Env env)
+            : base(new TDouble(true), env) {
             this.value = value;
         }
         public readonly Double value;
@@ -118,8 +123,8 @@ namespace AST {
     }
 
     public class ConstStringLiteral : ConstExpr {
-        public ConstStringLiteral(String value)
-            : base(new TPointer(new TChar(true), true)) {
+        public ConstStringLiteral(String value, Env env)
+            : base(new TPointer(new TChar(true), true), env) {
             this.value = value;
         }
         public readonly String value;

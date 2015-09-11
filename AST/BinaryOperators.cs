@@ -12,6 +12,7 @@ namespace AST {
         }
         public readonly Expr lhs;
         public readonly Expr rhs;
+        public override Env Env => rhs.Env;
     }
 
     /// <summary>
@@ -838,6 +839,7 @@ namespace AST {
         }
         public readonly Expr lhs;
         public readonly Expr rhs;
+        public override Env Env => rhs.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Int32 label_reset = state.label_idx;
@@ -947,6 +949,7 @@ namespace AST {
 
         public readonly Expr lhs;
         public readonly Expr rhs;
+        public override Env Env => rhs.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Int32 label_set = state.label_idx;

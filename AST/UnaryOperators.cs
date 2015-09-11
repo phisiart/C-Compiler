@@ -13,6 +13,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public override Env Env => expr.Env;
 
         // Integral
         // Before the actual calculation, the state is set to this.
@@ -715,6 +716,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public override Env Env => expr.Env;
     }
 
     /// <summary>

@@ -18,10 +18,10 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             switch (suffix) {
                 case TokenFloat.Suffix.F:
-                    return new AST.ConstFloat((Single)value);
+                    return new AST.ConstFloat((Single)value, env);
                 case TokenFloat.Suffix.NONE:
                 case TokenFloat.Suffix.L:
-                    return new AST.ConstDouble(value);
+                    return new AST.ConstDouble(value, env);
                 default:
                     throw new InvalidOperationException();
             }
@@ -44,10 +44,10 @@ namespace SyntaxTree {
             switch (suffix) {
                 case TokenInt.Suffix.U:
                 case TokenInt.Suffix.UL:
-                    return new AST.ConstULong((UInt32)value);
+                    return new AST.ConstULong((UInt32)value, env);
                 case TokenInt.Suffix.NONE:
                 case TokenInt.Suffix.L:
-                    return new AST.ConstLong((Int32)value);
+                    return new AST.ConstLong((Int32)value, env);
                 default:
                     throw new InvalidOperationException();
             }
@@ -64,7 +64,7 @@ namespace SyntaxTree {
 		public readonly String value;
 
 		public override AST.Expr GetExpr(AST.Env env) {
-			return new AST.ConstStringLiteral(value);
+			return new AST.ConstStringLiteral(value, env);
 		}
 	}
 

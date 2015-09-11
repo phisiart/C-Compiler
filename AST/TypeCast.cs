@@ -31,11 +31,19 @@ namespace AST {
         public readonly Expr expr;
         public readonly Kind kind;
 
-        public TypeCast(Kind kind, Expr expr, ExprType type)
+        // Note: typecast might introduce environment changes.
+        public override Env Env => _env;
+        private readonly Env _env;
+
+        public TypeCast(Kind kind, Expr expr, ExprType type, Env env)
             : base(type) {
             this.expr = expr;
             this.kind = kind;
+            this._env = env;
         }
+
+        public TypeCast(Kind kind, Expr expr, ExprType type)
+            : this(kind, expr, type, expr.Env) { }
 
         public override Reg CGenValue(Env env, CGenState state) {
             Reg ret = expr.CGenValue(env, state);
@@ -94,6 +102,8 @@ namespace AST {
             ExprType.Kind from = expr.type.kind;
             ExprType.Kind to = type.kind;
 
+            Env env = expr.Env;
+
             switch (from) {
                 case ExprType.Kind.CHAR:
                     switch (to) {
@@ -149,49 +159,49 @@ namespace AST {
                     switch (to) {
                         case ExprType.Kind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(SByte)((ConstLong)expr).value);
+                                return new ConstLong((Int32)(SByte)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                             }
 
                         case ExprType.Kind.UCHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(Byte)((ConstLong)expr).value);
+                                return new ConstULong((UInt32)(Byte)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                             }
 
                         case ExprType.Kind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(Int16)((ConstLong)expr).value);
+                                return new ConstLong((Int32)(Int16)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                             }
 
                         case ExprType.Kind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(UInt16)((ConstLong)expr).value);
+                                return new ConstULong((UInt32)(UInt16)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                             }
 
                         case ExprType.Kind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstLong)expr).value);
+                                return new ConstULong((UInt32)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.NOP, expr, type);
                             }
 
                         case ExprType.Kind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat((Single)((ConstLong)expr).value);
+                                return new ConstFloat((Single)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.INT32_TO_FLOAT, expr, type);
                             }
 
                         case ExprType.Kind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble((Double)((ConstLong)expr).value);
+                                return new ConstDouble((Double)((ConstLong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.INT32_TO_DOUBLE, expr, type);
                             }
@@ -219,6 +229,8 @@ namespace AST {
         public static Expr UnsignedIntegralToArith(Expr expr, ExprType type) {
             ExprType.Kind from = expr.type.kind;
             ExprType.Kind to = type.kind;
+
+            Env env = expr.Env;
 
             switch (from) {
                 case ExprType.Kind.UCHAR:
@@ -277,49 +289,49 @@ namespace AST {
                     switch (to) {
                         case ExprType.Kind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(SByte)((ConstULong)expr).value);
+                                return new ConstLong((Int32)(SByte)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                             }
 
                         case ExprType.Kind.UCHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(Byte)((ConstULong)expr).value);
+                                return new ConstULong((UInt32)(Byte)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT8, expr, type);
                             }
 
                         case ExprType.Kind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(Int16)((ConstULong)expr).value);
+                                return new ConstLong((Int32)(Int16)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                             }
 
                         case ExprType.Kind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(UInt16)((ConstULong)expr).value);
+                                return new ConstULong((UInt32)(UInt16)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, expr, type);
                             }
 
                         case ExprType.Kind.LONG:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstULong)expr).value);
+                                return new ConstLong((Int32)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.NOP, expr, type);
                             }
 
                         case ExprType.Kind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat((Single)((ConstULong)expr).value);
+                                return new ConstFloat((Single)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.INT32_TO_FLOAT, expr, type);
                             }
 
                         case ExprType.Kind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble((Double)((ConstULong)expr).value);
+                                return new ConstDouble((Double)((ConstULong)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.INT32_TO_DOUBLE, expr, type);
                             }
@@ -354,47 +366,49 @@ namespace AST {
             Boolean is_const = type.is_const;
             Boolean is_volateil = type.is_volatile;
 
+            Env env = expr.Env;
+
             switch (from) {
                 case ExprType.Kind.FLOAT:
                     switch (to) {
                         case ExprType.Kind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(SByte)((ConstFloat)expr).value);
+                                return new ConstLong((Int32)(SByte)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT8, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                             }
 
                         case ExprType.Kind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(Int16)((ConstFloat)expr).value);
+                                return new ConstLong((Int32)(Int16)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                             }
 
                         case ExprType.Kind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(UInt16)((ConstFloat)expr).value);
+                                return new ConstULong((UInt32)(UInt16)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.FLOAT_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                             }
 
                         case ExprType.Kind.LONG:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstFloat)expr).value);
+                                return new ConstLong((Int32)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.FLOAT_TO_INT32, expr, type);
                             }
 
                         case ExprType.Kind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstFloat)expr).value);
+                                return new ConstULong((UInt32)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.FLOAT_TO_INT32, expr, type);
                             }
 
                         case ExprType.Kind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble((Double)((ConstFloat)expr).value);
+                                return new ConstDouble((Double)((ConstFloat)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.FLOAT_TO_DOUBLE, expr, type);
                             }
@@ -408,7 +422,7 @@ namespace AST {
                         case ExprType.Kind.CHAR:
                             // double -> float -> char
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(SByte)((ConstDouble)expr).value);
+                                return new ConstLong((Int32)(SByte)((ConstDouble)expr).value, env);
                             } else {
                                 return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TChar(type.is_const, type.is_volatile));
                             }
@@ -416,7 +430,7 @@ namespace AST {
                         case ExprType.Kind.SHORT:
                             // double -> float -> short
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)(Int16)((ConstDouble)expr).value);
+                                return new ConstLong((Int32)(Int16)((ConstDouble)expr).value, env);
                             } else {
                                 return FloatToArith(FloatToArith(expr, new TFloat(type.is_const, type.is_volatile)), new TShort(type.is_const, type.is_volatile));
                             }
@@ -424,14 +438,14 @@ namespace AST {
                         case ExprType.Kind.LONG:
                             // double -> float -> short
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstDouble)expr).value);
+                                return new ConstLong((Int32)((ConstDouble)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.DOUBLE_TO_INT32, expr, type);
                             }
 
                         case ExprType.Kind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstDouble)expr).value);
+                                return new ConstULong((UInt32)((ConstDouble)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.DOUBLE_TO_INT32, expr, type);
                             }
@@ -439,14 +453,14 @@ namespace AST {
                         case ExprType.Kind.USHORT:
                             // double -> long -> ushort
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)(UInt16)((ConstDouble)expr).value);
+                                return new ConstULong((UInt32)(UInt16)((ConstDouble)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.PRESERVE_INT16, new TypeCast(Kind.DOUBLE_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
                             }
 
                         case ExprType.Kind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat((Single)((ConstDouble)expr).value);
+                                return new ConstFloat((Single)((ConstDouble)expr).value, env);
                             } else {
                                 return new TypeCast(Kind.DOUBLE_TO_FLOAT, expr, type);
                             }
@@ -466,7 +480,7 @@ namespace AST {
         /// To:
         ///     pointer, integral
         /// </summary>
-        public static Expr FromPointer(Expr expr, ExprType type) {
+        public static Expr FromPointer(Expr expr, ExprType type, Env env) {
             ExprType.Kind from = expr.type.kind;
             ExprType.Kind to = type.kind;
 
@@ -477,9 +491,9 @@ namespace AST {
             // if we are casting to another pointer, do a nop
             if (to == ExprType.Kind.POINTER) {
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstPtr)expr).value, type);
+                    return new ConstPtr(((ConstPtr)expr).value, type, env);
                 } else {
-                    return new TypeCast(Kind.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type, env);
                 }
             }
 
@@ -487,11 +501,11 @@ namespace AST {
             if (type.IsIntegral) {
                 // pointer -> ulong -> whatever integral
                 if (expr.IsConstExpr) {
-                    expr = new ConstULong(((ConstPtr)expr).value);
+                    expr = new ConstULong(((ConstPtr)expr).value, env);
                 } else {
-                    expr = new TypeCast(Kind.NOP, expr, new TULong(type.is_const, type.is_volatile));
+                    expr = new TypeCast(Kind.NOP, expr, new TULong(type.is_const, type.is_volatile), env);
                 }
-                return MakeCast(expr, type);
+                return MakeCast(expr, type, env);
             }
 
             throw new InvalidOperationException("Casting from a pointer to an unsupported type.");
@@ -503,7 +517,7 @@ namespace AST {
         /// To:
         ///     pointer
         /// </summary>
-        public static Expr ToPointer(Expr expr, ExprType type) {
+        public static Expr ToPointer(Expr expr, ExprType type, Env env) {
             ExprType.Kind from = expr.type.kind;
             ExprType.Kind to = type.kind;
 
@@ -513,9 +527,9 @@ namespace AST {
 
             if (from == ExprType.Kind.POINTER) {
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstPtr)expr).value, type);
+                    return new ConstPtr(((ConstPtr)expr).value, type, env);
                 } else {
-                    return new TypeCast(Kind.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type, env);
                 }
             }
 
@@ -540,9 +554,9 @@ namespace AST {
 
                 // ulong -> pointer
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstULong)expr).value, type);
+                    return new ConstPtr(((ConstULong)expr).value, type, env);
                 } else {
-                    return new TypeCast(Kind.NOP, expr, type);
+                    return new TypeCast(Kind.NOP, expr, type, env);
                 }
 
             } else if (expr.type is TFunction) {
@@ -551,12 +565,12 @@ namespace AST {
                 }
 
                 // TODO: only allow compatible type?
-                return new TypeCast(Kind.NOP, expr, type);
+                return new TypeCast(Kind.NOP, expr, type, env);
 
             } else if (expr.type is TArray) {
 
                 // TODO: allow any pointer type to cast to?
-                return new TypeCast(Kind.NOP, expr, type);
+                return new TypeCast(Kind.NOP, expr, type, env);
             }
 
             throw new InvalidOperationException("Error: casting from an unsupported type to pointer.");
@@ -568,7 +582,7 @@ namespace AST {
         // output: TypeCast
         // converts expr to type
         // 
-        public static Expr MakeCast(Expr expr, ExprType type) {
+        public static Expr MakeCast(Expr expr, ExprType type, Env env) {
 
             // if two types are equal, return expr
             if (EqualType(expr.type, type)) {
@@ -577,12 +591,12 @@ namespace AST {
 
             // from pointer
             if (expr.type.kind == ExprType.Kind.POINTER) {
-                return FromPointer(expr, type);
+                return FromPointer(expr, type, env);
             }
 
             // to pointer
             if (type.kind == ExprType.Kind.POINTER) {
-                return ToPointer(expr, type);
+                return ToPointer(expr, type, env);
             }
 
             switch (expr.type.kind) {
@@ -608,6 +622,9 @@ namespace AST {
             }
 
         }
+
+        public static Expr MakeCast(Expr expr, ExprType type) =>
+            MakeCast(expr, type, expr.Env);
 
         // UsualArithmeticConversion
         // =========================
@@ -655,10 +672,10 @@ namespace AST {
         // 
         public static Tuple<Expr, Expr, ExprType.Kind> UsualScalarConversion(Expr e1, Expr e2) {
             if (e1.type.kind == ExprType.Kind.POINTER) {
-                e1 = FromPointer(e1, new TULong(e1.type.is_const, e1.type.is_volatile));
+                e1 = FromPointer(e1, new TULong(e1.type.is_const, e1.type.is_volatile), e2.Env);
             }
             if (e2.type.kind == ExprType.Kind.POINTER) {
-                e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile));
+                e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile), e2.Env);
             }
             return UsualArithmeticConversion(e1, e2);
         }

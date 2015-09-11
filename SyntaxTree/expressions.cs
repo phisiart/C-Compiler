@@ -45,11 +45,11 @@ namespace SyntaxTree {
                 case AST.Env.EntryKind.TYPEDEF:
                     throw new InvalidOperationException($"Expected a variable '{name}', not a typedef.");
                 case AST.Env.EntryKind.ENUM:
-                    return new AST.ConstLong(entry.offset);
+                    return new AST.ConstLong(entry.offset, env);
                 case AST.Env.EntryKind.FRAME:
                 case AST.Env.EntryKind.GLOBAL:
                 case AST.Env.EntryKind.STACK:
-                    return new AST.Variable(entry.type, name);
+                    return new AST.Variable(entry.type, name, env);
                 default:
                     throw new InvalidOperationException($"Cannot find variable '{name}'");
             }

@@ -53,7 +53,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.ExprType type = type_name.GetExprType(env);
-            return new AST.ConstULong((UInt32)type.SizeOf);
+            return new AST.ConstULong((UInt32)type.SizeOf, env);
         }
     }
     
@@ -68,7 +68,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
-            return new AST.ConstULong((UInt32)expr.type.SizeOf);
+            return new AST.ConstULong((UInt32)expr.type.SizeOf, env);
         }
     }
 
@@ -194,13 +194,13 @@ namespace SyntaxTree {
             if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(-((AST.ConstLong)expr).value);
+                        return new AST.ConstLong(-((AST.ConstLong)expr).value, env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).value);
+                        return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).value, env);
                     case AST.ExprType.Kind.FLOAT:
-                        return new AST.ConstFloat(-((AST.ConstFloat)expr).value);
+                        return new AST.ConstFloat(-((AST.ConstFloat)expr).value, env);
                     case AST.ExprType.Kind.DOUBLE:
-                        return new AST.ConstDouble(-((AST.ConstDouble)expr).value);
+                        return new AST.ConstDouble(-((AST.ConstDouble)expr).value, env);
                     default:
                         throw new InvalidOperationException();
                 }
@@ -229,9 +229,9 @@ namespace SyntaxTree {
             if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(~((AST.ConstLong)expr).value);
+                        return new AST.ConstLong(~((AST.ConstLong)expr).value, env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstULong(~((AST.ConstULong)expr).value);
+                        return new AST.ConstULong(~((AST.ConstULong)expr).value, env);
                     default:
                         throw new InvalidOperationException();
                 }
@@ -275,7 +275,7 @@ namespace SyntaxTree {
                     default:
                         throw new InvalidOperationException();
                 }
-                return new AST.ConstLong(Convert.ToInt32(is_zero));
+                return new AST.ConstLong(Convert.ToInt32(is_zero), env);
             }
 
             return new AST.LogicalNot(expr, new AST.TLong(expr.type.is_const, expr.type.is_volatile));

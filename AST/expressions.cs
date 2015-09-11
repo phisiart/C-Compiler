@@ -23,6 +23,7 @@ namespace AST {
             type = _type;
         }
         public virtual Boolean IsConstExpr => false;
+        public abstract Env Env { get; }
         public abstract Reg CGenValue(Env env, CGenState state);
 
         public virtual void CGenAddress(Env env, CGenState state) {
@@ -93,11 +94,15 @@ namespace AST {
     }
 
     public class Variable : Expr {
-        public Variable(ExprType _type, String _name)
-            : base(_type) {
-            name = _name;
+        public Variable(ExprType type, String name, Env env)
+            : base(type) {
+            this.name = name;
+            this._env = env;
         }
         public readonly String name;
+
+        private readonly Env _env;
+        public override Env Env => _env;
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(name).Value;
@@ -278,11 +283,12 @@ namespace AST {
     }
 
     public class AssignList : Expr {
-        public AssignList(List<Expr> _exprs, ExprType _type)
-            : base(_type) {
-            exprs = _exprs;
+        public AssignList(List<Expr> exprs, ExprType type)
+            : base(type) {
+            this.exprs = exprs;
         }
         public readonly List<Expr> exprs;
+        public override Env Env => exprs.Last().Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Reg reg = Reg.EAX;
@@ -294,13 +300,14 @@ namespace AST {
     }
 
     public class Assign : Expr {
-        public Assign(Expr _lvalue, Expr _rvalue, ExprType _type)
-            : base(_type) {
-            lvalue = _lvalue;
-            rvalue = _rvalue;
+        public Assign(Expr lvalue, Expr rvalue, ExprType type)
+            : base(type) {
+            this.lvalue = lvalue;
+            this.rvalue = rvalue;
         }
         public readonly Expr lvalue;
         public readonly Expr rvalue;
+        public override Env Env => rvalue.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
 
@@ -404,6 +411,7 @@ namespace AST {
         public readonly Expr cond;
         public readonly Expr true_expr;
         public readonly Expr false_expr;
+        public override Env Env => false_expr.Env;
 
         // 
         //          test cond
@@ -455,7 +463,7 @@ namespace AST {
             return ret;
         }
     }
-
+        
     public class FuncCall : Expr {
         public FuncCall(Expr func, TFunction func_type, List<Expr> args)
             : base(func_type.ret_type) {
@@ -466,6 +474,8 @@ namespace AST {
         public readonly Expr func;
         public readonly TFunction func_type;
         public readonly IReadOnlyList<Expr> args;
+
+        public override Env Env => args.Any() ? args.Last().Env : func.Env;
 
         public override void CGenAddress(Env env, CGenState state) {
             throw new Exception("Error: cannot get the address of a function call.");
@@ -642,6 +652,7 @@ namespace AST {
         }
         public readonly Expr expr;
         public readonly String name;
+        public override Env Env => expr.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
 
@@ -732,6 +743,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public override Env Env => expr.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             expr.CGenAddress(env, state);
@@ -752,6 +764,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public override Env Env => expr.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Reg ret = expr.CGenValue(env, state);

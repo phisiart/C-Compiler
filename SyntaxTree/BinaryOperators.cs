@@ -30,7 +30,10 @@ namespace SyntaxTree {
 
             // 1. semant operands
             AST.Expr lhs = this.lhs.GetExpr(env);
+            env = lhs.Env;
+
             AST.Expr rhs = this.rhs.GetExpr(env);
+            env = rhs.Env;
 
             // 2. perform usual arithmetic conversion
             Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
@@ -45,9 +48,9 @@ namespace SyntaxTree {
             if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
                     default:
                         throw new InvalidOperationException("Expected long or unsigned long.");
                 }
@@ -80,7 +83,10 @@ namespace SyntaxTree {
 
             // 1. semant operands
             AST.Expr lhs = this.lhs.GetExpr(env);
+            env = lhs.Env;
+
             AST.Expr rhs = this.rhs.GetExpr(env);
+            env = rhs.Env;
 
             // 2. perform usual arithmetic conversion
             Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
@@ -95,13 +101,13 @@ namespace SyntaxTree {
             if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.DOUBLE:
-                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
+                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value), env);
                     case AST.ExprType.Kind.FLOAT:
-                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
+                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value), env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
                 }
@@ -142,7 +148,10 @@ namespace SyntaxTree {
 
             // 1. semant operands
             AST.Expr lhs = this.lhs.GetExpr(env);
+            env = lhs.Env;
+
             AST.Expr rhs = this.rhs.GetExpr(env);
+            env = rhs.Env;
 
             // 2. perform usual scalar conversion
             Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualScalarConversion(lhs, rhs);
@@ -157,13 +166,13 @@ namespace SyntaxTree {
             if (lhs.IsConstExpr && rhs.IsConstExpr) {
                 switch (kind) {
                     case AST.ExprType.Kind.DOUBLE:
-                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value));
+                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value), env);
                     case AST.ExprType.Kind.FLOAT:
-                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value));
+                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value), env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstLong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value));
+                        return new AST.ConstLong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value));
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
                 }
@@ -263,17 +272,19 @@ namespace SyntaxTree {
                 throw new InvalidOperationException();
             }
 
+            AST.Env env = order ? ptr.Env : offset.Env;
+
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
                 Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type);
+                return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type, env);
             }
 
-            AST.Expr base_addr = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile));
+            AST.Expr base_addr = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env);
             AST.Expr scale = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf),
+                new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf, env),
                 new AST.TLong(offset.type.is_const, offset.type.is_volatile)
             );
             AST.ExprType add_type = new AST.TLong(offset.type.is_const, offset.type.is_volatile);
@@ -282,14 +293,17 @@ namespace SyntaxTree {
                 ? new AST.Add(base_addr, scale, add_type)
                 : new AST.Add(scale, base_addr, add_type);
 
-            return AST.TypeCast.ToPointer(add, ptr.type);
+            return AST.TypeCast.ToPointer(add, ptr.type, env);
         }
 
         public override AST.Expr GetExpr(AST.Env env) {
 
             // 1. semant the operands
             AST.Expr lhs = this.lhs.GetExpr(env);
+            env = lhs.Env;
+
             AST.Expr rhs = this.rhs.GetExpr(env);
+            env = rhs.Env;
 
             if (lhs.type is AST.TArray) {
                 lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
@@ -355,26 +369,31 @@ namespace SyntaxTree {
                 Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
                 Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
                 Int32 _offset = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type);
+                return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type, offset.Env);
             }
 
             return AST.TypeCast.ToPointer(
-                new AST.Sub(
-                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile)),
+                expr: new AST.Sub(
+                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf),
+                        new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf, offset.Env),
                         new AST.TLong(offset.type.is_const, offset.type.is_volatile)
                     ),
                     new AST.TLong(offset.type.is_const, offset.type.is_volatile)
                 ),
-                ptr.type
+                type: ptr.type,
+                env: offset.Env
             );
         }
 
         public override AST.Expr GetExpr(AST.Env env) {
+
             AST.Expr lhs = this.lhs.GetExpr(env);
+            env = lhs.Env;
+
             AST.Expr rhs = this.rhs.GetExpr(env);
+            env = rhs.Env;
 
             if (lhs.type is AST.TArray) {
                 lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
@@ -400,7 +419,7 @@ namespace SyntaxTree {
                     Int32 scale = lhs_t.ref_t.SizeOf;
 
                     if (lhs.IsConstExpr && rhs.IsConstExpr) {
-                        return new AST.ConstLong((Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale);
+                        return new AST.ConstLong((Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale, env);
                     }
 
                     return new AST.Divide(
@@ -409,7 +428,7 @@ namespace SyntaxTree {
                             AST.TypeCast.MakeCast(rhs, new AST.TLong(is_const, is_volatile)),
                             new AST.TLong(is_const, is_volatile)
                         ),
-                        new AST.ConstLong(scale),
+                        new AST.ConstLong(scale, env),
                         new AST.TLong(is_const, is_volatile)
                     );
                 }
