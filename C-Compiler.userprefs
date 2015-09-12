@@ -2,19 +2,9 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="SyntaxTree/unary_operators.cs">
     <Files>
-      <File FileName="AST/cgen.cs" Line="1" Column="1" />
-      <File FileName="AST/StmtVisitor.cs" Line="1" Column="1" />
-      <File FileName="AST/statements.cs" Line="1" Column="1" />
-      <File FileName="AST/utils.cs" Line="1" Column="1" />
-      <File FileName="AST/UnaryOperators.cs" Line="1" Column="1" />
-      <File FileName="AST/TypeCast.cs" Line="1" Column="1" />
-      <File FileName="AST/expressions.cs" Line="393" Column="17" />
-      <File FileName="AST/Declarations.cs" Line="1" Column="1" />
-      <File FileName="AST/external_declarations.cs" Line="1" Column="1" />
-      <File FileName="SyntaxTree/BinaryOperators.cs" Line="431" Column="53" />
-      <File FileName="SyntaxTree/ConstExpressions.cs" Line="67" Column="48" />
-      <File FileName="SyntaxTree/expressions.cs" Line="52" Column="66" />
-      <File FileName="SyntaxTree/unary_operators.cs" Line="303" Column="10" />
+      <File FileName="SyntaxTree/unary_operators.cs" Line="245" Column="13" />
+      <File FileName="AST/types.cs" Line="156" Column="54" />
+      <File FileName="AST/expressions.cs" Line="742" Column="42" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

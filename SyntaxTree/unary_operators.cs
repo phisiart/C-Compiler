@@ -60,6 +60,7 @@ namespace SyntaxTree {
     /// <summary>
     /// sizeof(expr)
     /// </summary>
+    [Checked]
     public class SizeofExpr : Expr {
         public SizeofExpr(Expr expr) {
             this.expr = expr;
@@ -75,8 +76,9 @@ namespace SyntaxTree {
     /// <summary>
     /// Prefix increment: ++x
     /// </summary>
-    public class PrefixIncrement : Expr {
-        public PrefixIncrement(Expr expr) {
+    [Checked]
+    public class PreIncrement : Expr {
+        public PreIncrement(Expr expr) {
             this.expr = expr;
         }
         public readonly Expr expr;
@@ -95,6 +97,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Prefix decrement: --x
     /// </summary>
+    [Checked]
     public class PreDecrement : Expr {
         public PreDecrement(Expr expr) {
             this.expr = expr;
@@ -115,6 +118,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Reference: &expr
     /// </summary>
+    [Checked]
     public class Reference : Expr {
         public Reference(Expr expr) {
             this.expr = expr;
@@ -123,7 +127,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
-            return new AST.Reference(expr, new AST.TPointer(expr.type));
+            return new AST.Reference(expr);
         }
     }
 
@@ -158,6 +162,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Merely a check on arithmetic type.
     /// </summary>
+    [Checked]
     public class Positive : Expr {
         public Positive(Expr expr) {
             this.expr = expr;
@@ -178,6 +183,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Negative: requires arithmetic type.
     /// </summary>
+    // TODO: what if const char, short?
     public class Negative : Expr {
         public Negative(Expr expr) {
             this.expr = expr;

@@ -104,6 +104,12 @@
     <None Include="TestPrograms\FloatCalculation.c" />
     <None Include="TestPrograms\FunctionPointer.c" />
     <None Include="TestPrograms\test_all.py" />
+    <None Include="TestPrograms\ExternFunction.c" />
+    <None Include="TestPrograms\IfElseStmt.c" />
+    <None Include="TestPrograms\StaticFunction.c" />
+    <None Include="TestPrograms\StaticObject.c" />
+    <None Include="TestPrograms\SwitchStmt.c" />
+    <None Include="TestPrograms\WeiredSwitch.c" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestPrograms\LinkedList.c" />

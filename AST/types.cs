@@ -152,8 +152,8 @@ namespace AST {
         private Int32 _size_of;
         private Int32 _alignment;
 
-        public virtual Int32 SizeOf { get { return _size_of; } }
-        public virtual Int32 Alignment { get { return _alignment; } }
+        public virtual Int32 SizeOf => _size_of;
+        public virtual Int32 Alignment => _alignment;
 
         public readonly Boolean is_const;
         public readonly Boolean is_volatile;

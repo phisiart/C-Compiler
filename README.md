@@ -299,7 +299,7 @@ It is worth our time to figure out what each step means and what each intermedia
     
 3. `*(arr + 2) + 1`
 
-    This step is pretty much the same. The array is cast into a pointer. This time the pointer has type `int *` so the scale would be 4. The result of this expression is `(base + 2 * 8 + 1 * 4) and has type `int *`.
+    This step is pretty much the same. The array is cast into a pointer. This time the pointer has type `int *` so the scale would be 4. The result of this expression is `(base + 2 * 8 + 1 * 4)` and has type `int *`.
     
     ```
     arr[0][0] arr[0][1] arr[1][0] arr[1][1] arr[2][0] arr[2][1]

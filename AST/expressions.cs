@@ -738,8 +738,8 @@ namespace AST {
     /// &expr: get the address of expr.
     /// </summary>
     public class Reference : Expr {
-        public Reference(Expr expr, ExprType type)
-            : base(type) {
+        public Reference(Expr expr)
+            : base(new TPointer(expr.type)) {
             this.expr = expr;
         }
         public readonly Expr expr;

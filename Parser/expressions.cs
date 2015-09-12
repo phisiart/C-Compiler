@@ -738,7 +738,7 @@ public class _unary_expression : ParseRule {
                 return -1;
             }
 
-            expr = new PrefixIncrement(expr);
+            expr = new PreIncrement(expr);
             return current;
 
         case OperatorVal.DEC:
