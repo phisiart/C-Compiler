@@ -124,7 +124,7 @@ public class _function_definition : ParseRule {
         }
 
         // match compound_statement
-        CompoundStatement stmt;
+        CompoundStmt stmt;
         current = _compound_statement.Parse(src, current, out stmt);
         if (current == -1) {
             def = null;

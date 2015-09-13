@@ -102,6 +102,10 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected a scalar condition in conditional expression.");
             }
 
+            if (cond.type.IsIntegral) {
+                cond = AST.TypeCast.IntegralPromotion(cond).Item1;
+            }
+
             AST.Expr true_expr = this.true_expr.GetExpr(env);
             AST.Expr false_expr = this.false_expr.GetExpr(env);
 
@@ -176,7 +180,7 @@ namespace SyntaxTree {
                     loc: AST.Env.EntryKind.TYPEDEF,
                     name: (this.func as Variable).name,
                     type: AST.TFunction.Create(
-                        ret_type: new AST.TLong(_is_const: true),
+                        ret_type: new AST.TLong(is_const: true),
                         args: args.ConvertAll(_ => Tuple.Create("", _.type)),
                         is_varargs: false
                     )

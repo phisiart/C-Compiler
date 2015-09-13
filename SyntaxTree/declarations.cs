@@ -951,12 +951,13 @@ namespace SyntaxTree {
         public readonly DeclnSpecs specs;
         public readonly Declr declr;
 
-        // TODO: check env
-        public AST.ExprType GetExprType(AST.Env env) {
-            AST.ExprType type = specs.GetExprTypeEnv(env).Item2;
-            return declr.GetNameAndType(env, type).Item2;
+        public Tuple<AST.Env, AST.ExprType> GetTypeEnv(AST.Env env) {
+            Tuple<AST.Env, AST.ExprType> type_env = this.specs.GetExprTypeEnv(env);
+            env = type_env.Item1;
+            AST.ExprType base_type = type_env.Item2;
+
+            return Tuple.Create(env, this.declr.GetNameAndType(env, base_type).Item2);
         }
-        
     }
 
 }

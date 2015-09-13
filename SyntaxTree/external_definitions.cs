@@ -36,7 +36,7 @@ namespace SyntaxTree {
     /// A function definition gives the implementation.
     /// </summary>
     public class FuncDef : ExternDecln {
-        public FuncDef(DeclnSpecs specs, Declr declr, CompoundStatement stmt) {
+        public FuncDef(DeclnSpecs specs, Declr declr, CompoundStmt stmt) {
             this.specs = specs;
             this.declr = declr;
             this.stmt = stmt;
@@ -44,21 +44,18 @@ namespace SyntaxTree {
 
         public readonly DeclnSpecs specs;
         public readonly Declr declr;
-        public readonly CompoundStatement stmt;
+        public readonly CompoundStmt stmt;
 
-        // Get Function Definition
-        // =======================
-        // 
         public Tuple<AST.Env, AST.FuncDef> GetFuncDef(AST.Env env) {
 
             // Get storage class specifier and base type from declaration specifiers.
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = specs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = this.specs.GetSCSType(env);
             env = r_specs.Item1;
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
             // Get function name and function type from declarator.
-            Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, base_type);
+            Tuple<String, AST.ExprType> r_declr = this.declr.GetNameAndType(env, base_type);
             String name = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
 
@@ -75,6 +72,7 @@ namespace SyntaxTree {
                 case AST.Decln.SCS.STATIC:
                     env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
                     break;
+                case AST.Decln.SCS.TYPEDEF:
                 default:
                     throw new InvalidOperationException("Invalid storage class specifier for function definition.");
             }

@@ -32,22 +32,21 @@ namespace AST {
         public readonly Kind kind;
 
         // Note: typecast might introduce environment changes.
-        public override Env Env => _env;
-        private readonly Env _env;
+        public override Env Env { get; }
 
         public TypeCast(Kind kind, Expr expr, ExprType type, Env env)
             : base(type) {
             this.expr = expr;
             this.kind = kind;
-            this._env = env;
+            this.Env = env;
         }
 
         public TypeCast(Kind kind, Expr expr, ExprType type)
             : this(kind, expr, type, expr.Env) { }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = expr.CGenValue(env, state);
-            switch (kind) {
+            Reg ret = this.expr.CGenValue(env, state);
+            switch (this.kind) {
                 case Kind.DOUBLE_TO_FLOAT:
                 case Kind.FLOAT_TO_DOUBLE:
                 case Kind.PRESERVE_INT16:
@@ -126,8 +125,15 @@ namespace AST {
                             // char -> long -> double
                             return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.INT8_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
+                        case ExprType.Kind.VOID:
+                        case ExprType.Kind.POINTER:
+                        case ExprType.Kind.FUNCTION:
+                        case ExprType.Kind.ARRAY:
+                        case ExprType.Kind.INCOMPLETE_ARRAY:
+                        case ExprType.Kind.STRUCT_OR_UNION:
+                        case ExprType.Kind.CHAR:
                         default:
-                            throw new InvalidProgramException();
+                            throw new InvalidProgramException($"Cannot cast from {from} to {to}");
                     }
 
                 case ExprType.Kind.SHORT:
@@ -151,8 +157,15 @@ namespace AST {
                             // short -> long -> double
                             return new TypeCast(Kind.INT32_TO_DOUBLE, new TypeCast(Kind.INT16_TO_INT32, expr, new TLong(type.is_const, type.is_volatile)), type);
 
+                        case ExprType.Kind.VOID:
+                        case ExprType.Kind.SHORT:
+                        case ExprType.Kind.POINTER:
+                        case ExprType.Kind.FUNCTION:
+                        case ExprType.Kind.ARRAY:
+                        case ExprType.Kind.INCOMPLETE_ARRAY:
+                        case ExprType.Kind.STRUCT_OR_UNION:
                         default:
-                            throw new InvalidProgramException();
+                            throw new InvalidProgramException($"Cannot cast from {from} to {to}");
                     }
 
                 case ExprType.Kind.LONG:
@@ -206,8 +219,15 @@ namespace AST {
                                 return new TypeCast(Kind.INT32_TO_DOUBLE, expr, type);
                             }
 
+                        case ExprType.Kind.VOID:
+                        case ExprType.Kind.LONG:
+                        case ExprType.Kind.POINTER:
+                        case ExprType.Kind.FUNCTION:
+                        case ExprType.Kind.ARRAY:
+                        case ExprType.Kind.INCOMPLETE_ARRAY:
+                        case ExprType.Kind.STRUCT_OR_UNION:
                         default:
-                            throw new Exception("Error: casting from " + from + " to " + to);
+                            throw new InvalidProgramException($"Cannot cast from {from} to {to}");
                     }
 
                 default:
@@ -346,7 +366,7 @@ namespace AST {
                     return null;
             }
         }
-        
+
         /// <summary>
         /// From:
         ///     float, double
@@ -362,10 +382,6 @@ namespace AST {
 
             ExprType.Kind from = expr.type.kind;
             ExprType.Kind to = type.kind;
-
-            Boolean is_const = type.is_const;
-            Boolean is_volateil = type.is_volatile;
-
             Env env = expr.Env;
 
             switch (from) {
@@ -617,6 +633,12 @@ namespace AST {
                 case ExprType.Kind.DOUBLE:
                     return FloatToArith(expr, type);
 
+                case ExprType.Kind.VOID:
+                case ExprType.Kind.POINTER:
+                case ExprType.Kind.FUNCTION:
+                case ExprType.Kind.ARRAY:
+                case ExprType.Kind.INCOMPLETE_ARRAY:
+                case ExprType.Kind.STRUCT_OR_UNION:
                 default:
                     throw new InvalidOperationException("Error: expression type not supported for casting from.");
             }
@@ -678,6 +700,35 @@ namespace AST {
                 e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile), e2.Env);
             }
             return UsualArithmeticConversion(e1, e2);
+        }
+
+        public static Tuple<Expr, ExprType.Kind> IntegralPromotion(Expr expr) {
+            if (!expr.type.IsIntegral) {
+                throw new InvalidProgramException();
+            }
+
+            switch (expr.type.kind) {
+                case ExprType.Kind.CHAR:
+                case ExprType.Kind.SHORT:
+                case ExprType.Kind.LONG:
+                    return Tuple.Create(MakeCast(expr, new TLong(expr.type.is_const, expr.type.is_volatile)), ExprType.Kind.LONG);
+
+                case ExprType.Kind.UCHAR:
+                case ExprType.Kind.USHORT:
+                case ExprType.Kind.ULONG:
+                    return Tuple.Create(MakeCast(expr, new TULong(expr.type.is_const, expr.type.is_volatile)), ExprType.Kind.ULONG);
+
+                case ExprType.Kind.VOID:
+                case ExprType.Kind.FLOAT:
+                case ExprType.Kind.DOUBLE:
+                case ExprType.Kind.POINTER:
+                case ExprType.Kind.FUNCTION:
+                case ExprType.Kind.ARRAY:
+                case ExprType.Kind.INCOMPLETE_ARRAY:
+                case ExprType.Kind.STRUCT_OR_UNION:
+                default:
+                    throw new InvalidProgramException();
+            }
         }
 
     }

@@ -16,7 +16,7 @@ public class _statement : ParseRule {
             return current;
         }
 
-        CompoundStatement compound_stmt;
+        CompoundStmt compound_stmt;
         current = _compound_statement.Parse(src, begin, out compound_stmt);
         if (current != -1) {
             stmt = compound_stmt;
@@ -68,16 +68,16 @@ public class _jump_statement : ParseRule {
             if (src[current].type != TokenType.IDENTIFIER) {
                 return -1;
             }
-            stmt = new GotoStatement(((TokenIdentifier)src[current]).val);
+            stmt = new GotoStmt(((TokenIdentifier)src[current]).val);
             current++;
             break;
         case KeywordVal.CONTINUE:
             // current++;
-            stmt = new ContinueStatement();
+            stmt = new ContStmt();
             break;
         case KeywordVal.BREAK:
             // current++;
-            stmt = new BreakStatement();
+            stmt = new BreakStmt();
             break;
         case KeywordVal.RETURN:
             Int32 saved = current;
@@ -85,9 +85,9 @@ public class _jump_statement : ParseRule {
             current = _expression.Parse(src, current, out expr);
             if (current == -1) {
                 current = saved;
-                stmt = new ReturnStatement(null);
+                stmt = new ReturnStmt(null);
             } else {
-                stmt = new ReturnStatement(expr);
+                stmt = new ReturnStmt(expr);
             }
             break;
         default:
@@ -107,7 +107,7 @@ public class _jump_statement : ParseRule {
 
 // compound_statement : { <declaration_list>? <statement_list>? }
 public class _compound_statement : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out CompoundStatement stmt) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out CompoundStmt stmt) {
         stmt = null;
         if (!Parser.IsLCURL(src[begin])) {
             return -1;
@@ -135,7 +135,7 @@ public class _compound_statement : ParseRule {
         }
         current++;
 
-        stmt = new CompoundStatement(decl_list, stmt_list);
+        stmt = new CompoundStmt(decl_list, stmt_list);
         return current;
     }
 }
@@ -194,7 +194,7 @@ public class _expression_statement : ParseRule {
         }
         current++;
 
-        stmt = new ExpressionStatement(expr);
+        stmt = new ExprStmt(expr);
         return current;
     }
 }
@@ -223,7 +223,7 @@ public class _iteration_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new WhileStatement(cond, body);
+            stmt = new WhileStmt(cond, body);
             return current;
 
         } else if (Parser.IsKeyword(src[begin], KeywordVal.DO)) {
@@ -242,7 +242,7 @@ public class _iteration_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new DoWhileStatement(body, cond);
+            stmt = new DoWhileStmt(body, cond);
             return current;
 
         } else if (Parser.IsKeyword(src[begin], KeywordVal.FOR)) {
@@ -345,7 +345,7 @@ public class _selection_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new SwitchStatement(expr, stmt);
+            stmt = new SwitchStmt(expr, stmt);
             return current;
 
         } else if (Parser.IsKeyword(src[begin], KeywordVal.IF)) {
@@ -361,7 +361,7 @@ public class _selection_statement : ParseRule {
                 return -1;
             }
             if (!Parser.IsKeyword(src[current], KeywordVal.ELSE)) {
-                stmt = new IfStatement(expr, true_stmt);
+                stmt = new IfStmt(expr, true_stmt);
                 return current;
             }
             current++;
@@ -370,7 +370,7 @@ public class _selection_statement : ParseRule {
             if (current == -1) {
                 return -1;
             }
-            stmt = new IfElseStatement(expr, true_stmt, false_stmt);
+            stmt = new IfElseStmt(expr, true_stmt, false_stmt);
             return current;
 
         } else {
@@ -402,7 +402,7 @@ public class _labeled_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new CaseStatement(null, stmt);
+            stmt = new CaseStmt(new None<Expr>(), stmt);
             return current;
 
         } else if (Parser.IsKeyword(src[begin], KeywordVal.CASE)) {
@@ -426,7 +426,7 @@ public class _labeled_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new CaseStatement(expr, stmt);
+            stmt = new CaseStmt(new Some<Expr>(expr), stmt);
             return current;
 
         } else if (src[begin].type == TokenType.IDENTIFIER) {
@@ -444,7 +444,7 @@ public class _labeled_statement : ParseRule {
                 return -1;
             }
 
-            stmt = new LabeledStatement(label, stmt);
+            stmt = new LabeledStmt(label, stmt);
             return current;
 
         } else {

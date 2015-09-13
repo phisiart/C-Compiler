@@ -2,21 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// SyntaxTree.Statement {
-/// 	Statement child1, child2;
-/// 	Semant(Env env, Stmt parent) {
-/// 		(env, new Stmt(env, parent, child1, child2))
-/// 	}
-/// }
-/// 
-/// Stmt {
-/// 	Stmt child1, child2;
-/// 	Stmt(env, parent, _child1, _child2) {
-/// 		
-/// 	}
-/// }
-/// </summary>
 namespace AST {
     public abstract class Stmt {
         public enum Kind {
@@ -38,9 +23,7 @@ namespace AST {
         }
         public abstract Kind kind { get; }
 
-        public virtual void CGenStmt(Env env, CGenState state) {
-            throw new NotImplementedException();
-        }
+        public abstract void CGenStmt(Env env, CGenState state);
 
         public abstract void Accept(StmtVisitor visitor);
 
@@ -86,6 +69,10 @@ namespace AST {
         public override void Accept(StmtVisitor visitor) =>
             visitor.Visit(this);
 
+        public override void CGenStmt(Env env, CGenState state) {
+            throw new NotImplementedException();
+        }
+
         public readonly String label;
     }
 
@@ -101,6 +88,10 @@ namespace AST {
 
         public override void Accept(StmtVisitor visitor) =>
             visitor.Visit(this);
+
+        public override void CGenStmt(Env env, CGenState state) {
+            throw new NotImplementedException();
+        }
 
         public readonly String label;
         public readonly Stmt stmt;
@@ -192,7 +183,7 @@ namespace AST {
         public readonly Expr expr;
 
         public override void CGenStmt(Env env, CGenState state) {
-            ExprType ret_type = env.GetCurrentFunction().ret_type;
+            ExprType ret_type = env.GetCurrentFunction().ret_t;
 
             Int32 stack_size = state.StackSize;
 

@@ -15,12 +15,12 @@ namespace AST {
     /// 3. floats are returned in %st(0).
     /// 4. when calling a function, %st(0) ~ %st(7) are all free.
     /// 5. functions are free to use %eax, %ecx, %edx, because caller needs to save them.
-    /// 6. stack must be aligned to 4 bytes (< gcc 4.5, for gcc 4.5+, aligned to 16 bytes).
+    /// 6. stack must be aligned to 4 bytes (before gcc 4.5, for gcc 4.5+, aligned to 16 bytes).
     /// </summary>
 
     public abstract class Expr {
-        public Expr(ExprType _type) {
-            type = _type;
+        protected Expr(ExprType type) {
+            this.type = type;
         }
         public virtual Boolean IsConstExpr => false;
         public abstract Env Env { get; }
@@ -97,12 +97,11 @@ namespace AST {
         public Variable(ExprType type, String name, Env env)
             : base(type) {
             this.name = name;
-            this._env = env;
+            this.Env = env;
         }
         public readonly String name;
 
-        private readonly Env _env;
-        public override Env Env => _env;
+        public override Env Env { get; }
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(name).Value;
@@ -466,7 +465,7 @@ namespace AST {
         
     public class FuncCall : Expr {
         public FuncCall(Expr func, TFunction func_type, List<Expr> args)
-            : base(func_type.ret_type) {
+            : base(func_type.ret_t) {
             this.func = func;
             this.func_type = func_type;
             this.args = args;

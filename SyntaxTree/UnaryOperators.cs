@@ -5,6 +5,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Postfix increment: x++
     /// </summary>
+    // TODO: Check lvalue
     public class PostIncrement : Expr {
         public PostIncrement(Expr expr) {
             this.expr = expr;
@@ -25,6 +26,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Postfix decrement: x--
     /// </summary>
+    // TODO: Check lvalue
     public class PostDecrement : Expr {
         public PostDecrement(Expr expr) {
             this.expr = expr;
@@ -45,6 +47,7 @@ namespace SyntaxTree {
     /// <summary>
     /// sizeof(type)
     /// </summary>
+    [Checked]
     public class SizeofType : Expr {
         public SizeofType(TypeName type_name) {
             this.type_name = type_name;
@@ -52,7 +55,9 @@ namespace SyntaxTree {
         public readonly TypeName type_name;
 
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.ExprType type = type_name.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> type_env = this.type_name.GetTypeEnv(env);
+            env = type_env.Item1;
+            AST.ExprType type = type_env.Item2;
             return new AST.ConstULong((UInt32)type.SizeOf, env);
         }
     }
@@ -137,6 +142,7 @@ namespace SyntaxTree {
     /// Note that expr might have an **incomplete** type.
     /// We need to search the environment
     /// </summary>
+    [Checked]
     public class Dereference : Expr {
         public Dereference(Expr expr) {
             this.expr = expr;
@@ -183,7 +189,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Negative: requires arithmetic type.
     /// </summary>
-    // TODO: what if const char, short?
+    [Checked]
     public class Negative : Expr {
         public Negative(Expr expr) {
             this.expr = expr;
@@ -197,16 +203,24 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
+            if (expr.type.IsIntegral) {
+                expr = AST.TypeCast.IntegralPromotion(expr).Item1;
+            }
+
             if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
                     case AST.ExprType.Kind.LONG:
                         return new AST.ConstLong(-((AST.ConstLong)expr).value, env);
+
                     case AST.ExprType.Kind.ULONG:
                         return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).value, env);
+
                     case AST.ExprType.Kind.FLOAT:
                         return new AST.ConstFloat(-((AST.ConstFloat)expr).value, env);
+
                     case AST.ExprType.Kind.DOUBLE:
                         return new AST.ConstDouble(-((AST.ConstDouble)expr).value, env);
+
                     default:
                         throw new InvalidOperationException();
                 }
@@ -219,6 +233,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Bitwise not: requires integral.
     /// </summary>
+    [Checked]
     public class BitwiseNot : Expr {
         public BitwiseNot(Expr expr) {
             this.expr = expr;
@@ -231,6 +246,8 @@ namespace SyntaxTree {
             if (!expr.type.IsIntegral) {
                 throw new InvalidOperationException("Expected integral type.");
             }
+
+            expr = AST.TypeCast.IntegralPromotion(expr).Item1;
 
             if (expr.IsConstExpr) {
                 switch (expr.type.kind) {
@@ -250,6 +267,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Logical not
     /// </summary>
+    [Checked]
     public class LogicalNot : Expr {
         public LogicalNot(Expr expr) {
             this.expr = expr;
@@ -261,6 +279,10 @@ namespace SyntaxTree {
 
             if (!expr.type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
+            }
+
+            if (expr.type.IsIntegral) {
+                expr = AST.TypeCast.IntegralPromotion(expr).Item1;
             }
 
             if (expr.IsConstExpr) {
@@ -291,6 +313,7 @@ namespace SyntaxTree {
     /// <summary>
     /// User-specified explicit type cast
     /// </summary>
+    [Checked]
     public class TypeCast : Expr {
         public TypeCast(TypeName type_name, Expr expr) {
             this.type_name = type_name;
@@ -300,8 +323,9 @@ namespace SyntaxTree {
         public readonly Expr expr;
 
         public override AST.Expr GetExpr(AST.Env env) {
-            // TODO: does this change environment?
-            AST.ExprType type = type_name.GetExprType(env);
+            Tuple<AST.Env, AST.ExprType> type_env = this.type_name.GetTypeEnv(env);
+            env = type_env.Item1;
+            AST.ExprType type = type_env.Item2;
 
             AST.Expr expr = this.expr.GetExpr(env);
 

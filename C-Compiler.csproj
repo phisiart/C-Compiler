@@ -55,7 +55,7 @@
     <Compile Include="SyntaxTree\expressions.cs" />
     <Compile Include="SyntaxTree\external_definitions.cs" />
     <Compile Include="SyntaxTree\statements.cs" />
-    <Compile Include="SyntaxTree\unary_operators.cs" />
+    <Compile Include="SyntaxTree\UnaryOperators.cs" />
     <Compile Include="Driver\Program.cs" />
     <Compile Include="Parser\declarations.cs" />
     <Compile Include="Parser\environment.cs" />
