@@ -82,5 +82,66 @@ namespace AST {
             stmt.false_stmt.Accept(this);
         }
     }
+
+    public class GotoLabelsGrabber : StmtVisitor {
+        private List<String> _labels = new List<String>();
+        public IReadOnlyList<String> Labels => _labels;
+
+        public static IReadOnlyList<String> GrabLabels(Stmt stmt) {
+            GotoLabelsGrabber grabber = new GotoLabelsGrabber();
+            stmt.Accept(grabber);
+            return grabber.Labels;
+        }
+
+        public override void Visit(Stmt stmt) {
+            throw new InvalidOperationException("Cannot visit abstract Stmt");
+        }
+
+        public override void Visit(GotoStmt stmt) { }
+
+        public override void Visit(LabeledStmt stmt) {
+            this._labels.Add(stmt.label);
+            stmt.stmt.Accept(this);
+        }
+
+        public override void Visit(ContStmt stmt) { }
+
+        public override void Visit(BreakStmt stmt) { }
+
+        public override void Visit(ExprStmt stmt) { }
+
+        public override void Visit(CompoundStmt stmt) =>
+            stmt.stmts.ForEach(_ => _.Item2.Accept(this));
+
+        public override void Visit(ReturnStmt stmt) { }
+
+        public override void Visit(WhileStmt stmt) =>
+            stmt.body.Accept(this);
+
+        public override void Visit(DoWhileStmt stmt) =>
+            stmt.body.Accept(this);
+
+        public override void Visit(ForStmt stmt) =>
+            stmt.body.Accept(this);
+
+        public override void Visit(SwitchStmt stmt) {
+            stmt.stmt.Accept(this);
+        }
+
+        public override void Visit(CaseStmt stmt) {
+            stmt.stmt.Accept(this);
+        }
+
+        public override void Visit(DefaultStmt stmt) =>
+            stmt.stmt.Accept(this);
+
+        public override void Visit(IfStmt stmt) =>
+            stmt.stmt.Accept(this);
+
+        public override void Visit(IfElseStmt stmt) {
+            stmt.true_stmt.Accept(this);
+            stmt.false_stmt.Accept(this);
+        }
+    }
 }
 

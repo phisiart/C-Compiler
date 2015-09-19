@@ -58,7 +58,8 @@ namespace AST {
                 throw new InvalidOperationException();
             }
             state.CGenFuncStart(name);
-            state.InFunction();
+
+            state.InFunction(GotoLabelsGrabber.GrabLabels(this.stmt));
 
             stmt.CGenStmt(env, state);
 

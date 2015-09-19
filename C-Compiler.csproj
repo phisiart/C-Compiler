@@ -30,6 +30,9 @@
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>driver.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
   </ItemGroup>
@@ -112,6 +115,7 @@
     <None Include="TestPrograms\WeiredSwitch.c" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="TestPrograms\Goto.c" />
     <Content Include="TestPrograms\LinkedList.c" />
     <Content Include="TestPrograms\StructReturn.c" />
   </ItemGroup>

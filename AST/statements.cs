@@ -70,7 +70,8 @@ namespace AST {
             visitor.Visit(this);
 
         public override void CGenStmt(Env env, CGenState state) {
-            throw new NotImplementedException();
+            Int32 label = state.GotoLabel(this.label);
+            state.JMP(label);
         }
 
         public readonly String label;
@@ -90,7 +91,9 @@ namespace AST {
             visitor.Visit(this);
 
         public override void CGenStmt(Env env, CGenState state) {
-            throw new NotImplementedException();
+            state.CGenLabel(state.GotoLabel(this.label));
+            state.CGenForceStackSizeTo(state.StackSize);
+            this.stmt.CGenStmt(env, state);
         }
 
         public readonly String label;

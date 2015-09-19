@@ -931,6 +931,12 @@ public class CGenState {
         //_break_labels.Pop();
     }
 
+    private Dictionary<String, Int32> _goto_labels = new Dictionary<String, Int32>();
+
+    public Int32 GotoLabel(String label) {
+        return _goto_labels[label];
+    }
+
     private Int32 return_label;
     public Int32 ReturnLabel {
         get {
@@ -940,11 +946,17 @@ public class CGenState {
             return return_label;
         }
     }
-    public void InFunction() {
+
+    public void InFunction(IReadOnlyList<String> goto_labels) {
         return_label = RequestLabel();
+        _goto_labels.Clear();
+        foreach (String goto_label in goto_labels) {
+            this._goto_labels.Add(goto_label, this.RequestLabel());
+        }
     }
 
     public void OutFunction() {
         return_label = -1;
+        _goto_labels.Clear();
     }
 }
