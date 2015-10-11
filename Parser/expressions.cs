@@ -1,1158 +1,284 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SyntaxTree;
+using System.Text;
+using System.Threading.Tasks;
+using NUnit.Framework;
+using static ParserCombinator;
+
+public partial class Parser2 {
+
+    /// <summary>
+    /// expression
+    ///   : assignment-expression [ ',' assignment-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr>
+        Expression =>
+            AssignmentExpression.aggregate(
+                ParseMore: Operator(OperatorVal.COMMA).then(AssignmentExpression),
+                Combine: (first, next) => new SyntaxTree.AssignmentList(new List<SyntaxTree.Expr> { first, next })
+            );
+
+    /// <summary>
+    /// primary-expression
+    ///   : identifier          <see cref="Variable"/> # Notice that the identifier cannot be a typedef name.
+    ///   | constant            <see cref="Constant"/>   # Can either be const-char, const-float, or const-int
+    ///   | string-literal      <see cref="StringLiteral"/>
+    ///   | '(' expression ')'
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr>
+        PrimaryExpression =>
+            (Variable)
+            .or(Constant)
+            .or(StringLiteral)
+            .or(
+                Operator(OperatorVal.LPAREN).then(Expression).then(Operator(OperatorVal.RPAREN))
+            )
+            ;
+
+    public static ParsingFunction<SyntaxTree.Expr> Variable =>
+        ParseTokenWhen((TokenIdentifier token) => true, token => new SyntaxTree.Variable(token.val));
+
+    public static ParsingFunction<SyntaxTree.Expr>
+        Constant =>
+            (ConstChar)
+            .or(ConstInt)
+            .or(ConstFloat)
+            ;
+
+    public static ParsingFunction<SyntaxTree.Expr> ConstChar =>
+        ParseToken((TokenCharConst token) => new SyntaxTree.ConstInt(token.value, TokenInt.Suffix.NONE));
+
+    public static ParsingFunction<SyntaxTree.Expr> ConstFloat =>
+        ParseToken((TokenFloat token) => new SyntaxTree.ConstFloat(token.value, token.suffix));
+
+    public static ParsingFunction<SyntaxTree.Expr> ConstInt =>
+        ParseToken((TokenInt token) => new SyntaxTree.ConstInt(token.val, token.suffix));
+
+    public static ParsingFunction<SyntaxTree.Expr> StringLiteral =>
+        ParseToken((TokenString token) => new SyntaxTree.StringLiteral(token.raw));
+
+    /// <summary>
+    /// constant-expression
+    ///   : conditional-expression
+    /// </summary>
+    /// <remarks>
+    /// The size of an array should be a constant.
+    /// Note that the check is actually performed in semantic analysis.
+    /// </remarks>
+    public static ParsingFunction<SyntaxTree.Expr>
+        ConstantExpression =>
+            ConditionalExpression;
+
+    /// <summary>
+    /// conditional-expression
+    ///   : logical-or-expression [ '?' expression ':' conditional-expression ]?
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> ConditionalExpression =>
+        null;
+
+    /// <summary>
+    /// assignment-expression
+    ///   : conditional-expression
+    ///   | unary-expression assignment-operator assignment-expression
+    /// </summary>
+    /// <remarks>
+    /// Conflict?
+    /// </remarks>
+    public static ParsingFunction<SyntaxTree.Expr> AssignmentExpression =>
+        null;
+
+    /// <summary>
+    /// postfix-expression
+    ///   : primary-expression [
+    ///         '[' expression ']'                      # Get element from array
+    ///       | '(' [argument-expression-list]? ')'     # Function call
+    ///       | '.' identifier                          # Get member from struct/union
+    ///       | '->' identifier                         # Get member from struct/union
+    ///       | '++'                                    # Increment
+    ///       | '--'                                    # Decrement
+    ///     ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> PostfixExpression =>
+        null;
+
+    /// <summary>
+    /// argument-expression-list
+    ///   : assignment-expression [ ',' assignment-expression ]*
+    /// </summary>
+    public static ParsingFunction<IReadOnlyList<SyntaxTree.Expr>> ArgumentExpressionList =>
+        null;
+
+    /// <summary>
+    /// unary-expression
+    ///   : postfix-expression
+    ///   | '++' unary-expression
+    ///   | '--' unary-expression
+    ///   | unary-operator cast-expression
+    ///   | sizeof unary-expression
+    ///   | sizeof '(' type-name ')'
+    /// </summary>
+    /// <remarks>
+    /// 1. unary-operator can be '&', '*', '+', '-', '~', '!'.
+    /// 2. The last two rules are ambiguous: you can't figure out whether the x in sizeof(x) is a typedef of a variable.
+    ///    I have a parser hack for this: add a parser environment to track all the typedefs.
+    /// 3. first_set = first_set(postfix-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
+    ///              = first_set(primary-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
+    ///              = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
+    /// </remarks>
+    public static ParsingFunction<SyntaxTree.Expr>
+        UnaryExpression =>
+            (
+                PostfixExpression
+            ).or(
+                Operator(OperatorVal.INC).then(UnaryExpression)
+            ).or(
+                Operator(OperatorVal.DEC).then(UnaryExpression)
+            ).or(
+                Operator(OperatorVal.BITAND).then(CastExpression).transform(expr => new SyntaxTree.Reference(expr))
+            ).or(
+                Operator(OperatorVal.MULT).then(CastExpression).transform(expr => new SyntaxTree.Dereference(expr))
+            ).or(
+                Operator(OperatorVal.ADD).then(CastExpression).transform(expr => new SyntaxTree.Positive(expr))
+            ).or(
+                Operator(OperatorVal.SUB).then(CastExpression).transform(expr => new SyntaxTree.Negative(expr))
+            ).or(
+                Operator(OperatorVal.TILDE).then(CastExpression).transform(expr => new SyntaxTree.BitwiseNot(expr))
+            ).or(
+                Operator(OperatorVal.NOT).then(CastExpression).transform(expr => new SyntaxTree.LogicalNot(expr))
+            ).or(
+                Keyword(KeywordVal.SIZEOF).then(UnaryExpression).transform(expr => new SyntaxTree.SizeofExpr(expr))
+            ).or(
+                Keyword(KeywordVal.SIZEOF)
+                .then(Operator(OperatorVal.LPAREN))
+                .then(TypeName)
+                .then(Operator(OperatorVal.RPAREN))
+                .transform(typeName => new SyntaxTree.SizeofType(typeName))
+            )
+            ;
+
+    /// <summary>
+    /// cast-expression
+    ///   : unary-expression
+    ///   | '(' type_name ')' cast-expression
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr>
+        CastExpression =>
+            (UnaryExpression)
+            .or(
+                Operator(OperatorVal.LPAREN)
+                .then(TypeName)
+                .then(Operator(OperatorVal.RPAREN))
+                .then(CastExpression)
+                .transform(typeNameAndExpression => new SyntaxTree.TypeCast(typeNameAndExpression.Item2, typeNameAndExpression.Item1))
+            );
+
+    /// <summary>
+    /// multiplicative-expression
+    ///   : cast-expression [ [ '*' | '/' | '%' ] cast-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> MultiplicativeExpression =>
+        ParseBinaryOperator(
+            CastExpression,
+            CreateDealer(OperatorVal.MULT, SyntaxTree.Multiply.Create),
+            CreateDealer(OperatorVal.DIV, SyntaxTree.Divide.Create),
+            CreateDealer(OperatorVal.MOD, SyntaxTree.Modulo.Create)
+        );
+
+    /// <summary>
+    /// additive-expression
+    ///   : multiplicative-expression [ [ '+' | '-' ] multiplicative-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> AdditiveExpression =>
+        ParseBinaryOperator(
+            MultiplicativeExpression,
+            CreateDealer(OperatorVal.ADD, SyntaxTree.Add.Create),
+            CreateDealer(OperatorVal.SUB, SyntaxTree.Sub.Create)
+        );
+
+    /// <summary>
+    /// shift-expression
+    ///   : additive-expression [ [ '&lt;&lt;' | '>>' ] additive-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> ShiftExpression =>
+        ParseBinaryOperator(
+            AdditiveExpression,
+            CreateDealer(OperatorVal.LSHIFT, SyntaxTree.LShift.Create),
+            CreateDealer(OperatorVal.RSHIFT, SyntaxTree.RShift.Create)
+        );
+
+    /// <summary>
+    /// relational-expression
+    ///   : shift-expression [ [ '&lt;' | '>' | '&lt=' | '>=' ] shift-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> RelationalExpression =>
+        ParseBinaryOperator(
+            ShiftExpression,
+            CreateDealer(OperatorVal.LT, SyntaxTree.Less.Create),
+            CreateDealer(OperatorVal.GT, SyntaxTree.Greater.Create),
+            CreateDealer(OperatorVal.LEQ, SyntaxTree.LEqual.Create),
+            CreateDealer(OperatorVal.GEQ, SyntaxTree.GEqual.Create)
+        );
+
+    /// <summary>
+    /// equality-expression
+    ///   : relational-expression [ [ '=' | '!=' ] relational-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> EqualityExpression =>
+        ParseBinaryOperator(
+            RelationalExpression,
+            CreateDealer(OperatorVal.EQ, SyntaxTree.Equal.Create),
+            CreateDealer(OperatorVal.NEQ, SyntaxTree.NotEqual.Create)
+        );
+
+    /// <summary>
+    /// and-expression
+    ///   : equality-expression [ '&' equality-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> AndExpression =>
+        ParseBinaryOperator(
+            EqualityExpression,
+            CreateDealer(OperatorVal.BITAND, SyntaxTree.BitwiseAnd.Create)
+        );
+
+    /// <summary>
+    /// exclusive-or-expression
+    ///   : and-expression [ '^' and-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> ExclusiveOrExpression =>
+        ParseBinaryOperator(
+            AndExpression,
+            CreateDealer(OperatorVal.XOR, SyntaxTree.Xor.Create)
+        );
+
+    /// <summary>
+    /// inclusive-or-expression
+    ///   : exclusive-or-expression [ '|' exclusive-or-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> InclusiveOrExpression =>
+        ParseBinaryOperator(
+            ExclusiveOrExpression,
+            CreateDealer(OperatorVal.BITOR, SyntaxTree.BitwiseOr.Create)
+        );
+
+    /// <summary>
+    /// logical-and-expression
+    ///   : inclusive-or-expression [ '&&' inclusive-or-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> LogicalAndExpression =>
+        ParseBinaryOperator(
+            InclusiveOrExpression,
+            CreateDealer(OperatorVal.AND, SyntaxTree.LogicalAnd.Create)
+        );
+
+    /// <summary>
+    /// logical-or-expression
+    ///   :logical-and-expression [ '||' logical-and-expression ]*
+    /// </summary>
+    public static ParsingFunction<SyntaxTree.Expr> LogicalOrExpression =>
+        ParseBinaryOperator(
+            LogicalAndExpression,
+            CreateDealer(OperatorVal.OR, SyntaxTree.LogicalOr.Create)
+        );
 
-// primary_expression: identifier           /* Variable : Expression */
-//
-//                   | constant             /* ConstChar : Expression
-//                                             ConstFloat : Expression
-//                                             ConstInt : Expression */
-//
-//                   | string_literal       /* StringLiteral : Expression */
-//
-//                   | '(' expression ')'   /* Expression */
-// 
-// RETURN: Expression
-//
-// FAILURE: null
-// 
-// NOTE:
-// 1. This grammar is LL(1)
-// 2. identifier shouldn't be previously defined as a typedef_name
-//    this is to resolve the ambiguity of something like a * b
-// 3. first set : id, const, String, '('
-//
-public class _primary_expression : ParseRule {
-    public static Boolean Test() {
-        Expr expr;
-
-        var src = Parser.GetTokensFromString("test_id");
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("'h'");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("3.0f");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("10");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("\"String\"");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("(test_id)");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-
-        // 1. match identifier
-        String var_name = Parser.GetIdentifierValue(src[begin]);
-        if (var_name != null) {
-            if (!ParserEnvironment.HasTypedefName(var_name)) {
-                expr = new Variable(var_name);
-                return begin + 1;
-            } else {
-                expr = null;
-                return -1;
-            }
-        }
-
-        // 2. match const
-        // 2.1. match char
-        if (src[begin].type == TokenType.CHAR) {
-            // expr = new ConstChar(((TokenChar)src[begin]).val);
-            // NOTE : there is no const char in C, there is only const Int32 ...
-            expr = new ConstInt(((TokenCharConst)src[begin]).value, TokenInt.Suffix.NONE);
-            return begin + 1;
-        }
-
-        // 2.2. match float
-        if (src[begin].type == TokenType.FLOAT) {
-            expr = new ConstFloat(((TokenFloat)src[begin]).value, ((TokenFloat)src[begin]).suffix);
-            return begin + 1;
-        }
-
-        // 2.3. match Int32
-        if (src[begin].type == TokenType.INT) {
-            expr = new ConstInt(((TokenInt)src[begin]).val, ((TokenInt)src[begin]).suffix);
-            return begin + 1;
-        }
-
-        // 3. match String literal
-        if (src[begin].type == TokenType.STRING) {
-            expr = new StringLiteral(((TokenString)src[begin]).raw);
-            return begin + 1;
-        }
-
-        // 4 & last. match '(' expression ')'
-        // step 1. match '('
-        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
-            expr = null;
-            return -1;
-        }
-        begin++;
-
-        // step 2. match expression
-        if ((begin = _expression.Parse(src, begin, out expr)) == -1) {
-            expr = null;
-            return -1;
-        }
-
-        // step 3. match ')'
-        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
-            expr = null;
-            return -1;
-        }
-        begin++;
-
-        return begin;
-
-    }
-}
-
-
-/// <summary>
-/// expression
-///   : assignment_expression [ ',' assignment_expression ]*
-/// </summary>
-public class _expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-        List<Expr> assign_exprs;
-        if ((begin = Parser.ParseNonEmptyListWithSep(src, begin, out assign_exprs, _assignment_expression.Parse, OperatorVal.COMMA)) == -1) {
-            expr = null;
-            return -1;
-        } else {
-            if (assign_exprs.Count == 1) {
-                expr = assign_exprs[0];
-                return begin;
-            } else {
-                expr = new AssignmentList(assign_exprs);
-                return begin;
-            }
-        }
-    }
-}
-
-/// <summary>
-/// constant_expression:
-///   : conditional_expression
-/// </summary>
-/// <remarks>
-/// When declaring an array, the size should be a constant.
-/// </remarks>
-public class _constant_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-        return _conditional_expression.Parse(src, begin, out expr);
-    }
-}
-
-
-/// <summary>
-/// conditional_expression:
-///   : logical_or_expression [ '?' expression ':' conditional_expression ]?
-/// </summary>
-public class _conditional_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		// logical_or_expression
-        Int32 current = _logical_or_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            return -1;
-        }
-
-		// '?'
-        if (!Parser.EatOperator(src, ref current, OperatorVal.QUESTION)) {
-            return current;
-        }
-
-		// expression
-        Expr true_expr;
-        if ((current = _expression.Parse(src, current, out true_expr)) == -1) {
-            return -1;
-        }
-
-		// ':'
-        if (!Parser.EatOperator(src, ref current, OperatorVal.COLON)) {
-            return -1;
-        }
-
-		// conditional_expression
-        Expr false_expr;
-        if ((current = Parse(src, current, out false_expr)) == -1) {
-            return -1;
-        }
-
-        expr = new ConditionalExpression(expr, true_expr, false_expr);
-        return current;
-    }
-}
-
-// assignment_expression: conditional_expression
-//                      | unary_expression assignment_operator assignment_expression
-// [ note: assignment_operator is = *= /= %= += -= <<= >>= &= ^= |= ]
-// [ note: how to predict which one to choose? ]
-// [ note: unary_expression is a special type of conditional_expression ]
-// [ note: first try unary ]
-// first(conditional_expression) = first(cast_expression)
-public class _assignment_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr node) {
-        node = null;
-        Expr lvalue;
-        Expr rvalue;
-        Int32 current = _unary_expression.Parse(src, begin, out lvalue);
-        if (current != -1) {
-            if (src[current].type == TokenType.OPERATOR) {
-                OperatorVal val = ((TokenOperator)src[current]).val;
-                switch (val) {
-                case OperatorVal.ASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new Assignment(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.MULTASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new MultAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.DIVASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new DivAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.MODASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new ModAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.ADDASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new AddAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.SUBASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new SubAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.LSHIFTASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new LShiftAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.RSHIFTASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new RShiftAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.ANDASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new BitwiseAndAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.XORASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new XorAssign(lvalue, rvalue);
-                    return current;
-
-                case OperatorVal.ORASSIGN:
-                    current++;
-                    current = _assignment_expression.Parse(src, current, out rvalue);
-                    if (current == -1) {
-                        return -1;
-                    }
-                    node = new BitwiseOrAssign(lvalue, rvalue);
-                    return current;
-
-                default:
-                    break;
-                // node = lvalue;
-                // return current;
-                }
-            }
-        }
-
-        return _conditional_expression.Parse(src, begin, out node);
-    }
-}
-
-// postfix_expression: primary_expression                                       /* Expression */
-//                   | postfix_expression '[' expression ']'                    /* ArrayElement */
-//                   | postfix_expression '(' [argument_expression_list]? ')'  /* FunctionCall */
-//                   | postfix_expression '.' identifier                        /* Attribute */
-//                   | postfix_expression '->' identifier                       /* PointerAttribute */
-//                   | postfix_expression '++'                                  /* Increment */
-//                   | postfix_expression '--'                                  /* Decrement */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// 1. from this grammar we can see that postfix operators are of the highest priority
-// 2. this is left-recursive
-//
-// MY SOLUTION:
-// postfix_expression: primary_expression [ one of these postfixes ]*
-//
-public class _postfix_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a[3]");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a(b)");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a.b");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a->b");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a++");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a--");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a++ -- -> b[3](c)");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-
-        // step 1. match primary_expression
-        Int32 current = _primary_expression.Parse(src, begin, out expr);
-        if (current == -1) {
-            expr = null;
-            return -1;
-        }
-
-        // step 2. match postfixes
-        while (true) {
-
-            if (src[current].type != TokenType.OPERATOR) {
-                return current;
-            }
-
-            OperatorVal val = ((TokenOperator)src[current]).val;
-            switch (val) {
-            case OperatorVal.LBRACKET:
-                // '['
-                current++;
-
-                // 1. match expression
-                Expr idx;
-                current = _expression.Parse(src, current, out idx);
-                if (current == -1) {
-                    expr = null;
-                    return -1;
-                }
-
-                // 2. match ']'
-                if (!Parser.IsOperator(src[current], OperatorVal.RBRACKET)) {
-                    expr = null;
-                    return -1;
-                }
-                current++;
-
-                // successful match
-                expr = new Dereference(new Add(expr, idx));
-                // expr = new ArrayElement(expr, idx);
-                break;
-
-            case OperatorVal.LPAREN:
-                // '('
-                current++;
-
-                // 1. match arglist, if no match, assume empty arglist
-                List<Expr> args;
-                Int32 saved = current;
-                current = _argument_expression_list.Parse(src, current, out args);
-                if (current == -1) {
-                    args = new List<Expr>();
-                    current = saved;
-                }
-                
-                // 2. match ')'
-                if (!Parser.IsOperator(src[current], OperatorVal.RPAREN)) {
-                    expr = null;
-                    return -1;
-                }
-                current++;
-
-                // successful match
-                expr = new FuncCall(expr, args);
-                break;
-
-            case OperatorVal.PERIOD:
-                // '.'
-                current++;
-
-                // match identifier
-                if (src[current].type != TokenType.IDENTIFIER) {
-                    expr = null;
-                    return -1;
-                }
-                String attrib = ((TokenIdentifier)src[current]).val;
-                current++;
-
-                // successful match
-                expr = new SyntaxTree.Attribute(expr, new Variable(attrib));
-                break;
-
-            case OperatorVal.RARROW:
-                // '->'
-                current++;
-
-                if (src[current].type != TokenType.IDENTIFIER) {
-                    return -1;
-                }
-                String pattrib = ((TokenIdentifier)src[current]).val;
-                current++;
-
-                // successful match
-                expr = new SyntaxTree.Attribute(new Dereference(expr), new Variable(pattrib));
-                // expr = new PointerAttribute(expr, new Variable(pattrib));
-                break;
-
-            case OperatorVal.INC:
-                // '++'
-                current++;
-
-                // successful match
-                expr = new PostIncrement(expr);
-                break;
-
-            case OperatorVal.DEC:
-                // '--'
-
-                current++;
-                
-                // successful match
-                expr = new PostDecrement(expr);
-                break;
-
-            default:
-
-                // no more postfix
-                return current;
-
-            } // case (val)
-
-        } // while (true)
-
-    }
-}
-
-
-/// <summary>
-/// argument_expression_list
-///   : assignment_expression [ ',' assignment_expression ]*
-/// </summary>
-public class _argument_expression_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Expr> node) {
-		return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
-    }
-}
-
-
-// unary_expression: postfix_expression                     /* Expression */
-//                 | '++' unary_expression                  /* PrefixIncrement */
-//                 | '--' unary_expression                  /* PrefixDecrement */
-//                 | unary_operator cast_expression         /* Reference
-//                                                             Dereference
-//                                                             Positive
-//                                                             Negative
-//                                                             BitwiseNot
-//                                                             Not */
-//                 | sizeof unary_expression                /* SizeofExpression */
-//                 | sizeof '(' type_name ')'               /* SizeofType */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// 1. from this grammar, we can see that the 2nd priority operators are prefix unary operators
-// 2. notice the last two productions, they form an ambiguity. we need to use environment
-//    first try the type_name version
-// 3. unary_operators are & | * | + | - | ~ | ! 
-//
-// first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = { id const String ( ++ -- & * + - ~ ! sizeof }
-//
-public class _unary_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("sizeof a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-        
-        src = Parser.GetTokensFromString("sizeof(Int32)");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("++a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("--a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("&a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("*a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("+a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("-a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("~a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("!a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("!!~++ --a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-        return true;
-    }
-    
-    // match '(' type_name ')'
-    public static Int32 ParseTypeName(List<Token> src, Int32 begin, out TypeName type_name) {
-        // step 1. match '('
-        if (!Parser.IsOperator(src[begin], OperatorVal.LPAREN)) {
-            type_name = null;
-            return -1;
-        }
-        begin++;
-
-        // step 2. match type_name
-        begin = _type_name.Parse(src, begin, out type_name);
-        if (begin == -1) {
-            type_name = null;
-            return -1;
-        }
-
-        // step 3. match ')'
-        if (!Parser.IsOperator(src[begin], OperatorVal.RPAREN)) {
-            type_name = null;
-            return -1;
-        }
-        begin++;
-
-        // successful match
-        return begin;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-        //expr = null;
-
-        Int32 current;
-        Int32 saved;
-        
-
-        if (Parser.IsKeyword(src[begin], KeywordVal.SIZEOF)) {
-            // 1. sizeof
-            current = begin + 1;
-            
-            // 1.1. try to match type_name
-            saved = current;
-            TypeName type_name;
-            current = ParseTypeName(src, current, out type_name);
-            if (current != -1) {
-                // 1.1. -- successful match
-                expr = new SizeofType(type_name);
-                return current;
-            }
-
-            // 1.2. type_name match failed, try unary_expression
-            current = saved;
-            current = _unary_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            // 1.2. -- successful match
-            expr = new SizeofExpr(expr);
-            return current;
-
-        } // sizeof
-
-        // 2. postfix_expression
-        current = _postfix_expression.Parse(src, begin, out expr);
-        if (current != -1) {
-            // successful match
-            return current;
-        }
-
-        // now only operators are left
-        if (src[begin].type != TokenType.OPERATOR) {
-            return -1;
-        }
-
-        current = begin;
-        OperatorVal val = ((TokenOperator)src[begin]).val;
-        switch (val) {
-        case OperatorVal.INC:
-            // '++'
-            current++;
-
-            current = _unary_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new PreIncrement(expr);
-            return current;
-
-        case OperatorVal.DEC:
-            // '--'
-            current++;
-
-            current = _unary_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new PreDecrement(expr);
-            return current;
-
-        case OperatorVal.BITAND:
-            // '&' (reference)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-            
-            expr = new Reference(expr);
-            return current;
-
-        case OperatorVal.MULT:
-            // '*' (dereference)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new Dereference(expr);
-            return current;
-
-        case OperatorVal.ADD:
-            // '+' (positive)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new Positive(expr);
-            return current;
-
-        case OperatorVal.SUB:
-            // '-' (negative)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new Negative(expr);
-            return current;
-
-        case OperatorVal.TILDE:
-            // '~' (bitwise not)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new BitwiseNot(expr);
-            return current;
-
-        case OperatorVal.NOT:
-            // '!' (logical not)
-            current++;
-
-            current = _cast_expression.Parse(src, current, out expr);
-            if (current == -1) {
-                expr = null;
-                return -1;
-            }
-
-            expr = new LogicalNot(expr);
-            return current;
-
-        default:
-
-            // no match
-            return -1;
-
-        } // case (val)
-
-    }
-}
-
-// cast_expression: unary_expression                    /* Expression */
-//                | '(' type_name ')' cast_expression   /* TypeCast */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this is right-recursive, which is totally fine
-//
-public class _cast_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("(int)a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("(int)(float)a");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr node) {
-
-        // 1. try to match '(' type_name ')'
-        TypeName type_name;
-        Int32 current = _unary_expression.ParseTypeName(src, begin, out type_name);
-        if (current != -1) {
-            // successful match '(' type_name ')'
-            
-            // match cast_expression recursively
-            current = _cast_expression.Parse(src, current, out node);
-            if (current == -1) {
-                node = null;
-                return -1;
-            }
-            
-            // successful match
-            node = new TypeCast(type_name, node);
-            return current;
-
-        }
-
-        // 2. unary_expression
-        return _unary_expression.Parse(src, begin, out node);
-
-    }
-}
-
-
-/// <summary>
-/// multiplicative_expression
-///   : cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
-/// </summary>
-public class _multiplicative_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a * b");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a * b / c % d");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_cast_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MULT, (_lhs, _rhs) => new Multiply(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.DIV, (_lhs, _rhs) => new Divide(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.MOD, (_lhs, _rhs) => new Modulo(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// additive_expression
-///   : multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
-/// </summary>
-public class _additive_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a * b + c");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a + c + d");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_multiplicative_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.ADD, (_lhs, _rhs) => new Add(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.SUB, (_lhs, _rhs) => new Sub(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// shift_expression
-///   : additive_expression [ [ '<<' | '>>' ] additive_expression ]*
-/// </summary>
-public class _shift_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("a * b + c << 3");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a << 3 >> 4");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_additive_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LSHIFT, (_lhs, _rhs) => new LShift(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.RSHIFT, (_lhs, _rhs) => new RShift(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// relational_expression
-///   : shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
-/// </summary>
-public class _relational_expression : ParseRule {
-    public static Boolean Test() {
-        var src = Parser.GetTokensFromString("3 < 4");
-        Expr expr;
-        Int32 current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        src = Parser.GetTokensFromString("a < 3 > 4");
-        current = Parse(src, 0, out expr);
-        if (current == -1) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_shift_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LT, (_lhs, _rhs) => new Less(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GT, (_lhs, _rhs) => new Greater(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.LEQ, (_lhs, _rhs) => new LEqual(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.GEQ, (_lhs, _rhs) => new GEqual(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// equality_expression
-///   : relational_expression [ [ '==' | '!=' ] relational_expression ]*
-/// </summary>
-public class _equality_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_relational_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.EQ, (_lhs, _rhs) => new Equal(_lhs, _rhs)),
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.NEQ, (_lhs, _rhs) => new NotEqual(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// and_expression
-///   : equality_expresion [ '&' equality_expression ]*
-/// </summary>
-public class _and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_equality_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.BITAND, (_lhs, _rhs) => new BitwiseAnd(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// exclusive_or_expression
-///   : and_expression [ '^' and_expression ]*
-/// </summary>
-public class _exclusive_or_expression : ParseRule {
-	public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_and_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.XOR, (_lhs, _rhs) => new Xor(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// inclusive_or_expression
-///   : exclulsive_or_expression [ '|' exclulsive_or_expression ]*
-/// </summary>
-public class _inclusive_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_exclusive_or_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.BITOR, (_lhs, _rhs) => new BitwiseOr(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// logical_and_expression
-///   : inclusive_or_expression [ '&&' inclusive_or_expression ]*
-/// 
-/// <remarks>
-/// A logical and expression is just a bunch of (bitwise) inclusive or expressions.
-/// </remarks>
-/// </summary>
-public class _logical_and_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_inclusive_or_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.AND, (_lhs, _rhs) => new LogicalAnd(_lhs, _rhs)),
-			}
-		);
-    }
-}
-
-
-/// <summary>
-/// logical_or_expression
-///   : logical_and_expression [ '||' logical_and_expression ]*
-/// 
-/// <remarks>
-/// A logical or expression is just a bunch of logical and expressions separated by '||'s.
-/// </remarks>
-/// </summary>
-public class _logical_or_expression : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-		return Parser.ParseBinaryOperator(
-			src, begin, out expr,
-			_logical_and_expression.Parse,
-			new List<Tuple<OperatorVal, Parser.BinaryExpressionConstructor>> {
-				new Tuple<OperatorVal, Parser.BinaryExpressionConstructor>(OperatorVal.OR, (_lhs, _rhs) => new LogicalOr(_lhs, _rhs)),
-			}
-		);
-    }
 }

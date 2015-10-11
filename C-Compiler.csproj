@@ -20,6 +20,8 @@
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
     <Commandlineparameters>../../TestPrograms/StructReturn.c</Commandlineparameters>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -34,12 +36,20 @@
     <StartupObject>driver.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Compiler.cs" />
+    <Compile Include="Driver\CovariantTuple.cs" />
+    <Compile Include="Driver\HList.cs" />
     <Compile Include="Driver\Option.cs" />
+    <Compile Include="Parser\Declarations.cs" />
+    <Compile Include="Parser\Expressions.cs" />
+    <Compile Include="Parser\Parser.cs" />
+    <Compile Include="Parser\ParserCombinator.cs" />
+    <Compile Include="Parser\ParserTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\ConstExpressions.cs" />
@@ -60,12 +70,12 @@
     <Compile Include="SyntaxTree\statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
     <Compile Include="Driver\Program.cs" />
-    <Compile Include="Parser\declarations.cs" />
-    <Compile Include="Parser\environment.cs" />
-    <Compile Include="Parser\expressions.cs" />
-    <Compile Include="Parser\external_definitions.cs" />
-    <Compile Include="Parser\parser.cs" />
-    <Compile Include="Parser\statements.cs" />
+    <Compile Include="OldParser\declarations.cs" />
+    <Compile Include="OldParser\environment.cs" />
+    <Compile Include="OldParser\expressions.cs" />
+    <Compile Include="OldParser\external_definitions.cs" />
+    <Compile Include="OldParser\parser.cs" />
+    <Compile Include="OldParser\statements.cs" />
     <Compile Include="Scanner\char.cs" />
     <Compile Include="Scanner\float.cs" />
     <Compile Include="Scanner\fsa.cs" />
@@ -118,5 +128,8 @@
     <Content Include="TestPrograms\Goto.c" />
     <Content Include="TestPrograms\LinkedList.c" />
     <Content Include="TestPrograms\StructReturn.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
 </Project>

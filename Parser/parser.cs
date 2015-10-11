@@ -1,472 +1,218 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static ParserCombinator;
 
-using SyntaxTree;
+public partial class Parser2 {
+    public sealed class ParserEnvironment { }
 
-public interface ParseRule {
-}
-
-public class PTNode {
-}
-
-
-public class Parser {
-    public static Boolean IsQuestionMark(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.QUESTION) {
-                return true;
-            }
+    public sealed class ParserInput {
+        public ParserInput(ParserEnvironment environment, IEnumerable<Token> source) {
+            this.Environment = environment;
+            this.Source = source;
         }
-        return false;
+        public ParserEnvironment Environment { get; }
+        public IEnumerable<Token> Source { get; }
     }
 
-    public static Boolean IsCOMMA(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.COMMA) {
-                return true;
-            }
-        }
-        return false;
+    public interface ParserResult<out R> : ParserResult {
+        R Result { get; }
     }
 
-    public static Boolean IsLCURL(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.LCURL) {
-                return true;
+    public sealed class ParserFailed<R> : ParserResult<R> {
+        public ParserInput ToInput() {
+            throw new InvalidOperationException("Parser failed, can't construct input.");
+        }
+
+        public Boolean IsSuccessful => false;
+
+        public R Result {
+            get {
+                throw new NotSupportedException("Parser failed, can't get result.");
             }
         }
-        return false;
-    }
 
-    public static Boolean IsRCURL(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.RCURL) {
-                return true;
+        public ParserEnvironment Environment {
+            get {
+                throw new NotSupportedException("Parser failed, can't get environment.");
             }
         }
-        return false;
-    }
 
-    public static Boolean IsPERIOD(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.PERIOD) {
-                return true;
+        public IEnumerable<Token> Source {
+            get {
+                throw new NotSupportedException("Parser failed, can't get source.");
             }
         }
-        return false;
     }
 
-    public static Boolean IsEllipsis(List<Token> src, Int32 begin) {
-        if (Parser.IsPERIOD(src[begin])) {
-            begin++;
-            if (Parser.IsPERIOD(src[begin])) {
-                begin++;
-                if (Parser.IsPERIOD(src[begin])) {
-                    return true;
-                }
+    public sealed class ParserSucceeded<R> : ParserResult<R> {
+        public ParserSucceeded(R result, ParserEnvironment environment, IEnumerable<Token> source) {
+            this.Result = result;
+            this.Environment = environment;
+            this.Source = source;
+        }
+
+        public ParserInput ToInput() => new ParserInput(Environment, Source);
+
+        public Boolean IsSuccessful => true;
+
+        public R Result { get; }
+
+        public ParserEnvironment Environment { get; }
+
+        public IEnumerable<Token> Source { get; }
+    }
+
+    public interface ParserResult {
+        ParserInput ToInput();
+
+        Boolean IsSuccessful { get; }
+
+        ParserEnvironment Environment { get; }
+
+        IEnumerable<Token> Source { get; }
+    }
+
+    public sealed class ParserFailed : ParserResult {
+        public ParserInput ToInput() {
+            throw new InvalidOperationException("Parser failed, can't construct input.");
+        }
+
+        public Boolean IsSuccessful => false;
+
+        public ParserEnvironment Environment {
+            get {
+                throw new NotSupportedException("Parser failed, can't get environment.");
             }
         }
-        return false;
-    }
 
-    public static Boolean IsSEMICOLON(Token token) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == OperatorVal.SEMICOLON) {
-                return true;
+        public IEnumerable<Token> Source {
+            get {
+                throw new NotSupportedException("Parser failed, can't get source.");
             }
         }
-        return false;
     }
 
-    public static Boolean IsKeyword(Token token, KeywordVal val) {
-        if (token.type == TokenType.KEYWORD) {
-            if (((TokenKeyword)token).val == val) {
-                return true;
-            }
+    public sealed class ParserSucceeded : ParserResult {
+        public ParserSucceeded(ParserEnvironment environment, IEnumerable<Token> source) {
+            this.Environment = environment;
+            this.Source = source;
         }
-        return false;
+
+        public Boolean IsSuccessful => true;
+
+        public ParserInput ToInput() => new ParserInput(Environment, Source);
+
+        public ParserEnvironment Environment { get; }
+
+        public IEnumerable<Token> Source { get; }
+
+        public static ParserSucceeded Create(ParserEnvironment environment, IEnumerable<Token> source) =>
+            new ParserSucceeded(environment, source);
+
+        public static ParserSucceeded<R> Create<R>(R result, ParserEnvironment environment, IEnumerable<Token> source) =>
+            new ParserSucceeded<R>(result, environment, source);
     }
 
-    public static Boolean IsOperator(Token token, OperatorVal val) {
-        if (token.type == TokenType.OPERATOR) {
-            if (((TokenOperator)token).val == val) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String GetIdentifierValue(Token token) {
-        if (token.type == TokenType.IDENTIFIER) {
-            return ((TokenIdentifier)token).val;
+    public static ParsingFunction Keyword(KeywordVal keyword) => input => {
+        if (input.Source.First().type == TokenType.KEYWORD && (input.Source.First() as TokenKeyword).val == keyword) {
+            return new ParserSucceeded(input.Environment, input.Source.Skip(1));
         } else {
-            return null;
+            return new ParserFailed();
         }
-    }
+    };
 
-    public static Int32 ParseIdentifier(List<Token> src, Int32 begin, out String id) {
-        if (src[begin].type == TokenType.IDENTIFIER) {
-            id = ((TokenIdentifier)src[begin]).val;
-            return begin + 1;
+    public static ParsingFunction Operator(OperatorVal op) => input => {
+        if ((input.Source.First() as TokenOperator)?.val == op) {
+            return new ParserSucceeded(input.Environment, input.Source.Skip(1));
         } else {
-            id = null;
-            return -1;
+            return new ParserFailed();
         }
-    }
+    };
 
-    public static List<Token> GetTokensFromString(String src) {
-        Scanner lex = new Scanner();
-        lex.src = src;
-        lex.Lex();
-        return lex.tokens;
-    }
-
-    // EatOperator : (src, ref current, val) -> Boolean
-    // =============================================
-    // tries to eat an operator
-    // if succeed, current++, return true
-    // if fail, current remains the same, return false
-    // 
-    public static Boolean EatOperator(List<Token> src, ref Int32 current, OperatorVal val) {
-        if (src[current].type != TokenType.OPERATOR) {
-            return false;
+    public static ParsingFunction<R> ParseToken<T, R>(Func<T, R> TokenToNode) where T : Token => input => {
+        if (input.Source.First() is T) {
+            var token = input.Source.First() as T;
+            return ParserSucceeded.Create(
+                TokenToNode(token),
+                input.Environment,
+                input.Source.Skip(1)
+            );
+        } else {
+            return new ParserFailed<R>();
         }
+    };
 
-        if (((TokenOperator)src[current]).val != val) {
-            return false;
+    public static ParsingFunction ParseToken<T>() where T : Token => input => {
+        if (input.Source.First() is T) {
+            return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
+        } else {
+            return new ParserFailed();
         }
+    };
 
-        current++;
-        return true;
-    }
-
-    public delegate Int32 FParse<TRet>(List<Token> src, Int32 begin, out TRet node);
-
-    public static FParse<Boolean> GetOperatorParser(OperatorVal val) {
-        return delegate (List<Token> src, Int32 begin, out Boolean succeeded) {
-            if (succeeded = (
-                src[begin].type == TokenType.OPERATOR && ((TokenOperator)src[begin]).val == val
-            )) {
-                return begin + 1;
-            } else {
-                return -1;
+    public static ParsingFunction<R> ParseTokenWhen<T, R>(Predicate<T> pred, Func<T, R> TokenToNode) where T : Token => input => {
+        if (input.Source.First() is T) {
+            var token = input.Source.First() as T;
+            if (pred(token)) {
+                return ParserSucceeded.Create(
+                    TokenToNode(token),
+                    input.Environment,
+                    input.Source.Skip(1)
+                );
             }
-        };
-    }
+        }
+        return new ParserFailed<R>();
+    };
 
-    /// <summary>
-    /// turn a parsing function into an optional parsing function
-    /// if parsing fails, return the default value
-    /// </summary>
-    public static FParse<TRet> GetOptionalParser<TRet>(TRet default_val, FParse<TRet> Parse) {
-        return delegate (List<Token> src, Int32 begin, out TRet node) {
-            Int32 current;
-            if ((current = Parse(src, begin, out node)) == -1) {
-                // if parsing fails: return default value
-                node = default_val;
-                return begin;
-            } else {
-                return current;
-            }
-        };
-    }
+    public delegate SyntaxTree.Expr BinaryExpressionConstructor(SyntaxTree.Expr lhs, SyntaxTree.Expr rhs);
+
+    public static ParsingFunction<R> AlwaysFail<R>() => input => new ParserFailed<R>();
+
+    public static ICovariantTuple<OperatorVal, BinaryExpressionConstructor> CreateDealer(OperatorVal op, BinaryExpressionConstructor constructor) =>
+        CovariantTuple.Create(op, constructor);
+
+    public static ParsingFunction<SyntaxTree.Expr> ParseBinaryOperator(
+        ParsingFunction<SyntaxTree.Expr> ParseOperand,
+        params ICovariantTuple<OperatorVal, BinaryExpressionConstructor>[] dealers
+    ) => input => {
+
+        // 1. Parse the first operand.
+        var curResult = ParseOperand(input);
+        if (!curResult.IsSuccessful) {
+            return new ParserFailed<SyntaxTree.Expr>();
+        }
+
+        var lastSuccessfulResult = curResult;
+
+        /// <summary>
+        /// rhs
+        ///   : operator1 operand
+        ///   | operator2 operand
+        ///   ...
+        ///   | operatorN operand
+        /// </summary>
+        /// <remarks>
+        /// Note that the return of this parsing function is (constructor : (Expr, Expr) => Expr, rhs : Expr).
+        /// </remarks>
+        var rhsParsingFunction = dealers.Aggregate(
+            seed: AlwaysFail<Tuple<BinaryExpressionConstructor, SyntaxTree.Expr>>(),
+            func: (Parse, dealer) => Parse.or(
+                Operator(dealer.Head).then(ParseOperand).transform(rhsOperand => Tuple.Create(dealer.Tail, rhsOperand))
+            )
+        );
+
+        // 2. Try to get another operator and operand, until fail.
+        do {
+            lastSuccessfulResult = curResult;
+            input = lastSuccessfulResult.ToInput();
+            curResult = rhsParsingFunction.transform(constructorAndOperand => constructorAndOperand.Item1(lastSuccessfulResult.Result, constructorAndOperand.Item2))(input);
+        } while (curResult.IsSuccessful);
+
+        return lastSuccessfulResult;
+    };
+
     
-    public static FParse<Option<TRet>> GetOptionParser<TRet>(FParse<TRet> Parse) =>
-        delegate (List<Token> src, Int32 begin, out Option<TRet> ret) {
-            TRet node;
-            Int32 current = Parse(src, begin, out node);
-            if (current == -1) {
-                ret = new None<TRet>();
-                return begin;
-            } else {
-                ret = new Some<TRet>(node);
-                return current;
-            }
-        };
-
-    public static Int32 ParseOption<TRet>(List<Token> src, Int32 begin, out Option<TRet> ret, FParse<TRet> Parse) =>
-        GetOptionParser(Parse)(src, begin, out ret);
-
-    public static Int32 ParseList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) {
-        Int32 current = begin;
-
-        list = new List<TRet>();
-        TRet item;
-
-        while (true) {
-            Int32 saved = current;
-            if ((current = Parse(src, current, out item)) == -1) {
-                return saved;
-            }
-            list.Add(item);
-        }
-
-    }
-
-    public static Int32 ParseNonEmptyList<TRet>(List<Token> src, Int32 begin, out List<TRet> list, FParse<TRet> Parse) {
-        begin = ParseList(src, begin, out list, Parse);
-        if (list.Any()) {
-            return begin;
-        } else {
-            return -1;
-        }
-    }
-    
-    public static Int32 Parse2Choices<TRet, T1, T2>(List<Token> src, Int32 begin, out TRet node, FParse<T1> Parse1, FParse<T2> Parse2)
-        where T1 : TRet
-        where T2 : TRet
-        where TRet : PTNode {
-        Int32 ret;
-
-        T1 node1;
-        if ((ret = Parse1(src, begin, out node1)) != -1) {
-            node = node1;
-            return ret;
-        }
-
-        T2 node2;
-        if ((ret = Parse2(src, begin, out node2)) != -1) {
-            node = node2;
-            return ret;
-        }
-        
-        node = null;
-        return -1;
-    }
-
-    public static FParse<TRet> GetChoicesParser<TRet>(List<FParse<TRet>> ParseFuncs) where TRet : class {
-        return delegate (List<Token> src, Int32 begin, out TRet node) {
-            Int32 r;
-            foreach (FParse<TRet> Parse in ParseFuncs) {
-                if ((r = Parse(src, begin, out node)) != -1) {
-                    return r;
-                }
-            }
-            node = null;
-            return -1;
-        };
-    }
-
-    public static Int32 ParseChoices<TRet>(List<Token> src, Int32 begin, out TRet node, List<FParse<TRet>> ParseFuncs) where TRet : class {
-        return GetChoicesParser(ParseFuncs)(src, begin, out node);
-    }
-
-    public static Int32 ParseNonEmptyListWithSep<TRet>(List<Token> src, Int32 pos, out List<TRet> list, FParse<TRet> Parse, OperatorVal op) where TRet : class {
-        list = new List<TRet>();
-        TRet item;
-
-        if ((pos = Parse(src, pos, out item)) == -1)
-            return -1;
-        list.Add(item);
-
-        while (true) {
-            Int32 saved = pos;
-            if (!Parser.EatOperator(src, ref pos, op))
-                return saved;
-            if ((pos = Parse(src, pos, out item)) == -1)
-                return saved;
-            list.Add(item);
-        }
-
-    }
-
-    public static Int32 ParseParenExpr(List<Token> src, Int32 begin, out Expr expr) {
-        if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
-            expr = null;
-            return -1;
-        }
-
-        if ((begin = _expression.Parse(src, begin, out expr)) == -1) {
-            expr = null;
-            return -1;
-        }
-
-        if (!Parser.EatOperator(src, ref begin, OperatorVal.RPAREN)) {
-            expr = null;
-            return -1;
-        }
-
-        return begin;
-    }
-
-	public static FParse<TRet> GetBraceSurroundedParser<TRet>(FParse<TRet> Parse) where TRet : class {
-		return delegate (List<Token> src, Int32 begin, out TRet node) {
-			if (!Parser.EatOperator(src, ref begin, OperatorVal.LCURL)) {
-				node = null;
-				return -1;
-			}
-
-			if ((begin = Parse(src, begin, out node)) == -1) {
-				node = null;
-				return -1;
-			}
-
-			if (!Parser.EatOperator(src, ref begin, OperatorVal.RCURL)) {
-				node = null;
-				return -1;
-			}
-
-			return begin;
-		};
-	}
-
-	public delegate TAfter FModifier<TAfter, TBefore>(TBefore before);
-	public static FParse<TAfter> GetModifiedParser<TAfter, TBefore>(FParse<TBefore> Parse, FModifier<TAfter, TBefore> ModifierFunc) where TAfter : class {
-		return delegate (List<Token> src, Int32 begin, out TAfter node) {
-			TBefore before;
-			if ((begin = Parse(src, begin, out before)) == -1) {
-				node = null;
-				return -1;
-			}
-
-			node = ModifierFunc(before);
-			return begin;
-		};
-	}
-
-    public delegate TRet FBinaryCombine<TRet, TRet1, TRet2>(TRet1 obj1, TRet2 obj2);
-
-    public delegate TRet FTernaryCombine<TRet, TRet1, TRet2, TRet3>(TRet1 obj1, TRet2 obj2, TRet3 obj3);
-
-    /// <summary>
-    /// Pass in two parsing functions, and a combining function,
-    /// Return a parsing function
-    /// </summary>
-    public static FParse<TRet> GetSequenceParser<TRet, TRet1, TRet2>(
-        FParse<TRet1> ParseFirstNode,
-        FParse<TRet2> ParseSecondNode,
-        FBinaryCombine<TRet, TRet1, TRet2> Combine
-    ) where TRet : class {
-        return delegate (List<Token> src, Int32 begin, out TRet node) {
-            TRet1 node1;
-            if ((begin = ParseFirstNode(src, begin, out node1)) == -1) {
-                node = null;
-                return -1;
-            }
-            TRet2 node2;
-            if ((begin = ParseSecondNode(src, begin, out node2)) == -1) {
-                node = null;
-                return -1;
-            }
-            node = Combine(node1, node2);
-            return begin;
-        };
-    }
-
-    /// <summary>
-    /// Pass in two parsing functions, and a combining function,
-    /// Return a parsing function
-    /// </summary>
-    public static FParse<TRet> GetSequenceParser<TRet, TRet1, TRet2, TRet3>(
-        FParse<TRet1> ParseFirstNode,
-        FParse<TRet2> ParseSecondNode,
-        FParse<TRet3> ParseThirdNode,
-        FTernaryCombine<TRet, TRet1, TRet2, TRet3> Combine
-    ) where TRet : class {
-        return delegate (List<Token> src, Int32 begin, out TRet node) {
-            TRet1 node1;
-            if ((begin = ParseFirstNode(src, begin, out node1)) == -1) {
-                node = null;
-                return -1;
-            }
-            TRet2 node2;
-            if ((begin = ParseSecondNode(src, begin, out node2)) == -1) {
-                node = null;
-                return -1;
-            }
-            TRet3 node3;
-            if ((begin = ParseThirdNode(src, begin, out node3)) == -1) {
-                node = null;
-                return -1;
-            }
-            node = Combine(node1, node2, node3);
-            return begin;
-        };
-    }
-
-    /// <summary>
-    /// Parse a sequence
-    /// </summary>
-    public static Int32 ParseSequence<TRet, TRet1, TRet2>(
-        List<Token> src,
-        Int32 begin,
-        out TRet node,
-        FParse<TRet1> ParseFirstNode,
-        FParse<TRet2> ParseSecondNode,
-        FBinaryCombine<TRet, TRet1, TRet2> Combine
-    ) where TRet : class {
-        return GetSequenceParser(ParseFirstNode, ParseSecondNode, Combine)(src, begin, out node);
-    }
-
-    /// <summary>
-    /// Parse a sequence
-    /// </summary>
-    public static Int32 ParseSequence<TRet, TRet1, TRet2, TRet3>(
-        List<Token> src,
-        Int32 begin,
-        out TRet node,
-        FParse<TRet1> ParseFirstNode,
-        FParse<TRet2> ParseSecondNode,
-        FParse<TRet3> ParseThirdNode,
-        FTernaryCombine<TRet, TRet1, TRet2, TRet3> Combine
-    ) where TRet : class {
-        return GetSequenceParser(ParseFirstNode, ParseSecondNode, ParseThirdNode, Combine)(src, begin, out node);
-    }
-
-	public delegate Expr BinaryExpressionConstructor(Expr lhs, Expr rhs);
-	public static Parser.FParse<Expr> GetBinaryOperatorParser(
-		Parser.FParse<Expr> OperandParser,
-		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
-	) {
-		return delegate (List<Token> src, Int32 begin, out Expr expr) {
-
-			// 1. try to match the first operand
-			Int32 current = OperandParser(src, begin, out expr);
-			if (current == -1) {
-				expr = null;
-				return -1;
-			}
-
-			// 2. try to match more operands
-			Boolean matched;
-			do {
-
-				// matched : at least one operator matched.
-				matched = false;
-
-				foreach (Tuple<OperatorVal, BinaryExpressionConstructor> bin_op_treater in bin_op_treaters) {
-					OperatorVal op = bin_op_treater.Item1;
-					BinaryExpressionConstructor Constructor = bin_op_treater.Item2;
-
-					if (!Parser.EatOperator(src, ref current, op)) {
-						continue;
-					}
-					matched = true;
-
-					Expr rhs;
-					if ((current = OperandParser(src, current, out rhs)) == -1) {
-						expr = null;
-						return -1;
-					}
-					expr = Constructor(expr, rhs);
-
-				}
-
-			} while (matched);
-
-			return current;
-
-		};
-	}
-
-	public static Int32 ParseBinaryOperator(
-		List<Token> src, Int32 begin, out Expr expr,
-		Parser.FParse<Expr> OperandParser,
-		List<Tuple<OperatorVal, BinaryExpressionConstructor>> bin_op_treaters
-	) {
-		return GetBinaryOperatorParser(OperandParser, bin_op_treaters)(src, begin, out expr);
-	}
-
 }
-
