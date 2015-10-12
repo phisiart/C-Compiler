@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Parser2;
+
+namespace Parsing {
 
 public static class ParserCombinator {
-
-    public delegate ParserResult<R> ParsingFunction<out R>(ParserInput input);
-    public delegate ParserResult ParsingFunction(ParserInput input);
 
     public static ParsingFunction<Tuple<R2, R1>> then<R1, R2>(this ParsingFunction<R1> first, ParsingFunction<R2> second) => input => {
         var result1 = first(input);
@@ -19,6 +17,7 @@ public static class ParserCombinator {
         if (!result2.IsSuccessful) {
             return new ParserFailed<Tuple<R2, R1>>();
         }
+
         return new ParserSucceeded<Tuple<R2, R1>>(Tuple.Create(result2.Result, result1.Result), result2.Environment, result2.Source);
     };
 
@@ -83,4 +82,4 @@ public static class ParserCombinator {
         return lastSuccessfulResult;
     };
 }
-
+}

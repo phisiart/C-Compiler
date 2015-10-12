@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Parsing;
 
 [TestFixture]
 public class ParserTests {
@@ -13,7 +14,7 @@ public class ParserTests {
         scanner.src = @"'a'";
         scanner.Lex();
 
-        var input = new Parser2.ParserInput(new Parser2.ParserEnvironment(), scanner.tokens);
+        var input = new ParserInput(new Parsing.ParserEnvironment(), scanner.tokens);
         var result = Parser2.ConstChar(input);
 
     }

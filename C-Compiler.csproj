@@ -20,8 +20,6 @@
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
     <Commandlineparameters>../../TestPrograms/StructReturn.c</Commandlineparameters>
-    <DocumentationFile>
-    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -36,8 +34,10 @@
     <StartupObject>driver.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
     <Reference Include="System" />
+    <Reference Include="nunit.framework">
+      <HintPath>packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Driver\Checked.cs" />
@@ -91,6 +91,7 @@
     <Compile Include="AST\UnaryOperators.cs" />
     <Compile Include="AST\Declarations.cs" />
     <Compile Include="AST\StmtVisitor.cs" />
+    <Compile Include="Parser\ParserUtils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -123,6 +124,7 @@
     <None Include="TestPrograms\StaticObject.c" />
     <None Include="TestPrograms\SwitchStmt.c" />
     <None Include="TestPrograms\WeiredSwitch.c" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestPrograms\Goto.c" />
