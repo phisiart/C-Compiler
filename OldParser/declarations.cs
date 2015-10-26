@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using SyntaxTree;
 using System.Linq;
 
@@ -66,7 +67,7 @@ public class _declaration_specifiers : ParseRule {
 
 
     public static Int32 Parse(List<Token> src, Int32 begin, out DeclnSpecs decl_specs) {
-        List<StorageClassSpec> storage_class_specifiers = new List<StorageClassSpec>();
+        List<StorageClsSpec> storage_class_specifiers = new List<StorageClsSpec>();
         List<TypeSpec> type_specifiers = new List<TypeSpec>();
         List<TypeQual> type_qualifiers = new List<TypeQual>();
         
@@ -75,7 +76,7 @@ public class _declaration_specifiers : ParseRule {
             Int32 saved = current;
 
             // 1. match storage_class_specifier
-            StorageClassSpec storage_class_specifier;
+            StorageClsSpec storage_class_specifier;
 			if ((current = _storage_class_specifier.Parse(src, saved, out storage_class_specifier)) != -1) {
                 storage_class_specifiers.Add(storage_class_specifier);
                 continue;
@@ -106,7 +107,7 @@ public class _declaration_specifiers : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclnSpecs(storage_class_specifiers, type_specifiers, type_qualifiers);
+        decl_specs = new DeclnSpecs(storage_class_specifiers.ToImmutableList(), type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
         return current;
 
     }
@@ -182,7 +183,7 @@ public class _init_declarator : ParseRule {
 /// </summary>
 public class _storage_class_specifier : ParseRule {
     public static Boolean Test() {
-        StorageClassSpec decl_specs;
+        StorageClsSpec decl_specs;
 
         var src = Parser.GetTokensFromString("typedef");
         Int32 current = Parse(src, 0, out decl_specs);
@@ -199,11 +200,11 @@ public class _storage_class_specifier : ParseRule {
         return true;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out StorageClassSpec spec) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StorageClsSpec spec) {
 
         // make sure the token is a keyword
         if (src[begin].type != TokenType.KEYWORD) {
-            spec = StorageClassSpec.NULL;
+            spec = StorageClsSpec.NULL;
             return -1;
         }
 
@@ -211,27 +212,27 @@ public class _storage_class_specifier : ParseRule {
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.AUTO:
-            spec = StorageClassSpec.AUTO;
+            spec = StorageClsSpec.AUTO;
             return begin + 1;
 
         case KeywordVal.REGISTER:
-            spec = StorageClassSpec.REGISTER;
+            spec = StorageClsSpec.REGISTER;
             return begin + 1;
 
         case KeywordVal.STATIC:
-            spec = StorageClassSpec.STATIC;
+            spec = StorageClsSpec.STATIC;
             return begin + 1;
 
         case KeywordVal.EXTERN:
-            spec = StorageClassSpec.EXTERN;
+            spec = StorageClsSpec.EXTERN;
             return begin + 1;
 
         case KeywordVal.TYPEDEF:
-            spec = StorageClassSpec.TYPEDEF;
+            spec = StorageClsSpec.TYPEDEF;
             return begin + 1;
 
         default:
-            spec = StorageClassSpec.NULL;
+            spec = StorageClsSpec.NULL;
             return -1;
         }
     }
@@ -302,7 +303,7 @@ public class _type_specifier : ParseRule {
         }
 
         // 2. match enum
-        EnumSpecifier enum_specifier;
+        EnumSpec enum_specifier;
 		if ((current = _enum_specifier.Parse(src, begin, out enum_specifier)) != -1) {
             spec = enum_specifier;
             return current;
@@ -694,7 +695,7 @@ public class _direct_declarator : ParseRule {
             return -1;
         }
 
-        modifier = new FunctionModifier(param_type_list.params_inner_declns, param_type_list.params_varargs);
+        modifier = new FunctionModifier(param_type_list.params_inner_declns.ToList(), param_type_list.params_varargs);
         return begin;
     }
 
@@ -762,7 +763,7 @@ public class _enum_specifier : ParseRule {
     /// <summary>
 	/// '{' enumerator_list '}'
     /// </summary>
-    private static Int32 ParseEnumList(List<Token> src, Int32 begin, out List<Enumerator> enum_list) {
+    private static Int32 ParseEnumList(List<Token> src, Int32 begin, out List<Enumr> enum_list) {
         if (!Parser.IsOperator(src[begin], OperatorVal.LCURL)) {
 			enum_list = null;
             return -1;
@@ -781,7 +782,7 @@ public class _enum_specifier : ParseRule {
 		return begin + 1;
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out EnumSpecifier enum_spec) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out EnumSpec enum_spec) {
         
 		// enum
 		if (!Parser.IsKeyword(src[begin], KeywordVal.ENUM)) {
@@ -790,17 +791,17 @@ public class _enum_specifier : ParseRule {
 		}
 
         Int32 current = begin + 1;
-        List<Enumerator> enum_list;
+        List<Enumr> enum_list;
         String name;
         if ((name = Parser.GetIdentifierValue(src[current])) != null) {
 			current++;
 
             Int32 saved = current;
             if ((current = ParseEnumList(src, current, out enum_list)) == -1) {
-                enum_spec = new EnumSpecifier(name, new List<Enumerator>());
+                enum_spec = new EnumSpec(name, new List<Enumr>());
                 return saved;
             } else {
-                enum_spec = new EnumSpecifier(name, enum_list);
+                enum_spec = new EnumSpec(name, enum_list);
                 return current;
             }
 
@@ -809,7 +810,7 @@ public class _enum_specifier : ParseRule {
                 enum_spec = null;
                 return -1;
             }
-            enum_spec = new EnumSpecifier("", enum_list);
+            enum_spec = new EnumSpec("", enum_list);
             return current;
         }
     }
@@ -821,7 +822,7 @@ public class _enum_specifier : ParseRule {
 ///   : enumerator [ ',' enumerator ]*
 /// </summary>
 public class _enumerator_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<Enumerator> enum_list) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<Enumr> enum_list) {
         return Parser.ParseNonEmptyListWithSep(src, begin, out enum_list, _enumerator.Parse, OperatorVal.COMMA);
     }
 }
@@ -832,7 +833,7 @@ public class _enumerator_list : ParseRule {
 ///   : enumeration [ '=' constant_expression ]?
 /// </summary>
 public class _enumerator : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out Enumerator enumerator) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out Enumr enumerator) {
 		return Parser.ParseSequence(src, begin, out enumerator,
 
 			// enumeration
@@ -852,7 +853,7 @@ public class _enumerator : ParseRule {
 			),
 			// ]?
 
-			(String name, Expr expr) => new Enumerator(name, expr)
+			(String name, Expr expr) => new Enumr(name, expr)
 
 		);
     }
@@ -887,7 +888,7 @@ public class _struct_or_union_specifier : ParseRule {
 			_struct_or_union.Parse,
 
 			// [
-			Parser.GetChoicesParser (new List<Parser.FParse<Tuple<String, List<StructDeclaration>>>> {
+			Parser.GetChoicesParser (new List<Parser.FParse<Tuple<String, List<StructDecln>>>> {
 
 				// [
 				Parser.GetSequenceParser(
@@ -896,9 +897,9 @@ public class _struct_or_union_specifier : ParseRule {
 					Parser.GetOptionalParser("", Parser.ParseIdentifier),
 
 					// { struct_declaration_list }
-					Parser.GetBraceSurroundedParser<List<StructDeclaration>>(_struct_declaration_list.Parse),
+					Parser.GetBraceSurroundedParser<List<StructDecln>>(_struct_declaration_list.Parse),
 
-					(String id, List<StructDeclaration> declns) => Tuple.Create(id, declns)
+					(String id, List<StructDecln> declns) => Tuple.Create(id, declns)
 				),
 				// ]
 
@@ -907,16 +908,16 @@ public class _struct_or_union_specifier : ParseRule {
 				// identifier
 				Parser.GetModifiedParser(
 					Parser.ParseIdentifier,
-					(String id) => new Tuple<String, List<StructDeclaration>>(id, null)
+					(String id) => new Tuple<String, List<StructDecln>>(id, null)
 				)
 			}),
 			// ]
 
-			(Boolean is_union, Tuple<String, List<StructDeclaration>> declns) => {
+			(Boolean is_union, Tuple<String, List<StructDecln>> declns) => {
 				if (is_union) {
 					return new UnionSpec(declns.Item1, declns.Item2);
 				} else {
-					return new StructSpecifier(declns.Item1, declns.Item2);
+					return new StructSpec(declns.Item1, declns.Item2);
 				}
 			}
 
@@ -951,7 +952,7 @@ public class _struct_or_union : ParseRule {
 ///   : [struct_declaration]+
 /// </summary>
 public class _struct_declaration_list : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out List<StructDeclaration> decl_list) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out List<StructDecln> decl_list) {
         return Parser.ParseNonEmptyList(src, begin, out decl_list, _struct_declaration.Parse);
     }
 }
@@ -966,7 +967,7 @@ public class _struct_declaration_list : ParseRule {
 /// </remarks>
 /// </summary>
 public class _struct_declaration : ParseRule {
-    public static Int32 Parse(List<Token> src, Int32 begin, out StructDeclaration decln) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out StructDecln decln) {
         return Parser.ParseSequence(
 			src, begin, out decln,
             
@@ -979,7 +980,7 @@ public class _struct_declaration : ParseRule {
 			// ';'
             Parser.GetOperatorParser(OperatorVal.SEMICOLON),
 
-            (DeclnSpecs specs, List<Declr> declrs, Boolean _) => new StructDeclaration(specs, declrs)
+            (DeclnSpecs specs, List<Declr> declrs, Boolean _) => new StructDecln(specs, declrs)
         );
     }
 }
@@ -1035,7 +1036,7 @@ public class _specifier_qualifier_list : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclnSpecs(null, type_specifiers, type_qualifiers);
+        decl_specs = new DeclnSpecs(null, type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
         return begin;
 
     }

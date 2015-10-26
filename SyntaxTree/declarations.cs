@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Immutable;
 
 namespace SyntaxTree {
 
@@ -92,18 +93,20 @@ namespace SyntaxTree {
     /// </summary>
     public class DeclnSpecs : PTNode {
         public DeclnSpecs(
-            List<StorageClassSpec> scss,
-            List<TypeSpec> type_specs,
-            List<TypeQual> type_quals
+            ImmutableList<StorageClsSpec> scss,
+            ImmutableList<TypeSpec> type_specs,
+            ImmutableList<TypeQual> type_quals
         ) {
-            this.scss = scss;
-            this.type_quals = type_quals;
-            this.type_specs = type_specs;
+            this.StorageClsSpecs = scss;
+            this.TypeQuals = type_quals;
+            this.TypeSpecs = type_specs;
         }
 
-        public readonly List<StorageClassSpec> scss;
-        public readonly List<TypeSpec> type_specs;
-        public readonly List<TypeQual> type_quals;
+        public DeclnSpecs() : this(ImmutableList<StorageClsSpec>.Empty, ImmutableList<TypeSpec>.Empty, ImmutableList<TypeQual>.Empty) { }
+
+        public readonly ImmutableList<StorageClsSpec> StorageClsSpecs;
+        public readonly ImmutableList<TypeSpec> TypeSpecs;
+        public readonly ImmutableList<TypeQual> TypeQuals;
 
         /// <summary>
         /// Get storage class specifier and type.
@@ -121,18 +124,18 @@ namespace SyntaxTree {
         /// </summary>
         public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env) {
 
-            Boolean is_const = type_quals.Contains(TypeQual.CONST);
-            Boolean is_volatile = type_quals.Contains(TypeQual.VOLATILE);
+            Boolean is_const = TypeQuals.Contains(TypeQual.CONST);
+            Boolean is_volatile = TypeQuals.Contains(TypeQual.VOLATILE);
 
             // 1. if no type specifier => long
-            if (type_specs.Count == 0) {
+            if (TypeSpecs.Count == 0) {
                 return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
             }
 
             // 2. now let's analyse type specs
-            if (type_specs.All(spec => spec.kind != TypeSpec.Kind.NON_BASIC)) {
+            if (TypeSpecs.All(spec => spec.kind != TypeSpec.Kind.NON_BASIC)) {
 
-                var basic_specs = type_specs.Select(spec => spec.kind);
+                var basic_specs = TypeSpecs.Select(spec => spec.kind);
 
                 var basic_type = GetBasicType(basic_specs);
 
@@ -168,9 +171,9 @@ namespace SyntaxTree {
                         throw new Exception("Can't match type specifier.");
                 }
 
-            } else if (type_specs.Count == 1) {
+            } else if (TypeSpecs.Count == 1) {
                 // now we can only match for struct, union, function...
-                return type_specs[0].GetExprTypeEnv(env, is_const, is_volatile);
+                return TypeSpecs[0].GetExprTypeEnv(env, is_const, is_volatile);
 
             } else {
                 throw new InvalidOperationException("Can't match type specifier.");
@@ -181,23 +184,23 @@ namespace SyntaxTree {
         /// Only used by the parser.
         /// </summary>
         /// <returns></returns>
-        public bool IsTypedef() => scss.Contains(StorageClassSpec.TYPEDEF);
+        public bool IsTypedef() => StorageClsSpecs.Contains(StorageClsSpec.TYPEDEF);
         
         private AST.Decln.SCS GetSCS() {
-            if (scss.Count == 0) {
+            if (StorageClsSpecs.Count == 0) {
                 return AST.Decln.SCS.AUTO;
             }
-            if (scss.Count == 1) {
-                switch (scss[0]) {
-                    case StorageClassSpec.AUTO:
-                    case StorageClassSpec.NULL:
-                    case StorageClassSpec.REGISTER:
+            if (StorageClsSpecs.Count == 1) {
+                switch (StorageClsSpecs[0]) {
+                    case StorageClsSpec.AUTO:
+                    case StorageClsSpec.NULL:
+                    case StorageClsSpec.REGISTER:
                         return AST.Decln.SCS.AUTO;
-                    case StorageClassSpec.EXTERN:
+                    case StorageClsSpec.EXTERN:
                         return AST.Decln.SCS.EXTERN;
-                    case StorageClassSpec.STATIC:
+                    case StorageClsSpec.STATIC:
                         return AST.Decln.SCS.STATIC;
-                    case StorageClassSpec.TYPEDEF:
+                    case StorageClsSpec.TYPEDEF:
                         return AST.Decln.SCS.TYPEDEF;
                     default:
                         throw new InvalidOperationException();
@@ -281,6 +284,9 @@ namespace SyntaxTree {
         public readonly Declr declr;
         public readonly Option<Initr> initr;
 
+        public static Func<Declr, Option<Initr>, InitDeclr> Create { get; } =
+            (Declr declr, Option<Initr> initr) => new InitDeclr(declr, initr);
+
         public Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
             String name;
             Option<AST.Initr> initr_opt;
@@ -330,7 +336,7 @@ namespace SyntaxTree {
     }
 
 
-    public enum StorageClassSpec {
+    public enum StorageClsSpec {
         NULL,
         AUTO,
         REGISTER,
@@ -494,7 +500,7 @@ namespace SyntaxTree {
     }
 
     public class PointerModifier : TypeModifier {
-        public PointerModifier(List<TypeQual> type_quals)
+        public PointerModifier(IReadOnlyList<TypeQual> type_quals)
             : base(Kind.POINTER) {
             this.type_quals = type_quals;
         }
@@ -511,7 +517,7 @@ namespace SyntaxTree {
             return new AST.TPointer(type, is_const, is_volatile);
         }
         
-        public readonly List<TypeQual> type_quals;
+        public readonly IReadOnlyList<TypeQual> type_quals;
     }
 
     public class Declr : PTNode {
@@ -545,19 +551,19 @@ namespace SyntaxTree {
     // ===================
     // 
     public class ParameterTypeList : PTNode {
-        public ParameterTypeList(List<ParamDecln> _param_list, Boolean _varargs) {
+        public ParameterTypeList(IReadOnlyList<ParamDecln> _param_list, Boolean _varargs) {
             params_varargs = _varargs;
             params_inner_declns = _param_list;
         }
 
-        public ParameterTypeList(List<ParamDecln> _param_list)
+        public ParameterTypeList(IReadOnlyList<ParamDecln> _param_list)
             : this(_param_list, false) { }
 
         public readonly Boolean params_varargs;
         public IReadOnlyList<ParamDecln> params_declns {
             get { return params_inner_declns; }
         }
-        public readonly List<ParamDecln> params_inner_declns;
+        public readonly IReadOnlyList<ParamDecln> params_inner_declns;
 
         // Get Parameter Types
         // ===================
@@ -565,12 +571,12 @@ namespace SyntaxTree {
         public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypesEnv(AST.Env env) {
             return Tuple.Create(
                 params_varargs,
-                params_inner_declns.ConvertAll(decln => {
+                params_inner_declns.Select(decln => {
                     Tuple<String, AST.ExprType> r_decln = decln.GetParamDecln(env);
                     // Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDeclnEnv(env);
                     // env = r_decln.Item1;
                     return Tuple.Create(env, r_decln.Item1, r_decln.Item2);
-                })
+                }).ToList()
             );
         }
 
@@ -586,8 +592,8 @@ namespace SyntaxTree {
     /// 	...
     /// }
     /// </summary>
-    public class EnumSpecifier : TypeSpec {
-        public EnumSpecifier(String name, List<Enumerator> enums) {
+    public class EnumSpec : TypeSpec {
+        public EnumSpec(String name, IReadOnlyList<Enumr> enums) {
             this.name = name;
             this.enums = enums;
         }
@@ -602,7 +608,7 @@ namespace SyntaxTree {
             } else {
                 // so there are something in this enum type, we need to put this type into the environment
                 Int32 idx = 0;
-                foreach (Enumerator elem in enums) {
+                foreach (Enumr elem in enums) {
                     Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
                     env = r_enum.Item1;
                     String name = r_enum.Item2;
@@ -617,18 +623,22 @@ namespace SyntaxTree {
         }
 
         public readonly String name;
-        public readonly List<Enumerator> enums;
+        public readonly IReadOnlyList<Enumr> enums;
 
     }
 
 
-    public class Enumerator : PTNode {
-        public Enumerator(String _name, Expr _init) {
+    public class Enumr : PTNode {
+        public Enumr(String _name, Expr _init) {
             enum_name = _name;
             enum_init = _init;
         }
         public readonly String enum_name;
         public readonly Expr enum_init;
+
+        public static Func<String, Option<Expr>, Enumr> Create { get; } =
+            (String name, Option<Expr> init) =>
+                new Enumr(name, init.IsSome ? init.Value : null);
 
         public Tuple<AST.Env, String, Int32> GetEnumerator(AST.Env env, Int32 idx) {
             AST.Expr init;
@@ -655,16 +665,16 @@ namespace SyntaxTree {
     // not present in the semant phase
     // 
     public abstract class StructOrUnionSpec : TypeSpec {
-        public StructOrUnionSpec(String name, List<StructDeclaration> declns) {
+        public StructOrUnionSpec(String name, IReadOnlyList<StructDecln> declns) {
             this.name = name;
             this.declns = declns;
         }
         public readonly String name;
-        public readonly List<StructDeclaration> declns;
+        public readonly IReadOnlyList<StructDecln> declns;
 
         public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
             List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDeclaration decln in declns) {
+            foreach (StructDecln decln in declns) {
                 Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
                 env = r_decln.Item1;
                 attribs.AddRange(r_decln.Item2);
@@ -774,8 +784,8 @@ namespace SyntaxTree {
     ///        3. iterate over the declns
     ///        4. finish forming a complete struct and add it into the environment
     /// </summary>
-    public class StructSpecifier : StructOrUnionSpec {
-        public StructSpecifier(String _name, List<StructDeclaration> _declns)
+    public class StructSpec : StructOrUnionSpec {
+        public StructSpec(String _name, IReadOnlyList<StructDecln> _declns)
             : base(_name, _declns) { }
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
@@ -802,7 +812,7 @@ namespace SyntaxTree {
     ///        4. finish forming a complete union and add it into the environment
     /// </summary>
     public class UnionSpec : StructOrUnionSpec {
-        public UnionSpec(String _name, List<StructDeclaration> _declns)
+        public UnionSpec(String _name, IReadOnlyList<StructDecln> _declns)
             : base(_name, _declns) { }
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
@@ -811,20 +821,14 @@ namespace SyntaxTree {
     }
 
 
-    // StructOrUnion
-    // =============
-    // only used in parsing phase
-    // 
-    public class StructOrUnion : PTNode {
-        public StructOrUnion(Boolean _is_union) {
-            is_union = _is_union;
-        }
-        public Boolean is_union;
+    public enum StructOrUnion {
+        STRUCT,
+        UNION
     }
 
 
-    public class StructDeclaration : PTNode {
-        public StructDeclaration(DeclnSpecs _specs, List<Declr> _declrs) {
+    public class StructDecln : PTNode {
+        public StructDecln(DeclnSpecs _specs, List<Declr> _declrs) {
             specs = _specs;
             declrs = _declrs;
         }

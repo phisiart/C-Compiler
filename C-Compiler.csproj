@@ -38,6 +38,10 @@
     <Reference Include="nunit.framework">
       <HintPath>packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable, Version=1.1.38.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Collections.Immutable.1.1.38-beta-23225\lib\dotnet\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Driver\Checked.cs" />
@@ -45,8 +49,10 @@
     <Compile Include="Driver\CovariantTuple.cs" />
     <Compile Include="Driver\HList.cs" />
     <Compile Include="Driver\Option.cs" />
-    <Compile Include="Parser\Declarations.cs" />
+    <Compile Include="Driver\SetOnce.cs" />
+    <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
+    <Compile Include="Parser\Tokens.cs" />
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\ParserCombinator.cs" />
     <Compile Include="Parser\ParserTests.cs" />

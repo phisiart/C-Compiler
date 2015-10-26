@@ -9,10 +9,8 @@ public class Compiler {
     private Compiler(String src) {
         this.src = src;
 
-        Scanner scanner = new Scanner();
-        scanner.src = src;
-        scanner.Lex();
-        tokens = scanner.tokens;
+        Scanner scanner = new Scanner(src);
+        tokens = scanner.Tokens.ToList();
 
         SyntaxTree.TranslnUnit unit;
         if (_translation_unit.Parse(tokens.ToList(), 0, out unit) != tokens.Count - 1) {

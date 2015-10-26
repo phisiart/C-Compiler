@@ -17,6 +17,8 @@ namespace SyntaxTree {
 		public readonly Expr lhs;
 		public readonly Expr rhs;
 
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new Assignment(lhs, rhs);
+
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr lhs = this.lhs.GetExpr(env);
             AST.Expr rhs = this.rhs.GetExpr(env);
@@ -49,6 +51,7 @@ namespace SyntaxTree {
 	public class MultAssign : AssignOp {
         public MultAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new MultAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Multiply(lhs, rhs);
 	}
 
@@ -58,6 +61,7 @@ namespace SyntaxTree {
 	public class DivAssign : AssignOp {
         public DivAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new DivAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Divide(lhs, rhs);
     }
 
@@ -67,6 +71,7 @@ namespace SyntaxTree {
     public class ModAssign : AssignOp {
         public ModAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new ModAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Modulo(lhs, rhs);
     }
 
@@ -76,6 +81,7 @@ namespace SyntaxTree {
     public class AddAssign : AssignOp {
         public AddAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new AddAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Add(lhs, rhs);
     }
 
@@ -85,6 +91,7 @@ namespace SyntaxTree {
     public class SubAssign : AssignOp {
         public SubAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new SubAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Sub(lhs, rhs);
     }
 
@@ -94,6 +101,7 @@ namespace SyntaxTree {
     public class LShiftAssign : AssignOp {
         public LShiftAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new LShiftAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new LShift(lhs, rhs);
     }
 
@@ -103,6 +111,7 @@ namespace SyntaxTree {
     public class RShiftAssign : AssignOp {
         public RShiftAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new RShiftAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new RShift(lhs, rhs);
     }
 
@@ -112,6 +121,7 @@ namespace SyntaxTree {
     public class BitwiseAndAssign : AssignOp {
         public BitwiseAndAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new BitwiseAndAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new BitwiseAnd(lhs, rhs);
     }
 
@@ -121,6 +131,7 @@ namespace SyntaxTree {
     public class XorAssign : AssignOp {
         public XorAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new XorAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new Xor(lhs, rhs);
     }
 
@@ -130,6 +141,7 @@ namespace SyntaxTree {
     public class BitwiseOrAssign : AssignOp {
         public BitwiseOrAssign(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new BitwiseAndAssign(lhs, rhs);
         public override Expr ConstructBinaryOp() => new BitwiseOr(lhs, rhs);
     }
 }

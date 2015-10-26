@@ -11,6 +11,7 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Func<Expr, Expr> Create { get; } = expr => new PostIncrement(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -32,6 +33,7 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Func<Expr, Expr> Create { get; } = expr => new PostDecrement(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -53,7 +55,8 @@ namespace SyntaxTree {
             this.type_name = type_name;
         }
         public readonly TypeName type_name;
-
+        public static Expr Create(TypeName typeName) =>
+            new SizeofType(typeName);
         public override AST.Expr GetExpr(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> type_env = this.type_name.GetTypeEnv(env);
             env = type_env.Item1;
@@ -71,7 +74,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-
+        public static Expr Create(Expr expr) =>
+            new SizeofExpr(expr);
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
             return new AST.ConstULong((UInt32)expr.type.SizeOf, env);
@@ -87,6 +91,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Expr Create(Expr expr) =>
+            new PreIncrement(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -108,6 +114,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Expr Create(Expr expr) =>
+            new PreDecrement(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -129,6 +137,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Expr Create(Expr expr) =>
+            new Reference(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -148,6 +158,7 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
+        public static Expr Create(Expr expr) => new Dereference(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
@@ -174,7 +185,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-
+        public static Expr Create(Expr expr) =>
+            new Positive(expr);
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
@@ -195,7 +207,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-
+        public static Expr Create(Expr expr) =>
+            new Negative(expr);
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
@@ -239,7 +252,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-
+        public static Expr Create(Expr expr) =>
+            new BitwiseNot(expr);
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
@@ -273,7 +287,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-
+        public static Expr Create(Expr expr) =>
+            new LogicalNot(expr);
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);
 
@@ -321,7 +336,8 @@ namespace SyntaxTree {
         }
         public readonly TypeName type_name;
         public readonly Expr expr;
-
+        public static Expr Create(TypeName typeName, Expr expr) =>
+            new TypeCast(typeName, expr);
         public override AST.Expr GetExpr(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> type_env = this.type_name.GetTypeEnv(env);
             env = type_env.Item1;

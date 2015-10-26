@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace SyntaxTree {
@@ -31,6 +32,7 @@ namespace SyntaxTree {
             this.name = name;
         }
 		public readonly String name;
+        public static Func<String, Expr> Create { get; } = name => new Variable(name);
 
         public override AST.Expr GetExpr(AST.Env env) {
             Option<AST.Env.Entry> entry_opt = env.Find(name);
@@ -62,14 +64,15 @@ namespace SyntaxTree {
     ///   a = 3, b = 4;
     /// </summary>
 	public class AssignmentList : Expr {
-		public AssignmentList(List<Expr> _exprs) {
+		public AssignmentList(ImmutableList<Expr> _exprs) {
 			assign_exprs = _exprs;
 		}
-		public List<Expr> assign_exprs;
+		public ImmutableList<Expr> assign_exprs;
 
+        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new AssignmentList(ImmutableList.Create(lhs, rhs));
         public override AST.Expr GetExpr(AST.Env env) {
-            List<AST.Expr> exprs = assign_exprs.ConvertAll(expr => expr.GetExpr(env));
-            return new AST.AssignList(exprs, exprs.FindLast(_ => true).type);
+            ImmutableList<AST.Expr> exprs = assign_exprs.ConvertAll(expr => expr.GetExpr(env));
+            return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).type);
         }
 	}
 
@@ -94,7 +97,10 @@ namespace SyntaxTree {
         public readonly Expr cond;
         public readonly Expr true_expr;
         public readonly Expr false_expr;
-        
+
+        public static Expr Create(Expr cond, Expr true_expr, Expr false_expr) =>
+            new ConditionalExpression(cond, true_expr, false_expr);
+
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr cond = this.cond.GetExpr(env);
 
@@ -161,6 +167,8 @@ namespace SyntaxTree {
             this.func = func;
             this.args = args;
         }
+        public static Func<Expr, IReadOnlyList<Expr>, Expr> Create { get; } = (func, args) => new FuncCall(func, args);
+        
         public readonly Expr func;
         public readonly IReadOnlyList<Expr> args;
 
@@ -244,6 +252,9 @@ namespace SyntaxTree {
         }
         public readonly Expr expr;
         public readonly Variable attrib;
+
+        public static Func<Expr, String, Expr> Create { get; } = (expr, member) =>
+            new Attribute(expr, new Variable(member));
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);

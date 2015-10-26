@@ -13,6 +13,7 @@ namespace SyntaxTree {
         }
         public readonly Expr lhs;
         public readonly Expr rhs;
+        public delegate Expr Creator(Expr lhs, Expr rhs);
     }
 
     /// <summary>
@@ -201,8 +202,8 @@ namespace SyntaxTree {
     public class Multiply : BinaryArithmeticOp {
         public Multiply(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
+        public static Creator Create { get; } = (lhs, rhs) => new Multiply(lhs, rhs);
 
-        public static Expr Create(Expr lhs, Expr rhs) => new Multiply(lhs, rhs);
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs * rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs * rhs;
         public override Single OperateFloat(Single lhs, Single rhs) => lhs * rhs;
@@ -210,7 +211,6 @@ namespace SyntaxTree {
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.Multiply(lhs, rhs, type);
-
     }
 
 	/// <summary>
@@ -219,7 +219,8 @@ namespace SyntaxTree {
 	public class Divide : BinaryArithmeticOp {
         public Divide(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Divide(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Divide(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs / rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs / rhs;
         public override Single OperateFloat(Single lhs, Single rhs) => lhs / rhs;
@@ -227,7 +228,6 @@ namespace SyntaxTree {
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.Divide(lhs, rhs, type);
-
     }
 
     /// <summary>
@@ -236,13 +236,13 @@ namespace SyntaxTree {
     public class Modulo : BinaryIntegralOp {
         public Modulo(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Modulo(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Modulo(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs % rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs % rhs;
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.Modulo(lhs, rhs, type);
-
     }
 
 	/// <summary>
@@ -256,7 +256,8 @@ namespace SyntaxTree {
 	public class Add : BinaryArithmeticOp {
         public Add(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Add(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Add(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs + rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs + rhs;
         public override Single OperateFloat(Single lhs, Single rhs) => lhs + rhs;
@@ -349,7 +350,7 @@ namespace SyntaxTree {
 	public class Sub : BinaryArithmeticOp {
         public Sub(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Sub(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Sub(lhs, rhs);
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs - rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs - rhs;
         public override Single OperateFloat(Single lhs, Single rhs) => lhs - rhs;
@@ -454,7 +455,7 @@ namespace SyntaxTree {
 	public class LShift : BinaryIntegralOp {
         public LShift(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new LShift(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new LShift(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs << rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => (UInt32)((Int32)lhs << (Int32)rhs);
@@ -469,7 +470,7 @@ namespace SyntaxTree {
 	public class RShift : BinaryIntegralOp {
         public RShift(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new RShift(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new RShift(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs >> rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => (UInt32)((Int32)lhs >> (Int32)rhs);
@@ -485,7 +486,7 @@ namespace SyntaxTree {
 	public class Less : BinaryLogicalOp {
         public Less(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Less(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Less(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs < rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs < rhs);
@@ -502,7 +503,7 @@ namespace SyntaxTree {
     public class LEqual : BinaryLogicalOp {
         public LEqual(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new LEqual(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new LEqual(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs <= rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs <= rhs);
@@ -519,7 +520,8 @@ namespace SyntaxTree {
 	public class Greater : BinaryLogicalOp {
         public Greater(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Greater(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Greater(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs > rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs > rhs);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs > rhs);
@@ -535,7 +537,8 @@ namespace SyntaxTree {
     public class GEqual : BinaryLogicalOp {
         public GEqual(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new GEqual(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new GEqual(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs >= rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs >= rhs);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs >= rhs);
@@ -551,7 +554,7 @@ namespace SyntaxTree {
 	public class Equal : BinaryLogicalOp {
         public Equal(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Equal(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Equal(lhs, rhs);
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs == rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs == rhs);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs == rhs);
@@ -567,7 +570,8 @@ namespace SyntaxTree {
     public class NotEqual : BinaryLogicalOp {
         public NotEqual(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new NotEqual(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new NotEqual(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != rhs);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != rhs);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != rhs);
@@ -583,7 +587,7 @@ namespace SyntaxTree {
     public class BitwiseAnd : BinaryIntegralOp {
         public BitwiseAnd(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new BitwiseAnd(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new BitwiseAnd(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs & rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs & rhs;
@@ -599,7 +603,7 @@ namespace SyntaxTree {
     public class Xor : BinaryIntegralOp {
         public Xor(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new Xor(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new Xor(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs ^ rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs ^ rhs;
@@ -614,14 +618,13 @@ namespace SyntaxTree {
 	public class BitwiseOr : BinaryIntegralOp {
         public BitwiseOr(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new BitwiseOr(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new BitwiseOr(lhs, rhs);
 
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => lhs | rhs;
         public override UInt32 OperateULong(UInt32 lhs, UInt32 rhs) => lhs | rhs;
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.BitwiseOr(lhs, rhs, type);
-
 	}
 
     /// <summary>
@@ -630,7 +633,8 @@ namespace SyntaxTree {
 	public class LogicalAnd : BinaryLogicalOp {
         public LogicalAnd(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new LogicalAnd(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new LogicalAnd(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
@@ -638,7 +642,6 @@ namespace SyntaxTree {
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.LogicalAnd(lhs, rhs, type);
-
     }
 
     /// <summary>
@@ -647,7 +650,8 @@ namespace SyntaxTree {
 	public class LogicalOr : BinaryLogicalOp {
         public LogicalOr(Expr lhs, Expr rhs)
             : base(lhs, rhs) { }
-        public static Expr Create(Expr lhs, Expr rhs) => new LogicalOr(lhs, rhs);
+        public static Creator Create { get; } = (lhs, rhs) => new LogicalOr(lhs, rhs);
+
         public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
         public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
         public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
@@ -655,7 +659,5 @@ namespace SyntaxTree {
 
         public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
             new AST.LogicalOr(lhs, rhs, type);
-
     }
-
 }

@@ -8,14 +8,156 @@ using Parsing;
 
 [TestFixture]
 public class ParserTests {
+
+    public ParserInput CreateInput(String source) {
+        var scanner = new Scanner(source);
+        return new ParserInput(new Parsing.ParserEnvironment(), scanner.Tokens);
+    }
+
+    public void TestParserRule<R>(String source, IParser<R> parser) {
+        var scanner = new Scanner(source);
+        var input = new ParserInput(new Parsing.ParserEnvironment(), scanner.Tokens);
+        var result = parser.Parse(input);
+        Assert.IsTrue(result.IsSuccessful);
+        Assert.IsTrue(result.Source.Count() == 1);
+    }
+
+    public void TestParserRule<R>(IParser<R> parser, params String[] sources) {
+        foreach (var source in sources) {
+            TestParserRule(source, parser);
+        }
+    }
+
     [Test]
-    public void _const_char() {
-        var scanner = new Scanner();
-        scanner.src = @"'a'";
-        scanner.Lex();
+    public void ConstChar() {
+        TestParserRule("'a'", CParser.CONST_CHAR);
+    }
 
-        var input = new ParserInput(new Parsing.ParserEnvironment(), scanner.tokens);
-        var result = Parser2.ConstChar(input);
+    [Test]
+    public void ConstInt() {
+        TestParserRule("3", CParser.CONST_INT);
+    }
 
+    [Test]
+    public void ConstFloat() {
+        TestParserRule("3.0f", CParser.CONST_FLOAT);
+    }
+
+    [Test]
+    public void StringLiteral() {
+        TestParserRule("\"Haha\"", CParser.STRING_LITERAL);
+    }
+
+    [Test]
+    public void Variable() {
+        TestParserRule("a", CParser.Variable);
+    }
+
+    [Test]
+    public void PrimaryExpression() {
+        TestParserRule("a", CParser.PrimaryExpression);
+        TestParserRule("3", CParser.PrimaryExpression);
+        TestParserRule("3.0f", CParser.PrimaryExpression);
+        TestParserRule("'a'", CParser.PrimaryExpression);
+        TestParserRule("\"Hello, world!\"", CParser.PrimaryExpression);
+        TestParserRule("(a)", CParser.PrimaryExpression);
+    }
+
+    [Test]
+    public void PostfixExpression() {
+        TestParserRule("a++", CParser.PostfixExpression);
+        TestParserRule("a--", CParser.PostfixExpression);
+        TestParserRule("a->b", CParser.PostfixExpression);
+        TestParserRule("a.b", CParser.PostfixExpression);
+        TestParserRule("a(1)", CParser.PostfixExpression);
+        TestParserRule("a()", CParser.PostfixExpression);
+        TestParserRule("a(1, 2)", CParser.PostfixExpression);
+        TestParserRule("a[b]", CParser.PostfixExpression);
+        TestParserRule("a[b]->b++", CParser.PostfixExpression);
+    }
+
+    [Test]
+    public void Unaryexpression() {
+        TestParserRule(
+            CParser.UnaryExpression,
+            "++a",
+            "--a",
+            "&a",
+            "*a",
+            "+a",
+            "-a",
+            "~a",
+            "!a",
+            "++ -- & * + - ~ ! a"
+        );
+    }
+
+    [Test]
+    public void CastExpression() {
+        TestParserRule(
+            CParser.CastExpression,
+            "a"
+        );
+    }
+
+    [Test]
+    public void MultiplicativeExpression() {
+        TestParserRule(
+            CParser.MultiplicativeExpression,
+            "a * b",
+            "a / b",
+            "a % c",
+            "a * b / c % d"
+        );
+    }
+
+    [Test]
+    public void AdditiveExpression() {
+        TestParserRule(
+            CParser.AdditiveExpression,
+            "a * b / c % d + e",
+            "a - b",
+            "a + b - c"
+        );
+    }
+
+    [Test]
+    public void ShiftExpression() {
+        TestParserRule("a << b", CParser.ShiftExpression);
+    }
+
+    [Test]
+    public void RelationalExpression() {
+        TestParserRule("a < b", CParser.RelationalExpression);
+    }
+
+    [Test]
+    public void EqualityExpression() {
+        TestParserRule("a == b", CParser.EqualityExpression);
+    }
+
+    [Test]
+    public void AndExpression() {
+        TestParserRule("a & b", CParser.AndExpression);
+    }
+
+    [Test]
+    public void ExclusiveOrExpression() {
+        TestParserRule("a ^ b", CParser.ExclusiveOrExpression);
+    }
+
+    [Test]
+    public void InclusiveOrExpression() {
+        TestParserRule("a | b", CParser.InclusiveOrExpression);
+    }
+
+    [Test]
+    public void LogicalAndExpression() {
+        TestParserRule("a && b", CParser.LogicalAndExpression);
+    }
+
+    [Test]
+    public void LogicalOrExpression() {
+        TestParserRule("a || b", CParser.LogicalOrExpression);
     }
 }

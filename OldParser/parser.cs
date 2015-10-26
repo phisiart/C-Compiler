@@ -116,10 +116,8 @@ public class Parser {
     }
 
     public static List<Token> GetTokensFromString(String src) {
-        Scanner lex = new Scanner();
-        lex.src = src;
-        lex.Lex();
-        return lex.tokens;
+        Scanner lex = new Scanner(src);
+        return lex.Tokens.ToList();
     }
 
     // EatOperator : (src, ref current, val) -> Boolean

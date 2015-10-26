@@ -20,6 +20,8 @@ namespace Parsing {
         }
         public ParserEnvironment Environment { get; }
         public IEnumerable<Token> Source { get; }
+        public IParserResult<R> Parse<R>(IParser<R> parser) =>
+            parser.Parse(this);
     }
 
     /// <summary>
@@ -132,8 +134,5 @@ namespace Parsing {
 
         public IEnumerable<Token> Source { get; }
     }
-
-    public delegate IParserResult<R> ParsingFunction<out R>(ParserInput input);
-    public delegate IParserResult ParsingFunction(ParserInput input);
 
 }
