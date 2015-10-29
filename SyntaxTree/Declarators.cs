@@ -25,10 +25,11 @@ namespace SyntaxTree {
     }
 
     public class FunctionModifier : TypeModifier {
+        [Obsolete]
         public FunctionModifier(List<ParamDecln> param_declns, Boolean has_varargs)
             : base(Kind.FUNCTION) {
-            this.param_declns = param_declns;
-            this.has_varargs = has_varargs;
+            this.ParamDeclns = param_declns;
+            this.HasVarArgs = has_varargs;
         }
 
         public FunctionModifier(ParameterTypeList _param_type_list)
@@ -37,12 +38,12 @@ namespace SyntaxTree {
         }
         public ParameterTypeList param_type_list;
 
-        public readonly List<ParamDecln> param_declns;
-        public readonly Boolean has_varargs;
+        public List<ParamDecln> ParamDeclns { get; }
+        public Boolean HasVarArgs { get; }
 
         public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType ret_t) {
-            var args = param_declns.ConvertAll(decln => decln.GetParamDecln(env));
-            return AST.TFunction.Create(ret_t, args, has_varargs);
+            var args = ParamDeclns.ConvertAll(decln => decln.GetParamDecln(env));
+            return AST.TFunction.Create(ret_t, args, HasVarArgs);
         }
 
     }
@@ -112,6 +113,21 @@ namespace SyntaxTree {
         protected AbstractDeclr(ImmutableList<TypeModifier> typeModifiers)
             : base(typeModifiers) { }
 
+        public static AbstractDeclr Create(ImmutableList<TypeModifier> typeModifiers) =>
+            new AbstractDeclr(typeModifiers);
+
+        public static AbstractDeclr Create(ImmutableList<PointerModifier> typeModifiers) =>
+            new AbstractDeclr(typeModifiers.ToImmutableList<TypeModifier>());
+
+        public static AbstractDeclr Create() =>
+            Create(ImmutableList<TypeModifier>.Empty);
+
+        public static AbstractDeclr Add(AbstractDeclr abstractDeclr, TypeModifier typeModifier) =>
+            Create(abstractDeclr.TypeModifiers.Add(typeModifier));
+
+        public static AbstractDeclr Add(ImmutableList<PointerModifier> pointerModifiers, AbstractDeclr abstractDeclr) =>
+            Create(abstractDeclr.TypeModifiers.AddRange(pointerModifiers));
+
         private static Option<String> noneName { get; } = new None<String>();
         public override Option<String> OptionalName => noneName;
     }
@@ -131,7 +147,17 @@ namespace SyntaxTree {
             this.OptionalName = Option.Some(name);
         }
 
+        public static Declr Create(String name, ImmutableList<TypeModifier> typeModifiers) =>
+            new Declr(name, typeModifiers);
+
+        public static Declr Create(String name) =>
+            new Declr(name, ImmutableList<TypeModifier>.Empty);
         
+        public static Declr Add(Declr declr, TypeModifier typeModifier) =>
+            Create(declr.Name, declr.TypeModifiers.Add(typeModifier));
+
+        public static Declr Add(ImmutableList<PointerModifier> pointerModifiers, Declr declr) =>
+            Create(declr.Name, declr.TypeModifiers.AddRange(pointerModifiers));
 
         public String Name { get; }
 

@@ -83,8 +83,6 @@ namespace SyntaxTree {
 
     }
 
-
-
     // InitDeclr
     // =========
     // initialization declarator: a normal declarator + an initialization expression
@@ -150,103 +148,6 @@ namespace SyntaxTree {
 
     }
 
-
-    public enum StorageClsSpec {
-        NULL,
-        AUTO,
-        REGISTER,
-        STATIC,
-        EXTERN,
-        TYPEDEF
-    }
-
-    // TypeSpec
-    // ========
-    // TypeSpec
-    //    |
-    //    +--- TypedefName
-    //    |
-    //    +--- EnumSpec
-    //    |
-    //    +--- StructOrUnionSpec
-    //                 |
-    //                 +--- StructSpec
-    //                 |
-    //                 +--- UnionSpec
-    //
-    public class TypeSpec : PTNode {
-        public enum Kind {
-            NON_BASIC,
-            VOID,
-            CHAR,
-            SHORT,
-            INT,
-            LONG,
-            FLOAT,
-            DOUBLE,
-            SIGNED,
-            UNSIGNED
-        }
-
-        public TypeSpec() {
-            kind = Kind.NON_BASIC;
-        }
-        public TypeSpec(Kind spec) {
-            kind = spec;
-        }
-
-        // GetExprType
-        // ===========
-        // input: env
-        // output: tuple<ExprType, Environment>
-        // 
-        public virtual Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            throw new NotImplementedException();
-        }
-
-        public readonly Kind kind;
-    }
-
-
-    /// <summary>
-    /// Typedef Name
-	/// 
-	/// Represents a name that has been previously defined as a typedef.
-    /// </summary>
-    public class TypedefName : TypeSpec {
-        public TypedefName(String _name) {
-            name = _name;
-        }
-
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-
-            Option<AST.Env.Entry> entry_opt = env.Find(name);
-
-            if (entry_opt.IsNone) {
-                throw new InvalidOperationException($"Cannot find name \"{name}\".");
-            }
-
-            AST.Env.Entry entry = entry_opt.Value;
-
-            if (entry.kind != AST.Env.EntryKind.TYPEDEF) {
-                throw new InvalidOperationException($"\"{name}\" is not a typedef.");
-            }
-
-            return Tuple.Create(env, entry.type.GetQualifiedType(is_const, is_volatile));
-        }
-
-
-        public readonly String name;
-    }
-
-
-    public enum TypeQual {
-        NULL,
-        CONST,
-        VOLATILE
-    }
-
-
     // Parameter Type List
     // ===================
     // 
@@ -282,52 +183,6 @@ namespace SyntaxTree {
 
     }
 
-
-    /// <summary>
-    /// Enum Specifier
-    /// 
-    /// enum enum-name {
-    ///     ENUM-0,
-    ///     ENUM-1,
-    /// 	...
-    /// }
-    /// </summary>
-    public class EnumSpec : TypeSpec {
-        public EnumSpec(String name, IReadOnlyList<Enumr> enums) {
-            this.name = name;
-            this.enums = enums;
-        }
-
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            if (enums == null) {
-                // if there is no content in this enum type, we must find it's definition in the environment
-                Option<AST.Env.Entry> entry_opt = env.Find($"enum {name}");
-                if (entry_opt.IsNone || entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                    throw new InvalidOperationException($"Type 'enum {name}' has not been defined.");
-                }
-            } else {
-                // so there are something in this enum type, we need to put this type into the environment
-                Int32 idx = 0;
-                foreach (Enumr elem in enums) {
-                    Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
-                    env = r_enum.Item1;
-                    String name = r_enum.Item2;
-                    idx = r_enum.Item3;
-                    env = env.PushEnum(name, new AST.TLong(), idx);
-                    idx++;
-                }
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + name, new AST.TLong());
-            }
-
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
-        }
-
-        public readonly String name;
-        public readonly IReadOnlyList<Enumr> enums;
-
-    }
-
-
     public class Enumr : PTNode {
         public Enumr(String _name, Expr _init) {
             enum_name = _name;
@@ -356,117 +211,6 @@ namespace SyntaxTree {
             Int32 init_idx = ((AST.ConstLong)init).value;
 
             return new Tuple<AST.Env, String, int>(env, enum_name, init_idx);
-        }
-    }
-
-    // StructOrUnionSpec
-    // =================
-    // a base class of StructSpec and UnionSpec
-    // not present in the semant phase
-    // 
-    public abstract class StructOrUnionSpec : TypeSpec {
-        public StructOrUnionSpec(String name, IReadOnlyList<StructDecln> declns) {
-            this.name = name;
-            this.declns = declns;
-        }
-
-        protected StructOrUnionSpec(StructOrUnion structOrUnion, Option<String> name, Option<ImmutableList<StructDecln>> memberDeclns) {
-
-        }
-
-        public Option<String> Name { get; }
-        public ImmutableList<StructDecln> declns;
-
-        public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDecln decln in declns) {
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                attribs.AddRange(r_decln.Item2);
-            }
-            return Tuple.Create(env, attribs);
-        }
-
-        public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(Boolean is_struct, AST.Env env, Boolean is_const, Boolean is_volatile) {
-
-            if (name == "") {
-                // If no name is supplied: must be complete.
-                // struct { ... } or union { ... }
-
-                if (declns == null) {
-                    throw new ArgumentNullException("Error: parser should ensure declns != null");
-                }
-
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                env = r_attribs.Item1;
-
-                if (is_struct) {
-                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateStruct("<anonymous>", r_attribs.Item2, is_const, is_volatile));
-                } else {
-                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateUnion("<anonymous>", r_attribs.Item2, is_const, is_volatile));
-                }
-
-            } else {
-                // If a name is supplied, split into 2 cases.
-
-                String typename = is_struct ? $"struct {name}" : $"union {name}";
-
-                if (declns == null) {
-                    // Case 1: If no attribute list supplied, then we are either
-                    //       1) mentioning an already-existed struct/union
-                    //    or 2) creating an incomplete struct/union
-
-                    Option<AST.Env.Entry> entry_opt = env.Find(typename);
-
-                    if (entry_opt.IsNone) {
-                        // If the struct/union is not in the current environment,
-                        // then add an incomplete struct/union into the environment
-                        AST.ExprType type =
-                            is_struct
-                            ? AST.TStructOrUnion.CreateIncompleteStruct(name, is_const, is_volatile)
-                            : AST.TStructOrUnion.CreateIncompleteUnion(name, is_const, is_volatile);
-
-                        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typename, type);
-                        return Tuple.Create(env, type);
-                    }
-
-                    if (entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                        throw new InvalidProgramException(typename + " is not a type? This should be my fault.");
-                    }
-
-                    // If the struct/union is found, return it.
-                    return Tuple.Create(env, entry_opt.Value.type);
-
-                } else {
-                    // Case 2: If an attribute list is supplied.
-
-                    // 1) Make sure there is no complete struct/union in the current environment.
-                    Option<AST.Env.Entry> entry_opt = env.Find(typename);
-                    if (entry_opt.IsSome && entry_opt.Value.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)entry_opt.Value.type).IsComplete) {
-                        throw new InvalidOperationException($"Redefining {typename}");
-                    }
-
-                    // 2) Add an incomplete struct/union into the environment.
-                    AST.TStructOrUnion type =
-                        is_struct
-                        ? AST.TStructOrUnion.CreateIncompleteStruct(name, is_const, is_volatile)
-                        : AST.TStructOrUnion.CreateIncompleteUnion(name, is_const, is_volatile);
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typename, type);
-
-                    // 3) Iterate over the attributes.
-                    Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                    env = r_attribs.Item1;
-
-                    // 4) Make the type complete. This would also change the entry inside env.
-                    if (is_struct) {
-                        type.DefineStruct(r_attribs.Item2);
-                    } else {
-                        type.DefineUnion(r_attribs.Item2);
-                    }
-
-                    return new Tuple<AST.Env, AST.ExprType>(env, type);
-                }
-            }
         }
     }
 
@@ -524,13 +268,6 @@ namespace SyntaxTree {
     //        GetExprTypeEnv(false, env, is_const, is_volatile);
 
     //}
-
-
-    public enum StructOrUnion {
-        STRUCT,
-        UNION
-    }
-
 
     public class StructDecln : PTNode {
         public StructDecln(DeclnSpecs _specs, List<Declr> _declrs) {

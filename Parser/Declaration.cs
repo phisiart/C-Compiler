@@ -130,15 +130,15 @@ namespace Parsing {
                     (
                         Given<DeclnSpecs>()
                         .Then(StorageClassSpecifier)
-                        .Then(DeclnSpecs.AddStorageClsSpec)
+                        .Then(DeclnSpecs.Add)
                     ).Or(
                         Given<DeclnSpecs>()
                         .Then(TypeSpecifier)
-                        .Then(DeclnSpecs.AddTypeSpec)
+                        .Then(DeclnSpecs.Add)
                     ).Or(
                         Given<DeclnSpecs>()
                         .Then(TypeQualifier)
-                        .Then(DeclnSpecs.AddTypeQual)
+                        .Then(DeclnSpecs.Add)
                     ).OneOrMore()
                 )
             );
@@ -247,7 +247,7 @@ namespace Parsing {
             Declarator.Is(
                 (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
                 .Then(DirectDeclarator)
-                .Then(Declr.AddTypeModifiers)
+                .Then(Declr.Add)
             );
 
             /// <summary>
@@ -337,7 +337,7 @@ namespace Parsing {
                         .Then(LEFT_BRACKET)
                         .Then(ConstantExpression.Optional().Then(ArrayModifier.Create))
                         .Then(RIGHT_BRACKET)
-                        .Then(Declr.AddTypeModifier)
+                        .Then(Declr.Add)
                     ).Or(
                         Given<Declr>()
                         .Then(LEFT_PAREN)
@@ -346,7 +346,7 @@ namespace Parsing {
                             .Optional(SyntaxTree.ParameterTypeList.Create())
                             .Then(FunctionModifier.Create)
                         ).Then(RIGHT_PAREN)
-                        .Then(Declr.AddTypeModifier)
+                        .Then(Declr.Add)
                     )
                     .ZeroOrMore()
                 )
@@ -470,11 +470,11 @@ namespace Parsing {
                     (
                         Given<SpecQualList>()
                         .Then(TypeSpecifier)
-                        .Then(SpecQualList.AddTypeSpec)
+                        .Then(SpecQualList.Add)
                     ).Or(
                         Given<SpecQualList>()
                         .Then(TypeQualifier)
-                        .Then(SpecQualList.AddTypeQual)
+                        .Then(SpecQualList.Add)
                     )
                     .OneOrMore()
                 )
@@ -515,7 +515,7 @@ namespace Parsing {
             ParameterDeclaration.Is(
                 (DeclarationSpecifiers)
                 .Then(
-                    (Declarator as IParser<ParamDeclr>)
+                    (Declarator as IParser<OptionalDeclr>)
                     .Or(AbstractDeclarator)
                     .Optional(AbstractDeclr.Create())
                 ).Then(ParamDecln.Create)
@@ -534,7 +534,7 @@ namespace Parsing {
                 (
                     (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
                     .Then(DirectAbstractDeclarator)
-                    .Then(AbstractDeclr.AddTypeModifiers)
+                    .Then(AbstractDeclr.Add)
                 ).Or(
                     (Pointer)
                     .Then(AbstractDeclr.Create)
@@ -582,7 +582,7 @@ namespace Parsing {
                             .Then(RIGHT_BRACKET)
                             .Then(ArrayModifier.Create)
                         ).Then(
-                            AbstractDeclr.AddTypeModifier
+                            AbstractDeclr.Add
                         )
                     ).Or(
                         Given<AbstractDeclr>()
@@ -592,7 +592,7 @@ namespace Parsing {
                             .Then(RIGHT_PAREN)
                             .Then(FunctionModifier.Create)
                         ).Then(
-                            AbstractDeclr.AddTypeModifier
+                            AbstractDeclr.Add
                         )
                     )
                     .ZeroOrMore()
