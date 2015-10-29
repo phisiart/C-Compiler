@@ -246,121 +246,6 @@ namespace SyntaxTree {
         VOLATILE
     }
 
-    // Type Modifier
-    // =============
-    // Modify a type into a function, array, or pointer
-    // 
-    public abstract class TypeModifier : PTNode {
-        public enum Kind {
-            FUNCTION,
-            ARRAY,
-            POINTER
-        }
-
-        public TypeModifier(Kind kind) {
-            this.kind = kind;
-        }
-        public readonly Kind kind;
-
-        public abstract AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type);
-        
-    }
-
-    public class FunctionModifier : TypeModifier {
-        public FunctionModifier(List<ParamDecln> param_declns, Boolean has_varargs)
-            : base(Kind.FUNCTION) {
-            this.param_declns = param_declns;
-            this.has_varargs = has_varargs;
-        }
-
-        public FunctionModifier(ParameterTypeList _param_type_list)
-            : base(Kind.FUNCTION) {
-            param_type_list = _param_type_list;
-        }
-        public ParameterTypeList param_type_list;
-
-        public readonly List<ParamDecln> param_declns;
-        public readonly Boolean has_varargs;
-
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType ret_t) {
-            var args = param_declns.ConvertAll(decln => decln.GetParamDecln(env));
-            return AST.TFunction.Create(ret_t, args, has_varargs);
-        }
-        
-    }
-
-    public class ArrayModifier : TypeModifier {
-        public ArrayModifier(Option<Expr> num_elems_opt)
-            : base(Kind.ARRAY) {
-            this.num_elems_opt = num_elems_opt;
-        }
-
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
-
-            if (num_elems_opt.IsNone) {
-                return new AST.TIncompleteArray(type);
-            }
-
-            AST.Expr num_elems = AST.TypeCast.MakeCast(num_elems_opt.Value.GetExpr(env), new AST.TLong(true, true));
-
-            if (!num_elems.IsConstExpr) {
-                throw new InvalidOperationException("Expected constant length.");
-            }
-
-            return new AST.TArray(type, ((AST.ConstLong)num_elems).value);
-        }
-        
-
-        public readonly Option<Expr> num_elems_opt;
-    }
-
-    public class PointerModifier : TypeModifier {
-        public PointerModifier(IReadOnlyList<TypeQual> type_quals)
-            : base(Kind.POINTER) {
-            this.type_quals = type_quals;
-        }
-
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
-            Boolean is_const = type_quals.Contains(TypeQual.CONST);
-            Boolean is_volatile = type_quals.Contains(TypeQual.VOLATILE);
-
-            // This is commented out, for incomplete struct declaration.
-            //if (!type.IsComplete) {
-            //    throw new InvalidOperationException("The type a pointer points to must be complete.");
-            //}
-
-            return new AST.TPointer(type, is_const, is_volatile);
-        }
-        
-        public readonly IReadOnlyList<TypeQual> type_quals;
-    }
-
-    public class Declr : PTNode {
-        public Declr(String name, IReadOnlyList<TypeModifier> modifiers) {
-            declr_modifiers = modifiers;
-            this.name = name;
-        }
-
-        public Declr()
-            : this("", new List<TypeModifier>()) { }
-
-        public readonly IReadOnlyList<TypeModifier> declr_modifiers;
-        public readonly String name;
-
-        /// <summary>
-        /// A declarator consists of 1) a name, and 2) a list of decorators.
-        /// This method returns the name, and the modified type.
-        /// </summary>
-        public virtual Tuple<String, AST.ExprType> GetNameAndType(AST.Env env, AST.ExprType base_type) =>
-            Tuple.Create(
-                name,
-                declr_modifiers
-                    .Reverse()
-                    .Aggregate(base_type, (type, modifier) => modifier.GetDecoratedType(env, type))
-            );
-
-    }
-    
 
     // Parameter Type List
     // ===================
@@ -484,8 +369,13 @@ namespace SyntaxTree {
             this.name = name;
             this.declns = declns;
         }
-        public readonly String name;
-        public readonly IReadOnlyList<StructDecln> declns;
+
+        protected StructOrUnionSpec(StructOrUnion structOrUnion, Option<String> name, Option<ImmutableList<StructDecln>> memberDeclns) {
+
+        }
+
+        public Option<String> Name { get; }
+        public ImmutableList<StructDecln> declns;
 
         public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
             List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
@@ -599,13 +489,13 @@ namespace SyntaxTree {
     ///        3. iterate over the declns
     ///        4. finish forming a complete struct and add it into the environment
     /// </summary>
-    public class StructSpec : StructOrUnionSpec {
-        public StructSpec(String _name, IReadOnlyList<StructDecln> _declns)
-            : base(_name, _declns) { }
+    //public class StructSpec : StructOrUnionSpec {
+    //    public StructSpec(String _name, IReadOnlyList<StructDecln> _declns)
+    //        : base(_name, _declns) { }
 
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
-            GetExprTypeEnv(true, env, is_const, is_volatile);
-    }
+    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+    //        GetExprTypeEnv(true, env, is_const, is_volatile);
+    //}
 
     /// <summary>
     /// Union Specifier
@@ -626,14 +516,14 @@ namespace SyntaxTree {
     ///        3. iterate over the declns
     ///        4. finish forming a complete union and add it into the environment
     /// </summary>
-    public class UnionSpec : StructOrUnionSpec {
-        public UnionSpec(String _name, IReadOnlyList<StructDecln> _declns)
-            : base(_name, _declns) { }
+    //public class UnionSpec : StructOrUnionSpec {
+    //    public UnionSpec(String _name, IReadOnlyList<StructDecln> _declns)
+    //        : base(_name, _declns) { }
 
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
-            GetExprTypeEnv(false, env, is_const, is_volatile);
+    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+    //        GetExprTypeEnv(false, env, is_const, is_volatile);
 
-    }
+    //}
 
 
     public enum StructOrUnion {

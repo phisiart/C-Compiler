@@ -54,6 +54,7 @@ namespace SyntaxTree {
 
         public static DeclnSpecs AddTypeSpec(DeclnSpecs declnSpecs, TypeSpec typeSpec) =>
             Create(declnSpecs.StorageClsSpecs, declnSpecs.TypeSpecs.Add(typeSpec), declnSpecs.TypeQuals);
+
         public ImmutableList<StorageClsSpec> StorageClsSpecs { get; }
 
         /// <summary>

@@ -74,6 +74,7 @@
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
     <Compile Include="SyntaxTree\declarations.cs" />
     <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
+    <Compile Include="SyntaxTree\Declarators.cs" />
     <Compile Include="SyntaxTree\expressions.cs" />
     <Compile Include="SyntaxTree\external_definitions.cs" />
     <Compile Include="SyntaxTree\statements.cs" />
