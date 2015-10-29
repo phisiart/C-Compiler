@@ -140,15 +140,17 @@ namespace AST {
     /// </summary>
     public class ExprStmt : Stmt {
         public override Kind kind => Kind.EXPR;
-        public ExprStmt(Expr expr) {
+        public ExprStmt(Option<Expr> expr) {
             this.expr = expr;
         }
-        public readonly Expr expr;
+        public readonly Option<Expr> expr;
 
         public override void CGenStmt(Env env, CGenState state) {
-            Int32 stack_size = state.StackSize;
-            expr.CGenValue(env, state);
-            state.CGenForceStackSizeTo(stack_size);
+            if (this.expr.IsSome) {
+                Int32 stack_size = state.StackSize;
+                this.expr.Value.CGenValue(env, state);
+                state.CGenForceStackSizeTo(stack_size);
+            }
         }
 
         public override void Accept(StmtVisitor visitor) =>
@@ -180,31 +182,32 @@ namespace AST {
 
     public class ReturnStmt : Stmt {
         public override Kind kind => Kind.RETURN;
-        public ReturnStmt(Expr expr) {
+        public ReturnStmt(Option<Expr> expr) {
             this.expr = expr;
         }
-        public readonly Expr expr;
+        public readonly Option<Expr> expr;
 
         public override void CGenStmt(Env env, CGenState state) {
             ExprType ret_type = env.GetCurrentFunction().ret_t;
 
             Int32 stack_size = state.StackSize;
 
-            // Evaluate the value.
-            expr.CGenValue(env, state);
+            if (this.expr.IsSome) {
+                // Evaluate the value.
+                this.expr.Value.CGenValue(env, state);
 
-            // If the function returns a struct, copy it to the address given by 8(%ebp).
-            if (expr.type is TStructOrUnion) {
-                state.MOVL(Reg.EAX, Reg.ESI);
-                state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
-                state.MOVL(expr.type.SizeOf, Reg.ECX);
-                state.CGenMemCpy();
-                state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EAX);
+                // If the function returns a struct, copy it to the address given by 8(%ebp).
+                if (this.expr.Value.type is TStructOrUnion) {
+                    state.MOVL(Reg.EAX, Reg.ESI);
+                    state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
+                    state.MOVL(this.expr.Value.type.SizeOf, Reg.ECX);
+                    state.CGenMemCpy();
+                    state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EAX);
+                }
+
+                // Restore stack size.
+                state.CGenForceStackSizeTo(stack_size);
             }
-
-            // Restore stack size.
-            state.CGenForceStackSizeTo(stack_size);
-
             // Jump to end of the function.
             state.JMP(state.ReturnLabel);
         }

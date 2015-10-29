@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace SyntaxTree {
 
@@ -13,6 +15,10 @@ namespace SyntaxTree {
             this.label = label;
         }
         public readonly String label;
+
+        public static Stmt Create(String label) =>
+            new GotoStmt(label);
+
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(this.label));
 		}
@@ -34,16 +40,19 @@ namespace SyntaxTree {
 
 
     public class ReturnStmt : Stmt {
-        public ReturnStmt(Expr expr) {
+        public ReturnStmt(Option<Expr> expr) {
             this.expr = expr;
         }
 
+        public static Stmt Create(Option<Expr> expr) =>
+            new ReturnStmt(expr);
+
         // TODO: change this into Option. Currently parser might give null.
-        public readonly Expr expr;
+        public readonly Option<Expr> expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr expr = this.expr.GetExpr(env);
-            expr = AST.TypeCast.MakeCast(expr, env.GetCurrentFunction().ret_t);
+            var expr = this.expr.Map(_ => _.GetExpr(env));
+            expr = expr.Map(_ => AST.TypeCast.MakeCast(_, env.GetCurrentFunction().ret_t));
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
         }
     }
@@ -56,6 +65,9 @@ namespace SyntaxTree {
         }
         public readonly List<Decln> declns;
         public readonly List<Stmt> stmts;
+
+        public static Stmt Create(ImmutableList<Decln> declns, ImmutableList<Stmt> stmts) =>
+            new CompoundStmt(declns.ToList(), stmts.ToList());
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             env = env.InScope();
@@ -82,14 +94,17 @@ namespace SyntaxTree {
 
 
     public class ExprStmt : Stmt {
-        public ExprStmt(Expr expr) {
+        public ExprStmt(Option<Expr> expr) {
             this.expr = expr;
         }
-        public readonly Expr expr;
+        public readonly Option<Expr> expr;
+
+        public static Stmt Create(Option<Expr> expr) =>
+            new ExprStmt(expr);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr expr = this.expr.GetExpr(env);
-            env = expr.Env;
+            var expr = this.expr.Map(_ => _.GetExpr(env));
+            env = expr.IsSome ? expr.Value.Env : env;
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ExprStmt(expr));
         }
     }
@@ -109,6 +124,9 @@ namespace SyntaxTree {
         }
         public readonly Expr cond;
         public readonly Stmt body;
+
+        public static Stmt Create(Expr cond, Stmt body) =>
+            new WhileStmt(cond, body);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             AST.Expr cond = this.cond.GetExpr(env);
@@ -142,6 +160,9 @@ namespace SyntaxTree {
         }
         public readonly Stmt body;
         public readonly Expr cond;
+
+        public static Stmt Create(Stmt body, Expr cond) =>
+            new DoWhileStmt(body, cond);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             Tuple<AST.Env, AST.Stmt> r_body = this.body.GetStmt(env);
@@ -179,6 +200,9 @@ namespace SyntaxTree {
         public readonly Option<Expr> cond;
         public readonly Option<Expr> loop;
         public readonly Stmt body;
+
+        public static Stmt Create(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) =>
+            new ForStmt(init, cond, loop, body);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             Option<AST.Expr> init = this.init.Map(_ => _.GetExpr(env));
@@ -218,6 +242,9 @@ namespace SyntaxTree {
         public readonly Expr expr;
         public readonly Stmt stmt;
 
+        public static Stmt Create(Expr expr, Stmt stmt) =>
+            new SwitchStmt(expr, stmt);
+
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 		    AST.Expr expr = this.expr.GetExpr(env);
 
@@ -237,6 +264,9 @@ namespace SyntaxTree {
         }
         public readonly Expr cond;
         public readonly Stmt stmt;
+
+        public static Stmt Create(Expr cond, Stmt stmt) =>
+            new IfStmt(cond, stmt);
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 		    AST.Expr cond = this.cond.GetExpr(env);
@@ -263,6 +293,9 @@ namespace SyntaxTree {
         public readonly Expr cond;
         public readonly Stmt true_stmt;
         public readonly Stmt false_stmt;
+
+        public static Stmt Create(Expr cond, Stmt true_stmt, Stmt false_stmt) =>
+            new IfElseStmt(cond, true_stmt, false_stmt);
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 		    AST.Expr cond = this.cond.GetExpr(env);
@@ -295,6 +328,9 @@ namespace SyntaxTree {
         public readonly String label;
         public readonly Stmt stmt;
 
+        public static Stmt Create(String label, Stmt stmt) =>
+            new LabeledStmt(label, stmt);
+
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
 			env = r_stmt.Item1;
@@ -315,6 +351,9 @@ namespace SyntaxTree {
         // expr.IsNone means 'default'
         public readonly Option<Expr> expr;
         public readonly Stmt stmt;
+
+        public static Stmt Create(Option<Expr> expr, Stmt stmt) =>
+            new CaseStmt(expr, stmt);
 
 		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
 			if (this.expr.IsNone) {

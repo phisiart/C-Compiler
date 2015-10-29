@@ -85,9 +85,9 @@ public class _jump_statement : ParseRule {
             current = _expression.Parse(src, current, out expr);
             if (current == -1) {
                 current = saved;
-                stmt = new ReturnStmt(null);
+                stmt = new ReturnStmt(new None<Expr>());
             } else {
-                stmt = new ReturnStmt(expr);
+                stmt = new ReturnStmt(new Some<Expr>(expr));
             }
             break;
         default:
@@ -182,11 +182,14 @@ public class _statement_list : ParseRule {
 public class _expression_statement : ParseRule {
     public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
         stmt = null;
+        Option<Expr> exprOpt;
         Expr expr;
         Int32 current = _expression.Parse(src, begin, out expr);
         if (current == -1) {
-            expr = null;
+            exprOpt = new None<Expr>();
             current = begin;
+        } else {
+            exprOpt = new Some<Expr>(expr);
         }
 
         if (!Parser.IsSEMICOLON(src[current])) {
@@ -194,7 +197,7 @@ public class _expression_statement : ParseRule {
         }
         current++;
 
-        stmt = new ExprStmt(expr);
+        stmt = new ExprStmt(exprOpt);
         return current;
     }
 }

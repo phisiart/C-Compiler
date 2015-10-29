@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace SyntaxTree {
 
@@ -7,9 +8,17 @@ namespace SyntaxTree {
     /// A translation unit consists of a list of external declarations - functions and objects.
     /// </summary>
     public class TranslnUnit : PTNode {
-        public TranslnUnit(List<ExternDecln> declns) {
+
+        [Obsolete]
+        public TranslnUnit(List<ExternDecln> declns)
+            : this(declns.ToImmutableList()) { }
+
+        protected TranslnUnit(ImmutableList<ExternDecln> declns) {
             this.declns = declns;
         }
+
+        public static TranslnUnit Create(ImmutableList<ExternDecln> externDeclns) =>
+            new TranslnUnit(externDeclns);
 
         public Tuple<AST.Env, AST.TranslnUnit> GetTranslationUnit() {
             List<Tuple<AST.Env, AST.ExternDecln>> declns = new List<Tuple<AST.Env, AST.ExternDecln>>();
@@ -24,7 +33,7 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, AST.TranslnUnit>(env, new AST.TranslnUnit(declns));
         }
 
-        public List<ExternDecln> declns;
+        public ImmutableList<ExternDecln> declns;
     }
 
 
@@ -41,6 +50,9 @@ namespace SyntaxTree {
             this.declr = declr;
             this.stmt = stmt;
         }
+
+        public static FuncDef Create(DeclnSpecs declnSpecs, Declr declr, Stmt body) =>
+            new FuncDef(declnSpecs, declr, body as CompoundStmt);
 
         public readonly DeclnSpecs specs;
         public readonly Declr declr;

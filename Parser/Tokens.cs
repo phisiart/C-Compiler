@@ -19,6 +19,8 @@ namespace Parsing {
         public static IConsumer RIGHT_PAREN { get; } = OperatorConsumer.Create(OperatorVal.RPAREN);
         public static IConsumer QUESTION { get; } = OperatorConsumer.Create(OperatorVal.QUESTION);
         public static IConsumer COMMA { get; } = OperatorConsumer.Create(OperatorVal.COMMA);
+        public static IConsumer COLON { get; } = OperatorConsumer.Create(OperatorVal.COLON);
+
         public static IConsumer ASSIGN { get; } = OperatorConsumer.Create(OperatorVal.ASSIGN);
         public static IConsumer MULT_ASSIGN { get; } = OperatorConsumer.Create(OperatorVal.MULTASSIGN);
         public static IConsumer DIV_ASSIGN { get; } = OperatorConsumer.Create(OperatorVal.DIVASSIGN);
@@ -83,5 +85,21 @@ namespace Parsing {
         public static IConsumer ENUM { get; } = KeywordConsumer.Create(KeywordVal.ENUM);
         public static IParser<StructOrUnion> STRUCT { get; } = KeywordParser.Create(KeywordVal.STRUCT, SyntaxTree.StructOrUnion.STRUCT);
         public static IParser<StructOrUnion> UNION { get; } = KeywordParser.Create(KeywordVal.UNION, SyntaxTree.StructOrUnion.UNION);
+
+        public static IConsumer GOTO { get; } = KeywordConsumer.Create(KeywordVal.GOTO);
+        public static IParser<Stmt> CONTINUE { get; } = KeywordParser.Create(KeywordVal.CONTINUE, new ContStmt());
+        public static IParser<Stmt> BREAK { get; } = KeywordParser.Create(KeywordVal.BREAK, new BreakStmt());
+        public static IConsumer RETURN { get; } = KeywordConsumer.Create(KeywordVal.RETURN);
+
+        public static IConsumer WHILE { get; } = KeywordConsumer.Create(KeywordVal.WHILE);
+        public static IConsumer DO { get; } = KeywordConsumer.Create(KeywordVal.DO);
+        public static IConsumer FOR { get; } = KeywordConsumer.Create(KeywordVal.FOR);
+
+        public static IConsumer IF { get; } = KeywordConsumer.Create(KeywordVal.IF);
+        public static IConsumer ELSE { get; } = KeywordConsumer.Create(KeywordVal.ELSE);
+        public static IConsumer SWITCH { get; } = KeywordConsumer.Create(KeywordVal.SWITCH);
+
+        public static IConsumer CASE { get; } = KeywordConsumer.Create(KeywordVal.CASE);
+        public static IConsumer DEFAULT { get; } = KeywordConsumer.Create(KeywordVal.DEFAULT);
     }
 }

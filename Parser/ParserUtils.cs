@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SyntaxTree;
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Parsing {
 
@@ -7,7 +9,50 @@ namespace Parsing {
     /// A minimal environment solely for parsing, intended to resolve ambiguity.
     /// </summary>
     public sealed class ParserEnvironment {
-        // TODO: design ParserEnvironment
+        private ParserEnvironment(ImmutableStack<Scope> scopes) {
+            this.scopes = scopes;
+        }
+
+        public ParserEnvironment() 
+            : this(ImmutableStack.Create(new Scope())) { }
+
+        public ParserEnvironment InScope() =>
+            new ParserEnvironment(this.scopes.Push(new Scope()));
+
+        public ParserEnvironment OutScope() =>
+            new ParserEnvironment(this.scopes.Pop());
+
+        public ParserEnvironment AddSymbol(String name, StorageClsSpec storageClsSpec) =>
+            new ParserEnvironment(
+                this.scopes.Pop().Push(
+                    this.scopes.Peek().AddSymbol(name, storageClsSpec)
+                )
+            );
+
+        public Boolean IsTypedefName(String name) {
+            foreach (var scope in this.scopes) {
+                if (scope.Symbols.ContainsKey(name)) {
+                    return scope.Symbols[name] == StorageClsSpec.TYPEDEF;
+                }
+            }
+            return false;
+        }
+
+        private class Scope {
+            public Scope()
+                : this(ImmutableDictionary<String, StorageClsSpec>.Empty) { }
+
+            public Scope(ImmutableDictionary<String, StorageClsSpec> symbols) {
+                this.Symbols = symbols;
+            }
+
+            public Scope AddSymbol(String name, StorageClsSpec storageClsSpec) =>
+                new Scope(this.Symbols.Add(name, storageClsSpec));
+            
+            public ImmutableDictionary<String, StorageClsSpec> Symbols { get; }
+        }
+
+        private ImmutableStack<Scope> scopes { get; }
     }
 
     /// <summary>

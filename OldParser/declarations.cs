@@ -33,7 +33,7 @@ public class _declaration : ParseRule {
             (DeclnSpecs decln_specs, List<InitDeclr> init_declrs, Boolean _) => {
                 if (decln_specs.IsTypedef()) {
                     foreach (InitDeclr init_declr in init_declrs) {
-                        ParserEnvironment.AddTypedefName(init_declr.declr.name);
+                        ParserEnvironment.AddTypedefName(init_declr.declr.Name);
                     }
                 }
                 return new Decln(decln_specs, init_declrs);
@@ -107,7 +107,7 @@ public class _declaration_specifiers : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclnSpecs(storage_class_specifiers.ToImmutableList(), type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
+        decl_specs = DeclnSpecs.Create(storage_class_specifiers.ToImmutableList(), type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
         return current;
 
     }
@@ -462,8 +462,8 @@ public class _declarator : ParseRule {
 			_direct_declarator.Parse,
 
 			(List<PointerModifier> pointer_modifiers, Declr direct_declr) => {
-				String name = direct_declr.name;
-				List<TypeModifier> modifiers = new List<TypeModifier>(direct_declr.declr_modifiers);
+				String name = direct_declr.Name;
+				List<TypeModifier> modifiers = new List<TypeModifier>(direct_declr.TypeModifiers);
 				modifiers.AddRange(pointer_modifiers);
 				return new Declr(name, modifiers);
 			}
@@ -730,8 +730,8 @@ public class _direct_declarator : ParseRule {
         // 1.1. try: '(' declarator ')'
         Int32 current;
         if ((current = ParseDeclarator(src, begin, out declr)) != -1) {
-            name = declr.name;
-            modifiers = new List<TypeModifier>(declr.declr_modifiers);
+            name = declr.Name;
+            modifiers = new List<TypeModifier>(declr.TypeModifiers);
         } else {
             // if fail, 1.2. try id
             name = Parser.GetIdentifierValue(src[begin]);
@@ -913,13 +913,12 @@ public class _struct_or_union_specifier : ParseRule {
 			}),
 			// ]
 
-			(Boolean is_union, Tuple<String, List<StructDecln>> declns) => {
-				if (is_union) {
-					return new UnionSpec(declns.Item1, declns.Item2);
-				} else {
-					return new StructSpec(declns.Item1, declns.Item2);
-				}
-			}
+			(Boolean is_union, Tuple<String, List<StructDecln>> declns) => 
+                StructOrUnionSpec.Create(
+                    is_union ? StructOrUnion.UNION : StructOrUnion.STRUCT,
+                    declns.Item1 == "" ? Option<String>.None : Option.Some(declns.Item1),
+                    declns.Item2 != null ? Option.Some(declns.Item2.ToImmutableList()) : Option<ImmutableList<StructDecln>>.None
+                )
 
 		);
 
@@ -1036,7 +1035,7 @@ public class _specifier_qualifier_list : ParseRule {
             return -1;
         }
 
-        decl_specs = new DeclnSpecs(null, type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
+        decl_specs = DeclnSpecs.Create(null, type_specifiers.ToImmutableList(), type_qualifiers.ToImmutableList());
         return begin;
 
     }
@@ -1145,7 +1144,7 @@ public class _abstract_declarator : ParseRule {
 			// [direct_abstract_declarator]?
             Parser.GetOptionalParser(new Declr("", new List<TypeModifier>()), _direct_abstract_declarator.Parse),
 
-            (List<PointerModifier> ptr_modifiers, Declr abst_declr) => abst_declr.declr_modifiers.Concat(ptr_modifiers).ToList()
+            (List<PointerModifier> ptr_modifiers, Declr abst_declr) => abst_declr.TypeModifiers.Concat(ptr_modifiers).ToList()
         );
 
         // make sure the list is non-empty
@@ -1211,7 +1210,7 @@ public class _direct_abstract_declarator : ParseRule {
         // 1.1 try '(' abstract_declarator ')'
         Int32 current = ParseAbstractDeclarator(src, begin, out declr);
         if (current != -1) {
-            modifiers = new List<TypeModifier>(declr.declr_modifiers);
+            modifiers = new List<TypeModifier>(declr.TypeModifiers);
         } else {
             // if fail, 1.2. try modifier
             TypeModifier modifier;

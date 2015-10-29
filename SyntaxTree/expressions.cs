@@ -69,7 +69,10 @@ namespace SyntaxTree {
 		}
 		public ImmutableList<Expr> assign_exprs;
 
-        public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new AssignmentList(ImmutableList.Create(lhs, rhs));
+        //public static Func<Expr, Expr, Expr> Create { get; } = (lhs, rhs) => new AssignmentList(ImmutableList.Create(lhs, rhs));
+        public static Expr Create(ImmutableList<Expr> exprs) =>
+            new AssignmentList(exprs);
+
         public override AST.Expr GetExpr(AST.Env env) {
             ImmutableList<AST.Expr> exprs = assign_exprs.ConvertAll(expr => expr.GetExpr(env));
             return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).type);

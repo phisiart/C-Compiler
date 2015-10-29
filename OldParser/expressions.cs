@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SyntaxTree;
+using System.Collections.Immutable;
 
 // primary_expression: identifier           /* Variable : Expression */
 //
@@ -149,7 +150,7 @@ public class _expression : ParseRule {
                 expr = assign_exprs[0];
                 return begin;
             } else {
-                expr = new AssignmentList(assign_exprs);
+                expr = new AssignmentList(assign_exprs.ToImmutableList());
                 return begin;
             }
         }

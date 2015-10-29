@@ -7,6 +7,16 @@ using System.Linq;
 public class Scanner {
     public Scanner(String source) {
         this.Source = source;
+        this.FSAs = ImmutableList.Create<FSA>(
+            new FSAFloat(),
+            new FSAInt(),
+            new FSAOperator(),
+            new FSAIdentifier(),
+            new FSASpace(),
+            new FSANewLine(),
+            new FSACharConst(),
+            new FSAString()
+        );
         this.Tokens = this.Lex();
     }
 
@@ -24,7 +34,7 @@ public class Scanner {
     }
 
     private IEnumerable<Token> Lex() {
-        // Tokens = new List<Token>();
+        List<Token> tokens = new List<Token>();
         for (Int32 i = 0; i < Source.Length; ++i) {
 
             FSAs.ForEach(fsa => fsa.ReadChar(Source[i]));
@@ -36,7 +46,8 @@ public class Scanner {
                     // Console.WriteLine("> " + src.Substring(pos, i - pos));
                     Token token = FSAs[idx].RetrieveToken();
                     if (token.type != TokenType.NONE) {
-                        yield return token;// Tokens.Add(token);
+                        tokens.Add(token);
+                        // yield return token;
                     }
                     //Console.WriteLine(fsas[idx].RetrieveToken());
                     i--;
@@ -53,14 +64,17 @@ public class Scanner {
         if (idx2 != -1) {
             Token token = FSAs[idx2].RetrieveToken();
             if (token.type != TokenType.NONE) {
-                yield return token; // Tokens.Add(token);
+                tokens.Add(token);
+                //yield return token;
             }
             //Console.WriteLine("> " + src.Substring(pos, src.Length - pos));
         } else {
             Console.WriteLine("error");
         }
 
-        yield return new EmptyToken();// Tokens.Add(new EmptyToken());
+        tokens.Add(new EmptyToken());
+        //yield return new EmptyToken();
+        return tokens;
     }
 
     public override String ToString() {
@@ -72,16 +86,7 @@ public class Scanner {
     }
 
     public String Source { get; }
-    private ImmutableList<FSA> FSAs { get; } = ImmutableList.Create<FSA>(
-        new FSAFloat(),
-        new FSAInt(),
-        new FSAOperator(),
-        new FSAIdentifier(),
-        new FSASpace(),
-        new FSANewLine(),
-        new FSACharConst(),
-        new FSAString()
-    );
+    private ImmutableList<FSA> FSAs { get; }
     public IEnumerable<Token> Tokens { get; }
 
 }

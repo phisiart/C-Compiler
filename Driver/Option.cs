@@ -15,6 +15,13 @@ public abstract class Option<T> {
     public abstract T Value { get; }
     public abstract Boolean IsSome { get; }
     public abstract Boolean IsNone { get; }
+
+    public static readonly Option<T> None = new None<T>();
+}
+
+public static class Option {
+    public static Option<T> Some<T>(T value) => new Some<T>(value);
+    public static Option<T> None<T>() => new None<T>();
 }
 
 public sealed class None<T> : Option<T> {

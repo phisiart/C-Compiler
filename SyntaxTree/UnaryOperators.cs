@@ -11,7 +11,8 @@ namespace SyntaxTree {
             this.expr = expr;
         }
         public readonly Expr expr;
-        public static Func<Expr, Expr> Create { get; } = expr => new PostIncrement(expr);
+        // public static Func<Expr, Expr> Create { get; } = expr => new PostIncrement(expr);
+        public static Expr Create(Expr expr) => new PostIncrement(expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.expr.GetExpr(env);

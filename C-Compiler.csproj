@@ -52,6 +52,8 @@
     <Compile Include="Driver\SetOnce.cs" />
     <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
+    <Compile Include="Parser\ExternalDefinitions.cs" />
+    <Compile Include="Parser\Statements.cs" />
     <Compile Include="Parser\Tokens.cs" />
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\ParserCombinator.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
     <Compile Include="SyntaxTree\declarations.cs" />
+    <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
     <Compile Include="SyntaxTree\expressions.cs" />
     <Compile Include="SyntaxTree\external_definitions.cs" />
     <Compile Include="SyntaxTree\statements.cs" />

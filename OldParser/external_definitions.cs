@@ -43,6 +43,7 @@ public class _translation_unit : ParseRule {
     }
     
 }
+
 // external_declaration: function_definition | declaration
 public class _external_declaration : ParseRule {
     public static Boolean Test() {
@@ -111,7 +112,7 @@ public class _function_definition : ParseRule {
         DeclnSpecs specs;
         Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
         if (current == -1) {
-            specs = new DeclnSpecs();
+            specs = DeclnSpecs.Create();
             current = begin;
         }
 
