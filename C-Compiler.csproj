@@ -50,6 +50,8 @@
     <Compile Include="Driver\HList.cs" />
     <Compile Include="Driver\Option.cs" />
     <Compile Include="Driver\SetOnce.cs" />
+    <Compile Include="ParserTests\ParserTestUtils.cs" />
+    <Compile Include="ParserTests\TestDeclarations.cs" />
     <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
     <Compile Include="Parser\ExternalDefinitions.cs" />
@@ -57,7 +59,7 @@
     <Compile Include="Parser\Tokens.cs" />
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\ParserCombinator.cs" />
-    <Compile Include="Parser\ParserTests.cs" />
+    <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\ConstExpressions.cs" />

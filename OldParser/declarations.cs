@@ -167,7 +167,7 @@ public class _init_declarator : ParseRule {
             // [ '=' initializer ]?
             Parser.GetOptionParser(InitializerParser),
 			
-			(Declr declr, Option<Initr> initr) => new InitDeclr(declr, initr)
+			(Declr declr, Option<Initr> initr) => InitDeclr.Create(declr, initr)
 		);
     }
 }
@@ -1268,7 +1268,7 @@ public class _initializer : ParseRule {
                 initr = null;
                 return -1;
             }
-            initr = new InitExpr(expr);
+            initr = InitExpr.Create(expr);
             return begin;
         }
 

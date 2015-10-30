@@ -74,7 +74,7 @@ namespace SyntaxTree {
             List<Tuple<AST.Env, AST.Stmt>> stmts = new List<Tuple<AST.Env, AST.Stmt>>();
 
             foreach (Decln decln in this.Declns) {
-                Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
+                Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns_(env);
                 env = r_decln.Item1;
                 declns.AddRange(r_decln.Item2);
             }

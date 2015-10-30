@@ -28,6 +28,8 @@ namespace SyntaxTree {
     }
 
     public static class SemanticAnalysis {
+        public class SemantMethod : System.Attribute { }
+
         public static R Semant<R>(Func<AST.Env, ISemantReturn<R>> semantFunc, ref AST.Env env) {
             var semantReturn = semantFunc(env);
             env = semantReturn.Env;
@@ -46,4 +48,5 @@ namespace SyntaxTree {
             return semantReturn;
         }
     }
+
 }

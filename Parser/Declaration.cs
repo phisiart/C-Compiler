@@ -108,12 +108,26 @@ namespace Parsing {
             /// declaration
             ///   : declaration-specifiers [init-declarator-list]? ';'
             /// </summary>
-            // TODO: Update environment
             Declaration.Is(
                 (DeclarationSpecifiers)
                 .Then(InitDeclaratorList.Optional(ImmutableList<InitDeclr>.Empty))
                 .Then(SEMICOLON)
                 .Then(Decln.Create)
+                .TransformResult(
+                    _ => {
+                        var result = _.Result;
+                        var env = _.Environment;
+                        env = result.InitDeclrs.Aggregate(
+                            seed: env,
+                            func: (currentEnv, initDeclr) =>
+                                      currentEnv.AddSymbol(
+                                          initDeclr.Declr.Name,
+                                          result.DeclnSpecs.StorageClsSpecs.DefaultIfEmpty(StorageClsSpec.AUTO).First()
+                                      )
+                        );
+                        return ParserSucceeded.Create(result, env, _.Source);
+                    }
+                )
             );
 
             /// <summary>
@@ -169,11 +183,10 @@ namespace Parsing {
             /// <summary>
             /// storage_class_specifier
             ///   : auto | register | static | extern | typedef
-            /// 
+            /// </summary>
             /// <remarks>
             /// There can only be *one* storage class specifier in one declaration.
             /// </remarks>
-            /// </summary>
             StorageClassSpecifier.Is(
                 (AUTO)
                 .Or(REGISTER)
@@ -183,7 +196,7 @@ namespace Parsing {
             );
 
             /// <summary>
-            /// type_specifier
+            /// type-specifier
             ///   : void
             ///   | char
             ///   | short
@@ -193,14 +206,14 @@ namespace Parsing {
             ///   | double
             ///   | signed
             ///   | unsigned
-            ///   | struct_or_union_specifier
-            ///   | enum_specifier
-            ///   | typedef_name
+            ///   | struct-or-union-specifier
+            ///   | enum-specifier
+            ///   | typedef-name
             /// 
             /// <remarks>
             /// 1. void, char, short, int, long, float, double, signed, unsigned are called "basic type specifiers".
-            /// 2. struct_or_union_specifier and enum_specifier need more complicated parsing.
-            /// 3. Parsing typedef_name actually requires the environment to participate. For example, consider this statement:
+            /// 2. struct-or-union_specifier and enum-specifier need more complicated parsing.
+            /// 3. Parsing typedef-name actually requires the environment to participate. For example, consider this statement:
             ///      T *v;
             ///    Is T a type or an object? If T is a type, then this statement is a declaration: v is a pointer; if T is a object, then this statement is an expression.
             ///    So, we need to keep track of the typedefs in the environment even in the parsing stage!

@@ -528,6 +528,7 @@ namespace AST {
     // calling convention:
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
+    // TODO: name is optional
     public class TFunction : ExprType {
         protected TFunction(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
             : base(is_const: true, is_volatile: false) {
@@ -578,10 +579,9 @@ namespace AST {
                 is_varargs
             );
         }
-        
-        public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) {
 
-        }
+        public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) =>
+            Create(returnType, args.Select(_ => Tuple.Create(_.Item1.Value, _.Item2)).ToList(), hasVarArgs);
 
         public static TFunction Create(ExprType returnType) =>
             Create(returnType, ImmutableList<Tuple<Option<String>, ExprType>>.Empty, true);

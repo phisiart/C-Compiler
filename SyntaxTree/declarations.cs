@@ -5,6 +5,8 @@ using System.Collections.Immutable;
 
 namespace SyntaxTree {
 
+    using static SemanticAnalysis;
+
     /// <summary>
     /// declaration
     ///   : declaration-specifiers [init-declarator-list]? ';'
@@ -25,13 +27,57 @@ namespace SyntaxTree {
         public DeclnSpecs DeclnSpecs { get; }
         public ImmutableList<InitDeclr> InitDeclrs { get; }
 
+        [SemantMethod]
+        public ISemantReturn<ImmutableList<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
+            var storageClass = this.DeclnSpecs.GetStorageClass();
+            var baseType = Semant(this.DeclnSpecs.GetExprType, ref env);
+
+            var declns = this.InitDeclrs.ConvertAll(
+                initDeclr => {
+                    var typeAndInitr = Semant(initDeclr.GetDecoratedTypeAndInitr, baseType, ref env);
+                    var type = typeAndInitr.Item1;
+                    var initr = typeAndInitr.Item2;
+                    var name = initDeclr.GetName();
+
+                    // Add the new symbol into the environment.
+                    AST.Env.EntryKind kind;
+                    switch (storageClass) {
+                        case AST.Decln.StorageClass.AUTO:
+                            if (env.IsGlobal()) {
+                                kind = AST.Env.EntryKind.GLOBAL;
+                            } else {
+                                kind = AST.Env.EntryKind.STACK;
+                            }
+                            break;
+                        case AST.Decln.StorageClass.EXTERN:
+                            kind = AST.Env.EntryKind.GLOBAL;
+                            break;
+                        case AST.Decln.StorageClass.STATIC:
+                            kind = AST.Env.EntryKind.GLOBAL;
+                            break;
+                        case AST.Decln.StorageClass.TYPEDEF:
+                            kind = AST.Env.EntryKind.TYPEDEF;
+                            break;
+                        default:
+                            throw new InvalidOperationException();
+                    }
+                    env = env.PushEntry(kind, name, type);
+
+                    return Tuple.Create(env, new AST.Decln(name, storageClass, type, initr));
+                }
+            );
+
+            return SemantReturn.Create(env, declns);
+        }
+
         [Checked]
-        public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
+        [Obsolete]
+        public Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> GetDeclns_(AST.Env env) {
 
             // Get storage class, and base type.
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = DeclnSpecs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.StorageClass, AST.ExprType> r_specs = DeclnSpecs.GetSCSType(env);
             env = r_specs.Item1;
-            AST.Decln.SCS scs = r_specs.Item2;
+            AST.Decln.StorageClass scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
             List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
@@ -49,20 +95,20 @@ namespace SyntaxTree {
                 // Insert the new symbol into the environment.
                 AST.Env.EntryKind kind;
                 switch (scs) {
-                    case AST.Decln.SCS.AUTO:
+                    case AST.Decln.StorageClass.AUTO:
                         if (env.IsGlobal()) {
                             kind = AST.Env.EntryKind.GLOBAL;
                         } else {
                             kind = AST.Env.EntryKind.STACK;
                         }
                         break;
-                    case AST.Decln.SCS.EXTERN:
+                    case AST.Decln.StorageClass.EXTERN:
                         kind = AST.Env.EntryKind.GLOBAL;
                         break;
-                    case AST.Decln.SCS.STATIC:
+                    case AST.Decln.StorageClass.STATIC:
                         kind = AST.Env.EntryKind.GLOBAL;
                         break;
-                    case AST.Decln.SCS.TYPEDEF:
+                    case AST.Decln.StorageClass.TYPEDEF:
                         kind = AST.Env.EntryKind.TYPEDEF;
                         break;
                     default:
@@ -80,8 +126,9 @@ namespace SyntaxTree {
 
         // Simply change the Decln's to ExternDecln's.
         [Checked]
+        [Obsolete]
         public override Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
-            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_declns = GetDeclns(env);
+            Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_declns = GetDeclns_(env);
             env = r_declns.Item1;
 
             List<Tuple<AST.Env, AST.ExternDecln>> declns = r_declns
@@ -126,61 +173,6 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// Struct Specifier
-    /// 
-    /// Specifies a struct type.
-    /// 
-    /// if name == "", then
-    ///     the parser ensures that declns != null,
-    ///     and this specifier does not change the environment
-    /// if name != "", then
-    ///     if declns == null
-    ///        this means that this specifier is just mentioning a struct, not defining one, so
-    ///        if the current environment doesn't have this struct type, then add an **incomplete** struct
-    ///     if declns != null
-    ///        this means that this specifier is defining a struct, so we need to perform the following steps:
-    ///        1. make sure that the current environment doesn't have a **complete** struct of this name
-    ///        2. immediately add an **incomplete** struct into the environment
-    ///        3. iterate over the declns
-    ///        4. finish forming a complete struct and add it into the environment
-    /// </summary>
-    //public class StructSpec : StructOrUnionSpec {
-    //    public StructSpec(String _name, IReadOnlyList<StructDecln> _declns)
-    //        : base(_name, _declns) { }
-
-    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
-    //        GetExprTypeEnv(true, env, is_const, is_volatile);
-    //}
-
-    /// <summary>
-    /// Union Specifier
-    /// 
-    /// Specifies a union type.
-    /// 
-    /// if name == "", then
-    ///     the parser ensures that declns != null,
-    ///     and this specifier does not change the environment
-    /// if name != "", then
-    ///     if declns == null
-    ///        this means that this specifier is just mentioning a struct, not defining one, so
-    ///        if the current environment doesn't have this union type, then add an **incomplete** struct
-    ///     if declns != null
-    ///        this means that this specifier is defining a struct, so we need to perform the following steps:
-    ///        1. make sure that the current environment doesn't have a **complete** union of this name
-    ///        2. immediately add an **incomplete** union into the environment
-    ///        3. iterate over the declns
-    ///        4. finish forming a complete union and add it into the environment
-    /// </summary>
-    //public class UnionSpec : StructOrUnionSpec {
-    //    public UnionSpec(String _name, IReadOnlyList<StructDecln> _declns)
-    //        : base(_name, _declns) { }
-
-    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
-    //        GetExprTypeEnv(false, env, is_const, is_volatile);
-
-    //}
-
-    /// <summary>
     /// struct-declaration
     ///   : specifier-qualifier-list struct-declarator-list ';'
     /// 
@@ -207,16 +199,17 @@ namespace SyntaxTree {
         public SpecQualList SpecQualList { get; }
         public ImmutableList<IStructDeclr> StructDeclrs { get; }
 
+        [SemantMethod]
         public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetMemberDeclns(AST.Env env) {
             // Semant specifier-qualifier-list.
-            var baseType = SemanticAnalysis.Semant(this.SpecQualList.GetExprType, ref env);
+            var baseType = Semant(this.SpecQualList.GetExprType, ref env);
 
             // Decorate types, based on struct declarators.
             var memberTypes =
                 this.StructDeclrs
                 .ConvertAll(
                     structDeclr =>
-                        SemanticAnalysis.Semant(structDeclr.DecorateType, baseType, ref env)
+                        Semant(structDeclr.DecorateType, baseType, ref env)
                 );
 
             // Get (optional) member names.
@@ -234,18 +227,23 @@ namespace SyntaxTree {
         // 
         [Obsolete]
         public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetDeclns(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> r_specs = SpecQualList.GetExprTypeEnv(env);
-            env = r_specs.Item1;
-            AST.ExprType base_type = r_specs.Item2;
+            var structDeclns = Semant(this.GetMemberDeclns, ref env);
+            return Tuple.Create(
+                env,
+                structDeclns.ConvertAll(_ => Tuple.Create(_.Item1.Value, _.Item2)).ToList()
+            );
+            //Tuple<AST.Env, AST.ExprType> r_specs = SpecQualList.GetExprTypeEnv(env);
+            //env = r_specs.Item1;
+            //AST.ExprType base_type = r_specs.Item2;
 
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (Declr declr in StructDeclrs) {
-                Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, base_type);
-                String name = r_declr.Item1;
-                AST.ExprType type = r_declr.Item2;
-                attribs.Add(new Tuple<String, AST.ExprType>(name, type));
-            }
-            return new Tuple<AST.Env, List<Tuple<String, AST.ExprType>>>(env, attribs);
+            //List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
+            //foreach (Declr declr in StructDeclrs) {
+            //    Tuple<String, AST.ExprType> r_declr = declr.GetNameAndType(env, base_type);
+            //    String name = r_declr.Item1;
+            //    AST.ExprType type = r_declr.Item2;
+            //    attribs.Add(new Tuple<String, AST.ExprType>(name, type));
+            //}
+            //return new Tuple<AST.Env, List<Tuple<String, AST.ExprType>>>(env, attribs);
         }
 
     }
@@ -261,6 +259,7 @@ namespace SyntaxTree {
     /// 
     /// The declarator can be completely omitted.
     /// </summary>
+    // TODO: a parameter can have a storage class specifier: register.
     public class ParamDecln : PTNode {
 
         [Obsolete]
@@ -275,15 +274,26 @@ namespace SyntaxTree {
         public static ParamDecln Create(DeclnSpecs declnSpecs, IParamDeclr declr) =>
             new ParamDecln(declnSpecs, declr);
 
-        public DeclnSpecs DeclnSpecs { get; }   // base type
-        public IParamDeclr Declr { get; }     // type modifiers and name
+        public DeclnSpecs DeclnSpecs { get; }
+        public IParamDeclr Declr { get; }
+
+        [SemantMethod]
+        public Option<String> GetParamName() =>
+            this.Declr.OptionalName;
+
+        [SemantMethod]
+        public ISemantReturn<AST.ExprType> GetParamType(AST.Env env) {
+            var baseType = Semant(this.DeclnSpecs.GetExprType, ref env);
+            var type = Semant(this.Declr.DecorateType, baseType, ref env);
+            return SemantReturn.Create(env, type);
+        }
 
         [Obsolete]
         public Tuple<String, AST.ExprType> GetParamDecln(AST.Env env) {
 
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = DeclnSpecs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.StorageClass, AST.ExprType> r_specs = DeclnSpecs.GetSCSType(env);
             // TODO: check environment
-            AST.Decln.SCS scs = r_specs.Item2;
+            AST.Decln.StorageClass scs = r_specs.Item2;
             AST.ExprType type = r_specs.Item3;
 
             String name = "";
@@ -316,12 +326,17 @@ namespace SyntaxTree {
         public SpecQualList SpecQualList { get; }
         public AbstractDeclr AbstractDeclr { get; }
 
-        public Tuple<AST.Env, AST.ExprType> GetTypeEnv(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> type_env = this.SpecQualList.GetExprTypeEnv(env);
-            env = type_env.Item1;
-            AST.ExprType base_type = type_env.Item2;
+        [SemantMethod]
+        public ISemantReturn<AST.ExprType> GetExprType(AST.Env env) {
+            var baseType = Semant(this.SpecQualList.GetExprType, ref env);
+            var type = Semant(this.AbstractDeclr.DecorateType, baseType, ref env);
+            return SemantReturn.Create(env, type);
+        }
 
-            return Tuple.Create(env, this.AbstractDeclr.GetNameAndType(env, base_type).Item2);
+        [Obsolete]
+        public Tuple<AST.Env, AST.ExprType> GetTypeEnv(AST.Env env) {
+            var type = Semant(this.GetExprType, ref env);
+            return Tuple.Create(env, type);
         }
     }
 }

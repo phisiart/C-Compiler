@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 
 namespace SyntaxTree {
+    using static SemanticAnalysis;
 
     /// <summary>
     /// storage-class-specifier
@@ -47,11 +48,6 @@ namespace SyntaxTree {
             UNSIGNED
         }
 
-        // GetExprType
-        // ===========
-        // input: env
-        // output: tuple<ExprType, Environment>
-        // 
         public abstract Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile);
 
         public abstract Kind kind { get; }
@@ -139,6 +135,7 @@ namespace SyntaxTree {
 
         public ImmutableList<TypeSpec> TypeSpecs { get; }
         public ImmutableList<TypeQual> TypeQuals { get; }
+
         private static ImmutableDictionary<ImmutableSortedSet<TypeSpec.Kind>, AST.ExprType> basicTypeSpecLookupTable { get; }
 
         static SpecQualList() {
@@ -246,11 +243,11 @@ namespace SyntaxTree {
         /// <summary>
         /// Get storage class specifier and type.
         /// </summary>
-        public Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> GetSCSType(AST.Env env) {
+        public Tuple<AST.Env, AST.Decln.StorageClass, AST.ExprType> GetSCSType(AST.Env env) {
             Tuple<AST.Env, AST.ExprType> r_type = GetExprTypeEnv(env);
             env = r_type.Item1;
             AST.ExprType type = r_type.Item2;
-            AST.Decln.SCS scs = GetSCS();
+            AST.Decln.StorageClass scs = GetStorageClass();
             return Tuple.Create(env, scs, type);
         }
 
@@ -258,7 +255,7 @@ namespace SyntaxTree {
         /// Get the type and the modified environment.
         /// </summary>
         public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env) {
-            var _ = GetExprType(env);
+            var _ = this.GetExprType(env);
             return Tuple.Create(_.Env, _.Value);
             //Boolean isConst = TypeQuals.Contains(TypeQual.CONST);
             //Boolean is_volatile = TypeQuals.Contains(TypeQual.VOLATILE);
@@ -322,22 +319,28 @@ namespace SyntaxTree {
         [Obsolete]
         public bool IsTypedef() => StorageClsSpecs.Contains(StorageClsSpec.TYPEDEF);
 
-        private AST.Decln.SCS GetSCS() {
+        [SemantMethod]
+        public AST.Decln.StorageClass GetStorageClass() {
             if (StorageClsSpecs.Count == 0) {
-                return AST.Decln.SCS.AUTO;
+                return AST.Decln.StorageClass.AUTO;
             }
+
             if (StorageClsSpecs.Count == 1) {
                 switch (StorageClsSpecs[0]) {
                     case StorageClsSpec.AUTO:
                     case StorageClsSpec.NULL:
                     case StorageClsSpec.REGISTER:
-                        return AST.Decln.SCS.AUTO;
+                        return AST.Decln.StorageClass.AUTO;
+
                     case StorageClsSpec.EXTERN:
-                        return AST.Decln.SCS.EXTERN;
+                        return AST.Decln.StorageClass.EXTERN;
+
                     case StorageClsSpec.STATIC:
-                        return AST.Decln.SCS.STATIC;
+                        return AST.Decln.StorageClass.STATIC;
+
                     case StorageClsSpec.TYPEDEF:
-                        return AST.Decln.SCS.TYPEDEF;
+                        return AST.Decln.StorageClass.TYPEDEF;
+
                     default:
                         throw new InvalidOperationException();
                 }
@@ -474,6 +477,61 @@ namespace SyntaxTree {
     }
 
     /// <summary>
+    /// Struct Specifier
+    /// 
+    /// Specifies a struct type.
+    /// 
+    /// if name == "", then
+    ///     the parser ensures that declns != null,
+    ///     and this specifier does not change the environment
+    /// if name != "", then
+    ///     if declns == null
+    ///        this means that this specifier is just mentioning a struct, not defining one, so
+    ///        if the current environment doesn't have this struct type, then add an **incomplete** struct
+    ///     if declns != null
+    ///        this means that this specifier is defining a struct, so we need to perform the following steps:
+    ///        1. make sure that the current environment doesn't have a **complete** struct of this name
+    ///        2. immediately add an **incomplete** struct into the environment
+    ///        3. iterate over the declns
+    ///        4. finish forming a complete struct and add it into the environment
+    /// </summary>
+    //public class StructSpec : StructOrUnionSpec {
+    //    public StructSpec(String _name, IReadOnlyList<StructDecln> _declns)
+    //        : base(_name, _declns) { }
+
+    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+    //        GetExprTypeEnv(true, env, is_const, is_volatile);
+    //}
+
+    /// <summary>
+    /// Union Specifier
+    /// 
+    /// Specifies a union type.
+    /// 
+    /// if name == "", then
+    ///     the parser ensures that declns != null,
+    ///     and this specifier does not change the environment
+    /// if name != "", then
+    ///     if declns == null
+    ///        this means that this specifier is just mentioning a struct, not defining one, so
+    ///        if the current environment doesn't have this union type, then add an **incomplete** struct
+    ///     if declns != null
+    ///        this means that this specifier is defining a struct, so we need to perform the following steps:
+    ///        1. make sure that the current environment doesn't have a **complete** union of this name
+    ///        2. immediately add an **incomplete** union into the environment
+    ///        3. iterate over the declns
+    ///        4. finish forming a complete union and add it into the environment
+    /// </summary>
+    //public class UnionSpec : StructOrUnionSpec {
+    //    public UnionSpec(String _name, IReadOnlyList<StructDecln> _declns)
+    //        : base(_name, _declns) { }
+
+    //    public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) =>
+    //        GetExprTypeEnv(false, env, is_const, is_volatile);
+
+    //}
+
+    /// <summary>
     /// enum-specifier
     ///   : enum [identifier]? '{' enumerator-list '}'
     ///   | enum identifier
@@ -495,16 +553,16 @@ namespace SyntaxTree {
             Create(name, Option.Some(enumrs));
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
-            if (this.Enumrs == null) {
+            if (this.Enumrs.IsNone) {
                 // if there is no content in this enum type, we must find it's definition in the environment
-                Option<AST.Env.Entry> entry_opt = env.Find($"enum {Name}");
-                if (entry_opt.IsNone || entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                    throw new InvalidOperationException($"Type 'enum {Name}' has not been defined.");
+                Option<AST.Env.Entry> entryOpt = env.Find($"enum {Name}");
+                if (entryOpt.IsNone || entryOpt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
+                    throw new InvalidOperationException($"Type \"enum {Name}\" has not been defined.");
                 }
             } else {
                 // so there are something in this enum type, we need to put this type into the environment
                 Int32 idx = 0;
-                foreach (Enumr elem in Enumrs) {
+                foreach (Enumr elem in Enumrs.Value) {
                     Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
                     env = r_enum.Item1;
                     String name = r_enum.Item2;

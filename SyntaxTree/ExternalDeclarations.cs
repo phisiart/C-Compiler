@@ -61,9 +61,9 @@ namespace SyntaxTree {
         public Tuple<AST.Env, AST.FuncDef> GetFuncDef(AST.Env env) {
 
             // Get storage class specifier and base type from declaration specifiers.
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = this.Specs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.StorageClass, AST.ExprType> r_specs = this.Specs.GetSCSType(env);
             env = r_specs.Item1;
-            AST.Decln.SCS scs = r_specs.Item2;
+            AST.Decln.StorageClass scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
             // Get function name and function type from declarator.
@@ -79,12 +79,12 @@ namespace SyntaxTree {
             }
 
             switch (scs) {
-                case AST.Decln.SCS.AUTO:
-                case AST.Decln.SCS.EXTERN:
-                case AST.Decln.SCS.STATIC:
+                case AST.Decln.StorageClass.AUTO:
+                case AST.Decln.StorageClass.EXTERN:
+                case AST.Decln.StorageClass.STATIC:
                     env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
                     break;
-                case AST.Decln.SCS.TYPEDEF:
+                case AST.Decln.StorageClass.TYPEDEF:
                 default:
                     throw new InvalidOperationException("Invalid storage class specifier for function definition.");
             }

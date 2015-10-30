@@ -120,8 +120,9 @@ namespace Parsing {
         /// </summary>
         public static IParser<R> Check<R>(this IParser<R> parser, Predicate<IParserResult<R>> predicate) =>
             new ParserThenCheck<R>(parser, predicate);
-        
-        
+
+        public static IParser<R> TransformResult<R>(this IParser<R> parser, Func<IParserResult<R>, IParserResult<R>> transformFunc) =>
+            Then(parser, new ResultTransformer<R>(transformFunc));
 
         /// <summary>
         /// ( => I ) then ( Tuple[I, S] => R ) is ( S => R )

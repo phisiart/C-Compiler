@@ -533,6 +533,17 @@ namespace Parsing {
         }
     }
 
+    public class ResultTransformer<R> : ITransformer<R, R> {
+        public ResultTransformer(Func<IParserResult<R>, IParserResult<R>> transformFunc) {
+            this.TransformFunc = transformFunc;
+        }
+
+        public Func<IParserResult<R>, IParserResult<R>> TransformFunc { get; }
+
+        public IParserResult<R> Transform(R seed, ParserInput input) =>
+            TransformFunc(ParserSucceeded.Create(seed, input.Environment, input.Source));
+    }
+
     //public class ParserThenTransformer<S, I, R> : ITransformer<S, R> {
     //    public ParserThenTransformer(IParser<I> parser, ITransformer<Tuple<I, S>, R> transformer) {
     //        this.Parser = parser;
