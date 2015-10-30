@@ -36,8 +36,8 @@ namespace Parsing {
         public static NamedParser<ImmutableList<PointerModifier>>
             Pointer { get; } = new NamedParser<ImmutableList<PointerModifier>>("pointer");
 
-        public static NamedParser<ParameterTypeList>
-            ParameterTypeList { get; } = new NamedParser<ParameterTypeList>("parameter-type-list");
+        public static NamedParser<ParamTypeList>
+            ParameterTypeList { get; } = new NamedParser<ParamTypeList>("parameter-type-list");
 
         public static NamedParser<ImmutableList<ParamDecln>>
             ParameterList { get; } = new NamedParser<ImmutableList<ParamDecln>>("parameter-list");
@@ -75,11 +75,11 @@ namespace Parsing {
         public static NamedParser<SpecQualList>
             SpecifierQualifierList { get; } = new NamedParser<SpecQualList>("specifier-qualifier-list");
 
-        public static NamedParser<ImmutableList<Declr>>
-            StructDeclaratorList { get; } = new NamedParser<ImmutableList<Declr>>("struct-declarator-list");
+        public static NamedParser<ImmutableList<IStructDeclr>>
+            StructDeclaratorList { get; } = new NamedParser<ImmutableList<IStructDeclr>>("struct-declarator-list");
 
-        public static NamedParser<Declr>
-            StructDeclarator { get; } = new NamedParser<Declr>("struct-declarator");
+        public static NamedParser<IStructDeclr>
+            StructDeclarator { get; } = new NamedParser<IStructDeclr>("struct-declarator");
 
         public static NamedParser<ParamDecln>
             ParameterDeclaration { get; } = new NamedParser<ParamDecln>("parameter-declaration");
@@ -276,7 +276,7 @@ namespace Parsing {
                     (COMMA)
                     .Then(PERIOD).Then(PERIOD).Then(PERIOD)
                     .Optional()
-                ).Then(SyntaxTree.ParameterTypeList.Create)
+                ).Then(SyntaxTree.ParamTypeList.Create)
             );
 
             /// <summary>
@@ -343,7 +343,7 @@ namespace Parsing {
                         .Then(LEFT_PAREN)
                         .Then(
                             ParameterTypeList
-                            .Optional(SyntaxTree.ParameterTypeList.Create())
+                            .Optional()
                             .Then(FunctionModifier.Create)
                         ).Then(RIGHT_PAREN)
                         .Then(Declr.Add)
@@ -489,15 +489,23 @@ namespace Parsing {
             );
 
             /// <summary>
-            /// struct_declarator
-            ///   : declarator
-            ///   | type_specifier [declarator]? ':' constant_expression
+            /// struct-declarator
+            ///   : [declarator]? ':' constant-expression
+            ///   | declarator
             /// </summary>
             /// <remarks>
             /// Note that the second one represents a 'bit-field', which I'm not going to support.
             /// </remarks>
             StructDeclarator.Is(
-                Declarator
+                (
+                    Declarator.Optional()
+                    .Then(COLON)
+                    .Then(ConstantExpression)
+                    .Then(BitFieldDeclr.Create)
+                    as IParser<IStructDeclr>
+                ).Or(
+                    Declarator
+                )
             );
             
             /// <summary>
@@ -515,7 +523,7 @@ namespace Parsing {
             ParameterDeclaration.Is(
                 (DeclarationSpecifiers)
                 .Then(
-                    (Declarator as IParser<OptionalDeclr>)
+                    (Declarator as IParser<IParamDeclr>)
                     .Or(AbstractDeclarator)
                     .Optional(AbstractDeclr.Create())
                 ).Then(ParamDecln.Create)
@@ -567,7 +575,7 @@ namespace Parsing {
                         .Then(AbstractDeclr.Create)
                     ).Or(
                         (LEFT_PAREN)
-                        .Then(ParameterTypeList.Optional(SyntaxTree.ParameterTypeList.Create()))
+                        .Then(ParameterTypeList.Optional())
                         .Then(RIGHT_PAREN)
                         .Then(FunctionModifier.Create)
                         .Then(ImmutableList.Create)
@@ -588,7 +596,7 @@ namespace Parsing {
                         Given<AbstractDeclr>()
                         .Then(
                             (LEFT_PAREN)
-                            .Then(ParameterTypeList.Optional(SyntaxTree.ParameterTypeList.Create()))
+                            .Then(ParameterTypeList.Optional())
                             .Then(RIGHT_PAREN)
                             .Then(FunctionModifier.Create)
                         ).Then(
@@ -599,9 +607,12 @@ namespace Parsing {
                 )
             );
 
-            // initializer : assignment-expression
-            //             | '{' initializer-list '}'
-            //             | '{' initializer-list ',' '}'
+            /// <summary>
+            /// initializer
+            ///   : assignment-expression
+            ///   | '{' initializer-list '}'
+            ///   | '{' initializer-list ',' '}'
+            /// </summary>
             Initializer.Is(
                 AssignmentExpression.Then(InitExpr.Create)
                 .Or(
@@ -628,12 +639,10 @@ namespace Parsing {
             /// <summary>
             /// type-name
             ///   : specifier-qualifier-list [abstract-declarator]?
-            /// 
-            /// It's just a declaration with the name optional.
             /// </summary>
             TypeName.Is(
                 (SpecifierQualifierList)
-                .Then(AbstractDeclarator)
+                .Then(AbstractDeclarator.Optional(AbstractDeclr.Create()))
                 .Then(SyntaxTree.TypeName.Create)
             );
 

@@ -21,10 +21,10 @@
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.Workbench ActiveDocument="Parser/Declaration.cs">
     <Files>
-      <File FileName="SyntaxTree/DeclarationSpecifiers.cs" Line="57" Column="9" />
-      <File FileName="Parser/Declaration.cs" Line="87" Column="48" />
-      <File FileName="SyntaxTree/declarations.cs" Line="341" Column="5" />
-      <File FileName="AST/expressions.cs" Line="103" Column="9" />
+      <File FileName="SyntaxTree/DeclarationSpecifiers.cs" Line="1" Column="1" />
+      <File FileName="Parser/Declaration.cs" Line="279" Column="53" />
+      <File FileName="SyntaxTree/declarations.cs" Line="1" Column="1" />
+      <File FileName="AST/expressions.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />

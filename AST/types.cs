@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
@@ -577,6 +578,13 @@ namespace AST {
                 is_varargs
             );
         }
+        
+        public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) {
+
+        }
+
+        public static TFunction Create(ExprType returnType) =>
+            Create(returnType, ImmutableList<Tuple<Option<String>, ExprType>>.Empty, true);
 
         public String Dump(Boolean dump_args = false) {
             String str = "function";

@@ -33,7 +33,7 @@ public class _declaration : ParseRule {
             (DeclnSpecs decln_specs, List<InitDeclr> init_declrs, Boolean _) => {
                 if (decln_specs.IsTypedef()) {
                     foreach (InitDeclr init_declr in init_declrs) {
-                        ParserEnvironment.AddTypedefName(init_declr.declr.Name);
+                        ParserEnvironment.AddTypedefName(init_declr.Declr.Name);
                     }
                 }
                 return new Decln(decln_specs, init_declrs);
@@ -539,7 +539,7 @@ public class _parameter_type_list : ParseRule {
         }
     }
 
-    public static Int32 Parse(List<Token> src, Int32 begin, out ParameterTypeList param_type_list) {
+    public static Int32 Parse(List<Token> src, Int32 begin, out ParamTypeList param_type_list) {
         return Parser.ParseSequence(
 			src, begin, out param_type_list,
             
@@ -549,7 +549,7 @@ public class _parameter_type_list : ParseRule {
 			// [ ',' '...' ]?
             ParseOptionalVarArgs,
 
-            (List<ParamDecln> param_list, Boolean is_varargs) => new ParameterTypeList(param_list, is_varargs)
+            (List<ParamDecln> param_list, Boolean is_varargs) => new ParamTypeList(param_list, is_varargs)
         );
     }
 }
@@ -682,10 +682,10 @@ public class _direct_declarator : ParseRule {
         }
 
         // match constant_expression, if fail, just assume no parameter
-        ParameterTypeList param_type_list;
+        ParamTypeList param_type_list;
         Int32 saved = begin;
         if ((begin = _parameter_type_list.Parse(src, begin, out param_type_list)) == -1) {
-            param_type_list = new ParameterTypeList(new List<ParamDecln>());
+            param_type_list = new ParamTypeList(new List<ParamDecln>());
             begin = saved;
         }
 
@@ -695,7 +695,7 @@ public class _direct_declarator : ParseRule {
             return -1;
         }
 
-        modifier = new FunctionModifier(param_type_list.params_inner_declns.ToList(), param_type_list.params_varargs);
+        modifier = new FunctionModifier(param_type_list.ParamDeclns.ToList(), param_type_list.HasVarArgs);
         return begin;
     }
 

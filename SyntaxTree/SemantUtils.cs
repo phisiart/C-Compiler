@@ -26,4 +26,24 @@ namespace SyntaxTree {
         public static ISemantReturn<T> Create<T>(AST.Env env, T value) =>
             SemantReturn<T>.Create(env, value);
     }
+
+    public static class SemanticAnalysis {
+        public static R Semant<R>(Func<AST.Env, ISemantReturn<R>> semantFunc, ref AST.Env env) {
+            var semantReturn = semantFunc(env);
+            env = semantReturn.Env;
+            return semantReturn.Value;
+        }
+
+        public static R Semant<I, R>(Func<AST.Env, I, ISemantReturn<R>> semantFunc, I arg, ref AST.Env env) {
+            var semantReturn = semantFunc(env, arg);
+            env = semantReturn.Env;
+            return semantReturn.Value;
+        }
+
+        public static AST.Expr SemantExpr(Func<AST.Env, AST.Expr> semantFunc, ref AST.Env env) {
+            var semantReturn = semantFunc(env);
+            env = semantReturn.Env;
+            return semantReturn;
+        }
+    }
 }
