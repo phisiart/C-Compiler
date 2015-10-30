@@ -19,9 +19,9 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -40,7 +40,7 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -49,7 +49,7 @@ namespace AST {
         // 
         // float stack:
         // +-------+
-        // | expr  | <- %st(1)
+        // | Expr  | <- %st(1)
         // +-------+
         // |  1.0  | <- %st(0)
         // +-------+
@@ -62,10 +62,10 @@ namespace AST {
 
         public override Reg CGenValue(Env env, CGenState state) {
 
-            // 1. Get the address of expr.
+            // 1. Get the address of Expr.
             // 
             // regs:
-            // %eax = &expr
+            // %eax = &Expr
             // 
             // stack:
             // +-------+
@@ -77,60 +77,60 @@ namespace AST {
             // 2. Push address.
             // 
             // regs:
-            // %eax = &expr
+            // %eax = &Expr
             // 
             // stack:
             // +-------+
             // | ..... |
             // +-------+
-            // | &expr | <- %esp
+            // | &Expr | <- %esp
             // +-------+
             // 
             Int32 stack_size = state.CGenPushLong(Reg.EAX);
 
-            // 3. Get current value of expr.
+            // 3. Get current value of Expr.
             // 
-            // 1) If expr is an integral or pointer:
+            // 1) If Expr is an integral or pointer:
             // 
             // regs:
-            // %eax = expr
+            // %eax = Expr
             // 
             // stack:
             // +-------+
             // | ..... |
             // +-------+
-            // | &expr | <- %esp
+            // | &Expr | <- %esp
             // +-------+
             // 
             // 
-            // 2) If expr is a float:
+            // 2) If Expr is a float:
             // 
             // regs:
-            // %eax = &expr
+            // %eax = &Expr
             // 
             // stack:
             // +-------+
             // | ..... |
             // +-------+
-            // | &expr | <- %esp
+            // | &Expr | <- %esp
             // +-------+
             // 
             // float stack:
             // +-------+
-            // | expr  | <- %st(0)
+            // | Expr  | <- %st(0)
             // +-------+
             // 
             Reg ret = expr.CGenValue(env, state);
 
             switch (ret) {
                 case Reg.EAX:
-                    // expr is an integral or pointer.
+                    // Expr is an integral or pointer.
 
                     // 4. Pop address to %ecx.
                     // 
                     // regs:
-                    // %eax = expr
-                    // %ecx = &expr
+                    // %eax = Expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -139,12 +139,12 @@ namespace AST {
                     // 
                     state.CGenPopLong(stack_size, Reg.ECX);
 
-                    // 5. Cache current value of expr in %ebx.
+                    // 5. Cache current value of Expr in %ebx.
                     // 
                     // regs:
-                    // %eax = expr
-                    // %ebx = expr
-                    // %ecx = &expr
+                    // %eax = Expr
+                    // %ebx = Expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -157,9 +157,9 @@ namespace AST {
                     //    Set %eax to be the return value.
                     // 
                     // regs:
-                    // %eax = expr or (expr +- 1)
-                    // %ebx = (expr +- 1) or expr
-                    // %ecx = &expr
+                    // %eax = Expr or (Expr +- 1)
+                    // %ebx = (Expr +- 1) or Expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -191,12 +191,12 @@ namespace AST {
                     }
 
                 case Reg.ST0:
-                    // expr is a float.
+                    // Expr is a float.
 
                     // 4. Pop address to %ecx.
                     // 
                     // regs:
-                    // %ecx = &expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -208,7 +208,7 @@ namespace AST {
                     // 5. Load 1.0 to FPU stack.
                     // 
                     // regs:
-                    // %ecx = &expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -217,7 +217,7 @@ namespace AST {
                     // 
                     // float stack:
                     // +-------+
-                    // | expr  | <- %st(1)
+                    // | Expr  | <- %st(1)
                     // +-------+
                     // |  1.0  | <- %st(0)
                     // +-------+
@@ -228,7 +228,7 @@ namespace AST {
                     //    Set %st(0) to be the new or original value.
                     // 
                     // regs:
-                    // %ecx = &expr
+                    // %ecx = &Expr
                     // 
                     // stack:
                     // +-------+
@@ -237,7 +237,7 @@ namespace AST {
                     // 
                     // float stack:
                     // +---------------------+
-                    // | expr or (epxr +- 1) | <- %st(0)
+                    // | Expr or (epxr +- 1) | <- %st(0)
                     // +---------------------+
                     // 
                     switch (expr.type.kind) {
@@ -261,9 +261,9 @@ namespace AST {
     }
 
     /// <summary>
-    /// expr++: must be integral, float or pointer.
+    /// Expr++: must be integral, float or pointer.
     /// 
-    /// If expr is an array, it is converted to a pointer in semantic analysis.
+    /// If Expr is an array, it is converted to a pointer in semantic analysis.
     /// </summary>
     public class PostIncrement : IncDecExpr {
         public PostIncrement(Expr expr)
@@ -272,9 +272,9 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -285,9 +285,9 @@ namespace AST {
         // Leave %eax to be the original value.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr + 1
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr + 1
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -317,7 +317,7 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -326,7 +326,7 @@ namespace AST {
         // 
         // float stack:
         // +-------+
-        // | expr  | <- %st(1)
+        // | Expr  | <- %st(1)
         // +-------+
         // |  1.0  | <- %st(0)
         // +-------+
@@ -334,7 +334,7 @@ namespace AST {
         // 1. Compute %st(1) + %st(0) and stores in %st(0).
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -343,15 +343,15 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(1)
+        // |    Expr    | <- %st(1)
         // +------------+
-        // | expr + 1.0 | <- %st(0)
+        // | Expr + 1.0 | <- %st(0)
         // +------------+
         // 
         // 2. Pop result from FPU stack and store in memory.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -360,7 +360,7 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(0)
+        // |    Expr    | <- %st(0)
         // +------------+
         // 
         public override void CalcAndSaveFloat(CGenState state) {
@@ -375,7 +375,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// expr--: must be a scalar
+    /// Expr--: must be a scalar
     /// </summary>
     public class PostDecrement : IncDecExpr {
         public PostDecrement(Expr expr)
@@ -384,9 +384,9 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -397,9 +397,9 @@ namespace AST {
         // Leave %eax to be the original value.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr - 1
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr - 1
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -429,7 +429,7 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -438,7 +438,7 @@ namespace AST {
         // 
         // float stack:
         // +-------+
-        // | expr  | <- %st(1)
+        // | Expr  | <- %st(1)
         // +-------+
         // |  1.0  | <- %st(0)
         // +-------+
@@ -446,7 +446,7 @@ namespace AST {
         // 1. Compute %st(1) - %st(0) and stores in %st(0).
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -455,15 +455,15 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(1)
+        // |    Expr    | <- %st(1)
         // +------------+
-        // | expr - 1.0 | <- %st(0)
+        // | Expr - 1.0 | <- %st(0)
         // +------------+
         // 
         // 2. Pop result from FPU stack and store in memory.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -472,7 +472,7 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(0)
+        // |    Expr    | <- %st(0)
         // +------------+
         // 
         public override void CalcAndSaveFloat(CGenState state) {
@@ -487,7 +487,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// ++expr: must be a scalar
+    /// ++Expr: must be a scalar
     /// </summary>
     public class PreIncrement : IncDecExpr {
         public PreIncrement(Expr expr)
@@ -496,9 +496,9 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -509,9 +509,9 @@ namespace AST {
         // Leave %eax to be the original value.
         // 
         // regs:
-        // %eax = expr + 1
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr + 1
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -541,7 +541,7 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -550,7 +550,7 @@ namespace AST {
         // 
         // float stack:
         // +-------+
-        // | expr  | <- %st(1)
+        // | Expr  | <- %st(1)
         // +-------+
         // |  1.0  | <- %st(0)
         // +-------+
@@ -558,7 +558,7 @@ namespace AST {
         // 1. Compute %st(1) + %st(0) and stores in %st(0).
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -567,15 +567,15 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(1)
+        // |    Expr    | <- %st(1)
         // +------------+
-        // | expr + 1.0 | <- %st(0)
+        // | Expr + 1.0 | <- %st(0)
         // +------------+
         // 
         // 2. Store %st(0) in memory.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -584,7 +584,7 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // | expr + 1.0 | <- %st(0)
+        // | Expr + 1.0 | <- %st(0)
         // +------------+
         // 
         public override void CalcAndSaveFloat(CGenState state) {
@@ -599,7 +599,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// --expr: must be a scalar
+    /// --Expr: must be a scalar
     /// </summary>
     public class PreDecrement : IncDecExpr {
         public PreDecrement(Expr expr)
@@ -608,9 +608,9 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %eax = expr
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -621,9 +621,9 @@ namespace AST {
         // Leave %eax to be the original value.
         // 
         // regs:
-        // %eax = expr - 1
-        // %ebx = expr
-        // %ecx = &expr
+        // %eax = Expr - 1
+        // %ebx = Expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -653,7 +653,7 @@ namespace AST {
         // Before the actual calculation, the state is set to this.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -662,7 +662,7 @@ namespace AST {
         // 
         // float stack:
         // +-------+
-        // | expr  | <- %st(1)
+        // | Expr  | <- %st(1)
         // +-------+
         // |  1.0  | <- %st(0)
         // +-------+
@@ -670,7 +670,7 @@ namespace AST {
         // 1. Compute %st(1) - %st(0) and stores in %st(0).
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -679,15 +679,15 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // |    expr    | <- %st(1)
+        // |    Expr    | <- %st(1)
         // +------------+
-        // | expr - 1.0 | <- %st(0)
+        // | Expr - 1.0 | <- %st(0)
         // +------------+
         // 
         // 2. Store %st(0) in memory.
         // 
         // regs:
-        // %ecx = &expr
+        // %ecx = &Expr
         // 
         // stack:
         // +-------+
@@ -696,7 +696,7 @@ namespace AST {
         // 
         // float stack:
         // +------------+
-        // | expr - 1.0 | <- %st(0)
+        // | Expr - 1.0 | <- %st(0)
         // +------------+
         // 
         public override void CalcAndSaveFloat(CGenState state) {
@@ -720,7 +720,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// -expr: only takes arithmetic type.
+    /// -Expr: only takes arithmetic type.
     /// 
     /// After semantic analysis, only the following 4 types are possible:
     /// 1) long
@@ -750,7 +750,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// ~expr: only takes integral type.
+    /// ~Expr: only takes integral type.
     /// 
     /// After semantic analysis, only the following 2 types are possible:
     /// 1) long
@@ -771,7 +771,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// !expr: only takes scalar type.
+    /// !Expr: only takes scalar type.
     /// 
     /// After semantic analysis, only the following 4 types are possible:
     /// 1) long
@@ -795,7 +795,7 @@ namespace AST {
                     return Reg.EAX;
 
                 case Reg.ST0:
-                    /// Compare expr with 0.0
+                    /// Compare Expr with 0.0
                     /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
                     state.FLDZ();
                     state.FUCOMIP();

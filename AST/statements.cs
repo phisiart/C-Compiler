@@ -42,7 +42,7 @@ namespace AST {
                     break;
 
                 case Reg.ST0:
-                    /// Compare expr with 0.0
+                    /// Compare Expr with 0.0
                     /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
                     state.FLDZ();
                     state.FUCOMIP();
@@ -473,7 +473,7 @@ namespace AST {
                 declns.Last().Item1.StackSize :
                 saved_stack_size;
 
-            // 1. Evaluate expr.
+            // 1. Evaluate Expr.
             CGenExprStmt(env, expr, state);
 
             // 2. Expand stack.

@@ -113,7 +113,7 @@ namespace Parsing {
                 (DeclarationSpecifiers)
                 .Then(InitDeclaratorList.Optional(ImmutableList<InitDeclr>.Empty))
                 .Then(SEMICOLON)
-                .Then((Tuple<ImmutableList<InitDeclr>, DeclnSpecs> _) => new Decln(_.Item2, _.Item1))
+                .Then(Decln.Create)
             );
 
             /// <summary>
@@ -217,10 +217,10 @@ namespace Parsing {
                     .Or(DOUBLE)
                     .Or(SIGNED)
                     .Or(UNSIGNED)
-                ).Then(kind => new TypeSpec(kind))
+                ).Then(kind => new BasicTypeSpec(kind) as TypeSpec)
                 .Or(StructOrUnionSpecifier)
                 .Or(EnumSpecifier)
-                .Or(TypeDefName.Then(name => new TypedefName(name)))
+                .Or(TypeDefName.Then(TypedefName.Create))
             );
 
             /// <summary>
@@ -258,9 +258,9 @@ namespace Parsing {
                 (
                     MULT.
                     Then(TypeQualifierList.Optional(ImmutableList<TypeQual>.Empty))
-                    .Then((ImmutableList<TypeQual> typeQuals) => new PointerModifier(typeQuals))
+                    .Then(PointerModifier.Create)
                 ).OneOrMore()
-                .Then((ImmutableList<PointerModifier> pointerModifiers) => pointerModifiers.Reverse())
+                .Then(pointerModifiers => pointerModifiers.Reverse())
             );
 
             /// <summary>
@@ -525,7 +525,7 @@ namespace Parsing {
                 .Then(
                     (Declarator as IParser<IParamDeclr>)
                     .Or(AbstractDeclarator)
-                    .Optional(AbstractDeclr.Create())
+                    .Optional(AbstractDeclr.Empty)
                 ).Then(ParamDecln.Create)
             );
 
@@ -642,7 +642,7 @@ namespace Parsing {
             /// </summary>
             TypeName.Is(
                 (SpecifierQualifierList)
-                .Then(AbstractDeclarator.Optional(AbstractDeclr.Create()))
+                .Then(AbstractDeclarator.Optional(AbstractDeclr.Empty))
                 .Then(SyntaxTree.TypeName.Create)
             );
 

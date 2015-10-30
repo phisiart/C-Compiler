@@ -758,7 +758,7 @@ namespace Parsing {
         //    params Tuple<IConsumer, BinaryOp.Creator>[] operatorConsumerAndTransformers
         //) {
         //    var transformers = operatorConsumerAndTransformers.Select(_ =>
-        //        (_.Item1).Then(operandParser).Then((Expr lhs, Expr rhs) => _.Item2(lhs, rhs))
+        //        (_.Item1).Then(operandParser).Then((Expr Left, Expr Right) => _.Item2(Left, Right))
         //    );
         //    return operandParser.Then(transformers.Aggregate(ParserCombinator.Or).ZeroOrMore());
         //}
@@ -783,7 +783,7 @@ namespace Parsing {
         //    params Tuple<IConsumer, Func<Expr, Expr, Expr>>[] operatorConsumerAndTransformers
         //) {
         //    var transformers = operatorConsumerAndTransformers.Select(_ =>
-        //        (_.Item1).Then(rhsParser).Then((Expr lhs, Expr rhs) => _.Item2(lhs, rhs))
+        //        (_.Item1).Then(rhsParser).Then((Expr Left, Expr Right) => _.Item2(Left, Right))
         //    );
         //    return lhsParser.Then(transformers.Aggregate(ParserCombinator.Or));
         //}

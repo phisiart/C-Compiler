@@ -33,7 +33,7 @@ namespace SyntaxTree {
     ///   | enum-specifier
     ///   | typedef-name
     /// </summary>
-    public class TypeSpec : PTNode {
+    public abstract class TypeSpec : PTNode {
         public enum Kind {
             NON_BASIC,
             VOID,
@@ -47,52 +47,60 @@ namespace SyntaxTree {
             UNSIGNED
         }
 
-        public TypeSpec() {
-            kind = Kind.NON_BASIC;
-        }
-
-        public TypeSpec(Kind spec) {
-            kind = spec;
-        }
-
         // GetExprType
         // ===========
         // input: env
         // output: tuple<ExprType, Environment>
         // 
-        public virtual Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            throw new NotImplementedException();
+        public abstract Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile);
+
+        public abstract Kind kind { get; }
+    }
+
+    public class BasicTypeSpec : TypeSpec {
+        public BasicTypeSpec(Kind kind) {
+            this.kind = kind;
         }
 
-        public readonly Kind kind;
+        public override Kind kind { get; }
+
+        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+            throw new InvalidOperationException();
+        }
+    }
+
+    public abstract class NonBasicTypeSpec : TypeSpec {
+        public override Kind kind => Kind.NON_BASIC;
     }
 
     /// <summary>
     /// typedef-name
     ///   : identifier
     /// </summary>
-    public class TypedefName : TypeSpec {
+    public class TypedefName : NonBasicTypeSpec {
         public TypedefName(String name) {
             this.Name = name;
         }
 
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
+        public static TypedefName Create(String name) =>
+            new TypedefName(name);
 
-            Option<AST.Env.Entry> entry_opt = env.Find(Name);
+        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
 
-            if (entry_opt.IsNone) {
-                throw new InvalidOperationException($"Cannot find name \"{Name}\".");
+            var entryOpt = env.Find(this.Name);
+
+            if (entryOpt.IsNone) {
+                throw new InvalidOperationException($"Cannot find name \"{this.Name}\".");
             }
 
-            AST.Env.Entry entry = entry_opt.Value;
+            var entry = entryOpt.Value;
 
             if (entry.kind != AST.Env.EntryKind.TYPEDEF) {
-                throw new InvalidOperationException($"\"{Name}\" is not a typedef.");
+                throw new InvalidOperationException($"\"{this.Name}\" is not a typedef.");
             }
 
-            return Tuple.Create(env, entry.type.GetQualifiedType(is_const, is_volatile));
+            return Tuple.Create(env, entry.type.GetQualifiedType(isConst, isVolatile));
         }
-
 
         public String Name { get; }
     }
@@ -252,12 +260,12 @@ namespace SyntaxTree {
         public Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env) {
             var _ = GetExprType(env);
             return Tuple.Create(_.Env, _.Value);
-            //Boolean is_const = TypeQuals.Contains(TypeQual.CONST);
+            //Boolean isConst = TypeQuals.Contains(TypeQual.CONST);
             //Boolean is_volatile = TypeQuals.Contains(TypeQual.VOLATILE);
 
             //// 1. if no type specifier => long
             //if (TypeSpecs.Count == 0) {
-            //    return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
+            //    return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, is_volatile));
             //}
 
             //// 2. now let's analyse type specs
@@ -269,31 +277,31 @@ namespace SyntaxTree {
 
             //    switch (basic_type) {
             //        case AST.ExprType.Kind.VOID:
-            //            return Tuple.Create(env, (AST.ExprType)new AST.TVoid(is_const, is_volatile));
+            //            return Tuple.Create(env, (AST.ExprType)new AST.TVoid(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.CHAR:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TChar(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.UCHAR:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUChar(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUChar(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.SHORT:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TShort(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TShort(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.USHORT:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUShort(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TUShort(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.LONG:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.ULONG:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TULong(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TULong(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.FLOAT:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFloat(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TFloat(isConst, is_volatile));
 
             //        case AST.ExprType.Kind.DOUBLE:
-            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TDouble(is_const, is_volatile));
+            //            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TDouble(isConst, is_volatile));
 
             //        default:
             //            throw new Exception("Can't match type specifier.");
@@ -301,7 +309,7 @@ namespace SyntaxTree {
 
             //} else if (TypeSpecs.Count == 1) {
             //    // now we can only match for struct, union, function...
-            //    return TypeSpecs[0].GetExprTypeEnv(env, is_const, is_volatile);
+            //    return TypeSpecs[0].GetExprTypeEnv(env, isConst, is_volatile);
 
             //} else {
             //    throw new InvalidOperationException("Can't match type specifier.");
@@ -350,8 +358,9 @@ namespace SyntaxTree {
     /// <summary>
     /// struct-or-union-specifier
     /// </summary>
-    public class StructOrUnionSpec : TypeSpec {
+    public class StructOrUnionSpec : NonBasicTypeSpec {
         protected StructOrUnionSpec(StructOrUnion structOrUnion, Option<String> name, Option<ImmutableList<StructDecln>> memberDeclns) {
+            this.StructOrUnion = structOrUnion;
             this.Name = name;
             this.MemberDeclns = memberDeclns;
         }
@@ -371,9 +380,10 @@ namespace SyntaxTree {
         public Option<ImmutableList<StructDecln>> MemberDeclns { get; }
 
         // TODO: directly get value?
+        [Obsolete]
         public Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> GetAttribs(AST.Env env) {
-            List<Tuple<String, AST.ExprType>> attribs = new List<Tuple<String, AST.ExprType>>();
-            foreach (StructDecln decln in MemberDeclns.Value) {
+            var attribs = new List<Tuple<String, AST.ExprType>>();
+            foreach (var decln in this.MemberDeclns.Value) {
                 Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_decln = decln.GetDeclns(env);
                 env = r_decln.Item1;
                 attribs.AddRange(r_decln.Item2);
@@ -468,9 +478,9 @@ namespace SyntaxTree {
     ///   : enum [identifier]? '{' enumerator-list '}'
     ///   | enum identifier
     /// </summary>
-    public class EnumSpec : TypeSpec {
+    public class EnumSpec : NonBasicTypeSpec {
         [Obsolete]
-        public EnumSpec(String name, IReadOnlyList<Enumr> enums)
+        public EnumSpec(String name, IEnumerable<Enumr> enums)
             : this(Option.Some(name), Option.Some(enums.ToImmutableList())) { }
 
         protected EnumSpec(Option<String> name, Option<ImmutableList<Enumr>> enumrs) {
@@ -484,8 +494,8 @@ namespace SyntaxTree {
         public static EnumSpec Create(Option<String> name, ImmutableList<Enumr> enumrs) =>
             Create(name, Option.Some(enumrs));
 
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean is_const, Boolean is_volatile) {
-            if (Enumrs == null) {
+        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+            if (this.Enumrs == null) {
                 // if there is no content in this enum type, we must find it's definition in the environment
                 Option<AST.Env.Entry> entry_opt = env.Find($"enum {Name}");
                 if (entry_opt.IsNone || entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
@@ -505,7 +515,7 @@ namespace SyntaxTree {
                 env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + Name, new AST.TLong());
             }
 
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(is_const, is_volatile));
+            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, isVolatile));
         }
 
         public Option<String> Name { get; }

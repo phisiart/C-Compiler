@@ -327,39 +327,39 @@ public class _type_specifier : ParseRule {
         KeywordVal val = ((TokenKeyword)src[begin]).val;
         switch (val) {
         case KeywordVal.VOID:
-            spec = new TypeSpec(TypeSpec.Kind.VOID);
+            spec = new BasicTypeSpec(TypeSpec.Kind.VOID);
             return begin + 1;
 
         case KeywordVal.CHAR:
-            spec = new TypeSpec(TypeSpec.Kind.CHAR);
+            spec = new BasicTypeSpec(TypeSpec.Kind.CHAR);
             return begin + 1;
 
         case KeywordVal.SHORT:
-            spec = new TypeSpec(TypeSpec.Kind.SHORT);
+            spec = new BasicTypeSpec(TypeSpec.Kind.SHORT);
             return begin + 1;
 
         case KeywordVal.INT:
-            spec = new TypeSpec(TypeSpec.Kind.INT);
+            spec = new BasicTypeSpec(TypeSpec.Kind.INT);
             return begin + 1;
 
         case KeywordVal.LONG:
-            spec = new TypeSpec(TypeSpec.Kind.LONG);
+            spec = new BasicTypeSpec(TypeSpec.Kind.LONG);
             return begin + 1;
 
         case KeywordVal.FLOAT:
-            spec = new TypeSpec(TypeSpec.Kind.FLOAT);
+            spec = new BasicTypeSpec(TypeSpec.Kind.FLOAT);
             return begin + 1;
 
         case KeywordVal.DOUBLE:
-            spec = new TypeSpec(TypeSpec.Kind.DOUBLE);
+            spec = new BasicTypeSpec(TypeSpec.Kind.DOUBLE);
             return begin + 1;
 
         case KeywordVal.SIGNED:
-            spec = new TypeSpec(TypeSpec.Kind.SIGNED);
+            spec = new BasicTypeSpec(TypeSpec.Kind.SIGNED);
             return begin + 1;
 
         case KeywordVal.UNSIGNED:
-            spec = new TypeSpec(TypeSpec.Kind.UNSIGNED);
+            spec = new BasicTypeSpec(TypeSpec.Kind.UNSIGNED);
             return begin + 1;
 
         default:

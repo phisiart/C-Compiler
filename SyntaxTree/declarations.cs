@@ -15,10 +15,12 @@ namespace SyntaxTree {
             this.InitDeclrs = initDeclrs;
         }
 
-        public Decln(DeclnSpecs decln_specs, IEnumerable<InitDeclr> init_declrs) {
-            this.DeclnSpecs = decln_specs;
-            this.InitDeclrs = init_declrs;
-        }
+        [Obsolete]
+        public Decln(DeclnSpecs declnSpecs, IEnumerable<InitDeclr> initDeclrs)
+            : this(declnSpecs, initDeclrs.ToImmutableList()) { }
+
+        public static Decln Create(DeclnSpecs declnSpecs, ImmutableList<InitDeclr> initDeclrs) =>
+            new Decln(declnSpecs, initDeclrs);
 
         public DeclnSpecs DeclnSpecs { get; }
         public ImmutableList<InitDeclr> InitDeclrs { get; }
@@ -94,12 +96,12 @@ namespace SyntaxTree {
     public class Enumr : PTNode {
 
         // TODO: change this to optional.
-        public Enumr(String _name, Expr _init) {
-            enum_name = _name;
-            enum_init = _init;
+        public Enumr(String name, Expr init) {
+            this.Name = name;
+            this.Init = init;
         }
-        public readonly String enum_name;
-        public readonly Expr enum_init;
+        public String Name { get; }
+        public Expr Init { get; }
 
         public static Enumr Create(String name, Option<Expr> init) =>
             new Enumr(name, init.IsSome ? init.Value : null);
@@ -107,11 +109,11 @@ namespace SyntaxTree {
         public Tuple<AST.Env, String, Int32> GetEnumerator(AST.Env env, Int32 idx) {
             AST.Expr init;
 
-            if (enum_init == null) {
-                return new Tuple<AST.Env, String, int>(env, enum_name, idx);
+            if (this.Init == null) {
+                return new Tuple<AST.Env, String, Int32>(env, this.Name, idx);
             }
 
-            init = enum_init.GetExpr(env);
+            init = Init.GetExpr(env);
 
             init = AST.TypeCast.MakeCast(init, new AST.TLong());
             if (!init.IsConstExpr) {
@@ -119,7 +121,7 @@ namespace SyntaxTree {
             }
             Int32 init_idx = ((AST.ConstLong)init).value;
 
-            return new Tuple<AST.Env, String, int>(env, enum_name, init_idx);
+            return new Tuple<AST.Env, String, int>(env, Name, init_idx);
         }
     }
 
@@ -188,7 +190,7 @@ namespace SyntaxTree {
     /// struct-declarator
     ///   : declarator
     ///   | [declarator]? ':' constant-expression
-    /// <remarks>
+    /// </summary>
     public class StructDecln : PTNode {
         protected StructDecln(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) {
             this.SpecQualList = specQualList;
@@ -196,8 +198,8 @@ namespace SyntaxTree {
         }
 
         [Obsolete]
-        public StructDecln(DeclnSpecs _specs, List<Declr> _declrs)
-            : this(_specs as SpecQualList, _declrs.ToImmutableList<IStructDeclr>()) { }
+        public StructDecln(DeclnSpecs declnSpecs, List<Declr> structDeclrs)
+            : this(declnSpecs, structDeclrs.ToImmutableList<IStructDeclr>()) { }
 
         public static StructDecln Create(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) =>
             new StructDecln(specQualList, structDeclrs);
@@ -262,8 +264,8 @@ namespace SyntaxTree {
     public class ParamDecln : PTNode {
 
         [Obsolete]
-        public ParamDecln(DeclnSpecs specs, Option<Declr> declr)
-            : this(specs, declr.IsSome ? declr.Value as IParamDeclr : AbstractDeclr.Create()) { }
+        public ParamDecln(DeclnSpecs declnSpecs, Option<Declr> declr)
+            : this(declnSpecs, declr.IsSome ? declr.Value as IParamDeclr : AbstractDeclr.Empty) { }
 
         protected ParamDecln(DeclnSpecs declnSpecs, IParamDeclr declr) {
             this.DeclnSpecs = declnSpecs;
@@ -275,7 +277,6 @@ namespace SyntaxTree {
 
         public DeclnSpecs DeclnSpecs { get; }   // base type
         public IParamDeclr Declr { get; }     // type modifiers and name
-
 
         [Obsolete]
         public Tuple<String, AST.ExprType> GetParamDecln(AST.Env env) {
@@ -293,7 +294,6 @@ namespace SyntaxTree {
             }
             return Tuple.Create(name, type);
         }
-
     }
 
     /// <summary>
@@ -307,8 +307,8 @@ namespace SyntaxTree {
         }
 
         [Obsolete]
-        public TypeName(DeclnSpecs specs, Declr declr)
-            : this(specs, AbstractDeclr.Create(declr.TypeModifiers)) { }
+        public TypeName(DeclnSpecs declnSpecs, Declr declr)
+            : this(declnSpecs, AbstractDeclr.Create(declr.TypeModifiers)) { }
 
         public static TypeName Create(SpecQualList specQualList, AbstractDeclr abstractDeclr) =>
             new TypeName(specQualList, abstractDeclr);
@@ -324,5 +324,4 @@ namespace SyntaxTree {
             return Tuple.Create(env, this.AbstractDeclr.GetNameAndType(env, base_type).Item2);
         }
     }
-
 }

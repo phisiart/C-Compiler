@@ -594,13 +594,13 @@ namespace AST {
 
         // MakeCast
         // ========
-        // input: expr, type
+        // input: Expr, type
         // output: TypeCast
-        // converts expr to type
+        // converts Expr to type
         // 
         public static Expr MakeCast(Expr expr, ExprType type, Env env) {
 
-            // if two types are equal, return expr
+            // if two types are equal, return Expr
             if (EqualType(expr.type, type)) {
                 return expr;
             }
@@ -664,17 +664,17 @@ namespace AST {
             Boolean v1 = t1.is_volatile;
             Boolean c2 = t2.is_const;
             Boolean v2 = t2.is_volatile;
-            // 1. if either expr is double: both are converted to double
+            // 1. if either Expr is double: both are converted to double
             if (t1.kind == ExprType.Kind.DOUBLE || t2.kind == ExprType.Kind.DOUBLE) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TDouble(c1, v1)), MakeCast(e2, new TDouble(c2, v2)), ExprType.Kind.DOUBLE);
             }
 
-            // 2. if either expr is float: both are converted to float
+            // 2. if either Expr is float: both are converted to float
             if (t1.kind == ExprType.Kind.FLOAT || t2.kind == ExprType.Kind.FLOAT) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TFloat(c1, v1)), MakeCast(e2, new TFloat(c2, v2)), ExprType.Kind.FLOAT);
             }
 
-            // 3. if either expr is unsigned long: both are converted to unsigned long
+            // 3. if either Expr is unsigned long: both are converted to unsigned long
             if (t1.kind == ExprType.Kind.ULONG || t2.kind == ExprType.Kind.ULONG) {
                 return new Tuple<Expr, Expr, ExprType.Kind>(MakeCast(e1, new TULong(c1, v1)), MakeCast(e2, new TULong(c2, v2)), ExprType.Kind.ULONG);
             }

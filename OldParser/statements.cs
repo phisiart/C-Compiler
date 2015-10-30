@@ -411,7 +411,7 @@ public class _labeled_statement : ParseRule {
         } else if (Parser.IsKeyword(src[begin], KeywordVal.CASE)) {
             current = begin + 1;
 
-            // match expr
+            // match Expr
             Expr expr;
             current = _constant_expression.Parse(src, current, out expr);
             if (current == -1) {

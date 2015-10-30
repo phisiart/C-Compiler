@@ -269,7 +269,8 @@ namespace SyntaxTree {
         public Boolean IsBitField => true;
 
         public Expr NumBits { get; }
-        
+
+        public Option<String> OptionalName => this.Name;
     }
 
     /// <summary>
@@ -296,7 +297,7 @@ namespace SyntaxTree {
         public static AbstractDeclr Create<Modifier>(ImmutableList<Modifier> typeModifiers) where Modifier : TypeModifier =>
             new AbstractDeclr(typeModifiers.ToImmutableList<TypeModifier>());
         
-        public static AbstractDeclr Create() =>
+        public static AbstractDeclr Empty { get; } =
             Create(ImmutableList<TypeModifier>.Empty);
 
         public static AbstractDeclr Add(AbstractDeclr abstractDeclr, TypeModifier typeModifier) =>
@@ -461,7 +462,7 @@ namespace SyntaxTree {
         public Expr Expr { get; }
 
         public override Tuple<AST.Env, AST.Initr> GetInitr(AST.Env env) {
-            // TODO: expr should change env
+            // TODO: Expr should change env
             return new Tuple<AST.Env, AST.Initr>(env, new AST.InitExpr(Expr.GetExpr(env)));
         }
     }

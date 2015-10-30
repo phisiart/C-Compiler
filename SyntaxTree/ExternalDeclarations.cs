@@ -10,11 +10,11 @@ namespace SyntaxTree {
     public class TranslnUnit : PTNode {
 
         [Obsolete]
-        public TranslnUnit(List<ExternDecln> declns)
+        public TranslnUnit(IEnumerable<ExternDecln> declns)
             : this(declns.ToImmutableList()) { }
 
         protected TranslnUnit(ImmutableList<ExternDecln> declns) {
-            this.declns = declns;
+            this.Declns = declns;
         }
 
         public static TranslnUnit Create(ImmutableList<ExternDecln> externDeclns) =>
@@ -24,7 +24,7 @@ namespace SyntaxTree {
             List<Tuple<AST.Env, AST.ExternDecln>> declns = new List<Tuple<AST.Env, AST.ExternDecln>>();
             AST.Env env = new AST.Env();
 
-            foreach (ExternDecln decln in this.declns) {
+            foreach (ExternDecln decln in this.Declns) {
                 Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> r_decln = decln.GetExternDecln(env);
                 env = r_decln.Item1;
                 declns.AddRange(r_decln.Item2);
@@ -33,7 +33,7 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, AST.TranslnUnit>(env, new AST.TranslnUnit(declns));
         }
 
-        public ImmutableList<ExternDecln> declns;
+        public ImmutableList<ExternDecln> Declns { get; }
     }
 
 
@@ -46,28 +46,28 @@ namespace SyntaxTree {
     /// </summary>
     public class FuncDef : ExternDecln {
         public FuncDef(DeclnSpecs specs, Declr declr, CompoundStmt stmt) {
-            this.specs = specs;
-            this.declr = declr;
-            this.stmt = stmt;
+            this.Specs = specs;
+            this.Declr = declr;
+            this.Stmt = stmt;
         }
 
         public static FuncDef Create(DeclnSpecs declnSpecs, Declr declr, Stmt body) =>
             new FuncDef(declnSpecs, declr, body as CompoundStmt);
 
-        public readonly DeclnSpecs specs;
-        public readonly Declr declr;
-        public readonly CompoundStmt stmt;
+        public DeclnSpecs Specs { get; }
+        public Declr Declr { get; }
+        public CompoundStmt Stmt { get; }
 
         public Tuple<AST.Env, AST.FuncDef> GetFuncDef(AST.Env env) {
 
             // Get storage class specifier and base type from declaration specifiers.
-            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = this.specs.GetSCSType(env);
+            Tuple<AST.Env, AST.Decln.SCS, AST.ExprType> r_specs = this.Specs.GetSCSType(env);
             env = r_specs.Item1;
             AST.Decln.SCS scs = r_specs.Item2;
             AST.ExprType base_type = r_specs.Item3;
 
             // Get function name and function type from declarator.
-            Tuple<String, AST.ExprType> r_declr = this.declr.GetNameAndType(env, base_type);
+            Tuple<String, AST.ExprType> r_declr = this.Declr.GetNameAndType(env, base_type);
             String name = r_declr.Item1;
             AST.ExprType type = r_declr.Item2;
 
@@ -91,7 +91,7 @@ namespace SyntaxTree {
 
             env = env.SetCurrentFunction(func_type);
 
-            Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
             env = r_stmt.Item1;
             AST.Stmt stmt = r_stmt.Item2;
 

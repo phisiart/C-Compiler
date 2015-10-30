@@ -84,7 +84,7 @@ public class _primary_expression : ParseRule {
         // 2. match const
         // 2.1. match char
         if (src[begin].type == TokenType.CHAR) {
-            // expr = new ConstChar(((TokenChar)src[begin]).val);
+            // Expr = new ConstChar(((TokenChar)src[begin]).val);
             // NOTE : there is no const char in C, there is only const Int32 ...
             expr = new ConstInt(((TokenCharConst)src[begin]).value, TokenInt.Suffix.NONE);
             return begin + 1;
@@ -150,7 +150,7 @@ public class _expression : ParseRule {
                 expr = assign_exprs[0];
                 return begin;
             } else {
-                expr = new AssignmentList(assign_exprs.ToImmutableList());
+                expr = new AssignmentList(assign_exprs);
                 return begin;
             }
         }
@@ -233,7 +233,7 @@ public class _assignment_expression : ParseRule {
                     if (current == -1) {
                         return -1;
                     }
-                    node = new Assignment(lvalue, rvalue);
+                    node = Assignment.Create(lvalue, rvalue);
                     return current;
 
                 case OperatorVal.MULTASSIGN:
@@ -450,7 +450,7 @@ public class _postfix_expression : ParseRule {
 
                 // successful match
                 expr = new Dereference(new Add(expr, idx));
-                // expr = new ArrayElement(expr, idx);
+                // Expr = new ArrayElement(Expr, idx);
                 break;
 
             case OperatorVal.LPAREN:
@@ -490,7 +490,7 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new SyntaxTree.Attribute(expr, new Variable(attrib));
+                expr = SyntaxTree.Attribute.Create(expr, attrib);
                 break;
 
             case OperatorVal.RARROW:
@@ -504,8 +504,8 @@ public class _postfix_expression : ParseRule {
                 current++;
 
                 // successful match
-                expr = new SyntaxTree.Attribute(new Dereference(expr), new Variable(pattrib));
-                // expr = new PointerAttribute(expr, new Variable(pattrib));
+                expr = SyntaxTree.Attribute.Create(new Dereference(expr), pattrib);
+                // Expr = new PointerAttribute(Expr, new Variable(pattrib));
                 break;
 
             case OperatorVal.INC:
@@ -680,7 +680,7 @@ public class _unary_expression : ParseRule {
     }
     
     public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
-        //expr = null;
+        //Expr = null;
 
         Int32 current;
         Int32 saved;

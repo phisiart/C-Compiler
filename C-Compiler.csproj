@@ -76,7 +76,7 @@
     <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
     <Compile Include="SyntaxTree\Declarators.cs" />
     <Compile Include="SyntaxTree\expressions.cs" />
-    <Compile Include="SyntaxTree\external_definitions.cs" />
+    <Compile Include="SyntaxTree\ExternalDeclarations.cs" />
     <Compile Include="SyntaxTree\SemantUtils.cs" />
     <Compile Include="SyntaxTree\statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
