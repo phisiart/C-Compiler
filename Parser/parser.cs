@@ -1,10 +1,7 @@
 ﻿using SyntaxTree;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {
@@ -12,14 +9,14 @@ namespace Parsing {
     // Chains
     // ======
     public class ParserThenParser<R1, R2> : IParser<Tuple<R2, R1>> {
-        public ParserThenParser(IParser<R1> FirstParser, IParser<R2> SecondParser) {
-            this.FirstParser = FirstParser;
-            this.SecondParser = SecondParser;
+        public ParserThenParser(IParser<R1> firstParser, IParser<R2> secondParser) {
+            this.FirstParser = firstParser;
+            this.SecondParser = secondParser;
         }
 
         public IParser<R1> FirstParser { get; }
         public IParser<R2> SecondParser { get; }
-        public RuleCombining Combining => RuleCombining.Then;
+        public RuleCombining Combining => RuleCombining.THEN;
 
         public IParserResult<Tuple<R2, R1>> Parse(ParserInput input) {
             var result1 = this.FirstParser.Parse(input);
@@ -35,14 +32,14 @@ namespace Parsing {
     }
 
     public class ParserThenConsumer<R> : IParser<R> {
-        public ParserThenConsumer(IParser<R> Parser, IConsumer Consumer) {
-            this.Parser = Parser;
-            this.Consumer = Consumer;
+        public ParserThenConsumer(IParser<R> parser, IConsumer consumer) {
+            this.Parser = parser;
+            this.Consumer = consumer;
         }
 
         public IParser<R> Parser { get; }
         public IConsumer Consumer { get; }
-        public RuleCombining Combining => RuleCombining.Then;
+        public RuleCombining Combining => RuleCombining.THEN;
 
         public IParserResult<R> Parse(ParserInput input) {
             var result1 = this.Parser.Parse(input);
@@ -65,7 +62,7 @@ namespace Parsing {
 
         public IParser<R1> Parser { get; }
         public ITransformer<R1, R2> Transformer { get; }
-        public RuleCombining Combining => RuleCombining.Then;
+        public RuleCombining Combining => RuleCombining.THEN;
 
         public IParserResult<R2> Parse(ParserInput input) {
             var result1 = this.Parser.Parse(input);
@@ -84,7 +81,7 @@ namespace Parsing {
 
         public IConsumer Consumer { get; }
         public IParser<R> Parser { get; }
-        public RuleCombining Combining => RuleCombining.Then;
+        public RuleCombining Combining => RuleCombining.THEN;
 
         public IParserResult<R> Parse(ParserInput input) {
             var result1 = this.Consumer.Consume(input);
@@ -96,9 +93,9 @@ namespace Parsing {
     }
 
     public class ConsumerThenConsumer : IConsumer {
-        public ConsumerThenConsumer(IConsumer FirstConsumer, IConsumer SecondConsumer) {
-            this.FirstConsumer = FirstConsumer;
-            this.SecondConsumer = SecondConsumer;
+        public ConsumerThenConsumer(IConsumer firstConsumer, IConsumer secondConsumer) {
+            this.FirstConsumer = firstConsumer;
+            this.SecondConsumer = secondConsumer;
         }
 
         public IConsumer FirstConsumer { get; }
@@ -128,7 +125,7 @@ namespace Parsing {
                 return new ParserFailed<Tuple<R2, R1>>();
             }
             var result2 = this.Parser.Parse(result1.ToInput());
-            if (!result1.IsSuccessful) {
+            if (!result2.IsSuccessful) {
                 return new ParserFailed<Tuple<R2, R1>>();
             }
             return ParserSucceeded.Create(Tuple.Create(result2.Result, result1.Result), result2.Environment, result2.Source);
@@ -176,9 +173,9 @@ namespace Parsing {
     }
 
     public enum RuleCombining {
-        None,
-        Then,
-        Or
+        NONE,
+        THEN,
+        OR
     }
 
     /// <summary>
@@ -203,9 +200,9 @@ namespace Parsing {
         }
 
         public SetOnce<IParser<R>> Parser { get; }
-        
-        public void Is(IParser<R> Parser) {
-            this.Parser.Value = Parser;
+
+        public void Is(IParser<R> parser) {
+            this.Parser.Value = parser;
         }
 
         public IParserResult<R> Parse(ParserInput input) =>
@@ -213,16 +210,16 @@ namespace Parsing {
 
         public String Name { get; }
         public String Rule => this.Parser.Value.ToString();
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public override String ToString() => this.Name;
     }
 
     public class OptionalParser<R> : IParser<Option<R>> {
-        public OptionalParser(IParser<R> Parser) {
-            this.Parser = Parser;
+        public OptionalParser(IParser<R> parser) {
+            this.Parser = parser;
         }
         public IParser<R> Parser { get; }
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public IParserResult<Option<R>> Parse(ParserInput input) {
             var result = this.Parser.Parse(input);
             if (result.IsSuccessful) {
@@ -240,7 +237,7 @@ namespace Parsing {
         }
         public IParser<R> Parser { get; }
         public R DefaultValue { get; }
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public IParserResult<R> Parse(ParserInput input) {
             var result = this.Parser.Parse(input);
             if (result.IsSuccessful) {
@@ -255,7 +252,7 @@ namespace Parsing {
         public AlwaysSucceedingParser(R result) {
             this.Result = result;
         }
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public R Result { get; }
         public IParserResult<R> Parse(ParserInput input) =>
             ParserSucceeded.Create(this.Result, input.Environment, input.Source);
@@ -267,7 +264,7 @@ namespace Parsing {
             this.Predicate = predicate;
         }
         public IParser<R> Parser { get; }
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public Predicate<IParserResult<R>> Predicate { get; }
         public IParserResult<R> Parse(ParserInput input) {
             var result1 = this.Parser.Parse(input);
@@ -277,21 +274,21 @@ namespace Parsing {
             return result1;
         }
     }
-    
+
     public class ParserOrParser<R> : IParser<R> {
-        public ParserOrParser(IParser<R> FirstParser, IParser<R> SecondParser) {
-            this.FirstParser = FirstParser;
-            this.SecondParser = SecondParser;
+        public ParserOrParser(IParser<R> firstParser, IParser<R> secondParser) {
+            this.FirstParser = firstParser;
+            this.SecondParser = secondParser;
         }
         public IParser<R> FirstParser { get; }
         public IParser<R> SecondParser { get; }
-        public RuleCombining Combining => RuleCombining.Or;
+        public RuleCombining Combining => RuleCombining.OR;
         public IParserResult<R> Parse(ParserInput input) {
-            var result1 = FirstParser.Parse(input);
+            var result1 = this.FirstParser.Parse(input);
             if (result1.IsSuccessful) {
                 return result1;
             } else {
-                return SecondParser.Parse(input);
+                return this.SecondParser.Parse(input);
             }
         }
     }
@@ -301,7 +298,7 @@ namespace Parsing {
             this.Parser = parser;
         }
 
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
 
         public IParser<R> Parser { get; }
 
@@ -321,7 +318,7 @@ namespace Parsing {
             this.Parser = parser;
         }
 
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public IParser<R> Parser { get; }
 
         public IParserResult<ImmutableList<R>> Parse(ParserInput input) {
@@ -330,8 +327,8 @@ namespace Parsing {
             if (!curResult.IsSuccessful) {
                 return new ParserFailed<ImmutableList<R>>();
             }
-            var lastSuccessfulResult = curResult;
 
+            IParserResult<R> lastSuccessfulResult;
             do {
                 list = list.Add(curResult.Result);
                 lastSuccessfulResult = curResult;
@@ -347,7 +344,7 @@ namespace Parsing {
             this.SeparatorConsumer = separatorConsumer;
             this.ElementParser = elementParser;
         }
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
         public IConsumer SeparatorConsumer { get; }
         public IParser<R> ElementParser { get; }
 
@@ -388,8 +385,8 @@ namespace Parsing {
 
         public SetOnce<IConsumer> Consumer { get; }
 
-        public void Is(IConsumer Consumer) {
-            this.Consumer.Value = Consumer;
+        public void Is(IConsumer consumer) {
+            this.Consumer.Value = consumer;
         }
 
         public IParserResult Consume(ParserInput input) =>
@@ -405,20 +402,19 @@ namespace Parsing {
     }
 
     public class OptionalConsumer : IParser<Boolean> {
-        public OptionalConsumer(IConsumer Consumer) {
-            this.Consumer = Consumer;
+        public OptionalConsumer(IConsumer consumer) {
+            this.Consumer = consumer;
         }
 
-        public RuleCombining Combining => RuleCombining.None;
+        public RuleCombining Combining => RuleCombining.NONE;
 
         public IConsumer Consumer { get; }
         public IParserResult<Boolean> Parse(ParserInput input) {
             var result = this.Consumer.Consume(input);
             if (result.IsSuccessful) {
-                return ParserSucceeded.Create(true, input.Environment, input.Source);
-            } else {
-                return ParserSucceeded.Create(false, input.Environment, input.Source);
+                return ParserSucceeded.Create(true, result.Environment, result.Source);
             }
+            return ParserSucceeded.Create(false, input.Environment, input.Source);
         }
     }
 
@@ -453,7 +449,7 @@ namespace Parsing {
 
         public static SetOnceTransformer<S, R> Create<S, R>() =>
             new SetOnceTransformer<S, R>();
-        
+
     }
 
     public class IdentityTransformer<R> : ITransformer<R, R> {
@@ -504,7 +500,7 @@ namespace Parsing {
         }
         public ITransformer<R, R> Transformer { get; }
         public IParserResult<R> Transform(R seed, ParserInput input) {
-            var result = Transformer.Transform(seed, input);
+            var result = this.Transformer.Transform(seed, input);
             if (result.IsSuccessful) {
                 return result;
             } else {
@@ -524,12 +520,12 @@ namespace Parsing {
             var result1 = this.FirstTransformer.Transform(seed, input);
             if (result1.IsSuccessful) {
                 return result1;
-            } else {
-                return this.SecondTransformer.Transform(seed, input);
             }
+            return this.SecondTransformer.Transform(seed, input);
+
         }
         public override String ToString() {
-            return this.FirstTransformer.ToString() + " | " + this.SecondTransformer.ToString();
+            return this.FirstTransformer + " | " + this.SecondTransformer;
         }
     }
 
@@ -541,18 +537,18 @@ namespace Parsing {
         public Func<IParserResult<R>, IParserResult<R>> TransformFunc { get; }
 
         public IParserResult<R> Transform(R seed, ParserInput input) =>
-            TransformFunc(ParserSucceeded.Create(seed, input.Environment, input.Source));
+            this.TransformFunc(ParserSucceeded.Create(seed, input.Environment, input.Source));
     }
 
     //public class ParserThenTransformer<S, I, R> : ITransformer<S, R> {
     //    public ParserThenTransformer(IParser<I> parser, ITransformer<Tuple<I, S>, R> transformer) {
-    //        this.Parser = parser;
+    //        this.parser = parser;
     //        this.Transformer = transformer;
     //    }
-    //    public IParser<I> Parser { get; }
+    //    public IParser<I> parser { get; }
     //    public ITransformer<Tuple<I, S>, R> Transformer { get; }
     //    public IParserResult<R> Transform(S seed, ParserInput input) {
-    //        var intermediateResult = this.Parser.Parse(input);
+    //        var intermediateResult = this.parser.Parse(input);
     //        if (!intermediateResult.IsSuccessful) {
     //            return new ParserFailed<R>();
     //        }
@@ -583,8 +579,8 @@ namespace Parsing {
         public ITransformer<R, R> Transformer { get; }
         public IParserResult<R> Transform(R seed, ParserInput input) {
             IParserResult<R> curResult = ParserSucceeded.Create(seed, input.Environment, input.Source);
-            var lastSuccessfulResult = curResult;
 
+            IParserResult<R> lastSuccessfulResult;
             do {
                 lastSuccessfulResult = curResult;
                 curResult = this.Transformer.Transform(lastSuccessfulResult.Result, lastSuccessfulResult.ToInput());
@@ -604,8 +600,8 @@ namespace Parsing {
             if (!curResult.IsSuccessful) {
                 return new ParserFailed<R>();
             }
-            var lastSuccessfulResult = curResult;
 
+            IParserResult<R> lastSuccessfulResult;
             do {
                 lastSuccessfulResult = curResult;
                 curResult = this.Transformer.Transform(lastSuccessfulResult.Result, lastSuccessfulResult.ToInput());
@@ -619,6 +615,9 @@ namespace Parsing {
 
         static CParser() {
             SetExpressionRules();
+            SetDeclarationRules();
+            SetExternalDefinitionRules();
+            SetStatementRules();
         }
 
         public class OperatorConsumer : IConsumer {
@@ -632,7 +631,7 @@ namespace Parsing {
             public OperatorVal OperatorVal { get; }
 
             public IParserResult Consume(ParserInput input) {
-                if ((input.Source.First() as TokenOperator)?.val == OperatorVal) {
+                if ((input.Source.First() as TokenOperator)?.val == this.OperatorVal) {
                     return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
                 } else {
                     return new ParserFailed();
@@ -641,13 +640,13 @@ namespace Parsing {
         }
 
         public class IdentifierParser : IParser<String> {
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<String> Parse(ParserInput input) {
-                if (input.Source.First() is TokenIdentifier) {
-                    return ParserSucceeded.Create((input.Source.First() as TokenIdentifier).val, input.Environment, input.Source.Skip(1));
-                } else {
+                var token = input.Source.First() as TokenIdentifier;
+                if (token == null) {
                     return new ParserFailed<String>();
                 }
+                return ParserSucceeded.Create(token.val, input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -659,7 +658,7 @@ namespace Parsing {
             public static KeywordConsumer Create(KeywordVal keywordVal) =>
                 new KeywordConsumer(keywordVal);
             public IParserResult Consume(ParserInput input) {
-                if ((input.Source.First() as TokenKeyword)?.val == KeywordVal) {
+                if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
                     return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
                 } else {
                     return new ParserFailed();
@@ -669,17 +668,17 @@ namespace Parsing {
 
         public class KeywordParser<R> : IParser<R> {
             public KeywordParser(KeywordVal keywordVal, R result) {
-                this.KeywordVal = KeywordVal;
+                this.KeywordVal = keywordVal;
                 this.Result = result;
             }
 
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
 
             public KeywordVal KeywordVal { get; }
             public R Result { get; }
 
             public IParserResult<R> Parse(ParserInput input) {
-                if ((input.Source.First() as TokenKeyword)?.val == KeywordVal) {
+                if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
                     return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Skip(1));
                 } else {
                     return new ParserFailed<R>();
@@ -693,50 +692,46 @@ namespace Parsing {
         }
 
         public class ConstCharParser : IParser<Expr> {
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                if (input.Source.First() is TokenCharConst) {
-                    var token = input.Source.First() as TokenCharConst;
-                    return ParserSucceeded.Create(new ConstInt(token.value, TokenInt.Suffix.NONE), input.Environment, input.Source.Skip(1));
-                } else {
+                var token = input.Source.First() as TokenCharConst;
+                if (token == null) {
                     return new ParserFailed<Expr>();
                 }
+                return ParserSucceeded.Create(new ConstInt(token.value, TokenInt.Suffix.NONE), input.Environment, input.Source.Skip(1));
             }
         }
 
         public class ConstIntParser : IParser<Expr> {
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                if (input.Source.First() is TokenInt) {
-                    var token = input.Source.First() as TokenInt;
-                    return ParserSucceeded.Create(new ConstInt(token.val, token.suffix), input.Environment, input.Source.Skip(1));
-                } else {
+                var token = input.Source.First() as TokenInt;
+                if (token == null) {
                     return new ParserFailed<Expr>();
                 }
+                return ParserSucceeded.Create(new ConstInt(token.val, token.suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
         public class ConstFloatParser : IParser<Expr> {
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                if (input.Source.First() is TokenFloat) {
-                    var token = input.Source.First() as TokenFloat;
-                    return ParserSucceeded.Create(new ConstFloat(token.value, token.suffix), input.Environment, input.Source.Skip(1));
-                } else {
+                var token = input.Source.First() as TokenFloat;
+                if (token == null) {
                     return new ParserFailed<Expr>();
                 }
+                return ParserSucceeded.Create(new ConstFloat(token.value, token.suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
         public class StringLiteralParser : IParser<Expr> {
-            public RuleCombining Combining => RuleCombining.None;
+            public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                if (input.Source.First() is TokenString) {
-                    var token = input.Source.First() as TokenString;
-                    return ParserSucceeded.Create(new StringLiteral(token.raw), input.Environment, input.Source.Skip(1));
-                } else {
+                var token = input.Source.First() as TokenString;
+                if (token == null) {
                     return new ParserFailed<Expr>();
                 }
+                return ParserSucceeded.Create(new StringLiteral(token.raw), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -769,9 +764,9 @@ namespace Parsing {
         //    params Tuple<IConsumer, BinaryOp.Creator>[] operatorConsumerAndTransformers
         //) {
         //    var transformers = operatorConsumerAndTransformers.Select(_ =>
-        //        (_.Item1).Then(operandParser).Then((Expr Left, Expr Right) => _.Item2(Left, Right))
+        //        (_.Item1).THEN(operandParser).THEN((Expr Left, Expr Right) => _.Item2(Left, Right))
         //    );
-        //    return operandParser.Then(transformers.Aggregate(ParserCombinator.Or).ZeroOrMore());
+        //    return operandParser.THEN(transformers.Aggregate(ParserCombinator.Or).ZeroOrMore());
         //}
         public static IParser<Expr> AssignmentOperator(
             IParser<Expr> lhsParser,
@@ -784,7 +779,7 @@ namespace Parsing {
                 .Then(rhsParser)
                 .Then(builder.NodeCreator)
             );
-            return lhsParser.Then(transformers.Aggregate(ParserCombinator.Or).ZeroOrMore());
+            return lhsParser.Then(transformers.Aggregate(ParserCombinator.Or).OneOrMore());
 
         }
 
@@ -794,9 +789,9 @@ namespace Parsing {
         //    params Tuple<IConsumer, Func<Expr, Expr, Expr>>[] operatorConsumerAndTransformers
         //) {
         //    var transformers = operatorConsumerAndTransformers.Select(_ =>
-        //        (_.Item1).Then(rhsParser).Then((Expr Left, Expr Right) => _.Item2(Left, Right))
+        //        (_.Item1).THEN(rhsParser).THEN((Expr Left, Expr Right) => _.Item2(Left, Right))
         //    );
-        //    return lhsParser.Then(transformers.Aggregate(ParserCombinator.Or));
+        //    return lhsParser.THEN(transformers.Aggregate(ParserCombinator.Or));
         //}
     }
 }

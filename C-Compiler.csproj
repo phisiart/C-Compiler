@@ -52,6 +52,8 @@
     <Compile Include="Driver\SetOnce.cs" />
     <Compile Include="ParserTests\ParserTestUtils.cs" />
     <Compile Include="ParserTests\TestDeclarations.cs" />
+    <Compile Include="ParserTests\TestExternalDefinitions.cs" />
+    <Compile Include="ParserTests\TestStatements.cs" />
     <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
     <Compile Include="Parser\ExternalDefinitions.cs" />

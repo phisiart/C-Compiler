@@ -68,6 +68,7 @@ namespace Parsing {
                 (
                     ((GOTO).Then(IDENTIFIER).Then(GotoStmt.Create))
                     .Or(CONTINUE)
+                    .Or(BREAK)
                     .Or((RETURN).Then(Expression.Optional()).Then(ReturnStmt.Create))
                 )
                 .Then(SEMICOLON)
@@ -81,7 +82,7 @@ namespace Parsing {
                 (LEFT_CURLY_BRACE)
                 .Then(DeclarationList.Optional(ImmutableList<Decln>.Empty))
                 .Then(StatementList.Optional(ImmutableList<Stmt>.Empty))
-                .Then(SEMICOLON)
+                .Then(RIGHT_CURLY_BRACE)
                 .Then(CompoundStmt.Create)
             );
 
@@ -192,7 +193,7 @@ namespace Parsing {
             LabeledStatement.Is(
                 (
                     (IDENTIFIER)
-                    .Then(COMMA)
+                    .Then(COLON)
                     .Then(Statement)
                     .Then(LabeledStmt.Create)
                 )

@@ -15,55 +15,53 @@ namespace Parsing {
         public static NamedParser<ExternDecln>
             ExternalDeclaration { get; } = new NamedParser<ExternDecln>("external-declaration");
 
+        /// <summary>
+        /// function-definition
+        ///   : [declaration-specifiers]? declarator [declaration-list]? compound-statement
+        ///
+        /// NOTE: the optional declaration_list is for the **old-style** function prototype like this:
+        /// +-------------------------------+
+        /// |    int foo(param1, param2)    |
+        /// |    int param1;                |
+        /// |    char param2;               |
+        /// |    {                          |
+        /// |        ....                   |
+        /// |    }                          |
+        /// +-------------------------------+
+        ///
+        /// i'm **not** going to support this style. function prototypes should always be like this:
+        /// +------------------------------------------+
+        /// |    int foo(int param1, char param2) {    |
+        /// |        ....                              |
+        /// |    }                                     |
+        /// +------------------------------------------+
+        ///
+        /// so the grammar becomes:
+        /// function-definition
+        ///   : [declaration-specifiers]? declarator compound-statement
+        /// </summary>
         public static NamedParser<FuncDef>
             FunctionDefinition { get; } = new NamedParser<FuncDef>("function-definition");
 
         public static void SetExternalDefinitionRules() {
 
-            /// <summary>
-            /// translation-unit
-            ///   : [external-declaration]+
-            /// </summary>
+            // translation-unit
+            //   : [external-declaration]+
             TranslationUnit.Is(
                 ExternalDeclaration
                 .OneOrMore()
                 .Then(TranslnUnit.Create)
             );
 
-            /// <summary>
-            /// external-declaration
-            ///   : function-definition | declaration
-            /// </summary>
+            // external-declaration
+            //   : function-definition | declaration
             ExternalDeclaration.Is(
                 (FunctionDefinition as IParser<ExternDecln>)
                 .Or(Declaration)
             );
 
-            /// <summary>
-            /// function-definition
-            ///   : [declaration-specifiers]? declarator [declaration-list]? compound-statement
-            ///
-            /// NOTE: the optional declaration_list is for the **old-style** function prototype like this:
-            /// +-------------------------------+
-            /// |    int foo(param1, param2)    |
-            /// |    int param1;                |
-            /// |    char param2;               |
-            /// |    {                          |
-            /// |        ....                   |
-            /// |    }                          |
-            /// +-------------------------------+
-            ///
-            /// i'm **not** going to support this style. function prototypes should always be like this:
-            /// +------------------------------------------+
-            /// |    int foo(int param1, char param2) {    |
-            /// |        ....                              |
-            /// |    }                                     |
-            /// +------------------------------------------+
-            ///
-            /// so the grammar becomes:
-            /// function-definition
-            ///   : [declaration-specifiers]? declarator compound-statement
-            /// </summary>
+            // function-definition
+            //   : [declaration-specifiers]? declarator compound-statement
             FunctionDefinition.Is(
                 DeclarationSpecifiers.Optional(DeclnSpecs.Create())
                 .Then(Declarator)

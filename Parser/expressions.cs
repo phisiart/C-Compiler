@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-
+﻿using System.Collections.Immutable;
 using SyntaxTree;
 using static Parsing.ParserCombinator;
 
@@ -75,10 +72,8 @@ namespace Parsing {
         /// </summary>
         public static void SetExpressionRules() {
 
-            /// <summary>
-            /// expression
-            ///   : assignment-expression [ ',' assignment-expression ]*
-            /// </summary>
+            // expression
+            //   : assignment-expression [ ',' assignment-expression ]*
             Expression.Is(
                 AssignmentExpression
                 .OneOrMore(COMMA)
@@ -91,13 +86,11 @@ namespace Parsing {
                 })
             );
 
-            /// <summary>
-            /// primary-expression
-            ///   : identifier          <see cref="Variable"/> # Notice that the identifier cannot be a typedef name.
-            ///   | constant            <see cref="Constant"/>   # Can either be const-char, const-float, or const-int
-            ///   | string-literal      <see cref="STRING_LITERAL"/>
-            ///   | '(' expression ')'
-            /// </summary>
+            // primary-expression
+            //   : identifier          # Cannot be a typedef name.
+            //   | constant
+            //   | string-literal      
+            //   | '(' expression ')'
             PrimaryExpression.Is(
                 (Variable)
                 .Or(Constant)
@@ -105,19 +98,15 @@ namespace Parsing {
                 .Or((LEFT_PAREN).Then(Expression).Then(RIGHT_PAREN))
             );
 
-            /// <summary>
-            /// An identifier for a variable must not be defined as a typedef name.
-            /// </summary>
+            // An identifier for a variable must not be defined as a typedef name.
             Variable.Is(
                 IDENTIFIER.Check(result => !result.Environment.IsTypedefName(result.Result)).Then(SyntaxTree.Variable.Create)
             );
 
-            /// <summary>
-            /// constant
-            ///   : const-char
-            ///   : const-int
-            ///   : const-float
-            /// </summary>
+            // constant
+            //   : const-char
+            //   : const-int
+            //   : const-float
             Constant.Is(
                 (CONST_CHAR)
                 .Or(CONST_INT)
@@ -125,22 +114,18 @@ namespace Parsing {
             );
 
 
-            /// <summary>
-            /// constant-expression
-            ///   : conditional-expression
-            /// </summary>
-            /// <remarks>
-            /// The size of an array should be a constant.
-            /// Note that the check is actually performed in semantic analysis.
-            /// </remarks>
+            // constant-expression
+            //   : conditional-expression
+            // 
+            // Note:
+            // The size of an array should be a constant.
+            // Note that the check is actually performed in semantic analysis.
             ConstantExpression.Is(
                 ConditionalExpression
             );
 
-            /// <summary>
-            /// conditional-expression
-            ///   : logical-or-expression [ '?' expression ':' conditional-expression ]?
-            /// </summary>
+            // conditional-expression
+            //   : logical-or-expression [ '?' expression ':' conditional-expression ]?
             ConditionalExpression.Is(
                 (LogicalOrExpression)
                 .Then(
@@ -154,16 +139,15 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// assignment-expression
-            ///   : conditional-expression
-            ///   : unary-expression assignment-operator assignment-expression
-            /// </summary>
-            // Assignment operators are:
-            //   = *= /= %= += -= <<= >>= &= ^= |=
+            // assignment-expression
+            //   : unary-expression assignment-operator assignment-expression   # first-set = first-set(unary-expression)
+            //   | conditional-expression                                       # first-set = first-set(cast-expression) = first-set(unary-expression) ++ { '(' }
+            // 
+            // Note:
+            //   Assignment operators are:
+            //     '=', '*=', '/=', '%=', '+=', '-=', '<<=', '>>=', '&=', '^=', '|='
             AssignmentExpression.Is(
-                (ConditionalExpression)
-                .Or(
+                (
                     AssignmentOperator(
                         UnaryExpression,
                         AssignmentExpression,
@@ -179,20 +163,20 @@ namespace Parsing {
                         BinaryOperatorBuilder.Create(XOR_ASSIGN, XorAssign.Create),
                         BinaryOperatorBuilder.Create(BITWISE_OR_ASSIGN, BitwiseOrAssign.Create)
                     )
+                ).Or(
+                    ConditionalExpression
                 )
             );
 
-            /// <summary>
-            /// postfix-expression
-            ///   : primary-expression [
-            ///         '[' expression ']'                      # Get element from array
-            ///       | '(' [argument-expression-list]? ')'     # Function call
-            ///       | '.' identifier                          # Get member from struct/union
-            ///       | '->' identifier                         # Get member from struct/union
-            ///       | '++'                                    # Increment
-            ///       | '--'                                    # Decrement
-            ///     ]*
-            /// </summary>
+            // postfix-expression
+            //   : primary-expression [
+            //         '[' expression ']'                      # Get element from array
+            //       | '(' [argument-expression-list]? ')'     # Function call
+            //       | '.' identifier                          # Get member from struct/union
+            //       | '->' identifier                         # Get member from struct/union
+            //       | '++'                                    # Increment
+            //       | '--'                                    # Decrement
+            //     ]*
             PostfixExpression.Is(
                 PrimaryExpression
                 .Then(
@@ -230,31 +214,27 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// argument-expression-list
-            ///   : assignment-expression [ ',' assignment-expression ]*
-            /// </summary>
+            // argument-expression-list
+            //   : assignment-expression [ ',' assignment-expression ]*
             ArgumentExpressionList.Is(
                 AssignmentExpression.OneOrMore(COMMA)
             );
 
-            /// <summary>
-            /// unary-expression
-            ///   : postfix-expression
-            ///   | '++' unary-expression
-            ///   | '--' unary-expression
-            ///   | unary-operator cast-expression
-            ///   | sizeof unary-expression
-            ///   | sizeof '(' type-name ')'
-            /// </summary>
-            /// <remarks>
-            /// 1. unary-operator can be '&', '*', '+', '-', '~', '!'.
-            /// 2. The last two rules are ambiguous: you can't figure out whether the x in sizeof(x) is a typedef of a variable.
-            ///    I have a parser hack for this: add a parser environment to track all the typedefs.
-            /// 3. first_set = first_set(postfix-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
-            ///              = first_set(primary-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
-            ///              = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', sizeof }
-            /// </remarks>
+            // unary-expression
+            //   : postfix-expression               # first-set = { id, const, string }
+            //   | '++' unary-expression            # first-set = { '++' }
+            //   | '--' unary-expression            # first-set = { '--' }
+            //   | unary-operator cast-expression   # first-set = { '&', '*', '+', '-', '~', '!' }
+            //   | 'sizeof' unary-expression        # first-set = { 'sizeof' }
+            //   | 'sizeof' '(' type-name ')'       # first-set = { 'sizeof' }
+            // 
+            // Notes:
+            // 1. unary-operator can be '&', '*', '+', '-', '~', '!'.
+            // 2. The last two rules are ambiguous: you can't figure out whether the x in sizeof(x) is a typedef of a variable.
+            //    I have a parser hack for this: add a parser environment to track all the typedefs.
+            // 3. first_set = first_set(postfix-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
+            //              = first_set(primary-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
+            //              = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
             UnaryExpression.Is(
                 (PostfixExpression)
                 .Or(
@@ -276,27 +256,23 @@ namespace Parsing {
                 ).Or(
                     (SIZEOF).Then(UnaryExpression).Then(SizeofExpr.Create)
                 ).Or(
-                    (SIZEOF).Then(LEFT_PAREN).Then(TypeName).Then(SizeofType.Create)
+                    (SIZEOF).Then(LEFT_PAREN).Then(TypeName).Then(RIGHT_PAREN).Then(SizeofType.Create)
                 )
             );
 
-            /// <summary>
-            /// cast-expression
-            ///   : unary-expression
-            ///   | '(' type_name ')' cast-expression
-            /// </summary>
+            // cast-expression
+            //   : unary-expression                     # first-set = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
+            //   | '(' type_name ')' cast-expression    # first-set = '('
             CastExpression.Is(
                 (UnaryExpression)
                 .Or(
                     (LEFT_PAREN).Then(TypeName).Then(RIGHT_PAREN).Then(CastExpression)
-                    .Then((Tuple<Expr, TypeName> _) => TypeCast.Create(_.Item2, _.Item1))
+                    .Then(TypeCast.Create)
                 )
             );
 
-            /// <summary>
-            /// multiplicative-expression
-            ///   : cast-expression [ [ '*' | '/' | '%' ] cast-expression ]*
-            /// </summary>
+            // multiplicative-expression
+            //   : cast-expression [ [ '*' | '/' | '%' ] cast-expression ]*
             MultiplicativeExpression.Is(
                 BinaryOperator(
                     CastExpression,
@@ -306,10 +282,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// additive-expression
-            ///   : multiplicative-expression [ [ '+' | '-' ] multiplicative-expression ]*
-            /// </summary>
+            // additive-expression
+            //   : multiplicative-expression [ [ '+' | '-' ] multiplicative-expression ]*
             AdditiveExpression.Is(
                 BinaryOperator(
                     MultiplicativeExpression,
@@ -318,10 +292,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// shift-expression
-            ///   : additive-expression [ [ '&lt;&lt;' | '>>' ] additive-expression ]*
-            /// </summary>
+            // shift-expression
+            //   : additive-expression [ [ '<<' | '>>' ] additive-expression ]*
             ShiftExpression.Is(
                 BinaryOperator(
                     AdditiveExpression,
@@ -330,10 +302,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// relational-expression
-            ///   : shift-expression [ [ '&lt;' | '>' | '&lt=' | '>=' ] shift-expression ]*
-            /// </summary>
+            // relational-expression
+            //   : shift-expression [ [ '<' | '>' | '<=' | '>=' ] shift-expression ]*
             RelationalExpression.Is(
                 BinaryOperator(
                     ShiftExpression,
@@ -344,10 +314,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// equality-expression
-            ///   : relational-expression [ [ '==' | '!=' ] relational-expression ]*
-            /// </summary>
+            // equality-expression
+            //   : relational-expression [ [ '==' | '!=' ] relational-expression ]*
             EqualityExpression.Is(
                 BinaryOperator(
                     RelationalExpression,
@@ -356,10 +324,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// and-expression
-            ///   : equality-expression [ '&' equality-expression ]*
-            /// </summary>
+            // and-expression
+            //   : equality-expression [ '&' equality-expression ]*
             AndExpression.Is(
                 BinaryOperator(
                     EqualityExpression,
@@ -367,10 +333,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// exclusive-or-expression
-            ///   : and-expression [ '^' and-expression ]*
-            /// </summary>
+            // exclusive-or-expression
+            //   : and-expression [ '^' and-expression ]*
             ExclusiveOrExpression.Is(
                 BinaryOperator(
                     AndExpression,
@@ -378,10 +342,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// inclusive-or-expression
-            ///   : exclusive-or-expression [ '|' exclusive-or-expression ]*
-            /// </summary>
+            // inclusive-or-expression
+            //   : exclusive-or-expression [ '|' exclusive-or-expression ]*
             InclusiveOrExpression.Is(
                 BinaryOperator(
                     ExclusiveOrExpression,
@@ -389,10 +351,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// logical-and-expression
-            ///   : inclusive-or-expression [ '&&' inclusive-or-expression ]*
-            /// </summary>
+            // logical-and-expression
+            //   : inclusive-or-expression [ '&&' inclusive-or-expression ]*
             LogicalAndExpression.Is(
                 BinaryOperator(
                     InclusiveOrExpression,
@@ -400,10 +360,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// logical-or-expression
-            ///   :logical-and-expression [ '||' logical-and-expression ]*
-            /// </summary>
+            // logical-or-expression
+            //   :logical-and-expression [ '||' logical-and-expression ]*
             LogicalOrExpression.Is(
                 BinaryOperator(
                     LogicalAndExpression,

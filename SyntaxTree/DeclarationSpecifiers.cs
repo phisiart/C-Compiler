@@ -124,7 +124,7 @@ namespace SyntaxTree {
         public static SpecQualList Create(ImmutableList<TypeSpec> typeSpecs, ImmutableList<TypeQual> typeQuals) =>
             new SpecQualList(typeSpecs, typeQuals);
 
-        public static SpecQualList Create() =>
+        public static SpecQualList Empty { get; } =
             Create(ImmutableList<TypeSpec>.Empty, ImmutableList<TypeQual>.Empty);
 
         public static SpecQualList Add(SpecQualList list, TypeSpec typeSpec) =>
@@ -551,6 +551,9 @@ namespace SyntaxTree {
 
         public static EnumSpec Create(Option<String> name, ImmutableList<Enumr> enumrs) =>
             Create(name, Option.Some(enumrs));
+
+        public static EnumSpec Create(String name) =>
+            Create(Option.Some(name), Option<ImmutableList<Enumr>>.None);
 
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
             if (this.Enumrs.IsNone) {

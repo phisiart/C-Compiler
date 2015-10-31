@@ -1,113 +1,346 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Parsing.ParserCombinator;
 using SyntaxTree;
 
 namespace Parsing {
     public partial class CParser {
+
+        /// <summary>
+        /// declaration
+        ///   : declaration-specifiers [init-declarator-list]? ';'
+        /// </summary>
         public static NamedParser<Decln>
             Declaration { get; } = new NamedParser<Decln>("declaration");
 
+        /// <summary>
+        /// declaration-specifiers
+        ///   : [ storage-class-specifier | type-specifier | type-qualifier ]+
+        /// </summary>
+        /// <remarks>
+        /// 1. You can only have **one** storage class specifier.
+        /// 2. You can have duplicate type qualifiers, since it doesn't cause ambiguity.
+        /// </remarks>
         public static NamedParser<DeclnSpecs>
             DeclarationSpecifiers { get; } = new NamedParser<DeclnSpecs>("declaration-specifiers");
 
+        /// <summary>
+        /// init-declarator-list
+        ///   : init-declarator [ ',' init-declarator ]*
+        /// </summary>
+        /// <remarks>
+        /// a non-empty list of init_declarators separated by ','
+        /// </remarks>
         public static NamedParser<ImmutableList<InitDeclr>>
             InitDeclaratorList { get; } = new NamedParser<ImmutableList<InitDeclr>>("init-declarator-list");
 
+        /// <summary>
+        /// init-declarator
+        ///   : declarator [ '=' initializer ]?
+        /// </summary>
         public static NamedParser<InitDeclr>
             InitDeclarator { get; } = new NamedParser<InitDeclr>("init-declarator");
 
+        /// <summary>
+        /// storage-class-specifier
+        ///   : auto | register | static | extern | typedef
+        /// </summary>
+        /// <remarks>
+        /// There can only be *one* storage class specifier in one declaration.
+        /// </remarks>
         public static NamedParser<StorageClsSpec>
             StorageClassSpecifier { get; } = new NamedParser<StorageClsSpec>("storage-class-specifier");
 
+        /// <summary>
+        /// type-specifier
+        ///   : void
+        ///   | char
+        ///   | short
+        ///   | int
+        ///   | long
+        ///   | float
+        ///   | double
+        ///   | signed
+        ///   | unsigned
+        ///   | struct-or-union-specifier
+        ///   | enum-specifier
+        ///   | typedef-name
+        /// </summary>
+        /// <remarks>
+        /// 1. void, char, short, int, long, float, double, signed, unsigned are called "basic type specifiers".
+        /// 2. struct-or-union_specifier and enum-specifier need more complicated parsing.
+        /// 3. Parsing typedef-name actually requires the environment to participate. For example, consider this statement:
+        ///      T *v;
+        ///    Is T a type or an object? If T is a type, then this statement is a declaration: v is a pointer; if T is a object, then this statement is an expression.
+        ///    So, we need to keep track of the typedefs in the environment even in the parsing stage!
+        /// </remarks>
         public static NamedParser<TypeSpec>
             TypeSpecifier { get; } = new NamedParser<TypeSpec>("type-specifier");
 
+        /// <summary>
+        /// type-qualifier
+        ///   : const
+        ///   | volatile
+        /// </summary>
+        /// <remarks>
+        /// Note that there can be multiple type qualifiers in one declarations.
+        /// </remarks>
         public static NamedParser<TypeQual>
             TypeQualifier { get; } = new NamedParser<TypeQual>("type-qualifier");
 
+        /// <summary>
+        /// declarator
+        ///   : [pointer]? direct-declarator
+        /// </summary>
+        /// <remarks>
+        /// A declarator gives a name to the object and also modifies the type.
+        /// </remarks>
         public static NamedParser<Declr>
             Declarator { get; } = new NamedParser<Declr>("declarator");
 
+        /// <summary>
+        /// pointer
+        ///   : [ '*' [type-qualifier-list]? ]+
+        /// </summary>
         public static NamedParser<ImmutableList<PointerModifier>>
             Pointer { get; } = new NamedParser<ImmutableList<PointerModifier>>("pointer");
 
+        /// <summary>
+        /// parameter-type-list
+        ///   : parameter-list [ ',' '...' ]?
+        /// </summary>
+        /// <remarks>
+        /// A parameter list and an optional vararg signature.
+        /// Used in function declarations.
+        /// </remarks>
         public static NamedParser<ParamTypeList>
             ParameterTypeList { get; } = new NamedParser<ParamTypeList>("parameter-type-list");
 
+        /// <summary>
+        /// parameter-list
+        ///   : parameter-declaration [ ',' parameter-declaration ]*
+        /// </summary>
+        /// <remarks>
+        /// A non-empty list of parameters separated by ','.
+        /// Used in a function signature.
+        /// </remarks>
         public static NamedParser<ImmutableList<ParamDecln>>
             ParameterList { get; } = new NamedParser<ImmutableList<ParamDecln>>("parameter-list");
 
+        /// <summary>
+        /// type-qualifier-list
+        ///   : [type-qualifier]+
+        /// </summary>
+        /// <remarks>
+        /// A non-empty list of type qualifiers.
+        /// </remarks>
         public static NamedParser<ImmutableList<TypeQual>>
             TypeQualifierList { get; } = new NamedParser<ImmutableList<TypeQual>>("type-qualifier-list");
 
+        /// <summary>
+        /// direct-declarator
+        ///   : [
+        ///         identifier | '(' declarator ')'
+        ///     ] [
+        ///         '[' [constant-expression]? ']'
+        ///       | '(' [parameter-type-list]? ')'
+        ///     ]*
+        /// </summary>
+        /// <remarks>
+        /// There is an old style of function definition:
+        /// +-------------------------------+
+        /// |    int foo(param1, param2)    |
+        /// |    int  param1;               |
+        /// |    char param2;               |
+        /// |    {                          |
+        /// |        ....                   |
+        /// |    }                          |
+        /// +-------------------------------+
+        /// 
+        /// I'm not gonna support this style, and function definitions should always be like this:
+        /// +------------------------------------------+
+        /// |    int foo(int param1, char param2) {    |
+        /// |        ....                              |
+        /// |    }                                     |
+        /// +------------------------------------------+
+        /// </remarks>
         public static NamedParser<Declr>
             DirectDeclarator { get; } = new NamedParser<Declr>("direct-declarator");
 
+        /// <summary>
+        /// enum-specifier
+        ///   : enum [identifier]? '{' enumerator-list '}'
+        ///   | enum identifier
+        /// </summary>
         public static NamedParser<EnumSpec>
             EnumSpecifier { get; } = new NamedParser<EnumSpec>("enum-specifier");
 
+        /// <summary>
+        /// enumerator-list
+        ///   : enumerator [ ',' enumerator ]*
+        /// </summary>
         public static NamedParser<ImmutableList<Enumr>>
             EnumeratorList { get; } = new NamedParser<ImmutableList<Enumr>>("enumerator-list");
 
+        /// <summary>
+        /// enumerator
+        ///   : enumeration [ '=' constant-expression ]?
+        /// </summary>
         public static NamedParser<Enumr>
             Enumerator { get; } = new NamedParser<Enumr>("enumerator");
 
+        /// <summary>
+        /// enumeration-constant
+        ///   : identifier
+        /// </summary>
         public static NamedParser<String>
             EnumerationConstant { get; } = new NamedParser<string>("enumeration-constant");
 
+        /// <summary>
+        /// struct-or-union-specifier
+        ///   : struct-or-union [identifier]? { struct-declaration-list }
+        ///   | struct-or-union identifier
+        /// </summary>
+        /// <remarks>
+        /// Note: if no struct-declaration-list given, the type is considered incomplete.
+        /// </remarks>
         public static NamedParser<StructOrUnionSpec>
             StructOrUnionSpecifier { get; } = new NamedParser<StructOrUnionSpec>("struct-or-union-specifier");
 
+        /// <summary>
+        /// struct-or-union
+        ///   : struct | union
+        /// </summary>
         public static NamedParser<StructOrUnion>
             StructOrUnion { get; } = new NamedParser<StructOrUnion>("struct-or-union");
 
+        /// <summary>
+        /// struct-declaration-list
+        ///   : [struct-declaration]+
+        /// </summary>
         public static NamedParser<ImmutableList<StructDecln>>
             StructDeclarationList { get; } = new NamedParser<ImmutableList<StructDecln>>("struct-declaration-list");
 
+        /// <summary>
+        /// struct-declaration
+        ///   : specifier-qualifier-list struct-declarator-list ';'
+        /// </summary>
+        /// <remarks>
+        /// Note that a struct declaration does not need a storage class specifier.
+        /// </remarks>
         public static NamedParser<StructDecln>
             StructDeclaration { get; } = new NamedParser<StructDecln>("struct-declaration");
 
+        /// <summary>
+        /// specifier-qualifier-list
+        ///   : [ type-specifier | type-qualifier ]+
+        /// </summary>
         public static NamedParser<SpecQualList>
             SpecifierQualifierList { get; } = new NamedParser<SpecQualList>("specifier-qualifier-list");
 
+        /// <summary>
+        /// struct-declarator-list
+        ///   : struct-declarator [ ',' struct-declarator ]*
+        /// </summary>
         public static NamedParser<ImmutableList<IStructDeclr>>
             StructDeclaratorList { get; } = new NamedParser<ImmutableList<IStructDeclr>>("struct-declarator-list");
 
+        /// <summary>
+        /// struct-declarator
+        ///   : [declarator]? ':' constant-expression
+        ///   | declarator
+        /// </summary>
+        /// <remarks>
+        /// Note that the second one represents a 'bit-field', which I'm not going to support.
+        /// </remarks>
         public static NamedParser<IStructDeclr>
             StructDeclarator { get; } = new NamedParser<IStructDeclr>("struct-declarator");
 
+        /// <summary>
+        /// parameter-declaration
+        ///   : declaration-specifiers [ declarator | abstract-declarator ]?
+        /// </summary>
+        /// <remarks>
+        /// int foo(int arg1, int arg2);
+        ///         ~~~~~~~~
+        /// 
+        /// int foo(int, int);
+        ///         ~~~
+        /// 
+        /// The declarator can be completely omitted.
+        /// </remarks>
         public static NamedParser<ParamDecln>
             ParameterDeclaration { get; } = new NamedParser<ParamDecln>("parameter-declaration");
 
+        // identifier_list
+        //   : /* old style, i'm deleting this */
+
+        /// <summary>
+        /// abstract-declarator
+        ///   : [pointer]? direct-abstract-declarator
+        ///   | pointer
+        /// </summary>
+        /// <remarks>
+        /// An abstract declarator is a non-empty list of (pointer, function, or array) type modifiers
+        /// </remarks>
         public static NamedParser<AbstractDeclr>
             AbstractDeclarator { get; } = new NamedParser<AbstractDeclr>("abstract-declarator");
 
+        /// <summary>
+        /// direct-abstract-declarator
+        ///   : [
+        ///         '(' abstract-declarator ')'
+        ///       | '[' [constant-expression]? ']'  // array modifier
+        ///       | '(' [parameter-type_list]? ')'  // function modifier
+        ///     ] [
+        ///         '[' [constant-expression]? ']'  // array modifier
+        ///       | '(' [parameter-type-list]? ')'  // function modifier
+        ///     ]*
+        /// </summary>
         public static NamedParser<AbstractDeclr>
             DirectAbstractDeclarator { get; } = new NamedParser<AbstractDeclr>("direct-abstract-declarator");
 
+        /// <summary>
+        /// initializer
+        ///   : assignment-expression
+        ///   | '{' initializer-list '}'
+        ///   | '{' initializer-list ',' '}'
+        /// </summary>
         public static NamedParser<Initr>
             Initializer { get; } = new NamedParser<Initr>("initializer");
 
+        /// <summary>
+        /// initializer-list
+        ///   : initializer [ ',' initializer ]*
+        /// 
+        /// A non-empty list of initializers.
+        /// </summary>
         public static NamedParser<Initr>
             InitializerList { get; } = new NamedParser<Initr>("initializer-list");
 
+        /// <summary>
+        /// type-name
+        ///   : specifier-qualifier-list [abstract-declarator]?
+        /// </summary>
         public static NamedParser<TypeName>
             TypeName { get; } = new NamedParser<TypeName>("type-name");
 
+        /// <summary>
+        /// typedef-name
+        ///   : identifier
+        /// </summary>
+        /// <remarks>
+        /// It must be something already defined.
+        /// We need to look it up in the parser environment.
+        /// </remarks>
         public static NamedParser<String>
-            TypeDefName { get; } = new NamedParser<string>("typedef-name");
+            TypeDefName { get; } = new NamedParser<String>("typedef-name");
 
         public static void SetDeclarationRules() {
 
-            /// <summary>
-            /// declaration
-            ///   : declaration-specifiers [init-declarator-list]? ';'
-            /// </summary>
+            // declaration
+            //   : declaration-specifiers [init-declarator-list]? ';'
             Declaration.Is(
                 (DeclarationSpecifiers)
                 .Then(InitDeclaratorList.Optional(ImmutableList<InitDeclr>.Empty))
@@ -130,14 +363,8 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// declaration-specifiers
-            ///   : [ storage-class-specifier | type-specifier | type-qualifier ]+
-            /// </summary>
-            /// <remarks>
-            /// 1. You can only have **one** storage class specifier.
-            /// 2. You can have duplicate type qualifiers, since it doesn't cause ambiguity.
-            /// </remarks>
+            // declaration-specifiers
+            //   : [ storage-class-specifier | type-specifier | type-qualifier ]+
             DeclarationSpecifiers.Is(
                 Parser.Seed(DeclnSpecs.Create())
                 .Then(
@@ -157,36 +384,23 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// init-declarator-list
-            ///   : init-declarator [ ',' init-declarator ]*
-            /// 
-            /// <remarks>
-            /// a non-empty list of init_declarators separated by ','
-            /// </remarks>
-            /// </summary>
+            // init-declarator-list
+            //   : init-declarator [ ',' init-declarator ]*
             InitDeclaratorList.Is(
                 InitDeclarator.OneOrMore(COMMA)
             );
 
-            /// <summary>
-            /// init-declarator
-            ///   : declarator [ '=' initializer ]?
-            /// </summary>
+            // init-declarator
+            //   : declarator [ '=' initializer ]?
             InitDeclarator.Is(
                 (Declarator)
                 .Then(
-                    (EQUAL).Then(Initializer).Optional()
+                    (ASSIGN).Then(Initializer).Optional()
                 ).Then(InitDeclr.Create)
             );
 
-            /// <summary>
-            /// storage_class_specifier
-            ///   : auto | register | static | extern | typedef
-            /// </summary>
-            /// <remarks>
-            /// There can only be *one* storage class specifier in one declaration.
-            /// </remarks>
+            // storage-class-specifier
+            //   : auto | register | static | extern | typedef
             StorageClassSpecifier.Is(
                 (AUTO)
                 .Or(REGISTER)
@@ -195,30 +409,19 @@ namespace Parsing {
                 .Or(TYPEDEF)
             );
 
-            /// <summary>
-            /// type-specifier
-            ///   : void
-            ///   | char
-            ///   | short
-            ///   | int
-            ///   | long
-            ///   | float
-            ///   | double
-            ///   | signed
-            ///   | unsigned
-            ///   | struct-or-union-specifier
-            ///   | enum-specifier
-            ///   | typedef-name
-            /// 
-            /// <remarks>
-            /// 1. void, char, short, int, long, float, double, signed, unsigned are called "basic type specifiers".
-            /// 2. struct-or-union_specifier and enum-specifier need more complicated parsing.
-            /// 3. Parsing typedef-name actually requires the environment to participate. For example, consider this statement:
-            ///      T *v;
-            ///    Is T a type or an object? If T is a type, then this statement is a declaration: v is a pointer; if T is a object, then this statement is an expression.
-            ///    So, we need to keep track of the typedefs in the environment even in the parsing stage!
-            /// </remarks>
-            /// </summary>
+            // type-specifier
+            //   : void
+            //   | char
+            //   | short
+            //   | int
+            //   | long
+            //   | float
+            //   | double
+            //   | signed
+            //   | unsigned
+            //   | struct-or-union-specifier
+            //   | enum-specifier
+            //   | typedef-name
             TypeSpecifier.Is(
                 (
                     (VOID)
@@ -230,43 +433,30 @@ namespace Parsing {
                     .Or(DOUBLE)
                     .Or(SIGNED)
                     .Or(UNSIGNED)
-                ).Then(kind => new BasicTypeSpec(kind) as TypeSpec)
+                    .Then(kind => new BasicTypeSpec(kind) as TypeSpec)
+                )
                 .Or(StructOrUnionSpecifier)
                 .Or(EnumSpecifier)
                 .Or(TypeDefName.Then(TypedefName.Create))
             );
 
-            /// <summary>
-            /// type_qualifier
-            ///   : const
-            ///   | volatile
-            /// 
-            /// <remarks>
-            /// Note that there can be multiple type qualifiers in one declarations.
-            /// </remarks>
-            /// </summary>
+            // type_qualifier
+            //   : const
+            //   | volatile
             TypeQualifier.Is(
                 (CONST).Or(VOLATILE)
             );
 
-            /// <summary>
-            /// declarator
-            ///   : [pointer]? direct_declarator
-            /// 
-            /// <remarks>
-            /// A declarator gives a name to the object and also modifies the type.
-            /// </remarks>
-            /// </summary>
+            // declarator
+            //   : [pointer]? direct-declarator
             Declarator.Is(
                 (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
                 .Then(DirectDeclarator)
                 .Then(Declr.Add)
             );
 
-            /// <summary>
-            /// pointer
-            ///   : [ '*' [type_qualifier_list]? ]+
-            /// </summary>
+            // pointer
+            //   : [ '*' [type-qualifier-list]? ]+
             Pointer.Is(
                 (
                     MULT.
@@ -276,70 +466,36 @@ namespace Parsing {
                 .Then(pointerModifiers => pointerModifiers.Reverse())
             );
 
-            /// <summary>
-            /// parameter-type-list
-            ///   : parameter-list [ ',' '...' ]?
-            /// 
-            /// a parameter list and an optional vararg signature
-            /// used in function declarations
-            /// </summary>
+            // parameter-type-list
+            //   : parameter-list [ ',' '...' ]?
             ParameterTypeList.Is(
                 ParameterList
                 .Then(
                     (COMMA)
                     .Then(PERIOD).Then(PERIOD).Then(PERIOD)
                     .Optional()
-                ).Then(SyntaxTree.ParamTypeList.Create)
+                ).Then(ParamTypeList.Create)
             );
 
-            /// <summary>
-            /// parameter-list
-            ///   : parameter-declaration [ ',' parameter-declaration ]*
-            /// 
-            /// a non-empty list of parameters separated by ','
-            /// used in a function signature
-            /// </summary>
+            // parameter-list
+            //   : parameter-declaration [ ',' parameter-declaration ]*
             ParameterList.Is(
                 ParameterDeclaration.OneOrMore(COMMA)
             );
 
-            /// <summary>
-            /// type-qualifier-list
-            ///   : [type-qualifier]+
-            /// 
-            /// a non-empty list of type qualifiers
-            /// </summary>
+            // type-qualifier-list
+            //   : [type-qualifier]+
             TypeQualifierList.Is(
                 TypeQualifier.OneOrMore()
             );
 
-            /// <summary>
-            /// direct-declarator
-            ///   : [
-            ///         identifier | '(' declarator ')'
-            ///     ] [
-            ///         '[' [constant-expression]? ']'
-            ///       | '(' [parameter-type-list]? ')'
-            ///     ]*
-            /// </summary>
-            /// <remarks>
-            /// There is an old style of function definition:
-            /// +-------------------------------+
-            /// |    int foo(param1, param2)    |
-            /// |    int  param1;               |
-            /// |    char param2;               |
-            /// |    {                          |
-            /// |        ....                   |
-            /// |    }                          |
-            /// +-------------------------------+
-            /// 
-            /// I'm not gonna support this style, and function definitions should always be like this:
-            /// +------------------------------------------+
-            /// |    int foo(int param1, char param2) {    |
-            /// |        ....                              |
-            /// |    }                                     |
-            /// +------------------------------------------+
-            /// </remarks>
+            // direct-declarator
+            //   : [
+            //         identifier | '(' declarator ')'
+            //     ] [
+            //         '[' [constant-expression]? ']'
+            //       | '(' [parameter-type-list]? ')'
+            //     ]*
             DirectDeclarator.Is(
                 (
                     (IDENTIFIER).Then(Declr.Create)
@@ -365,11 +521,9 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// enum-specifier
-            ///   : enum [identifier]? '{' enumerator-list '}'
-            ///   | enum identifier
-            /// </summary>
+            // enum-specifier
+            //   : enum [identifier]? '{' enumerator-list '}'
+            //   | enum identifier
             EnumSpecifier.Is(
                 (ENUM)
                 .Then(
@@ -381,49 +535,37 @@ namespace Parsing {
                         .Then(EnumSpec.Create)
                     ).Or(
                         (IDENTIFIER)
-                        .Then(name => EnumSpec.Create(Option.Some(name), ImmutableList<Enumr>.Empty))
+                        .Then(EnumSpec.Create)
                     )
                 )
             );
 
-            /// <summary>
-            /// enumerator-list
-            ///   : enumerator [ ',' enumerator ]*
-            /// </summary>
+            // enumerator-list
+            //   : enumerator [ ',' enumerator ]*
             EnumeratorList.Is(
                 Enumerator.OneOrMore(COMMA)
             );
 
-            /// <summary>
-            /// enumerator
-            ///   : enumeration [ '=' constant_expression ]?
-            /// </summary>
+            // enumerator
+            //   : enumeration [ '=' constant-expression ]?
             Enumerator.Is(
                 EnumerationConstant
                 .Then(
-                    (EQUAL)
+                    (ASSIGN)
                     .Then(ConstantExpression)
                     .Optional()
                 ).Then(Enumr.Create)
             );
 
-            /// <summary>
-            /// enumeration-constant
-            ///   : identifier
-            /// </summary>
+            // enumeration-constant
+            //   : identifier
             EnumerationConstant.Is(
                 IDENTIFIER
             );
 
-            /// <summary>
-            /// struct-or-union-specifier
-            ///   : struct-or-union [identifier]? { struct-declaration-list }
-            ///   | struct-or-union identifier
-            /// 
-            /// <remarks>
-            /// Note: if no struct-declaration-list given, the type is considered incomplete.
-            /// </remarks>
-            /// </summary>
+            // struct-or-union-specifier
+            //   : struct-or-union [identifier]? { struct-declaration-list }
+            //   | struct-or-union identifier
             StructOrUnionSpecifier.Is(
                 (StructOrUnion)
                 .Then(
@@ -442,30 +584,20 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// struct-or-union
-            ///   : struct | union
-            /// </summary>
+            // struct-or-union
+            //   : struct | union
             StructOrUnion.Is(
                 (STRUCT).Or(UNION)
             );
 
-            /// <summary>
-            /// struct-declaration-list
-            ///   : [struct-declaration]+
-            /// </summary>
+            // struct-declaration-list
+            //   : [struct-declaration]+
             StructDeclarationList.Is(
                 StructDeclaration.OneOrMore()
             );
 
-            /// <summary>
-            /// struct-declaration
-            ///   : specifier-qualifier-list struct-declarator-list ';'
-            /// 
-            /// <remarks>
-            /// Note that a struct declaration does not need a storage class specifier.
-            /// </remarks>
-            /// </summary>
+            // struct-declaration
+            //   : specifier-qualifier-list struct-declarator-list ';'
             StructDeclaration.Is(
                 (SpecifierQualifierList)
                 .Then(StructDeclaratorList)
@@ -473,12 +605,10 @@ namespace Parsing {
                 .Then(StructDecln.Create)
             );
 
-            /// <summary>
-            /// specifier-qualifier-list
-            ///   : [ type-specifier | type-qualifier ]+
-            /// </summary>
+            // specifier-qualifier-list
+            //   : [ type-specifier | type-qualifier ]+
             SpecifierQualifierList.Is(
-                Parser.Seed(SpecQualList.Create())
+                Parser.Seed(SpecQualList.Empty)
                 .Then(
                     (
                         Given<SpecQualList>()
@@ -493,22 +623,15 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// struct-declarator-list
-            ///   : struct-declarator [ ',' struct-declarator ]*
-            /// </summary>
+            // struct-declarator-list
+            //   : struct-declarator [ ',' struct-declarator ]*
             StructDeclaratorList.Is(
                 StructDeclarator.OneOrMore(COMMA)
             );
 
-            /// <summary>
-            /// struct-declarator
-            ///   : [declarator]? ':' constant-expression
-            ///   | declarator
-            /// </summary>
-            /// <remarks>
-            /// Note that the second one represents a 'bit-field', which I'm not going to support.
-            /// </remarks>
+            // struct-declarator
+            //   : [declarator]? ':' constant-expression
+            //   | declarator
             StructDeclarator.Is(
                 (
                     Declarator.Optional()
@@ -521,36 +644,20 @@ namespace Parsing {
                 )
             );
             
-            /// <summary>
-            /// parameter-declaration
-            ///   : declaration-specifiers [ declarator | abstract-declarator ]?
-            /// 
-            /// int foo(int arg1, int arg2);
-            ///         ~~~~~~~~
-            /// 
-            /// int foo(int, int);
-            ///         ~~~
-            /// 
-            /// The declarator can be completely omitted.
-            /// </summary>
+            // parameter-declaration
+            //   : declaration-specifiers [ declarator | abstract-declarator ]?
             ParameterDeclaration.Is(
                 (DeclarationSpecifiers)
                 .Then(
-                    (Declarator as IParser<IParamDeclr>)
+                    ((IParser<IParamDeclr>)Declarator)
                     .Or(AbstractDeclarator)
                     .Optional(AbstractDeclr.Empty)
                 ).Then(ParamDecln.Create)
             );
 
-            // identifier_list : /* old style, i'm deleting this */
-
-            /// <summary>
-            /// abstract-declarator
-            ///   : [pointer]? direct-abstract-declarator
-            ///   | pointer
-            /// 
-            /// an abstract declarator is a non-empty list of (pointer, function, or array) type modifiers
-            /// </summary>
+            // abstract-declarator
+            //   : [pointer]? direct-abstract-declarator
+            //   | pointer
             AbstractDeclarator.Is(
                 (
                     (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
@@ -562,17 +669,15 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// direct-abstract-declarator
-            ///   : [
-            ///         '(' abstract-declarator ')'
-            ///       | '[' [constant-expression]? ']'  // array modifier
-            ///       | '(' [parameter-type_list]? ')'  // function modifier
-            ///     ] [
-            ///         '[' [constant-expression]? ']'  // array modifier
-            ///       | '(' [parameter-type-list]? ')'  // function modifier
-            ///     ]*
-            /// </summary>
+            // direct-abstract-declarator
+            //   : [
+            //         '(' abstract-declarator ')'
+            //       | '[' [constant-expression]? ']'  // array modifier
+            //       | '(' [parameter-type_list]? ')'  // function modifier
+            //     ] [
+            //         '[' [constant-expression]? ']'  // array modifier
+            //       | '(' [parameter-type-list]? ')'  // function modifier
+            //     ]*
             DirectAbstractDeclarator.Is(
                 (
                     (
@@ -620,54 +725,46 @@ namespace Parsing {
                 )
             );
 
-            /// <summary>
-            /// initializer
-            ///   : assignment-expression
-            ///   | '{' initializer-list '}'
-            ///   | '{' initializer-list ',' '}'
-            /// </summary>
+            // initializer
+            //   : assignment-expression
+            //   | '{' initializer-list '}'
+            //   | '{' initializer-list ',' '}'
             Initializer.Is(
                 AssignmentExpression.Then(InitExpr.Create)
                 .Or(
                     (LEFT_CURLY_BRACE)
                     .Then(InitializerList)
-                    .Then(
-                        ((COMMA).Then(RIGHT_CURLY_BRACE))
-                        .Or(RIGHT_CURLY_BRACE)
-                    )
+                    .Then(RIGHT_CURLY_BRACE)
+                ).Or(
+                    (LEFT_CURLY_BRACE)
+                    .Then(InitializerList)
+                    .Then(COMMA)
+                    .Then(RIGHT_CURLY_BRACE)
                 )
             );
 
-            /// <summary>
-            /// initializer-list
-            ///   : initializer [ ',' initializer ]*
-            /// 
-            /// A non-empty list of initializers.
-            /// </summary>
+            // initializer-list
+            //   : initializer [ ',' initializer ]*
             InitializerList.Is(
                 Initializer.OneOrMore(COMMA)
                 .Then(InitList.Create)
             );
 
-            /// <summary>
-            /// type-name
-            ///   : specifier-qualifier-list [abstract-declarator]?
-            /// </summary>
+            // type-name
+            //   : specifier-qualifier-list [abstract-declarator]?
             TypeName.Is(
                 (SpecifierQualifierList)
                 .Then(AbstractDeclarator.Optional(AbstractDeclr.Empty))
                 .Then(SyntaxTree.TypeName.Create)
             );
 
-            /// <summary>
-            /// typedef-name
-            ///   : identifier
-            /// 
-            /// It must be something already defined.
-            /// We need to look it up in the parser environment.
-            /// </summary>
+            // typedef-name
+            //   : identifier
             TypeDefName.Is(
-                (IDENTIFIER).Check(result => result.Environment.IsTypedefName(result.Result))
+                (IDENTIFIER)
+                .Check(
+                    result => result.Environment.IsTypedefName(result.Result)
+                )
             );
         }
     }

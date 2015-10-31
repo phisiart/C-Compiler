@@ -1,15 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Parsing;
 using static ParserTestUtils;
 
 [TestFixture]
 public class TestExpressions {
 
+    [Test]
+    public void Expression() {
+        TestParserRule(
+            CParser.Expression,
+            "a = b, c = d, e = f"
+        );
+    }
+
+    [Test]
+    public void PrimaryExpression() {
+        TestParserRule("a", CParser.PrimaryExpression);
+        TestParserRule("3", CParser.PrimaryExpression);
+        TestParserRule("3.0f", CParser.PrimaryExpression);
+        TestParserRule("'a'", CParser.PrimaryExpression);
+        TestParserRule("\"Hello, world!\"", CParser.PrimaryExpression);
+        TestParserRule("(a)", CParser.PrimaryExpression);
+    }
+
+    [Test]
+    public void Variable() {
+        TestParserRule("a", CParser.Variable);
+    }
+
+    [Test]
+    public void Constant() {
+        TestParserRule(
+            CParser.Constant,
+            "'a'",
+            "3",
+            "3.0f"
+        );
+    }
+    
     [Test]
     public void ConstChar() {
         TestParserRule("'a'", CParser.CONST_CHAR);
@@ -31,18 +59,30 @@ public class TestExpressions {
     }
 
     [Test]
-    public void Variable() {
-        TestParserRule("a", CParser.Variable);
+    public void ConstantExpression() {
+        TestParserRule(
+            CParser.ConstantExpression,
+            "a || b ? a = b : a ? b : c"
+        );
     }
 
     [Test]
-    public void PrimaryExpression() {
-        TestParserRule("a", CParser.PrimaryExpression);
-        TestParserRule("3", CParser.PrimaryExpression);
-        TestParserRule("3.0f", CParser.PrimaryExpression);
-        TestParserRule("'a'", CParser.PrimaryExpression);
-        TestParserRule("\"Hello, world!\"", CParser.PrimaryExpression);
-        TestParserRule("(a)", CParser.PrimaryExpression);
+    public void ConditionalExpression() {
+        TestParserRule(
+            CParser.ConditionalExpression,
+            "a || b",
+            "a || b ? a = b : a ? b : c"
+        );
+    }
+
+    [Test]
+    public void AssignmentExpression() {
+        TestParserRule(
+            CParser.AssignmentExpression,
+            "a ? b : c",
+            "a = b",
+            "a"
+        );
     }
 
     [Test]
@@ -56,10 +96,20 @@ public class TestExpressions {
         TestParserRule("a(1, 2)", CParser.PostfixExpression);
         TestParserRule("a[b]", CParser.PostfixExpression);
         TestParserRule("a[b]->b++", CParser.PostfixExpression);
+        TestParserRule("qsort(arr, sizeof(arr) / sizeof(int), sizeof(int), &awesome_cmp)", CParser.PostfixExpression);
     }
 
     [Test]
-    public void Unaryexpression() {
+    public void ArgumentExpressionList() {
+        TestParserRule(
+            CParser.ArgumentExpressionList,
+            "a = 3, 3",
+            "3"
+        );
+    }
+
+    [Test]
+    public void UnaryExpression() {
         TestParserRule(
             CParser.UnaryExpression,
             "++a",
@@ -70,7 +120,10 @@ public class TestExpressions {
             "-a",
             "~a",
             "!a",
-            "++ -- & * + - ~ ! a"
+            "++ -- & * + - ~ ! a",
+            "sizeof 3",
+            "sizeof(3)",
+            "sizeof(int)"
         );
     }
 
@@ -78,7 +131,9 @@ public class TestExpressions {
     public void CastExpression() {
         TestParserRule(
             CParser.CastExpression,
-            "a"
+            "a",
+            "(int)a",
+            "(int)(char)a"
         );
     }
 
@@ -105,17 +160,31 @@ public class TestExpressions {
 
     [Test]
     public void ShiftExpression() {
-        TestParserRule("a << b", CParser.ShiftExpression);
+        TestParserRule(
+            CParser.ShiftExpression,
+            "a << b",
+            "a >> b"
+        );
     }
 
     [Test]
     public void RelationalExpression() {
-        TestParserRule("a < b", CParser.RelationalExpression);
+        TestParserRule(
+            CParser.RelationalExpression,
+            "a < b",
+            "a > b",
+            "a <= b",
+            "a >= b"
+        );
     }
 
     [Test]
     public void EqualityExpression() {
-        TestParserRule("a == b", CParser.EqualityExpression);
+        TestParserRule(
+            CParser.EqualityExpression,
+            "a == b",
+            "a != b"
+        );
     }
 
     [Test]

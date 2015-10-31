@@ -11,19 +11,19 @@ int printf(char *, ...);
 
 int main() {
     int (*fp)(int, int);
-    int arr[] = { 1, 6, 3, 8, 4, 5, 0, 2 };
-    int i;
+	int arr[] = { 1, 6, 3, 8, 4, 5, 0, 2 };
+	int i;
 
-    fp = &awesome_add;
-    fp = awesome_add;
-    fp(1, 2);
-    (*fp)(1, 2);
-    
-    qsort(arr, sizeof(arr) / sizeof(int), sizeof(int), &awesome_cmp);
+	fp = &awesome_add;
+	fp = awesome_add;
+	fp(1, 2);
+	(*fp)(1, 2);
 
-    for (i = 0; i < sizeof(arr) / sizeof(int); ++i) {
-        printf("%d\t", arr[i]);
-    }
+	qsort(arr, sizeof(arr) / sizeof(int), sizeof(int), &awesome_cmp);
 
-    return 0;
+	for (i = 0; i < sizeof(arr) / sizeof(int); ++i) {
+		printf("%d\t", arr[i]);
+	}
+
+	return 0;
 }
