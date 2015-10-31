@@ -9,17 +9,23 @@ This C compiler is written in C# 6.0. So you must have a relatively newer versio
 #### Windows
 To build it in Windows, you need to use Microsoft Visual Studio **2015**. Even VS2013 is too old. You can download VS2015 Community Edition [here](https://www.visualstudio.com/).
 
-Open `C-Compiler.sln` in Visual Studio, and you should be able to build it.
+Open `C-Compiler.sln` in Visual Studio.
+
+I'm using the `System.Collections.Immutable` package and `NUnit` for unit testing. So, you need to install these from NuGet.
 
 #### OS X
-To build it in OS X, you need to use Xamarin Studio, which includes a Mono compiler. I'm using Xamarin Studio 5.9.5 with Mono 4.0.3. I've heard that Mono 3.8+ supports C# 6.0. You can simply install the latest Xamarin Studio [here](http://xamarin.com/download).
+To build it in OS X, you need to use Xamarin Studio, which includes a Mono compiler. I'm using Xamarin Studio 5.10 with Mono 4.2.1. Older versions of Mono don't support C# 6.0 features very well (I got compiler errors), so I choose the **Alpha** channel of Xamarin which gives me a newer Mono. You can simply install the latest Xamarin Studio Alpha [here](https://releases.xamarin.com/category/alpha/).
 
-Open `C-Compiler.sln` in Xamarin Studio, and you should be able to build it.
+Open `C-Compiler.sln` in Xamarin Studio.
+
+I'm using the `System.Collections.Immutable` package and `NUnit` for unit testing. So, you need to install these from NuGet.
 
 #### Linux
 To build it in Linux, you need to have Mono. I'm using Mono 4.3.0 on my Linux. I've heard that Mono 3.8+ supports C# 6.0.
 
 It seems that `apt-get` would give you a very old Mono. If that's the case for you, you need to manually install a newer Mono by building from the source code. You can find it [here](https://github.com/mono/mono#compilation-and-installation).
+
+I'm using the `System.Collections.Immutable` package and `NUnit` for unit testing. So, you need to install these from NuGet.
 
 Type the following command:
 
