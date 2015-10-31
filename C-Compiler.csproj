@@ -35,11 +35,35 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="nunit.framework">
+      <HintPath>packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable, Version=1.1.38.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Collections.Immutable.1.1.38-beta-23225\lib\dotnet\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompilerTests\CompilerTests.cs" />
     <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Compiler.cs" />
+    <Compile Include="Driver\CovariantTuple.cs" />
+    <Compile Include="Driver\HList.cs" />
     <Compile Include="Driver\Option.cs" />
+    <Compile Include="Driver\SetOnce.cs" />
+    <Compile Include="ParserTests\ParserTestUtils.cs" />
+    <Compile Include="ParserTests\TestDeclarations.cs" />
+    <Compile Include="ParserTests\TestExternalDefinitions.cs" />
+    <Compile Include="ParserTests\TestStatements.cs" />
+    <Compile Include="Parser\Declaration.cs" />
+    <Compile Include="Parser\Expressions.cs" />
+    <Compile Include="Parser\ExternalDefinitions.cs" />
+    <Compile Include="Parser\ParserClasses.cs" />
+    <Compile Include="Parser\Statements.cs" />
+    <Compile Include="Parser\Tokens.cs" />
+    <Compile Include="Parser\CParser.cs" />
+    <Compile Include="Parser\ParserCombinator.cs" />
+    <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\ConstExpressions.cs" />
@@ -55,17 +79,20 @@
     <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
     <Compile Include="SyntaxTree\declarations.cs" />
+    <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
+    <Compile Include="SyntaxTree\Declarators.cs" />
     <Compile Include="SyntaxTree\expressions.cs" />
-    <Compile Include="SyntaxTree\external_definitions.cs" />
+    <Compile Include="SyntaxTree\ExternalDeclarations.cs" />
+    <Compile Include="SyntaxTree\SemantUtils.cs" />
     <Compile Include="SyntaxTree\statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
     <Compile Include="Driver\Program.cs" />
-    <Compile Include="Parser\declarations.cs" />
-    <Compile Include="Parser\environment.cs" />
-    <Compile Include="Parser\expressions.cs" />
-    <Compile Include="Parser\external_definitions.cs" />
-    <Compile Include="Parser\parser.cs" />
-    <Compile Include="Parser\statements.cs" />
+    <Compile Include="OldParser\declarations.cs" />
+    <Compile Include="OldParser\environment.cs" />
+    <Compile Include="OldParser\expressions.cs" />
+    <Compile Include="OldParser\external_definitions.cs" />
+    <Compile Include="OldParser\parser.cs" />
+    <Compile Include="OldParser\statements.cs" />
     <Compile Include="Scanner\char.cs" />
     <Compile Include="Scanner\float.cs" />
     <Compile Include="Scanner\fsa.cs" />
@@ -81,6 +108,7 @@
     <Compile Include="AST\UnaryOperators.cs" />
     <Compile Include="AST\Declarations.cs" />
     <Compile Include="AST\StmtVisitor.cs" />
+    <Compile Include="Parser\ParserUtils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -113,10 +141,14 @@
     <None Include="TestPrograms\StaticObject.c" />
     <None Include="TestPrograms\SwitchStmt.c" />
     <None Include="TestPrograms\WeiredSwitch.c" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestPrograms\Goto.c" />
     <Content Include="TestPrograms\LinkedList.c" />
     <Content Include="TestPrograms\StructReturn.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
 </Project>

@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace AST {
 
     public class Decln : ExternDecln {
-        public enum SCS {
+        public enum StorageClass {
             AUTO,
             STATIC,
             EXTERN,
             TYPEDEF,
         }
 
-        public Decln(String name, SCS scs, ExprType type, Option<Initr> initr) {
+        public Decln(String name, StorageClass scs, ExprType type, Option<Initr> initr) {
             this.name = name;
             this.scs = scs;
             this.type = type;
@@ -44,17 +44,17 @@ namespace AST {
                 if (this.initr.IsSome) {
                     Initr initr = this.initr.Value;
                     switch (scs) {
-                        case SCS.AUTO:
+                        case StorageClass.AUTO:
                             state.GLOBL(name);
                             break;
 
-                        case SCS.EXTERN:
+                        case StorageClass.EXTERN:
                             throw new InvalidProgramException();
 
-                        case SCS.STATIC:
+                        case StorageClass.STATIC:
                             break;
 
-                        case SCS.TYPEDEF:
+                        case StorageClass.TYPEDEF:
                             // Ignore.
                             return;
 
@@ -123,20 +123,20 @@ namespace AST {
                     // Global without initialization.
 
                     switch (scs) {
-                        case SCS.AUTO:
+                        case StorageClass.AUTO:
                             // .comm name,size,align
                             break;
 
-                        case SCS.EXTERN:
+                        case StorageClass.EXTERN:
                             break;
 
-                        case SCS.STATIC:
+                        case StorageClass.STATIC:
                             // .local name
                             // .comm name,size,align
                             state.LOCAL(name);
                             break;
 
-                        case SCS.TYPEDEF:
+                        case StorageClass.TYPEDEF:
                             // Ignore.
                             return;
 
@@ -217,7 +217,7 @@ namespace AST {
         }
 
         private readonly String name;
-        private readonly SCS scs;
+        private readonly StorageClass scs;
         private readonly ExprType type;
         private readonly Option<Initr> initr;
     }

@@ -1,49 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
 
-    public abstract class Stmt : PTNode {
+    public abstract class Stmt : SyntaxTreeNode {
         public abstract Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env);
     }
 
 
     public class GotoStmt : Stmt {
         public GotoStmt(String label) {
-            this.label = label;
+            this.Label = label;
         }
-        public readonly String label;
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(this.label));
-		}
+        public String Label { get; }
+
+        public static Stmt Create(String label) =>
+            new GotoStmt(label);
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(this.Label));
+        }
     }
 
 
     public class ContStmt : Stmt {
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.ContStmt());
-		}
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.ContStmt());
+        }
     }
 
 
     public class BreakStmt : Stmt {
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.BreakStmt());
-		}
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.BreakStmt());
+        }
     }
 
 
     public class ReturnStmt : Stmt {
-        public ReturnStmt(Expr expr) {
-            this.expr = expr;
+        public ReturnStmt(Option<Expr> expr) {
+            this.Expr = expr;
         }
 
-        // TODO: change this into Option. Currently parser might give null.
-        public readonly Expr expr;
+        public static Stmt Create(Option<Expr> expr) =>
+            new ReturnStmt(expr);
+
+        public readonly Option<Expr> Expr;
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr expr = this.expr.GetExpr(env);
-            expr = AST.TypeCast.MakeCast(expr, env.GetCurrentFunction().ret_t);
+            var expr = this.Expr.Map(_ => _.GetExpr(env));
+            expr = expr.Map(_ => AST.TypeCast.MakeCast(_, env.GetCurrentFunction().ret_t));
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
         }
     }
@@ -51,24 +60,30 @@ namespace SyntaxTree {
 
     public class CompoundStmt : Stmt {
         public CompoundStmt(List<Decln> declns, List<Stmt> stmts) {
-            this.declns = declns;
-            this.stmts = stmts;
+            this.Declns = declns;
+            this.Stmts = stmts;
         }
-        public readonly List<Decln> declns;
-        public readonly List<Stmt> stmts;
+        public List<Decln> Declns { get; }
+        public List<Stmt> Stmts { get; }
+
+        public static Stmt Create(ImmutableList<Decln> declns, ImmutableList<Stmt> stmts) =>
+            new CompoundStmt(declns.ToList(), stmts.ToList());
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             env = env.InScope();
             List<Tuple<AST.Env, AST.Decln>> declns = new List<Tuple<AST.Env, AST.Decln>>();
             List<Tuple<AST.Env, AST.Stmt>> stmts = new List<Tuple<AST.Env, AST.Stmt>>();
 
-            foreach (Decln decln in this.declns) {
-                Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns(env);
-                env = r_decln.Item1;
-                declns.AddRange(r_decln.Item2);
+            foreach (Decln decln in this.Declns) {
+                //Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns_(env);
+                //env = r_decln.Item1;
+                //declns.AddRange(r_decln.Item2);
+
+                var declns_ = Semant(decln.GetDeclns, ref env);
+                declns.AddRange(declns_);
             }
 
-            foreach (Stmt stmt in this.stmts) {
+            foreach (Stmt stmt in this.Stmts) {
                 Tuple<AST.Env, AST.Stmt> r_stmt = stmt.GetStmt(env);
                 env = r_stmt.Item1;
                 stmts.Add(r_stmt);
@@ -82,14 +97,16 @@ namespace SyntaxTree {
 
 
     public class ExprStmt : Stmt {
-        public ExprStmt(Expr expr) {
-            this.expr = expr;
+        public ExprStmt(Option<Expr> expr) {
+            this.Expr = expr;
         }
-        public readonly Expr expr;
+        public Option<Expr> Expr { get; }
+        public static Stmt Create(Option<Expr> expr) =>
+            new ExprStmt(expr);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr expr = this.expr.GetExpr(env);
-            env = expr.Env;
+            var expr = this.Expr.Map(_ => _.GetExpr(env));
+            env = expr.IsSome ? expr.Value.Env : env;
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ExprStmt(expr));
         }
     }
@@ -104,21 +121,25 @@ namespace SyntaxTree {
     /// </summary>
     public class WhileStmt : Stmt {
         public WhileStmt(Expr cond, Stmt body) {
-            this.cond = cond;
-            this.body = body;
+            this.Cond = cond;
+            this.Body = body;
         }
-        public readonly Expr cond;
-        public readonly Stmt body;
+
+        public static Stmt Create(Expr cond, Stmt body) =>
+            new WhileStmt(cond, body);
+
+        public Expr Cond { get; }
+        public Stmt Body { get; }
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            AST.Expr cond = this.cond.GetExpr(env);
+            AST.Expr cond = this.Cond.GetExpr(env);
             env = cond.Env;
 
             if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
-            Tuple<AST.Env, AST.Stmt> r_body = this.body.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_body = this.Body.GetStmt(env);
             env = r_body.Item1;
             AST.Stmt body = r_body.Item2;
 
@@ -137,18 +158,22 @@ namespace SyntaxTree {
     /// </summary>
     public class DoWhileStmt : Stmt {
         public DoWhileStmt(Stmt body, Expr cond) {
-            this.body = body;
-            this.cond = cond;
+            this.Body = body;
+            this.Cond = cond;
         }
-        public readonly Stmt body;
-        public readonly Expr cond;
+
+        public Stmt Body { get; }
+        public Expr Cond { get; }
+
+        public static Stmt Create(Stmt body, Expr cond) =>
+            new DoWhileStmt(body, cond);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            Tuple<AST.Env, AST.Stmt> r_body = this.body.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_body = this.Body.GetStmt(env);
             env = r_body.Item1;
             AST.Stmt body = r_body.Item2;
 
-            AST.Expr cond = this.cond.GetExpr(env);
+            AST.Expr cond = this.Cond.GetExpr(env);
             env = cond.Env;
 
             if (!cond.type.IsScalar) {
@@ -169,24 +194,27 @@ namespace SyntaxTree {
     /// </summary>
     public class ForStmt : Stmt {
         public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
-            this.init = init;
-            this.cond = cond;
-            this.loop = loop;
-            this.body = body;
+            this.Init = init;
+            this.Cond = cond;
+            this.Loop = loop;
+            this.Body = body;
         }
 
-        public readonly Option<Expr> init;
-        public readonly Option<Expr> cond;
-        public readonly Option<Expr> loop;
-        public readonly Stmt body;
+        public Option<Expr> Init { get; }
+        public Option<Expr> Cond { get; }
+        public Option<Expr> Loop { get; }
+        public Stmt Body { get; }
+
+        public static Stmt Create(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) =>
+            new ForStmt(init, cond, loop, body);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            Option<AST.Expr> init = this.init.Map(_ => _.GetExpr(env));
+            Option<AST.Expr> init = this.Init.Map(_ => _.GetExpr(env));
             if (init.IsSome) {
                 env = init.Value.Env;
             }
 
-            Option<AST.Expr> cond = this.cond.Map(_ => _.GetExpr(env));
+            Option<AST.Expr> cond = this.Cond.Map(_ => _.GetExpr(env));
             if (cond.IsSome) {
                 env = cond.Value.Env;
             }
@@ -195,12 +223,12 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
-            Option<AST.Expr> loop = this.loop.Map(_ => _.GetExpr(env));
+            Option<AST.Expr> loop = this.Loop.Map(_ => _.GetExpr(env));
             if (loop.IsSome) {
                 env = loop.Value.Env;
             }
 
-            Tuple<AST.Env, AST.Stmt> r_body = this.body.GetStmt(env);
+            Tuple<AST.Env, AST.Stmt> r_body = this.Body.GetStmt(env);
             env = r_body.Item1;
             AST.Stmt body = r_body.Item2;
 
@@ -212,75 +240,86 @@ namespace SyntaxTree {
 
     public class SwitchStmt : Stmt {
         public SwitchStmt(Expr expr, Stmt stmt) {
-            this.expr = expr;
-            this.stmt = stmt;
+            this.Expr = expr;
+            this.Stmt = stmt;
         }
-        public readonly Expr expr;
-        public readonly Stmt stmt;
+        public Expr Expr { get; }
+        public Stmt Stmt { get; }
 
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-		    AST.Expr expr = this.expr.GetExpr(env);
+        public static Stmt Create(Expr expr, Stmt stmt) =>
+            new SwitchStmt(expr, stmt);
 
-            Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
-			env = r_stmt.Item1;
-			AST.Stmt stmt = r_stmt.Item2;
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Expr expr = this.Expr.GetExpr(env);
 
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.SwitchStmt(expr, stmt));
-		}
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            AST.Stmt stmt = r_stmt.Item2;
+
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.SwitchStmt(expr, stmt));
+        }
     }
 
 
     public class IfStmt : Stmt {
         public IfStmt(Expr cond, Stmt stmt) {
-            this.cond = cond;
-            this.stmt = stmt;
+            this.Cond = cond;
+            this.Stmt = stmt;
         }
-        public readonly Expr cond;
-        public readonly Stmt stmt;
 
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-		    AST.Expr cond = this.cond.GetExpr(env);
+        public Expr Cond { get; }
+        public Stmt Stmt { get; }
+
+        public static Stmt Create(Expr cond, Stmt stmt) =>
+            new IfStmt(cond, stmt);
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Expr cond = this.Cond.GetExpr(env);
 
             if (!cond.type.IsScalar) {
-				throw new InvalidOperationException("Error: expected scalar type");
-			}
+                throw new InvalidOperationException("Error: expected scalar type");
+            }
 
-			Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
-			env = r_stmt.Item1;
-			AST.Stmt stmt = r_stmt.Item2;
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            AST.Stmt stmt = r_stmt.Item2;
 
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfStmt(cond, stmt));
-		}
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfStmt(cond, stmt));
+        }
     }
 
-    
-    public class IfElseStmt : Stmt {
-        public IfElseStmt(Expr cond, Stmt true_stmt, Stmt false_stmt) {
-            this.cond = cond;
-            this.true_stmt = true_stmt;
-            this.false_stmt = false_stmt;
-        }
-        public readonly Expr cond;
-        public readonly Stmt true_stmt;
-        public readonly Stmt false_stmt;
 
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-		    AST.Expr cond = this.cond.GetExpr(env);
+    public class IfElseStmt : Stmt {
+        public IfElseStmt(Expr cond, Stmt trueStmt, Stmt falseStmt) {
+            this.Cond = cond;
+            this.TrueStmt = trueStmt;
+            this.FalseStmt = falseStmt;
+        }
+
+        public Expr Cond { get; }
+        public Stmt TrueStmt { get; }
+        public Stmt FalseStmt { get; }
+
+        public static Stmt Create(Expr cond, Stmt trueStmt, Stmt falseStmt) =>
+            new IfElseStmt(cond, trueStmt, falseStmt);
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            AST.Expr cond = this.Cond.GetExpr(env);
 
             if (!cond.type.IsScalar) {
-				throw new InvalidOperationException("Error: expected scalar type");
-			}
+                throw new InvalidOperationException("Error: expected scalar type");
+            }
 
-			Tuple<AST.Env, AST.Stmt> r_true_stmt = this.true_stmt.GetStmt(env);
-			env = r_true_stmt.Item1;
-			AST.Stmt true_stmt = r_true_stmt.Item2;
+            Tuple<AST.Env, AST.Stmt> r_true_stmt = this.TrueStmt.GetStmt(env);
+            env = r_true_stmt.Item1;
+            AST.Stmt true_stmt = r_true_stmt.Item2;
 
-			Tuple<AST.Env, AST.Stmt> r_false_stmt = this.false_stmt.GetStmt(env);
-			env = r_false_stmt.Item1;
-			AST.Stmt false_stmt = r_false_stmt.Item2;
+            Tuple<AST.Env, AST.Stmt> r_false_stmt = this.FalseStmt.GetStmt(env);
+            env = r_false_stmt.Item1;
+            AST.Stmt false_stmt = r_false_stmt.Item2;
 
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfElseStmt(cond, true_stmt, false_stmt));
-		}
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.IfElseStmt(cond, true_stmt, false_stmt));
+        }
     }
 
     /// <summary>
@@ -289,56 +328,63 @@ namespace SyntaxTree {
     /// </summary>
 	public class LabeledStmt : Stmt {
         public LabeledStmt(String label, Stmt stmt) {
-            this.label = label;
-            this.stmt = stmt;
+            this.Label = label;
+            this.Stmt = stmt;
         }
-        public readonly String label;
-        public readonly Stmt stmt;
 
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-			Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
-			env = r_stmt.Item1;
-			return new Tuple<AST.Env, AST.Stmt>(env, new AST.LabeledStmt(this.label, r_stmt.Item2));
-		}
+        public String Label { get; }
+        public Stmt Stmt { get; }
+
+        public static Stmt Create(String label, Stmt stmt) =>
+            new LabeledStmt(label, stmt);
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.LabeledStmt(this.Label, r_stmt.Item2));
+        }
     }
 
     /// <summary>
-    /// case expr:
+    /// case Expr:
     ///     stmt
     /// </summary>
 	public class CaseStmt : Stmt {
         public CaseStmt(Option<Expr> expr, Stmt stmt) {
-            this.expr = expr;
-            this.stmt = stmt;
+            this.Expr = expr;
+            this.Stmt = stmt;
         }
-        
-        // expr.IsNone means 'default'
-        public readonly Option<Expr> expr;
-        public readonly Stmt stmt;
 
-		public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-			if (this.expr.IsNone) {
-				Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
-				env = r_stmt.Item1;
-				return new Tuple<AST.Env, AST.Stmt>(env, new AST.DefaultStmt(r_stmt.Item2));
-			
-			} else {
-                AST.Expr expr = this.expr.Value.GetExpr(env);
-			    env = expr.Env;
+        // Expr.IsNone means 'default'
+        public Option<Expr> Expr { get; }
+        public Stmt Stmt { get; }
 
-				expr = AST.TypeCast.MakeCast(expr, new AST.TLong());
-				if (!expr.IsConstExpr) {
-					throw new InvalidOperationException("case expr not const");
-				}
-				Int32 value = ((AST.ConstLong)expr).value;
+        public static Stmt Create(Option<Expr> expr, Stmt stmt) =>
+            new CaseStmt(expr, stmt);
 
-				Tuple<AST.Env, AST.Stmt> r_stmt = this.stmt.GetStmt(env);
-				env = r_stmt.Item1;
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            if (this.Expr.IsNone) {
+                Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+                env = r_stmt.Item1;
+                return new Tuple<AST.Env, AST.Stmt>(env, new AST.DefaultStmt(r_stmt.Item2));
 
-				return new Tuple<AST.Env, AST.Stmt>(env, new AST.CaseStmt(value, r_stmt.Item2));
-			}
+            } else {
+                AST.Expr expr = this.Expr.Value.GetExpr(env);
+                env = expr.Env;
 
-		}
+                expr = AST.TypeCast.MakeCast(expr, new AST.TLong());
+                if (!expr.IsConstExpr) {
+                    throw new InvalidOperationException("case Expr not const");
+                }
+                Int32 value = ((AST.ConstLong)expr).value;
+
+                Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+                env = r_stmt.Item1;
+
+                return new Tuple<AST.Env, AST.Stmt>(env, new AST.CaseStmt(value, r_stmt.Item2));
+            }
+
+        }
     }
 
 }

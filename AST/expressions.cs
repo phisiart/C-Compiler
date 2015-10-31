@@ -310,7 +310,7 @@ namespace AST {
 
         public override Reg CGenValue(Env env, CGenState state) {
 
-            // 1. %eax = &lhs
+            // 1. %eax = &Left
             lvalue.CGenAddress(env, state);
 
             // 2. push %eax
@@ -321,7 +321,7 @@ namespace AST {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.UCHAR:
                     // pop %ebx
-                    // now %ebx = %lhs
+                    // now %ebx = %Left
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %al
@@ -332,7 +332,7 @@ namespace AST {
                 case ExprType.Kind.SHORT:
                 case ExprType.Kind.USHORT:
                     // pop %ebx
-                    // now %ebx = %lhs
+                    // now %ebx = %Left
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %al
@@ -344,7 +344,7 @@ namespace AST {
                 case ExprType.Kind.ULONG:
                 case ExprType.Kind.POINTER:
                     // pop %ebx
-                    // now %ebx = &lhs
+                    // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %al
@@ -354,7 +354,7 @@ namespace AST {
 
                 case ExprType.Kind.FLOAT:
                     // pop %ebx
-                    // now %ebx = &lhs
+                    // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %st(0)
@@ -364,7 +364,7 @@ namespace AST {
 
                 case ExprType.Kind.DOUBLE:
                     // pop %ebx
-                    // now %ebx = &lhs
+                    // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
 
                     // *%ebx = %st(0)
@@ -374,10 +374,10 @@ namespace AST {
 
                 case ExprType.Kind.STRUCT_OR_UNION:
                     // pop %edi
-                    // now %edi = &lhs
+                    // now %edi = &Left
                     state.CGenPopLong(pos, Reg.EDI);
 
-                    // %esi = &rhs
+                    // %esi = &Right
                     state.MOVL(Reg.EAX, Reg.ESI);
 
                     // %ecx = nbytes
@@ -385,7 +385,7 @@ namespace AST {
 
                     state.CGenMemCpy();
 
-                    // %eax = &lhs
+                    // %eax = &Left
                     state.MOVL(Reg.EDI, Reg.EAX);
 
                     return Reg.EAX;
@@ -433,7 +433,7 @@ namespace AST {
                     break;
 
                 case Reg.ST0:
-                    /// Compare expr with 0.0
+                    /// Compare Expr with 0.0
                     /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
                     state.FLDZ();
                     state.FUCOMIP();
@@ -641,7 +641,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// expr.name: expr must be a struct or union.
+    /// Expr.name: Expr must be a struct or union.
     /// </summary>
     public class Attribute : Expr {
         public Attribute(Expr expr, String name, ExprType type)
@@ -734,7 +734,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// &expr: get the address of expr.
+    /// &Expr: get the address of Expr.
     /// </summary>
     public class Reference : Expr {
         public Reference(Expr expr)
@@ -751,7 +751,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// *expr: expr must be a pointer.
+    /// *Expr: Expr must be a pointer.
     /// 
     /// Arrays and functions are implicitly converted to pointers.
     /// 

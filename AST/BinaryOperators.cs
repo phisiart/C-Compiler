@@ -23,7 +23,7 @@ namespace AST {
     /// 2) ulong op ulong
     /// 
     /// The procedure is always:
-    /// %eax = lhs, %ebx = rhs
+    /// %eax = Left, %ebx = Right
     /// %eax = %eax op %ebx
     /// </summary>
     public abstract class BinaryIntegralOp : BinaryOp {
@@ -34,10 +34,10 @@ namespace AST {
         public abstract void OperateULong(CGenState state);
 
         public void CGenPrepareWord(Env env, CGenState state) {
-            // 1. Load lhs to EAX.
+            // 1. Load Left to EAX.
             // 
             // regs:
-            // %eax = lhs
+            // %eax = Left
             // 
             // stack:
             // +-----+
@@ -48,41 +48,41 @@ namespace AST {
                 throw new InvalidOperationException();
             }
 
-            // 2. Push lhs to stack.
+            // 2. Push Left to stack.
             // 
             // regs:
-            // %eax = lhs
+            // %eax = Left
             // 
             // stack:
             // +-----+
             // | ... |
             // +-----+
-            // | lhs | <- %esp has decreased by 4
+            // | Left | <- %esp has decreased by 4
             // +-----+
             // 
             Int32 stack_size = state.CGenPushLong(Reg.EAX);
 
-            // 3. Load rhs to EAX.
+            // 3. Load Right to EAX.
             // 
             // regs:
-            // %eax = rhs
+            // %eax = Right
             // 
             // stack:
             // +-----+
             // | ... |
             // +-----+
-            // | lhs | <- %esp
+            // | Left | <- %esp
             // +-----+
             // 
             if (rhs.CGenValue(env, state) != Reg.EAX) {
                 throw new InvalidOperationException();
             }
 
-            // 4. Move rhs into EBX. Pop lhs from stack, into EAX.
+            // 4. Move Right into EBX. Pop Left from stack, into EAX.
             // 
             // regs:
-            // %eax = lhs
-            // %ebx = rhs
+            // %eax = Left
+            // %ebx = Right
             // 
             // stack:
             // +-----+
@@ -137,7 +137,7 @@ namespace AST {
     /// 
     /// The procedure for long or ulong is the same as that of binary integral operators.
     /// The procedure for float and double is always:
-    /// %st(0) = lhs, %st(1) = rhs
+    /// %st(0) = Left, %st(1) = Right
     /// %st(0) = %st(0) op %st(1), invalidate %st(1)
     /// </summary>
     public abstract class BinaryArithmeticOp : BinaryIntegralOp {
@@ -149,7 +149,7 @@ namespace AST {
         public Reg CGenFloat(Env env, CGenState state) {
             Reg ret;
 
-            // 1. Load lhs to ST0. Now the float stack should only contain one element.
+            // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
             // +-----+
@@ -159,7 +159,7 @@ namespace AST {
             //
             // float stack:
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
             ret = lhs.CGenValue(env, state);
@@ -173,7 +173,7 @@ namespace AST {
             // +-----+
             // |     |
             // | ... |
-            // | lhs | <- %esp has decreased by 4
+            // | Left | <- %esp has decreased by 4
             // +-----+
             //
             // float stack:
@@ -181,18 +181,18 @@ namespace AST {
             // 
             Int32 stack_size = state.CGenPushFloatP();
 
-            // 3. Load rhs to ST0. Now the float stack should only contain one element.
+            // 3. Load Right to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
             // +-----+
             // |     |
             // | ... |
-            // | lhs | <- %esp
+            // | Left | <- %esp
             // +-----+
             //
             // float stack:
             // +-----+
-            // | rhs | <- %st(0)
+            // | Right | <- %st(0)
             // +-----+
             // 
             ret = rhs.CGenValue(env, state);
@@ -200,7 +200,7 @@ namespace AST {
                 throw new InvalidOperationException();
             }
 
-            // 4. Pop double from memory stack, push into float stack. Now both lhs and rhs are in float stack.
+            // 4. Pop double from memory stack, push into float stack. Now both Left and Right are in float stack.
             //
             // memory stack:
             // +-----+
@@ -210,9 +210,9 @@ namespace AST {
             //
             // float stack:
             // +-----+
-            // | rhs | <- %st(1)
+            // | Right | <- %st(1)
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
             state.CGenPopFloat(stack_size);
@@ -238,7 +238,7 @@ namespace AST {
         public Reg CGenDouble(Env env, CGenState state) {
             Reg ret;
 
-            // 1. Load lhs to ST0. Now the float stack should only contain one element.
+            // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
             // +-----+
@@ -248,7 +248,7 @@ namespace AST {
             //
             // float stack:
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
             ret = lhs.CGenValue(env, state);
@@ -262,7 +262,7 @@ namespace AST {
             // +-----+
             // |     |
             // | ... |
-            // | lhs | <- %esp has decreased by 8
+            // | Left | <- %esp has decreased by 8
             // +-----+
             //
             // float stack:
@@ -270,18 +270,18 @@ namespace AST {
             // 
             Int32 stack_size = state.CGenPushDoubleP();
 
-            // 3. Load rhs to ST0. Now the float stack should only contain one element.
+            // 3. Load Right to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
             // +-----+
             // |     |
             // | ... |
-            // | lhs | <- %esp
+            // | Left | <- %esp
             // +-----+
             //
             // float stack:
             // +-----+
-            // | rhs | <- %st(0)
+            // | Right | <- %st(0)
             // +-----+
             // 
             ret = rhs.CGenValue(env, state);
@@ -289,7 +289,7 @@ namespace AST {
                 throw new InvalidOperationException();
             }
 
-            // 4. Pop double from memory stack, push into float stack. Now both lhs and rhs are in float stack.
+            // 4. Pop double from memory stack, push into float stack. Now both Left and Right are in float stack.
             //
             // memory stack:
             // +-----+
@@ -299,9 +299,9 @@ namespace AST {
             //
             // float stack:
             // +-----+
-            // | rhs | <- %st(1)
+            // | Right | <- %st(1)
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
             state.CGenPopDouble(stack_size);
@@ -580,13 +580,13 @@ namespace AST {
         }
 
         public override void OperateFloat(CGenState state) {
-            // In the beginning, %st(0) = lhs, %st(1) = rhs.
+            // In the beginning, %st(0) = Left, %st(1) = Right.
             // 
             // float stack:
             // +-----+
-            // | rhs | <- %st(1)
+            // | Right | <- %st(1)
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
 
@@ -595,7 +595,7 @@ namespace AST {
             // 
             // float stack:
             // +-----+
-            // | rhs | <- %st(0)
+            // | Right | <- %st(0)
             // +-----+
             // 
             state.FUCOMIP();
@@ -613,13 +613,13 @@ namespace AST {
         }
 
         public override void OperateDouble(CGenState state) {
-            // In the beginning, %st(0) = lhs, %st(1) = rhs.
+            // In the beginning, %st(0) = Left, %st(1) = Right.
             // 
             // float stack:
             // +-----+
-            // | rhs | <- %st(1)
+            // | Right | <- %st(1)
             // +-----+
-            // | lhs | <- %st(0)
+            // | Left | <- %st(0)
             // +-----+
             // 
 
@@ -628,7 +628,7 @@ namespace AST {
             // 
             // float stack:
             // +-----+
-            // | rhs | <- %st(0)
+            // | Right | <- %st(0)
             // +-----+
             // 
             state.FUCOMIP();
@@ -789,28 +789,28 @@ namespace AST {
 
 
     /// <summary>
-    /// lhs && rhs: can only take scalars (to compare with 0).
+    /// Left && Right: can only take scalars (to compare with 0).
     /// 
     /// After semantic analysis, each operand can only be
     /// long, ulong, float, double.
     /// Pointers are casted to ulongs.
     /// 
-    /// if lhs == 0:
+    /// if Left == 0:
     ///     return 0
     /// else:
-    ///     return rhs != 0
+    ///     return Right != 0
     /// 
     /// Generate the assembly in this fashion,
     /// then every route would only have one jump.
     /// 
     ///        +---------+   0
-    ///        | cmp lhs |-------+
+    ///        | cmp Left |-------+
     ///        +---------+       |
     ///             |            |
     ///             | 1          |
     ///             |            |
     ///        +----+----+   0   |
-    ///        | cmp rhs |-------+
+    ///        | cmp Right |-------+
     ///        +---------+       |
     ///             |            |
     ///             | 1          |
@@ -898,28 +898,28 @@ namespace AST {
     }
 
     /// <summary>
-    /// lhs || rhs: can only take scalars (to compare with 0).
+    /// Left || Right: can only take scalars (to compare with 0).
     /// 
     /// After semantic analysis, each operand can only be
     /// long, ulong, float, double.
     /// Pointers are casted to ulongs.
     /// 
-    /// if lhs != 0:
+    /// if Left != 0:
     ///     return 1
     /// else:
-    ///     return rhs != 0
+    ///     return Right != 0
     /// 
     /// Generate the assembly in this fashion,
     /// then every route would only have one jump.
     /// 
     ///        +---------+   1
-    ///        | cmp lhs |-------+
+    ///        | cmp Left |-------+
     ///        +---------+       |
     ///             |            |
     ///             | 0          |
     ///             |            |
     ///        +----+----+   1   |
-    ///        | cmp rhs |-------+
+    ///        | cmp Right |-------+
     ///        +---------+       |
     ///             |            |
     ///             | 0          |

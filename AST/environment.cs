@@ -357,8 +357,12 @@ namespace AST {
 			return new None<Entry>();
         }
 
-        public Entry FindInCurrentScope(String name) {
-            return env_scopes.Peek().Find(name);
+        public Option<Entry> FindInCurrentScope(String name) {
+            var entry = env_scopes.Peek().Find(name);
+            if (entry == null) {
+                return Option<Entry>.None;
+            }
+            return Option.Some(entry);
         }
 
         public Boolean IsGlobal() {

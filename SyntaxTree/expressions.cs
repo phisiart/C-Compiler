@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace SyntaxTree {
@@ -19,7 +20,7 @@ namespace SyntaxTree {
     // My simplification:
     // I let long = int, long double = double
 
-    public abstract class Expr : PTNode {
+    public abstract class Expr : SyntaxTreeNode {
         public abstract AST.Expr GetExpr(AST.Env env);
     }
 
@@ -28,30 +29,33 @@ namespace SyntaxTree {
     /// </summary>
     public class Variable : Expr {
         public Variable(String name) {
-            this.name = name;
+            this.Name = name;
         }
-		public readonly String name;
+        public static Expr Create(String name) =>
+            new Variable(name);
+
+        public String Name { get; }
 
         public override AST.Expr GetExpr(AST.Env env) {
-            Option<AST.Env.Entry> entry_opt = env.Find(name);
-            
+            Option<AST.Env.Entry> entry_opt = env.Find(this.Name);
+
             if (entry_opt.IsNone) {
-                throw new InvalidOperationException($"Cannot find variable '{name}'");
+                throw new InvalidOperationException($"Cannot find variable '{this.Name}'");
             }
 
             AST.Env.Entry entry = entry_opt.Value;
 
             switch (entry.kind) {
                 case AST.Env.EntryKind.TYPEDEF:
-                    throw new InvalidOperationException($"Expected a variable '{name}', not a typedef.");
+                    throw new InvalidOperationException($"Expected a variable '{this.Name}', not a typedef.");
                 case AST.Env.EntryKind.ENUM:
                     return new AST.ConstLong(entry.offset, env);
                 case AST.Env.EntryKind.FRAME:
                 case AST.Env.EntryKind.GLOBAL:
                 case AST.Env.EntryKind.STACK:
-                    return new AST.Variable(entry.type, name, env);
+                    return new AST.Variable(entry.type, this.Name, env);
                 default:
-                    throw new InvalidOperationException($"Cannot find variable '{name}'");
+                    throw new InvalidOperationException($"Cannot find variable '{this.Name}'");
             }
         }
     }
@@ -62,41 +66,53 @@ namespace SyntaxTree {
     ///   a = 3, b = 4;
     /// </summary>
 	public class AssignmentList : Expr {
-		public AssignmentList(List<Expr> _exprs) {
-			assign_exprs = _exprs;
-		}
-		public List<Expr> assign_exprs;
+        protected AssignmentList(ImmutableList<Expr> exprs) {
+            this.Exprs = exprs;
+        }
+
+        [Obsolete]
+        public AssignmentList(IEnumerable<Expr> exprs)
+            : this(exprs.ToImmutableList()) { }
+
+        public ImmutableList<Expr> Exprs { get; }
+
+        public static Expr Create(ImmutableList<Expr> exprs) =>
+            new AssignmentList(exprs);
 
         public override AST.Expr GetExpr(AST.Env env) {
-            List<AST.Expr> exprs = assign_exprs.ConvertAll(expr => expr.GetExpr(env));
-            return new AST.AssignList(exprs, exprs.FindLast(_ => true).type);
+            ImmutableList<AST.Expr> exprs = this.Exprs.ConvertAll(expr => expr.GetExpr(env));
+            return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).type);
         }
-	}
+    }
 
-	/// <summary>
-	/// Conditional Expression
-	/// 
-	/// cond ? true_expr : false_expr
-	/// 
-	/// cond must be of scalar type
-	/// 
-	/// 1. if both true_expr and false_expr have arithmetic types
-	///    perform usual arithmetic conversion
-	/// 2. 
-	/// </summary>
-	// TODO : What if const???
+    /// <summary>
+    /// Conditional Expression
+    /// 
+    /// cond ? true_expr : false_expr
+    /// 
+    /// cond must be of scalar type
+    /// 
+    /// 1. if both true_expr and false_expr have arithmetic types
+    ///    perform usual arithmetic conversion
+    /// 2. 
+    /// </summary>
+    // TODO : What if const???
     public class ConditionalExpression : Expr {
-        public ConditionalExpression(Expr cond, Expr true_expr, Expr false_expr) {
-            this.cond = cond;
-            this.true_expr = true_expr;
-            this.false_expr = false_expr;
+        public ConditionalExpression(Expr cond, Expr trueExpr, Expr falseExpr) {
+            this.Cond = cond;
+            this.TrueExpr = trueExpr;
+            this.FalseExpr = falseExpr;
         }
-        public readonly Expr cond;
-        public readonly Expr true_expr;
-        public readonly Expr false_expr;
-        
+
+        public Expr Cond { get; }
+        public Expr TrueExpr { get; }
+        public Expr FalseExpr { get; }
+
+        public static Expr Create(Expr cond, Expr trueExpr, Expr falseExpr) =>
+            new ConditionalExpression(cond, trueExpr, falseExpr);
+
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.Expr cond = this.cond.GetExpr(env);
+            AST.Expr cond = this.Cond.GetExpr(env);
 
             if (!cond.type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar condition in conditional expression.");
@@ -106,8 +122,8 @@ namespace SyntaxTree {
                 cond = AST.TypeCast.IntegralPromotion(cond).Item1;
             }
 
-            AST.Expr true_expr = this.true_expr.GetExpr(env);
-            AST.Expr false_expr = this.false_expr.GetExpr(env);
+            AST.Expr true_expr = this.TrueExpr.GetExpr(env);
+            AST.Expr false_expr = this.FalseExpr.GetExpr(env);
 
             // 1. if both true_expr and false_Expr have arithmetic types:
             //    perform usual arithmetic conversion
@@ -117,7 +133,7 @@ namespace SyntaxTree {
                 false_expr = r_cast.Item2;
                 return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
             }
-            
+
             if (true_expr.type.kind != false_expr.type.kind) {
                 throw new InvalidOperationException("Operand types not match in conditional expression.");
             }
@@ -157,28 +173,36 @@ namespace SyntaxTree {
     /// Function call: func(args)
     /// </summary>
     public class FuncCall : Expr {
-        public FuncCall(Expr func, IReadOnlyList<Expr> args) {
-            this.func = func;
-            this.args = args;
+        protected FuncCall(Expr func, ImmutableList<Expr> args) {
+            this.Func = func;
+            this.Args = args;
         }
-        public readonly Expr func;
-        public readonly IReadOnlyList<Expr> args;
+
+        [Obsolete]
+        public FuncCall(Expr func, IEnumerable<Expr> args)
+            : this(func, args.ToImmutableList()) { }
+
+        public static Expr Create(Expr func, ImmutableList<Expr> args) =>
+            new FuncCall(func, args);
+
+        public readonly Expr Func;
+        public readonly ImmutableList<Expr> Args;
 
         public override AST.Expr GetExpr(AST.Env env) {
 
             // Step 1: get arguments passed into the function.
             // Note that currently the arguments are not casted based on the prototype.
-            var args = this.args.Select(_ => _.GetExpr(env)).ToList();
+            var args = this.Args.Select(_ => _.GetExpr(env)).ToList();
 
             // A special case:
             // If we cannot find the function prototype in the environment, make one up.
             // This function returns int.
             // Update the environment to add this function type.
-            if ((this.func is Variable) && env.Find((this.func as Variable).name).IsNone) {
+            if ((this.Func is Variable) && env.Find((this.Func as Variable).Name).IsNone) {
                 // TODO: get this env used.
                 env = env.PushEntry(
                     loc: AST.Env.EntryKind.TYPEDEF,
-                    name: (this.func as Variable).name,
+                    name: (this.Func as Variable).Name,
                     type: AST.TFunction.Create(
                         ret_type: new AST.TLong(is_const: true),
                         args: args.ConvertAll(_ => Tuple.Create("", _.type)),
@@ -188,7 +212,7 @@ namespace SyntaxTree {
             }
 
             // Step 2: get function expression.
-            AST.Expr func = this.func.GetExpr(env);
+            AST.Expr func = this.Func.GetExpr(env);
 
             // Step 3: get the function type.
             AST.TFunction func_type;
@@ -235,19 +259,23 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// expr.attrib: get an attribute from a struct or union
+    /// Expr.attrib: get an attribute from a struct or union
     /// </summary>
     public class Attribute : Expr {
-        public Attribute(Expr expr, Variable attrib) {
-            this.expr = expr;
-            this.attrib = attrib;
+        protected Attribute(Expr expr, String member) {
+            this.Expr = expr;
+            this.Member = member;
         }
-        public readonly Expr expr;
-        public readonly Variable attrib;
+
+        public Expr Expr { get; }
+        public String Member { get; }
+
+        public static Expr Create(Expr expr, String member) =>
+            new Attribute(expr, member);
 
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.Expr expr = this.expr.GetExpr(env);
-            String name = this.attrib.name;
+            AST.Expr expr = this.Expr.GetExpr(env);
+            String name = this.Member;
 
             if (expr.type.kind != AST.ExprType.Kind.STRUCT_OR_UNION) {
                 throw new InvalidOperationException("Must get the attribute from a struct or union.");

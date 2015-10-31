@@ -9,19 +9,19 @@ namespace SyntaxTree {
 	/// </summary>
 	public class ConstFloat : Constant {
 		public ConstFloat(Double value, TokenFloat.Suffix suffix) {
-			this.value = value;
-			this.suffix = suffix;
+			this.Value = value;
+			this.Suffix = suffix;
 		}
-		public readonly TokenFloat.Suffix suffix;
-		public readonly Double value;
+		public TokenFloat.Suffix Suffix { get; }
+		public Double Value { get; }
 
         public override AST.Expr GetExpr(AST.Env env) {
-            switch (suffix) {
+            switch (this.Suffix) {
                 case TokenFloat.Suffix.F:
-                    return new AST.ConstFloat((Single)value, env);
+                    return new AST.ConstFloat((Single)this.Value, env);
                 case TokenFloat.Suffix.NONE:
                 case TokenFloat.Suffix.L:
-                    return new AST.ConstDouble(value, env);
+                    return new AST.ConstDouble(this.Value, env);
                 default:
                     throw new InvalidOperationException();
             }
@@ -34,20 +34,20 @@ namespace SyntaxTree {
 	/// </summary>
 	public class ConstInt : Constant {
 		public ConstInt(Int64 value, TokenInt.Suffix suffix) {
-			this.value = value;
-			this.suffix = suffix;
+			this.Value = value;
+			this.Suffix = suffix;
 		}
-		public readonly TokenInt.Suffix suffix;
-		public readonly Int64 value;
+		public TokenInt.Suffix Suffix { get; }
+		public Int64 Value { get; }
 
         public override AST.Expr GetExpr(AST.Env env) {
-            switch (suffix) {
+            switch (this.Suffix) {
                 case TokenInt.Suffix.U:
                 case TokenInt.Suffix.UL:
-                    return new AST.ConstULong((UInt32)value, env);
+                    return new AST.ConstULong((UInt32)this.Value, env);
                 case TokenInt.Suffix.NONE:
                 case TokenInt.Suffix.L:
-                    return new AST.ConstLong((Int32)value, env);
+                    return new AST.ConstLong((Int32)this.Value, env);
                 default:
                     throw new InvalidOperationException();
             }
@@ -59,12 +59,12 @@ namespace SyntaxTree {
 	/// </summary>
 	public class StringLiteral : Expr {
 		public StringLiteral(String value) {
-			this.value = value;
+			this.Value = value;
 		}
-		public readonly String value;
+		public String Value { get; }
 
 		public override AST.Expr GetExpr(AST.Env env) {
-			return new AST.ConstStringLiteral(value, env);
+			return new AST.ConstStringLiteral(this.Value, env);
 		}
 	}
 

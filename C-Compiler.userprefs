@@ -1,16 +1,4 @@
 ﻿<Properties StartupItem="C-Compiler.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="SyntaxTree/unary_operators.cs">
-    <Files>
-      <File FileName="SyntaxTree/unary_operators.cs" Line="245" Column="13" />
-      <File FileName="AST/types.cs" Line="156" Column="54" />
-      <File FileName="AST/expressions.cs" Line="742" Column="42" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
-  <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
-  </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.ItemProperties.C-Compiler>
     <MonoDevelop.Ide.CustomExecutionModes>
       <Data Name="StructReturn" Id="7d56aa15-f70e-43bb-919b-ebd90378bc0a" ModeId="Default">
@@ -27,4 +15,17 @@
       </Data>
     </MonoDevelop.Ide.CustomExecutionModes>
   </MonoDevelop.Ide.ItemProperties.C-Compiler>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Parser/Declaration.cs">
+    <Files>
+      <File FileName="SyntaxTree/DeclarationSpecifiers.cs" Line="1" Column="1" />
+      <File FileName="Parser/Declaration.cs" Line="279" Column="53" />
+      <File FileName="SyntaxTree/declarations.cs" Line="1" Column="1" />
+      <File FileName="AST/expressions.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
 </Properties>

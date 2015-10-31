@@ -4,25 +4,33 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Parsing;
 
 public class Compiler {
     private Compiler(String src) {
         this.src = src;
 
-        Scanner scanner = new Scanner();
-        scanner.src = src;
-        scanner.Lex();
-        tokens = scanner.tokens;
+        Scanner scanner = new Scanner(src);
+        this.tokens = scanner.Tokens.ToList();
 
-        SyntaxTree.TranslnUnit unit;
-        if (_translation_unit.Parse(tokens.ToList(), 0, out unit) != tokens.Count - 1) {
+        var parserResult = CParser.Parse(this.tokens);
+        if (parserResult.Source.Count() != 1) {
             throw new InvalidOperationException("Error: not finished parsing");
         }
 
-        ast = unit.GetTranslationUnit();
+        SyntaxTree.TranslnUnit unit = parserResult.Result;
+
+        //if (CParser.Parse(tokens)) {
+        //    throw new InvalidOperationException("Error: not finished parsing");
+        //}
+
+        //ast = unit.GetTranslationUnit_();
+
+        var ast = unit.GetTranslnUnit();
+        this.ast = Tuple.Create(ast.Env, ast.Value);
 
         CGenState state = new CGenState();
-        ast.Item2.CodeGenerate(state);
+        this.ast.Item2.CodeGenerate(state);
 
         assembly = state.ToString();
     }

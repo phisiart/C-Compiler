@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
@@ -380,6 +381,11 @@ namespace AST {
         public static TStructOrUnion CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
             new TStructOrUnion(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
 
+        public static TStructOrUnion CreateIncompleteType(SyntaxTree.StructOrUnion structOrUnion, String name) =>
+            structOrUnion == SyntaxTree.StructOrUnion.STRUCT
+                ? CreateIncompleteStruct(name, false, false)
+                : CreateIncompleteUnion(name, false, false);
+
         public static TStructOrUnion CreateStruct(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
             StructOrUnionLayout layout = new StructOrUnionLayout($"struct {name}");
             layout.DefineStruct(attribs);
@@ -395,6 +401,17 @@ namespace AST {
         public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineStruct(attribs);
 
         public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineUnion(attribs);
+
+        public void Define(
+            SyntaxTree.StructOrUnion structOrUnion,
+            ImmutableList<Tuple<Option<String>, ExprType>> members) {
+            var _members = members.ConvertAll(_ => Tuple.Create(_.Item1.Value, _.Item2));
+            if (structOrUnion == SyntaxTree.StructOrUnion.STRUCT) {
+                DefineStruct(_members);
+            } else {
+                DefineUnion(_members);
+            }
+        }
 
         public String Dump(Boolean dump_attribs) {
             if (!IsComplete) {
@@ -527,6 +544,7 @@ namespace AST {
     // calling convention:
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
+    // TODO: name is optional
     public class TFunction : ExprType {
         protected TFunction(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
             : base(is_const: true, is_volatile: false) {
@@ -577,6 +595,13 @@ namespace AST {
                 is_varargs
             );
         }
+
+        // TODO: param name should be optional
+        public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) =>
+            Create(returnType, args.Select(_ => Tuple.Create(_.Item1.IsSome ? _.Item1.Value : "", _.Item2)).ToList(), hasVarArgs);
+
+        public static TFunction Create(ExprType returnType) =>
+            Create(returnType, ImmutableList<Tuple<Option<String>, ExprType>>.Empty, true);
 
         public String Dump(Boolean dump_args = false) {
             String str = "function";
