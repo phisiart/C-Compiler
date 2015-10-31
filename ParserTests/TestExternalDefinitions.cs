@@ -19,7 +19,7 @@ public class TestExternalDefinitions {
         foreach (var source in sources) {
             var scanner = new Scanner(source);
             var tokens = scanner.Tokens;
-            var env = new Parsing.ParserEnvironment();
+            var env = new ParserEnvironment();
             var input = new ParserInput(env, scanner.Tokens);
             var result = CParser.TranslationUnit.Parse(input);
             Assert.IsTrue(result.IsSuccessful);

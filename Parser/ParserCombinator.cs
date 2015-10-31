@@ -99,21 +99,6 @@ namespace Parsing {
         /// </summary>
         public static IConsumer Or(this IConsumer firstConsumer, IConsumer secondConsumer) =>
             new ConsumerOrConsumer(firstConsumer, secondConsumer);
-        
-        /// <summary>
-        /// ( => S ) then ( S => R ) is ( => R )
-        /// </summary>
-        //public static IParser<R> THEN<S, R>(this IParser<S> parser, ITransformer<S, R> transformer) =>
-        //    new ParserThenTransformer<S, R>(parser, transformer);
-
-        /// <summary>
-        /// ( => S ) then ( S => R ) is ( => R )
-        /// </summary>
-        //public static IParser<R> THEN<S, R>(this IParser<S> parser, Func<S, R> transformFunc) =>
-        //    THEN(parser, Transformer.Create(transformFunc));
-
-        //public static IParser<R> THEN<S1, S2, S3, R>(this IParser<Tuple<S3, Tuple<S2, S1>>> parser, Func<S1, S2, S3, R> transformFunc) =>
-        //    THEN(parser, (Tuple<S3, Tuple<S2, S1>> _) => transformFunc(_.Item2.Item2, _.Item2.Item1, _.Item1));
 
         /// <summary>
         /// ( => R ) check Predicate[IParserResult[R]] is ( => R)
@@ -124,22 +109,13 @@ namespace Parsing {
         public static IParser<R> TransformResult<R>(this IParser<R> parser, Func<IParserResult<R>, IParserResult<R>> transformFunc) =>
             Then(parser, new ResultTransformer<R>(transformFunc));
 
-        /// <summary>
-        /// ( => I ) then ( Tuple[I, S] => R ) is ( S => R )
-        /// </summary>
-        //public static ITransformer<S, R> THEN<S, I, R>(this IParser<I> parser, ITransformer<Tuple<I, S>, R> transformer) =>
-        //    new ParserThenTransformer<S, I, R>(parser, transformer);
+        public static IParser<R> TransformEnvironment<R>(this IParser<R> parser,
+            Func<ParserEnvironment, ParserEnvironment> transformFunc) =>
+                parser.Then(new EnvironmentTransformer(transformFunc));
 
-        /// <summary>
-        /// ( => I ) then ( Tuple[I, S] => R ) is ( S => R )
-        /// </summary>
-        //public static ITransformer<S, R> THEN<S, I, R>(this IParser<I> parser, Func<Tuple<I, S>, R> transformFunc) =>
-        //    THEN(parser, Transformer.Create(transformFunc));
-
-        public delegate R TransformFunc<S, I, R>(S seed, I intermediate);
-
-        //public static ITransformer<S, R> THEN<S, I, R>(this IParser<I> parser, Func<S, I, R> transformFunc) =>
-        //    THEN(parser, Transformer.Create((Tuple<I, S> _) => transformFunc(_.Item2, _.Item1)));
+        public static IConsumer TransformEnvironment(this IConsumer consumer,
+            Func<ParserEnvironment, ParserEnvironment> transformFunc) =>
+                consumer.Then(new EnvironmentTransformer(transformFunc));
 
         public static ITransformer<R, R> Optional<R>(this ITransformer<R, R> transformer) =>
             new OptionalTransformer<R>(transformer);
@@ -152,13 +128,7 @@ namespace Parsing {
 
         public static IParser<Boolean> Optional(this IConsumer consumer) =>
             new OptionalConsumer(consumer);
-
-        //public static ITransformer<R, R> THEN<R>(this IConsumer consumer, ITransformer<R, R> transformer) =>
-        //    new ConsumerThenTransformer<R>(consumer, transformer);
-
-        //public static ITransformer<R, R> THEN<R>(this IConsumer consumer, Func<R, R> transformFunc) =>
-        //    new ConsumerThenTransformer<R>(consumer, Transformer.Create(transformFunc));
-
+        
         public static ITransformer<R, R> ZeroOrMore<R>(this ITransformer<R, R> transformer) =>
             new ZeroOrMoreTransformer<R>(transformer);
 

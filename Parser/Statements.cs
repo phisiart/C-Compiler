@@ -80,9 +80,11 @@ namespace Parsing {
             /// </summary>
             CompoundStatement.Is(
                 (LEFT_CURLY_BRACE)
+                .TransformEnvironment(env => env.InScope())
                 .Then(DeclarationList.Optional(ImmutableList<Decln>.Empty))
                 .Then(StatementList.Optional(ImmutableList<Stmt>.Empty))
                 .Then(RIGHT_CURLY_BRACE)
+                .TransformEnvironment(env => env.OutScope())
                 .Then(CompoundStmt.Create)
             );
 

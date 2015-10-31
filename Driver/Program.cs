@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 //				throw new InvalidOperationException("Error: not finished parsing");
 //			}
 
-//            Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit();
+//            Tuple<AST.Env, AST.TranslnUnit> ast = unit.GetTranslationUnit_();
 
 //            //AST.TStructOrUnion type = (AST.TStructOrUnion)ast.Item1.Find("struct A").type;
 //            //AST.MemberIterator iter = new AST.MemberIterator(type);

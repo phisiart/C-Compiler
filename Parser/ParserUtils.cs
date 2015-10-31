@@ -42,7 +42,7 @@ namespace Parsing {
             public Scope()
                 : this(ImmutableDictionary<String, StorageClsSpec>.Empty) { }
 
-            public Scope(ImmutableDictionary<String, StorageClsSpec> symbols) {
+            private Scope(ImmutableDictionary<String, StorageClsSpec> symbols) {
                 this.Symbols = symbols;
             }
 

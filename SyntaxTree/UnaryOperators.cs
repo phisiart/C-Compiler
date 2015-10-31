@@ -1,4 +1,5 @@
 ﻿using System;
+using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
 
@@ -62,9 +63,12 @@ namespace SyntaxTree {
             new SizeofType(typeName);
 
         public override AST.Expr GetExpr(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> type_env = this.TypeName.GetTypeEnv(env);
-            env = type_env.Item1;
-            AST.ExprType type = type_env.Item2;
+            //Tuple<AST.Env, AST.ExprType> type_env = this.TypeName.GetTypeEnv(env);
+            //env = type_env.Item1;
+            //AST.ExprType type = type_env.Item2;
+
+            var type = Semant(this.TypeName.GetExprType, ref env);
+
             return new AST.ConstULong((UInt32)type.SizeOf, env);
         }
     }
@@ -322,18 +326,16 @@ namespace SyntaxTree {
             this.TypeName = typeName;
             this.Expr = expr;
         }
+
         public TypeName TypeName { get; }
         public Expr Expr { get; }
+
         public static Expr Create(TypeName typeName, Expr expr) =>
             new TypeCast(typeName, expr);
 
         public override AST.Expr GetExpr(AST.Env env) {
-            Tuple<AST.Env, AST.ExprType> type_env = this.TypeName.GetTypeEnv(env);
-            env = type_env.Item1;
-            AST.ExprType type = type_env.Item2;
-
+            AST.ExprType type = Semant(this.TypeName.GetExprType, ref env);
             AST.Expr expr = this.Expr.GetExpr(env);
-
             return AST.TypeCast.MakeCast(expr, type);
         }
     }

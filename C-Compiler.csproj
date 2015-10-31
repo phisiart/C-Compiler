@@ -44,6 +44,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompilerTests\CompilerTests.cs" />
     <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Compiler.cs" />
     <Compile Include="Driver\CovariantTuple.cs" />
@@ -57,9 +58,10 @@
     <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
     <Compile Include="Parser\ExternalDefinitions.cs" />
+    <Compile Include="Parser\ParserClasses.cs" />
     <Compile Include="Parser\Statements.cs" />
     <Compile Include="Parser\Tokens.cs" />
-    <Compile Include="Parser\Parser.cs" />
+    <Compile Include="Parser\CParser.cs" />
     <Compile Include="Parser\ParserCombinator.cs" />
     <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -20,7 +20,7 @@ namespace SyntaxTree {
     // My simplification:
     // I let long = int, long double = double
 
-    public abstract class Expr : PTNode {
+    public abstract class Expr : SyntaxTreeNode {
         public abstract AST.Expr GetExpr(AST.Env env);
     }
 

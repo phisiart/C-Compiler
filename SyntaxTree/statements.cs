@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
 
-    public abstract class Stmt : PTNode {
+    public abstract class Stmt : SyntaxTreeNode {
         public abstract Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env);
     }
 
@@ -74,9 +75,12 @@ namespace SyntaxTree {
             List<Tuple<AST.Env, AST.Stmt>> stmts = new List<Tuple<AST.Env, AST.Stmt>>();
 
             foreach (Decln decln in this.Declns) {
-                Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns_(env);
-                env = r_decln.Item1;
-                declns.AddRange(r_decln.Item2);
+                //Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns_(env);
+                //env = r_decln.Item1;
+                //declns.AddRange(r_decln.Item2);
+
+                var declns_ = Semant(decln.GetDeclns, ref env);
+                declns.AddRange(declns_);
             }
 
             foreach (Stmt stmt in this.Stmts) {

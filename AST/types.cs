@@ -381,6 +381,11 @@ namespace AST {
         public static TStructOrUnion CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
             new TStructOrUnion(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
 
+        public static TStructOrUnion CreateIncompleteType(SyntaxTree.StructOrUnion structOrUnion, String name) =>
+            structOrUnion == SyntaxTree.StructOrUnion.STRUCT
+                ? CreateIncompleteStruct(name, false, false)
+                : CreateIncompleteUnion(name, false, false);
+
         public static TStructOrUnion CreateStruct(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
             StructOrUnionLayout layout = new StructOrUnionLayout($"struct {name}");
             layout.DefineStruct(attribs);
@@ -396,6 +401,17 @@ namespace AST {
         public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineStruct(attribs);
 
         public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineUnion(attribs);
+
+        public void Define(
+            SyntaxTree.StructOrUnion structOrUnion,
+            ImmutableList<Tuple<Option<String>, ExprType>> members) {
+            var _members = members.ConvertAll(_ => Tuple.Create(_.Item1.Value, _.Item2));
+            if (structOrUnion == SyntaxTree.StructOrUnion.STRUCT) {
+                DefineStruct(_members);
+            } else {
+                DefineUnion(_members);
+            }
+        }
 
         public String Dump(Boolean dump_attribs) {
             if (!IsComplete) {
@@ -580,8 +596,9 @@ namespace AST {
             );
         }
 
+        // TODO: param name should be optional
         public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) =>
-            Create(returnType, args.Select(_ => Tuple.Create(_.Item1.Value, _.Item2)).ToList(), hasVarArgs);
+            Create(returnType, args.Select(_ => Tuple.Create(_.Item1.IsSome ? _.Item1.Value : "", _.Item2)).ToList(), hasVarArgs);
 
         public static TFunction Create(ExprType returnType) =>
             Create(returnType, ImmutableList<Tuple<Option<String>, ExprType>>.Empty, true);

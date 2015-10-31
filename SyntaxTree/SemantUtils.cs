@@ -47,6 +47,12 @@ namespace SyntaxTree {
             env = semantReturn.Env;
             return semantReturn;
         }
+
+        public static AST.Stmt SemantStmt(Func<AST.Env, Tuple<AST.Env, AST.Stmt>> semantFunc, ref AST.Env env) {
+            var semantReturn = semantFunc(env);
+            env = semantReturn.Item1;
+            return semantReturn.Item2;
+        }
     }
 
 }

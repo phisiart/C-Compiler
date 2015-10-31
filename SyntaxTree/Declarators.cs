@@ -9,7 +9,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Modify a type into a function, array, or pointer
     /// </summary>
-    public abstract class TypeModifier : PTNode {
+    public abstract class TypeModifier : SyntaxTreeNode {
         public enum Kind {
             FUNCTION,
             ARRAY,
@@ -70,15 +70,11 @@ namespace SyntaxTree {
     /// parameter-list
     ///   : parameter-declaration [ ',' parameter-declaration ]*
     /// </summary>
-    public class ParamTypeList : PTNode {
+    public class ParamTypeList : SyntaxTreeNode {
         [Obsolete]
-        public ParamTypeList(IReadOnlyList<ParamDecln> paramDeclns, Boolean hasVarArgs)
+        public ParamTypeList(IEnumerable<ParamDecln> paramDeclns, Boolean hasVarArgs)
             : this(paramDeclns.ToImmutableList(), hasVarArgs) { }
-
-        [Obsolete]
-        public ParamTypeList(IReadOnlyList<ParamDecln> paramDeclns)
-            : this(paramDeclns.ToImmutableList(), false) { }
-
+        
         protected ParamTypeList(ImmutableList<ParamDecln> paramDeclns, Boolean hasVarArgs) {
             this.ParamDeclns = paramDeclns;
             this.HasVarArgs = hasVarArgs;
@@ -86,6 +82,9 @@ namespace SyntaxTree {
 
         public static ParamTypeList Create(ImmutableList<ParamDecln> paramDeclns, Boolean hasVarArgs) =>
             new ParamTypeList(paramDeclns, hasVarArgs);
+
+        public static ParamTypeList Create() =>
+            Create(ImmutableList<ParamDecln>.Empty, true);
 
         public ImmutableList<ParamDecln> ParamDeclns { get; }
         public Boolean HasVarArgs { get; }
@@ -206,7 +205,7 @@ namespace SyntaxTree {
     /// There are a bunch of declarators in C.
     /// They are all derived from <see cref="BaseDeclr"/>.
     /// </summary>
-    public abstract class BaseDeclr : PTNode, IBaseDeclr {
+    public abstract class BaseDeclr : SyntaxTreeNode, IBaseDeclr {
         protected BaseDeclr(ImmutableList<TypeModifier> typeModifiers) {
             this.TypeModifiers = typeModifiers;
         }
@@ -378,7 +377,7 @@ namespace SyntaxTree {
     /// init-declarator
     ///   : declarator [ '=' initializer ]?
     /// </summary>
-    public class InitDeclr : PTNode {
+    public class InitDeclr : SyntaxTreeNode {
         protected InitDeclr(Declr declr, Option<Initr> initr) {
             this.Declr = declr;
             this.Initr = initr;
@@ -484,7 +483,7 @@ namespace SyntaxTree {
     /// initializer-list
     ///   : initializer [ ',' initializer ]*
     /// </summary>
-    public abstract class Initr : PTNode {
+    public abstract class Initr : SyntaxTreeNode {
         public enum Kind {
             EXPR,
             INIT_LIST,

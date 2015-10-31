@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Immutable;
+using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
-
-    using static SemanticAnalysis;
 
     /// <summary>
     /// declaration
@@ -127,7 +126,7 @@ namespace SyntaxTree {
         // Simply change the Decln's to ExternDecln's.
         [Checked]
         [Obsolete]
-        public override Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
+        public Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln_(AST.Env env) {
             Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_declns = GetDeclns_(env);
             env = r_declns.Item1;
 
@@ -138,37 +137,11 @@ namespace SyntaxTree {
             return new Tuple<AST.Env, List<Tuple<AST.Env, AST.ExternDecln>>>(env, declns);
         }
 
-    }
-
-    public class Enumr : PTNode {
-
-        // TODO: change this to optional.
-        public Enumr(String name, Expr init) {
-            this.Name = name;
-            this.Init = init;
-        }
-        public String Name { get; }
-        public Expr Init { get; }
-
-        public static Enumr Create(String name, Option<Expr> init) =>
-            new Enumr(name, init.IsSome ? init.Value : null);
-
-        public Tuple<AST.Env, String, Int32> GetEnumerator(AST.Env env, Int32 idx) {
-            AST.Expr init;
-
-            if (this.Init == null) {
-                return new Tuple<AST.Env, String, Int32>(env, this.Name, idx);
-            }
-
-            init = Init.GetExpr(env);
-
-            init = AST.TypeCast.MakeCast(init, new AST.TLong());
-            if (!init.IsConstExpr) {
-                throw new InvalidOperationException("Error: expected constant integer");
-            }
-            Int32 init_idx = ((AST.ConstLong)init).value;
-
-            return new Tuple<AST.Env, String, int>(env, Name, init_idx);
+        [SemantMethod]
+        public ISemantReturn<ImmutableList<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
+            var declns = Semant(GetDeclns, ref env);
+            var externDeclns = declns.ConvertAll(_ => Tuple.Create(_.Item1, _.Item2 as AST.ExternDecln));
+            return SemantReturn.Create(env, externDeclns);
         }
     }
 
@@ -183,7 +156,7 @@ namespace SyntaxTree {
     ///   : declarator
     ///   | [declarator]? ':' constant-expression
     /// </summary>
-    public class StructDecln : PTNode {
+    public class StructDecln : SyntaxTreeNode {
         protected StructDecln(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) {
             this.SpecQualList = specQualList;
             this.StructDeclrs = structDeclrs;
@@ -259,23 +232,40 @@ namespace SyntaxTree {
     /// 
     /// The declarator can be completely omitted.
     /// </summary>
-    // TODO: a parameter can have a storage class specifier: register.
-    public class ParamDecln : PTNode {
-
-        [Obsolete]
-        public ParamDecln(DeclnSpecs declnSpecs, Option<Declr> declr)
-            : this(declnSpecs, declr.IsSome ? declr.Value as IParamDeclr : AbstractDeclr.Empty) { }
-
+    public class ParamDecln : SyntaxTreeNode {
         protected ParamDecln(DeclnSpecs declnSpecs, IParamDeclr declr) {
             this.DeclnSpecs = declnSpecs;
             this.Declr = declr;
         }
+
+        public static ParamDecln Create(DeclnSpecs declnSpecs, Option<IParamDeclr> declr) =>
+            new ParamDecln(declnSpecs, declr.IsNone ? AbstractDeclr.Empty : declr.Value);
 
         public static ParamDecln Create(DeclnSpecs declnSpecs, IParamDeclr declr) =>
             new ParamDecln(declnSpecs, declr);
 
         public DeclnSpecs DeclnSpecs { get; }
         public IParamDeclr Declr { get; }
+
+        [SemantMethod]
+        // TODO: support register storage in function parameters.
+        public AST.Decln.StorageClass GetStorageClsSpec() {
+            var storageClsSpecs = this.DeclnSpecs
+                .StorageClsSpecs
+                .DefaultIfEmpty(StorageClsSpec.NULL);
+
+            if (storageClsSpecs.Count() > 1) {
+                throw new InvalidOperationException("Only one storage class specifier is allowed.");
+            }
+
+            switch (storageClsSpecs.First()) {
+                case StorageClsSpec.NULL:
+                case StorageClsSpec.REGISTER:
+                    return AST.Decln.StorageClass.AUTO;
+                default:
+                    throw new InvalidOperationException("Only register storage is allowed in function parameters.");
+            }
+        }
 
         [SemantMethod]
         public Option<String> GetParamName() =>
@@ -310,7 +300,7 @@ namespace SyntaxTree {
     /// type-name
     ///   : specifier-qualifier-list [abstract-declarator]?
     /// </summary>
-    public class TypeName : PTNode {
+    public class TypeName : SyntaxTreeNode {
         protected TypeName(SpecQualList specQualList, AbstractDeclr abstractDeclr) {
             this.SpecQualList = specQualList;
             this.AbstractDeclr = abstractDeclr;
@@ -322,6 +312,9 @@ namespace SyntaxTree {
 
         public static TypeName Create(SpecQualList specQualList, AbstractDeclr abstractDeclr) =>
             new TypeName(specQualList, abstractDeclr);
+
+        public static TypeName Create(SpecQualList specQualList, Option<AbstractDeclr> abstractDeclr) =>
+            Create(specQualList, abstractDeclr.IsSome ? AbstractDeclr.Empty : abstractDeclr.Value);
 
         public SpecQualList SpecQualList { get; }
         public AbstractDeclr AbstractDeclr { get; }

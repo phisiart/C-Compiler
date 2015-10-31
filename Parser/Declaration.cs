@@ -185,7 +185,7 @@ namespace Parsing {
 
         /// <summary>
         /// enumerator
-        ///   : enumeration [ '=' constant-expression ]?
+        ///   : enumeration-constant [ '=' constant-expression ]?
         /// </summary>
         public static NamedParser<Enumr>
             Enumerator { get; } = new NamedParser<Enumr>("enumerator");
@@ -547,7 +547,7 @@ namespace Parsing {
             );
 
             // enumerator
-            //   : enumeration [ '=' constant-expression ]?
+            //   : enumeration-constant [ '=' constant-expression ]?
             Enumerator.Is(
                 EnumerationConstant
                 .Then(
