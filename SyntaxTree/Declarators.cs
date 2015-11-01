@@ -10,29 +10,18 @@ namespace SyntaxTree {
     /// Modify a type into a function, array, or pointer
     /// </summary>
     public abstract class TypeModifier : SyntaxTreeNode {
-        public enum Kind {
-            FUNCTION,
-            ARRAY,
-            POINTER
-        }
-
-        public abstract Kind kind { get; }
-
         [Obsolete]
         public abstract AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type);
 
         public abstract ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType);
     }
 
-    public class FunctionModifier : TypeModifier {
-
-        public override Kind kind => Kind.FUNCTION;
-
+    public sealed class FunctionModifier : TypeModifier {
         [Obsolete]
         public FunctionModifier(List<ParamDecln> param_declns, Boolean has_varargs)
             : this(Option.Some(SyntaxTree.ParamTypeList.Create(param_declns.ToImmutableList(), has_varargs))) { }
 
-        protected FunctionModifier(Option<ParamTypeList> paramTypeList) {
+        private FunctionModifier(Option<ParamTypeList> paramTypeList) {
             this.ParamTypeList = paramTypeList;
         }
 
@@ -70,12 +59,12 @@ namespace SyntaxTree {
     /// parameter-list
     ///   : parameter-declaration [ ',' parameter-declaration ]*
     /// </summary>
-    public class ParamTypeList : SyntaxTreeNode {
+    public sealed class ParamTypeList : SyntaxTreeNode {
         [Obsolete]
         public ParamTypeList(IEnumerable<ParamDecln> paramDeclns, Boolean hasVarArgs)
             : this(paramDeclns.ToImmutableList(), hasVarArgs) { }
-        
-        protected ParamTypeList(ImmutableList<ParamDecln> paramDeclns, Boolean hasVarArgs) {
+
+        private ParamTypeList(ImmutableList<ParamDecln> paramDeclns, Boolean hasVarArgs) {
             this.ParamDeclns = paramDeclns;
             this.HasVarArgs = hasVarArgs;
         }
@@ -116,16 +105,13 @@ namespace SyntaxTree {
 
     }
 
-    public class ArrayModifier : TypeModifier {
-        // TODO: change this to protected
-        public ArrayModifier(Option<Expr> num_elems_opt) {
-            this.NumElems = num_elems_opt;
+    public sealed class ArrayModifier : TypeModifier {
+        private ArrayModifier(Option<Expr> numElements) {
+            this.NumElems = numElements;
         }
 
-        public override Kind kind => Kind.ARRAY;
-
-        public static ArrayModifier Create(Option<Expr> NumElements) =>
-            new ArrayModifier(NumElements);
+        public static ArrayModifier Create(Option<Expr> numElements) =>
+            new ArrayModifier(numElements);
 
         [Obsolete]
         public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
@@ -150,7 +136,7 @@ namespace SyntaxTree {
 
             // Get number of elements.
             // Be careful: the environment might change.
-            var numElems = SemanticAnalysis.SemantExpr(this.NumElems.Value.GetExpr, ref env);
+            var numElems = SemantExpr(this.NumElems.Value, ref env);
 
             // Try to cast number of elements to a integer.
             // TODO: allow float???
@@ -166,15 +152,14 @@ namespace SyntaxTree {
         public Option<Expr> NumElems { get; }
     }
 
-    public class PointerModifier : TypeModifier {
-        protected PointerModifier(ImmutableList<TypeQual> typeQuals) {
+    public sealed class PointerModifier : TypeModifier {
+        private PointerModifier(ImmutableList<TypeQual> typeQuals) {
             this.TypeQuals = typeQuals;
         }
 
+        [Obsolete]
         public PointerModifier(IReadOnlyList<TypeQual> type_quals)
             : this(type_quals.ToImmutableList()) { }
-
-        public override Kind kind => Kind.POINTER;
 
         public static PointerModifier Create(ImmutableList<TypeQual> typeQuals) =>
             new PointerModifier(typeQuals);
@@ -193,8 +178,8 @@ namespace SyntaxTree {
         }
 
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType targetType) {
-            Boolean isConst = TypeQuals.Contains(TypeQual.CONST);
-            Boolean isVolatile = TypeQuals.Contains(TypeQual.VOLATILE);
+            var isConst = this.TypeQuals.Contains(TypeQual.CONST);
+            var isVolatile = this.TypeQuals.Contains(TypeQual.VOLATILE);
             return SemantReturn.Create(env, new AST.TPointer(targetType, isConst, isVolatile));
         }
 
@@ -211,12 +196,11 @@ namespace SyntaxTree {
         }
 
         public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
-            AST.ExprType type =
-                TypeModifiers
+            var type = this.TypeModifiers
                 .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
                 .Aggregate( // Wrap up the type based on the type modifiers.
                     seed: baseType,
-                    func: (currentType, typeModifier) => SemanticAnalysis.Semant(typeModifier.DecorateType, currentType, ref env)
+                    func: (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
                 );
 
             return SemantReturn.Create(env, type);
@@ -249,8 +233,8 @@ namespace SyntaxTree {
         Option<String> OptionalName { get; }
     }
 
-    public class BitFieldDeclr : BaseDeclr, IStructDeclr {
-        protected BitFieldDeclr(Option<String> name, ImmutableList<TypeModifier> typeModifiers, Expr numBits)
+    public sealed class BitFieldDeclr : BaseDeclr, IStructDeclr {
+        private BitFieldDeclr(Option<String> name, ImmutableList<TypeModifier> typeModifiers, Expr numBits)
             : base(typeModifiers) {
             this.Name = name;
             this.NumBits = numBits;
@@ -298,8 +282,8 @@ namespace SyntaxTree {
     /// 
     /// An abstract declarator is a list of (pointer, function, or array) type modifiers
     /// </summary>
-    public class AbstractDeclr : BaseDeclr, IParamDeclr {
-        protected AbstractDeclr(ImmutableList<TypeModifier> typeModifiers)
+    public sealed class AbstractDeclr : BaseDeclr, IParamDeclr {
+        private AbstractDeclr(ImmutableList<TypeModifier> typeModifiers)
             : base(typeModifiers) { }
         
         public static AbstractDeclr Create<Modifier>(ImmutableList<Modifier> typeModifiers) where Modifier : TypeModifier =>
@@ -320,13 +304,13 @@ namespace SyntaxTree {
     /// <summary>
     /// Has a name and a list of modifiers.
     /// </summary>
-    public class Declr : BaseDeclr, IParamDeclr, IStructDeclr {
+    public sealed class Declr : BaseDeclr, IParamDeclr, IStructDeclr {
 
         [Obsolete]
         public Declr(String name, IReadOnlyList<TypeModifier> modifiers)
             : this(name, modifiers.ToImmutableList()) { }
 
-        protected Declr(String name, ImmutableList<TypeModifier> typeModifiers)
+        private Declr(String name, ImmutableList<TypeModifier> typeModifiers)
             : base(typeModifiers) {
             this.Name = name;
             this.OptionalName = Option.Some(name);
@@ -337,6 +321,9 @@ namespace SyntaxTree {
 
         public static Declr Create(String name) =>
             new Declr(name, ImmutableList<TypeModifier>.Empty);
+
+        public static Declr Create(Option<ImmutableList<PointerModifier>> pointerModifiers, Declr declr) =>
+            Add(pointerModifiers.IsSome ? pointerModifiers.Value : ImmutableList<PointerModifier>.Empty, declr);
         
         public static Declr Add(Declr declr, TypeModifier typeModifier) =>
             Create(declr.Name, declr.TypeModifiers.Add(typeModifier));
@@ -363,7 +350,7 @@ namespace SyntaxTree {
         /// This method returns the name, and the modified type.
         /// </summary>
         [Obsolete]
-        public virtual Tuple<String, AST.ExprType> GetNameAndType(AST.Env env, AST.ExprType base_type) =>
+        public Tuple<String, AST.ExprType> GetNameAndType(AST.Env env, AST.ExprType base_type) =>
             Tuple.Create(
                 Name,
                 TypeModifiers
@@ -377,8 +364,8 @@ namespace SyntaxTree {
     /// init-declarator
     ///   : declarator [ '=' initializer ]?
     /// </summary>
-    public class InitDeclr : SyntaxTreeNode {
-        protected InitDeclr(Declr declr, Option<Initr> initr) {
+    public sealed class InitDeclr : SyntaxTreeNode {
+        private InitDeclr(Declr declr, Option<Initr> initr) {
             this.Declr = declr;
             this.Initr = initr;
         }
@@ -498,8 +485,8 @@ namespace SyntaxTree {
         public abstract Kind kind { get; }
     }
 
-    public class InitExpr : Initr {
-        protected InitExpr(Expr expr) {
+    public sealed class InitExpr : Initr {
+        private InitExpr(Expr expr) {
             this.Expr = expr;
         }
 
@@ -511,7 +498,7 @@ namespace SyntaxTree {
 
         [SemantMethod]
         public override ISemantReturn<AST.Initr> GetInitr(AST.Env env) {
-            var expr = SemantExpr(this.Expr.GetExpr, ref env);
+            var expr = SemantExpr(this.Expr, ref env);
             return SemantReturn.Create(env, new AST.InitExpr(expr));
         }
 
@@ -522,8 +509,8 @@ namespace SyntaxTree {
         }
     }
 
-    public class InitList : Initr {
-        protected InitList(ImmutableList<Initr> initrs) {
+    public sealed class InitList : Initr {
+        private InitList(ImmutableList<Initr> initrs) {
             this.Initrs = initrs;
         }
 

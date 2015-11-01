@@ -450,9 +450,9 @@ namespace Parsing {
             // declarator
             //   : [pointer]? direct-declarator
             Declarator.Is(
-                (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
+                (Pointer.Optional())
                 .Then(DirectDeclarator)
-                .Then(Declr.Add)
+                .Then(Declr.Create)
             );
 
             // pointer

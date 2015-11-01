@@ -4,13 +4,10 @@ using System.Linq;
 
 using SyntaxTree;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
     public interface ParseRule {}
-
     
-
-
     public class Parser {
         public static Boolean IsQuestionMark(Token token) {
             if (token.type == TokenType.OPERATOR) {
@@ -279,6 +276,7 @@ namespace OldParser {
 
         }
 
+        [Obsolete]
         public static Int32 ParseParenExpr(List<Token> src, Int32 begin, out Expr expr) {
             if (!Parser.EatOperator(src, ref begin, OperatorVal.LPAREN)) {
                 expr = null;

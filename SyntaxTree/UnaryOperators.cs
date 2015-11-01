@@ -14,7 +14,7 @@ namespace SyntaxTree {
     /// Postfix increment: x++
     /// </summary>
     // TODO: Check lvalue
-    public class PostIncrement : UnaryExprOperator {
+    public sealed class PostIncrement : UnaryExprOperator {
         public PostIncrement(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) => new PostIncrement(expr);
@@ -34,7 +34,7 @@ namespace SyntaxTree {
     /// Postfix decrement: x--
     /// </summary>
     // TODO: Check lvalue
-    public class PostDecrement : UnaryExprOperator {
+    public sealed class PostDecrement : UnaryExprOperator {
         public PostDecrement(Expr expr)
             : base(expr) { }
         public static Func<Expr, Expr> Create { get; } = expr => new PostDecrement(expr);
@@ -54,7 +54,7 @@ namespace SyntaxTree {
     /// sizeof(type)
     /// </summary>
     [Checked]
-    public class SizeofType : Expr {
+    public sealed class SizeofType : Expr {
         public SizeofType(TypeName typeName) {
             this.TypeName = typeName;
         }
@@ -77,7 +77,7 @@ namespace SyntaxTree {
     /// sizeof(Expr)
     /// </summary>
     [Checked]
-    public class SizeofExpr : UnaryExprOperator {
+    public sealed class SizeofExpr : UnaryExprOperator {
         public SizeofExpr(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -93,7 +93,7 @@ namespace SyntaxTree {
     /// Prefix increment: ++x
     /// </summary>
     [Checked]
-    public class PreIncrement : UnaryExprOperator {
+    public sealed class PreIncrement : UnaryExprOperator {
         public PreIncrement(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -114,7 +114,7 @@ namespace SyntaxTree {
     /// Prefix decrement: --x
     /// </summary>
     [Checked]
-    public class PreDecrement : UnaryExprOperator {
+    public sealed class PreDecrement : UnaryExprOperator {
         public PreDecrement(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -135,7 +135,7 @@ namespace SyntaxTree {
     /// Reference: &Expr
     /// </summary>
     [Checked]
-    public class Reference : UnaryExprOperator {
+    public sealed class Reference : UnaryExprOperator {
         public Reference(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -154,7 +154,7 @@ namespace SyntaxTree {
     /// We need to search the environment
     /// </summary>
     [Checked]
-    public class Dereference : UnaryExprOperator {
+    public sealed class Dereference : UnaryExprOperator {
         public Dereference(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) => new Dereference(expr);
@@ -179,7 +179,7 @@ namespace SyntaxTree {
     /// Merely a check on arithmetic type.
     /// </summary>
     [Checked]
-    public class Positive : UnaryExprOperator {
+    public sealed class Positive : UnaryExprOperator {
         public Positive(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -199,7 +199,7 @@ namespace SyntaxTree {
     /// Negative: requires arithmetic type.
     /// </summary>
     [Checked]
-    public class Negative : UnaryExprOperator {
+    public sealed class Negative : UnaryExprOperator {
         public Negative(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -242,7 +242,7 @@ namespace SyntaxTree {
     /// Bitwise not: requires integral.
     /// </summary>
     [Checked]
-    public class BitwiseNot : UnaryExprOperator {
+    public sealed class BitwiseNot : UnaryExprOperator {
         public BitwiseNot(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -275,7 +275,7 @@ namespace SyntaxTree {
     /// Logical not
     /// </summary>
     [Checked]
-    public class LogicalNot : UnaryExprOperator {
+    public sealed class LogicalNot : UnaryExprOperator {
         public LogicalNot(Expr expr)
             : base(expr) { }
         public static Expr Create(Expr expr) =>
@@ -321,7 +321,7 @@ namespace SyntaxTree {
     /// User-specified explicit type cast
     /// </summary>
     [Checked]
-    public class TypeCast : Expr {
+    public sealed class TypeCast : Expr {
         public TypeCast(TypeName typeName, Expr expr) {
             this.TypeName = typeName;
             this.Expr = expr;

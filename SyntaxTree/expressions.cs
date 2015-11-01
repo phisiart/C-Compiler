@@ -177,11 +177,7 @@ namespace SyntaxTree {
             this.Func = func;
             this.Args = args;
         }
-
-        [Obsolete]
-        public FuncCall(Expr func, IEnumerable<Expr> args)
-            : this(func, args.ToImmutableList()) { }
-
+        
         public static Expr Create(Expr func, ImmutableList<Expr> args) =>
             new FuncCall(func, args);
 

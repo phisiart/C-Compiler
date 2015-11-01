@@ -5,9 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using SyntaxTree;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
-// translation_unit : [external_declaration]+
+    // translation_unit : [external_declaration]+
+    [Obsolete]
     public class _translation_unit : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("int a; int b() { return 1; }");
@@ -38,8 +39,7 @@ namespace OldParser {
             if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
                 unit = new TranslnUnit(list);
                 return current;
-            }
-            else {
+            } else {
                 unit = null;
                 return -1;
             }
@@ -47,7 +47,8 @@ namespace OldParser {
 
     }
 
-// external_declaration: function_definition | declaration
+    // external_declaration: function_definition | declaration
+    [Obsolete]
     public class _external_declaration : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("int a;");
@@ -73,32 +74,33 @@ namespace OldParser {
     }
 
 
-// function_definition : [declaration_specifiers]? declarator [declaration_list]? compound_statement
-//
-// NOTE: the optional declaration_list is for the **old-style** function prototype like this:
-// +-------------------------------+
-// |    Int32 foo(param1, param2)    |
-// |    Int32 param1;                |
-// |    char param2;               |
-// |    {                          |
-// |        ....                   |
-// |    }                          |
-// +-------------------------------+
-//
-// i'm **not** going to support this style. function prototypes should always be like this:
-// +------------------------------------------+
-// |    Int32 foo(Int32 param1, char param2) {    |
-// |        ....                              |
-// |    }                                     |
-// +------------------------------------------+
-//
-// so the grammar becomes:
-// function_definition : [declaration_specifiers]? declarator compound_statement
-//
-// RETURN: FunctionDefinition
-//
-// FAIL: null
-//
+    // function_definition : [declaration_specifiers]? declarator [declaration_list]? compound_statement
+    //
+    // NOTE: the optional declaration_list is for the **old-style** function prototype like this:
+    // +-------------------------------+
+    // |    Int32 foo(param1, param2)    |
+    // |    Int32 param1;                |
+    // |    char param2;               |
+    // |    {                          |
+    // |        ....                   |
+    // |    }                          |
+    // +-------------------------------+
+    //
+    // i'm **not** going to support this style. function prototypes should always be like this:
+    // +------------------------------------------+
+    // |    Int32 foo(Int32 param1, char param2) {    |
+    // |        ....                              |
+    // |    }                                     |
+    // +------------------------------------------+
+    //
+    // so the grammar becomes:
+    // function_definition : [declaration_specifiers]? declarator compound_statement
+    //
+    // RETURN: FunctionDefinition
+    //
+    // FAIL: null
+    //
+    [Obsolete]
     public class _function_definition : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("int add(int a, int b) { return a + b; }");

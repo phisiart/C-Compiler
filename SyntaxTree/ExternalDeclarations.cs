@@ -10,13 +10,13 @@ namespace SyntaxTree {
     /// <summary>
     /// A translation unit consists of a list of external declarations - functions and objects.
     /// </summary>
-    public class TranslnUnit : SyntaxTreeNode {
+    public sealed class TranslnUnit : SyntaxTreeNode {
 
         [Obsolete]
         public TranslnUnit(IEnumerable<ExternDecln> declns)
             : this(declns.ToImmutableList()) { }
 
-        protected TranslnUnit(ImmutableList<ExternDecln> declns) {
+        private TranslnUnit(ImmutableList<ExternDecln> declns) {
             this.Declns = declns;
         }
 
@@ -62,7 +62,7 @@ namespace SyntaxTree {
     /// <summary>
     /// A function definition gives the implementation.
     /// </summary>
-    public class FuncDef : ExternDecln {
+    public sealed class FuncDef : ExternDecln {
         public FuncDef(DeclnSpecs specs, Declr declr, CompoundStmt stmt) {
             this.Specs = specs;
             this.Declr = declr;

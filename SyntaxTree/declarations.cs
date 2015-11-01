@@ -161,11 +161,7 @@ namespace SyntaxTree {
             this.SpecQualList = specQualList;
             this.StructDeclrs = structDeclrs;
         }
-
-        [Obsolete]
-        public StructDecln(DeclnSpecs declnSpecs, List<Declr> structDeclrs)
-            : this(declnSpecs, structDeclrs.ToImmutableList<IStructDeclr>()) { }
-
+        
         public static StructDecln Create(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) =>
             new StructDecln(specQualList, structDeclrs);
 
@@ -305,11 +301,7 @@ namespace SyntaxTree {
             this.SpecQualList = specQualList;
             this.AbstractDeclr = abstractDeclr;
         }
-
-        [Obsolete]
-        public TypeName(DeclnSpecs declnSpecs, Declr declr)
-            : this(declnSpecs, AbstractDeclr.Create(declr.TypeModifiers)) { }
-
+        
         public static TypeName Create(SpecQualList specQualList, AbstractDeclr abstractDeclr) =>
             new TypeName(specQualList, abstractDeclr);
 

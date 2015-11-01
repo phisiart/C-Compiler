@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
     public class ParserScope {
         public ParserScope() {

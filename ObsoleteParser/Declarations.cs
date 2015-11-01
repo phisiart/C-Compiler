@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using SyntaxTree;
 using System.Linq;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
     /// <summary>
     /// declaration
@@ -330,7 +330,7 @@ namespace OldParser {
             // 3. match typedef name
             String typedef_name;
             if ((current = _typedef_name.Parse(src, begin, out typedef_name)) != -1) {
-                spec = new TypedefName(typedef_name);
+                spec = TypedefName.Create(typedef_name);
                 return current;
             }
 
@@ -691,7 +691,7 @@ namespace OldParser {
                 return -1;
             }
 
-            modifier = new ArrayModifier(num_elems_opt);
+            modifier = ArrayModifier.Create(num_elems_opt);
             return begin;
         }
 

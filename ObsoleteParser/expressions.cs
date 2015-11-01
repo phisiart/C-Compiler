@@ -4,28 +4,28 @@ using System.Linq;
 using SyntaxTree;
 using System.Collections.Immutable;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
-// primary_expression: identifier           /* Variable : Expression */
-//
-//                   | constant             /* ConstChar : Expression
-//                                             ConstFloat : Expression
-//                                             ConstInt : Expression */
-//
-//                   | string_literal       /* StringLiteral : Expression */
-//
-//                   | '(' expression ')'   /* Expression */
-// 
-// RETURN: Expression
-//
-// FAILURE: null
-// 
-// NOTE:
-// 1. This grammar is LL(1)
-// 2. identifier shouldn't be previously defined as a typedef_name
-//    this is to resolve the ambiguity of something like a * b
-// 3. first set : id, const, String, '('
-//
+    // primary_expression: identifier           /* Variable : Expression */
+    //
+    //                   | constant             /* ConstChar : Expression
+    //                                             ConstFloat : Expression
+    //                                             ConstInt : Expression */
+    //
+    //                   | string_literal       /* StringLiteral : Expression */
+    //
+    //                   | '(' expression ')'   /* Expression */
+    // 
+    // RETURN: Expression
+    //
+    // FAILURE: null
+    // 
+    // NOTE:
+    // 1. This grammar is LL(1)
+    // 2. identifier shouldn't be previously defined as a typedef_name
+    //    this is to resolve the ambiguity of something like a * b
+    // 3. first set : id, const, String, '('
+    [Obsolete]
     public class _primary_expression : ParseRule {
         public static Boolean Test() {
             Expr expr;
@@ -77,8 +77,7 @@ namespace OldParser {
                 if (!ParserEnvironment.HasTypedefName(var_name)) {
                     expr = new Variable(var_name);
                     return begin + 1;
-                }
-                else {
+                } else {
                     expr = null;
                     return -1;
                 }
@@ -89,25 +88,25 @@ namespace OldParser {
             if (src[begin].type == TokenType.CHAR) {
                 // Expr = new ConstChar(((TokenChar)src[begin]).val);
                 // NOTE : there is no const char in C, there is only const Int32 ...
-                expr = new ConstInt(((TokenCharConst) src[begin]).value, TokenInt.Suffix.NONE);
+                expr = new ConstInt(((TokenCharConst)src[begin]).value, TokenInt.Suffix.NONE);
                 return begin + 1;
             }
 
             // 2.2. match float
             if (src[begin].type == TokenType.FLOAT) {
-                expr = new ConstFloat(((TokenFloat) src[begin]).value, ((TokenFloat) src[begin]).suffix);
+                expr = new ConstFloat(((TokenFloat)src[begin]).value, ((TokenFloat)src[begin]).suffix);
                 return begin + 1;
             }
 
             // 2.3. match Int32
             if (src[begin].type == TokenType.INT) {
-                expr = new ConstInt(((TokenInt) src[begin]).val, ((TokenInt) src[begin]).suffix);
+                expr = new ConstInt(((TokenInt)src[begin]).val, ((TokenInt)src[begin]).suffix);
                 return begin + 1;
             }
 
             // 3. match String literal
             if (src[begin].type == TokenType.STRING) {
-                expr = new StringLiteral(((TokenString) src[begin]).raw);
+                expr = new StringLiteral(((TokenString)src[begin]).raw);
                 return begin + 1;
             }
 
@@ -142,6 +141,7 @@ namespace OldParser {
     /// expression
     ///   : assignment_expression [ ',' assignment_expression ]*
     /// </summary>
+    [Obsolete]
     public class _expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             List<Expr> assign_exprs;
@@ -151,14 +151,12 @@ namespace OldParser {
                         OperatorVal.COMMA)) == -1) {
                 expr = null;
                 return -1;
-            }
-            else {
+            } else {
                 if (assign_exprs.Count == 1) {
                     expr = assign_exprs[0];
                     return begin;
-                }
-                else {
-                    expr = new AssignmentList(assign_exprs);
+                } else {
+                    expr = AssignmentList.Create(assign_exprs.ToImmutableList());
                     return begin;
                 }
             }
@@ -172,6 +170,7 @@ namespace OldParser {
     /// <remarks>
     /// When declaring an array, the size should be a constant.
     /// </remarks>
+    [Obsolete]
     public class _constant_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return _conditional_expression.Parse(src, begin, out expr);
@@ -183,6 +182,7 @@ namespace OldParser {
     /// conditional_expression:
     ///   : logical_or_expression [ '?' expression ':' conditional_expression ]?
     /// </summary>
+    [Obsolete]
     public class _conditional_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             // logical_or_expression
@@ -218,13 +218,14 @@ namespace OldParser {
         }
     }
 
-// assignment_expression: conditional_expression
-//                      | unary_expression assignment_operator assignment_expression
-// [ note: assignment_operator is = *= /= %= += -= <<= >>= &= ^= |= ]
-// [ note: how to predict which one to choose? ]
-// [ note: unary_expression is a special type of conditional_expression ]
-// [ note: first try unary ]
-// first(conditional_expression) = first(cast_expression)
+    // assignment_expression: conditional_expression
+    //                      | unary_expression assignment_operator assignment_expression
+    // [ note: assignment_operator is = *= /= %= += -= <<= >>= &= ^= |= ]
+    // [ note: how to predict which one to choose? ]
+    // [ note: unary_expression is a special type of conditional_expression ]
+    // [ note: first try unary ]
+    // first(conditional_expression) = first(cast_expression)
+    [Obsolete]
     public class _assignment_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr node) {
             node = null;
@@ -233,7 +234,7 @@ namespace OldParser {
             Int32 current = _unary_expression.Parse(src, begin, out lvalue);
             if (current != -1) {
                 if (src[current].type == TokenType.OPERATOR) {
-                    OperatorVal val = ((TokenOperator) src[current]).val;
+                    OperatorVal val = ((TokenOperator)src[current]).val;
                     switch (val) {
                         case OperatorVal.ASSIGN:
                             current++;
@@ -336,8 +337,8 @@ namespace OldParser {
 
                         default:
                             break;
-                        // node = lvalue;
-                        // return current;
+                            // node = lvalue;
+                            // return current;
                     }
                 }
             }
@@ -346,25 +347,26 @@ namespace OldParser {
         }
     }
 
-// postfix_expression: primary_expression                                       /* Expression */
-//                   | postfix_expression '[' expression ']'                    /* ArrayElement */
-//                   | postfix_expression '(' [argument_expression_list]? ')'  /* FunctionCall */
-//                   | postfix_expression '.' identifier                        /* Attribute */
-//                   | postfix_expression '->' identifier                       /* PointerAttribute */
-//                   | postfix_expression '++'                                  /* Increment */
-//                   | postfix_expression '--'                                  /* Decrement */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// 1. from this grammar we can see that postfix operators are of the highest priority
-// 2. this is left-recursive
-//
-// MY SOLUTION:
-// postfix_expression: primary_expression [ one of these postfixes ]*
-//
+    // postfix_expression: primary_expression                                       /* Expression */
+    //                   | postfix_expression '[' expression ']'                    /* ArrayElement */
+    //                   | postfix_expression '(' [argument_expression_list]? ')'  /* FunctionCall */
+    //                   | postfix_expression '.' identifier                        /* Attribute */
+    //                   | postfix_expression '->' identifier                       /* PointerAttribute */
+    //                   | postfix_expression '++'                                  /* Increment */
+    //                   | postfix_expression '--'                                  /* Decrement */
+    //
+    // RETURN: Expression
+    //
+    // FAIL: null
+    //
+    // NOTE:
+    // 1. from this grammar we can see that postfix operators are of the highest priority
+    // 2. this is left-recursive
+    //
+    // MY SOLUTION:
+    // postfix_expression: primary_expression [ one of these postfixes ]*
+    //
+    [Obsolete]
     public class _postfix_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a");
@@ -435,7 +437,7 @@ namespace OldParser {
                     return current;
                 }
 
-                OperatorVal val = ((TokenOperator) src[current]).val;
+                OperatorVal val = ((TokenOperator)src[current]).val;
                 switch (val) {
                     case OperatorVal.LBRACKET:
                         // '['
@@ -482,7 +484,7 @@ namespace OldParser {
                         current++;
 
                         // successful match
-                        expr = new FuncCall(expr, args);
+                        expr = FuncCall.Create(expr, args.ToImmutableList());
                         break;
 
                     case OperatorVal.PERIOD:
@@ -494,7 +496,7 @@ namespace OldParser {
                             expr = null;
                             return -1;
                         }
-                        String attrib = ((TokenIdentifier) src[current]).val;
+                        String attrib = ((TokenIdentifier)src[current]).val;
                         current++;
 
                         // successful match
@@ -508,7 +510,7 @@ namespace OldParser {
                         if (src[current].type != TokenType.IDENTIFIER) {
                             return -1;
                         }
-                        String pattrib = ((TokenIdentifier) src[current]).val;
+                        String pattrib = ((TokenIdentifier)src[current]).val;
                         current++;
 
                         // successful match
@@ -550,6 +552,7 @@ namespace OldParser {
     /// argument_expression_list
     ///   : assignment_expression [ ',' assignment_expression ]*
     /// </summary>
+    [Obsolete]
     public class _argument_expression_list : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out List<Expr> node) {
             return Parser.ParseNonEmptyListWithSep(src, begin, out node, _assignment_expression.Parse, OperatorVal.COMMA);
@@ -557,32 +560,33 @@ namespace OldParser {
     }
 
 
-// unary_expression: postfix_expression                     /* Expression */
-//                 | '++' unary_expression                  /* PrefixIncrement */
-//                 | '--' unary_expression                  /* PrefixDecrement */
-//                 | unary_operator cast_expression         /* Reference
-//                                                             Dereference
-//                                                             Positive
-//                                                             Negative
-//                                                             BitwiseNot
-//                                                             Not */
-//                 | sizeof unary_expression                /* SizeofExpression */
-//                 | sizeof '(' type_name ')'               /* SizeofType */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// 1. from this grammar, we can see that the 2nd priority operators are prefix unary operators
-// 2. notice the last two productions, they form an ambiguity. we need to use environment
-//    first try the type_name version
-// 3. unary_operators are & | * | + | - | ~ | ! 
-//
-// first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
-//           = { id const String ( ++ -- & * + - ~ ! sizeof }
-//
+    // unary_expression: postfix_expression                     /* Expression */
+    //                 | '++' unary_expression                  /* PrefixIncrement */
+    //                 | '--' unary_expression                  /* PrefixDecrement */
+    //                 | unary_operator cast_expression         /* Reference
+    //                                                             Dereference
+    //                                                             Positive
+    //                                                             Negative
+    //                                                             BitwiseNot
+    //                                                             Not */
+    //                 | sizeof unary_expression                /* SizeofExpression */
+    //                 | sizeof '(' type_name ')'               /* SizeofType */
+    //
+    // RETURN: Expression
+    //
+    // FAIL: null
+    //
+    // NOTE:
+    // 1. from this grammar, we can see that the 2nd priority operators are prefix unary operators
+    // 2. notice the last two productions, they form an ambiguity. we need to use environment
+    //    first try the type_name version
+    // 3. unary_operators are & | * | + | - | ~ | ! 
+    //
+    // first set = first(postfix_expression) + { ++ -- & * + - ~ ! sizeof }
+    //           = first(primary_expression) + { ++ -- & * + - ~ ! sizeof }
+    //           = { id const String ( ++ -- & * + - ~ ! sizeof }
+    //
+    [Obsolete]
     public class _unary_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a");
@@ -735,7 +739,7 @@ namespace OldParser {
             }
 
             current = begin;
-            OperatorVal val = ((TokenOperator) src[begin]).val;
+            OperatorVal val = ((TokenOperator)src[begin]).val;
             switch (val) {
                 case OperatorVal.INC:
                     // '++'
@@ -851,16 +855,17 @@ namespace OldParser {
         }
     }
 
-// cast_expression: unary_expression                    /* Expression */
-//                | '(' type_name ')' cast_expression   /* TypeCast */
-//
-// RETURN: Expression
-//
-// FAIL: null
-//
-// NOTE:
-// this is right-recursive, which is totally fine
-//
+    // cast_expression: unary_expression                    /* Expression */
+    //                | '(' type_name ')' cast_expression   /* TypeCast */
+    //
+    // RETURN: Expression
+    //
+    // FAIL: null
+    //
+    // NOTE:
+    // this is right-recursive, which is totally fine
+    //
+    [Obsolete]
     public class _cast_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a");
@@ -917,6 +922,7 @@ namespace OldParser {
     /// multiplicative_expression
     ///   : cast_expression [ [ '*' | '/' | '%' ] cast_expression ]*
     /// </summary>
+    [Obsolete]
     public class _multiplicative_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a * b");
@@ -956,6 +962,7 @@ namespace OldParser {
     /// additive_expression
     ///   : multiplicative_expression [ [ '+' | '-' ] multiplicative_expression ]*
     /// </summary>
+    [Obsolete]
     public class _additive_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a * b + c");
@@ -993,6 +1000,7 @@ namespace OldParser {
     /// shift_expression
     ///   : additive_expression [ [ '<<' | '>>' ] additive_expression ]*
     /// </summary>
+    [Obsolete]
     public class _shift_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("a * b + c << 3");
@@ -1028,8 +1036,9 @@ namespace OldParser {
 
     /// <summary>
     /// relational_expression
-    ///   : shift_expression [ [ '<' | '>' | '<=' | '>=' ] shift_expression ]*
+    ///   : shift_expression [ [ '&lt;' | '>' | '&lt;=' | '>=' ] shift_expression ]*
     /// </summary>
+    [Obsolete]
     public class _relational_expression : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("3 < 4");
@@ -1071,6 +1080,7 @@ namespace OldParser {
     /// equality_expression
     ///   : relational_expression [ [ '==' | '!=' ] relational_expression ]*
     /// </summary>
+    [Obsolete]
     public class _equality_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(
@@ -1091,6 +1101,7 @@ namespace OldParser {
     /// and_expression
     ///   : equality_expresion [ '&' equality_expression ]*
     /// </summary>
+    [Obsolete]
     public class _and_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(
@@ -1109,6 +1120,7 @@ namespace OldParser {
     /// exclusive_or_expression
     ///   : and_expression [ '^' and_expression ]*
     /// </summary>
+    [Obsolete]
     public class _exclusive_or_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(
@@ -1127,6 +1139,7 @@ namespace OldParser {
     /// inclusive_or_expression
     ///   : exclulsive_or_expression [ '|' exclulsive_or_expression ]*
     /// </summary>
+    [Obsolete]
     public class _inclusive_or_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(
@@ -1149,6 +1162,7 @@ namespace OldParser {
     /// A logical and expression is just a bunch of (bitwise) inclusive or expressions.
     /// </remarks>
     /// </summary>
+    [Obsolete]
     public class _logical_and_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(
@@ -1171,6 +1185,7 @@ namespace OldParser {
     /// A logical or expression is just a bunch of logical and expressions separated by '||'s.
     /// </remarks>
     /// </summary>
+    [Obsolete]
     public class _logical_or_expression : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Expr expr) {
             return Parser.ParseBinaryOperator(

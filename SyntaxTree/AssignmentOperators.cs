@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace SyntaxTree {
+﻿namespace SyntaxTree {
+    using static SemanticAnalysis;
 
     /// <summary>
     /// Assignment: Left = Right
@@ -9,30 +7,30 @@ namespace SyntaxTree {
     /// <remarks>
     /// Left must be a lvalue, but this check is left to the cgen phase.
     /// </remarks>
-	public class Assignment : Expr {
-		public Assignment(Expr left, Expr right) {
-			this.Left = left;
-			this.Right = right;
-		}
+    public class Assignment : Expr {
+        public Assignment(Expr left, Expr right) {
+            this.Left = left;
+            this.Right = right;
+        }
 
-		public Expr Left { get; }
-		public Expr Right { get; }
+        public Expr Left { get; }
+        public Expr Right { get; }
 
         public static Expr Create(Expr left, Expr right) =>
             new Assignment(left, right);
 
         public override AST.Expr GetExpr(AST.Env env) {
-            AST.Expr lhs = this.Left.GetExpr(env);
-            AST.Expr rhs = this.Right.GetExpr(env);
-            rhs = AST.TypeCast.MakeCast(rhs, lhs.type);
-            return new AST.Assign(lhs, rhs, lhs.type);
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
+            right = AST.TypeCast.MakeCast(right, left.type);
+            return new AST.Assign(left, right, left.type);
         }
-	}
+    }
 
     /// <summary>
     /// Assignment operator
     /// </summary>
-    public abstract class AssignOp: Expr {
+    public abstract class AssignOp : Expr {
         protected AssignOp(Expr left, Expr right) {
             this.Left = left;
             this.Right = right;
@@ -55,7 +53,7 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new MultAssign(left, right);
         public override Expr ConstructBinaryOp() => new Multiply(this.Left, this.Right);
-	}
+    }
 
     /// <summary>
     /// DivAssign: a /= b
@@ -98,7 +96,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// LShiftAssign: a <<= b
+    /// LShiftAssign: a &lt;&lt;= b
     /// </summary>
     public class LShiftAssign : AssignOp {
         public LShiftAssign(Expr left, Expr right)

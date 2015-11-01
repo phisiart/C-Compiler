@@ -57,7 +57,7 @@ namespace SyntaxTree {
         public abstract Kind kind { get; }
     }
 
-    public class BasicTypeSpec : TypeSpec {
+    public sealed class BasicTypeSpec : TypeSpec {
         public BasicTypeSpec(Kind kind) {
             this.kind = kind;
         }
@@ -83,8 +83,8 @@ namespace SyntaxTree {
     /// typedef-name
     ///   : identifier
     /// </summary>
-    public class TypedefName : NonBasicTypeSpec {
-        public TypedefName(String name) {
+    public sealed class TypedefName : NonBasicTypeSpec {
+        private TypedefName(String name) {
             this.Name = name;
         }
 
@@ -245,8 +245,8 @@ namespace SyntaxTree {
     /// declaration-specifiers
     ///   : [ storage-class-specifier | type-specifier | type-qualifier ]+
     /// </summary>
-    public class DeclnSpecs : SpecQualList {
-        protected DeclnSpecs(ImmutableList<StorageClsSpec> storageClsSpecs, ImmutableList<TypeSpec> typeSpecs, ImmutableList<TypeQual> typeQuals)
+    public sealed class DeclnSpecs : SpecQualList {
+        private DeclnSpecs(ImmutableList<StorageClsSpec> storageClsSpecs, ImmutableList<TypeSpec> typeSpecs, ImmutableList<TypeQual> typeQuals)
             : base(typeSpecs, typeQuals) {
             this.StorageClsSpecs = storageClsSpecs;
         }
@@ -391,8 +391,8 @@ namespace SyntaxTree {
     /// <summary>
     /// struct-or-union-specifier
     /// </summary>
-    public class StructOrUnionSpec : NonBasicTypeSpec {
-        protected StructOrUnionSpec(StructOrUnion structOrUnion, Option<String> name, Option<ImmutableList<StructDecln>> memberDeclns) {
+    public sealed class StructOrUnionSpec : NonBasicTypeSpec {
+        private StructOrUnionSpec(StructOrUnion structOrUnion, Option<String> name, Option<ImmutableList<StructDecln>> memberDeclns) {
             this.StructOrUnion = structOrUnion;
             this.Name = name;
             this.MemberDeclns = memberDeclns;
@@ -611,13 +611,13 @@ namespace SyntaxTree {
     /// enumerator-list
     ///   : enumerator [ ',' enumerator ]*
     /// </summary>
-    public class EnumSpec : NonBasicTypeSpec {
-        protected EnumSpec(Option<String> name, Option<ImmutableList<Enumr>> enumrs) {
+    public sealed class EnumSpec : NonBasicTypeSpec {
+        private EnumSpec(Option<String> name, Option<ImmutableList<Enumr>> enumrs) {
             this.Name = name;
             this.Enumrs = enumrs;
         }
 
-        protected static EnumSpec Create(Option<String> name, Option<ImmutableList<Enumr>> enumrs) =>
+        private static EnumSpec Create(Option<String> name, Option<ImmutableList<Enumr>> enumrs) =>
             new EnumSpec(name, enumrs);
 
         public static EnumSpec Create(Option<String> name, ImmutableList<Enumr> enumrs) =>
@@ -630,9 +630,9 @@ namespace SyntaxTree {
         public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
             if (this.Enumrs.IsNone) {
                 // if there is no content in this enum type, we must find it's definition in the environment
-                Option<AST.Env.Entry> entryOpt = env.Find($"enum {Name}");
+                Option<AST.Env.Entry> entryOpt = env.Find($"enum {this.Name.Value}");
                 if (entryOpt.IsNone || entryOpt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                    throw new InvalidOperationException($"Type \"enum {Name}\" has not been defined.");
+                    throw new InvalidOperationException($"Type \"enum {this.Name.Value}\" has not been defined.");
                 }
             } else {
                 // so there are something in this enum type, we need to put this type into the environment
@@ -645,7 +645,7 @@ namespace SyntaxTree {
                     env = env.PushEnum(name, new AST.TLong(), idx);
                     idx++;
                 }
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, "enum " + Name, new AST.TLong());
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, $"enum {this.Name.Value}", new AST.TLong());
             }
 
             return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, isVolatile));
@@ -676,7 +676,7 @@ namespace SyntaxTree {
 
                 if (enumr.Init.IsSome) {
                     // If the user provides an initialization value, use it.
-                    var init = SemantExpr(enumr.Init.Value.GetExpr, ref env);
+                    var init = SemantExpr(enumr.Init.Value, ref env);
                     init = AST.TypeCast.MakeCast(init, new AST.TLong());
                     if (!init.IsConstExpr) {
                         throw new InvalidOperationException("Enumerator initialization must have a constant value.");
@@ -713,8 +713,8 @@ namespace SyntaxTree {
     /// enumeration-constant
     ///   : identifier
     /// </summary>
-    public class Enumr : SyntaxTreeNode {
-        public Enumr(String name, Option<Expr> init) {
+    public sealed class Enumr : SyntaxTreeNode {
+        private Enumr(String name, Option<Expr> init) {
             this.Name = name;
             this.Init = init;
         }

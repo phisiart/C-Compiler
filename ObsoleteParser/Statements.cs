@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using SyntaxTree;
 
-namespace OldParser {
+namespace ObsoleteParser {
 
-// statement: labeled_statement
-//          | compound_statement
-//          | expression_statement
-//          | selection_statement
-//          | iteration_statement
-//          | jump_statement
+    // statement: labeled_statement
+    //          | compound_statement
+    //          | expression_statement
+    //          | selection_statement
+    //          | iteration_statement
+    //          | jump_statement
+    [Obsolete]
     public class _statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
             stmt = null;
@@ -50,10 +51,11 @@ namespace OldParser {
     }
 
 
-// jump_statement: goto identifier ;
-//               | continue ;
-//               | break ;
-//               | return <expression>? ;
+    // jump_statement: goto identifier ;
+    //               | continue ;
+    //               | break ;
+    //               | return <expression>? ;
+    [Obsolete]
     public class _jump_statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
             stmt = null;
@@ -62,7 +64,7 @@ namespace OldParser {
                 return -1;
             }
 
-            KeywordVal val = ((TokenKeyword) src[begin]).val;
+            KeywordVal val = ((TokenKeyword)src[begin]).val;
 
             Int32 current = begin + 1;
             switch (val) {
@@ -70,7 +72,7 @@ namespace OldParser {
                     if (src[current].type != TokenType.IDENTIFIER) {
                         return -1;
                     }
-                    stmt = new GotoStmt(((TokenIdentifier) src[current]).val);
+                    stmt = new GotoStmt(((TokenIdentifier)src[current]).val);
                     current++;
                     break;
                 case KeywordVal.CONTINUE:
@@ -88,8 +90,7 @@ namespace OldParser {
                     if (current == -1) {
                         current = saved;
                         stmt = new ReturnStmt(new None<Expr>());
-                    }
-                    else {
+                    } else {
                         stmt = new ReturnStmt(new Some<Expr>(expr));
                     }
                     break;
@@ -108,7 +109,8 @@ namespace OldParser {
     }
 
 
-// compound_statement : { <declaration_list>? <statement_list>? }
+    // compound_statement : { <declaration_list>? <statement_list>? }
+    [Obsolete]
     public class _compound_statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out CompoundStmt stmt) {
             stmt = null;
@@ -144,10 +146,11 @@ namespace OldParser {
     }
 
 
-// declaration_list: declaration
-//                 | declaration_list declaration
-// [ note: my solution ]
-// declaration_list: <declaration>+
+    // declaration_list: declaration
+    //                 | declaration_list declaration
+    // [ note: my solution ]
+    // declaration_list: <declaration>+
+    [Obsolete]
     public class _declaration_list : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out List<Decln> decl_list) {
             decl_list = new List<Decln>();
@@ -174,6 +177,7 @@ namespace OldParser {
     /// statement_list
     ///   : [statement]+
     /// </summary>
+    [Obsolete]
     public class _statement_list : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out List<Stmt> stmts) {
             return Parser.ParseNonEmptyList(src, begin, out stmts, _statement.Parse);
@@ -181,7 +185,8 @@ namespace OldParser {
     }
 
 
-// expression_statement: <expression>? ;
+    // expression_statement: <expression>? ;
+    [Obsolete]
     public class _expression_statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
             stmt = null;
@@ -191,8 +196,7 @@ namespace OldParser {
             if (current == -1) {
                 exprOpt = new None<Expr>();
                 current = begin;
-            }
-            else {
+            } else {
                 exprOpt = new Some<Expr>(expr);
             }
 
@@ -207,9 +211,10 @@ namespace OldParser {
     }
 
 
-// iteration_statement: while ( expression ) statement
-//                    | do statement while ( expression ) ;
-//                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
+    // iteration_statement: while ( expression ) statement
+    //                    | do statement while ( expression ) ;
+    //                    | for ( <expression>? ; <expression>? ; <expression>? ) statement
+    [Obsolete]
     public class _iteration_statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
             stmt = null;
@@ -233,8 +238,7 @@ namespace OldParser {
                 stmt = new WhileStmt(cond, body);
                 return current;
 
-            }
-            else if (Parser.IsKeyword(src[begin], KeywordVal.DO)) {
+            } else if (Parser.IsKeyword(src[begin], KeywordVal.DO)) {
                 // do
                 current = begin + 1;
 
@@ -253,8 +257,7 @@ namespace OldParser {
                 stmt = new DoWhileStmt(body, cond);
                 return current;
 
-            }
-            else if (Parser.IsKeyword(src[begin], KeywordVal.FOR)) {
+            } else if (Parser.IsKeyword(src[begin], KeywordVal.FOR)) {
                 // for
                 current = begin + 1;
 
@@ -323,17 +326,17 @@ namespace OldParser {
                 stmt = new ForStmt(init_opt, cond_opt, loop_opt, body);
                 return current;
 
-            }
-            else {
+            } else {
                 return -1;
             }
         }
     }
 
 
-// selection_statement: if ( expression ) statement
-//                    | if ( expression ) statement else statement
-//                    | switch ( expression ) statement
+    // selection_statement: if ( expression ) statement
+    //                    | if ( expression ) statement else statement
+    //                    | switch ( expression ) statement
+    [Obsolete]
     public class _selection_statement : ParseRule {
 
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
@@ -358,8 +361,7 @@ namespace OldParser {
                 stmt = new SwitchStmt(expr, stmt);
                 return current;
 
-            }
-            else if (Parser.IsKeyword(src[begin], KeywordVal.IF)) {
+            } else if (Parser.IsKeyword(src[begin], KeywordVal.IF)) {
                 // if
                 current = begin + 1;
                 current = Parser.ParseParenExpr(src, current, out expr);
@@ -384,17 +386,17 @@ namespace OldParser {
                 stmt = new IfElseStmt(expr, true_stmt, false_stmt);
                 return current;
 
-            }
-            else {
+            } else {
                 return -1;
             }
         }
     }
 
 
-// labeled_statement : identifier : statement
-//                   | case constant_expression : statement
-//                   | default : statement
+    // labeled_statement : identifier : statement
+    //                   | case constant_expression : statement
+    //                   | default : statement
+    [Obsolete]
     public class _labeled_statement : ParseRule {
         public static Int32 Parse(List<Token> src, Int32 begin, out Stmt stmt) {
             stmt = null;
@@ -417,8 +419,7 @@ namespace OldParser {
                 stmt = new CaseStmt(new None<Expr>(), stmt);
                 return current;
 
-            }
-            else if (Parser.IsKeyword(src[begin], KeywordVal.CASE)) {
+            } else if (Parser.IsKeyword(src[begin], KeywordVal.CASE)) {
                 current = begin + 1;
 
                 // match Expr
@@ -442,9 +443,8 @@ namespace OldParser {
                 stmt = new CaseStmt(new Some<Expr>(expr), stmt);
                 return current;
 
-            }
-            else if (src[begin].type == TokenType.IDENTIFIER) {
-                String label = ((TokenIdentifier) src[begin]).val;
+            } else if (src[begin].type == TokenType.IDENTIFIER) {
+                String label = ((TokenIdentifier)src[begin]).val;
                 current = begin + 1;
 
                 // match ':'
@@ -461,8 +461,7 @@ namespace OldParser {
                 stmt = new LabeledStmt(label, stmt);
                 return current;
 
-            }
-            else {
+            } else {
                 return -1;
             }
 

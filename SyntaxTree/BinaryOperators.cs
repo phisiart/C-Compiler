@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace SyntaxTree {
+    using static SemanticAnalysis;
 
     /// <summary>
     /// Binary operator: Left op Right
@@ -29,39 +29,36 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
 
             // 1. semant operands
-            AST.Expr lhs = this.Left.GetExpr(env);
-            env = lhs.Env;
-
-            AST.Expr rhs = this.Right.GetExpr(env);
-            env = rhs.Env;
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual arithmetic conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            AST.ExprType.Kind kind = r_cast.Item3;
+            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
+            left = castReturn.Item1;
+            right = castReturn.Item2;
+            var typeKind = castReturn.Item3;
 
-            Boolean is_const = lhs.type.is_const || rhs.type.is_const;
-            Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
+            var isConst = left.type.is_const || right.type.is_const;
+            var isVolatile = left.type.is_volatile || right.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr && rhs.IsConstExpr) {
-                switch (kind) {
+            if (left.IsConstExpr && right.IsConstExpr) {
+                switch (typeKind) {
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected long or unsigned long.");
                 }
             }
 
             // 4. if not both operands are constants
-            switch (kind) {
+            switch (typeKind) {
                 case AST.ExprType.Kind.ULONG:
-                    return ConstructExpr(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
                 case AST.ExprType.Kind.LONG:
-                    return ConstructExpr(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected long or unsigned long.");
             }
@@ -82,47 +79,44 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
 
             // 1. semant operands
-            AST.Expr lhs = this.Left.GetExpr(env);
-            env = lhs.Env;
-
-            AST.Expr rhs = this.Right.GetExpr(env);
-            env = rhs.Env;
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual arithmetic conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualArithmeticConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            AST.ExprType.Kind kind = r_cast.Item3;
+            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
+            left = castReturn.Item1;
+            right = castReturn.Item2;
+            var typeKind = castReturn.Item3;
 
-            Boolean is_const = lhs.type.is_const || rhs.type.is_const;
-            Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
+            var isConst = left.type.is_const || right.type.is_const;
+            var isVolatile = left.type.is_volatile || right.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr && rhs.IsConstExpr) {
-                switch (kind) {
+            if (left.IsConstExpr && right.IsConstExpr) {
+                switch (typeKind) {
                     case AST.ExprType.Kind.DOUBLE:
-                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value), env);
+                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
                     case AST.ExprType.Kind.FLOAT:
-                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value), env);
+                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
                 }
             }
 
             // 4. if not both operands are constants
-            switch (kind) {
+            switch (typeKind) {
                 case AST.ExprType.Kind.DOUBLE:
-                    return ConstructExpr(lhs, rhs, new AST.TDouble(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TDouble(isConst, isVolatile));
                 case AST.ExprType.Kind.FLOAT:
-                    return ConstructExpr(lhs, rhs, new AST.TFloat(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TFloat(isConst, isVolatile));
                 case AST.ExprType.Kind.ULONG:
-                    return ConstructExpr(lhs, rhs, new AST.TULong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
                 case AST.ExprType.Kind.LONG:
-                    return ConstructExpr(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
             }
@@ -137,57 +131,54 @@ namespace SyntaxTree {
         protected BinaryLogicalOp(Expr left, Expr right)
             : base(left, right) { }
 
-        public abstract Int32 OperateLong(Int32 lhs, Int32 rhs);
-        public abstract Int32 OperateULong(UInt32 lhs, UInt32 rhs);
-        public abstract Int32 OperateFloat(Single lhs, Single rhs);
-        public abstract Int32 OperateDouble(Double lhs, Double rhs);
+        public abstract Int32 OperateLong(Int32 left, Int32 right);
+        public abstract Int32 OperateULong(UInt32 left, UInt32 right);
+        public abstract Int32 OperateFloat(Single left, Single right);
+        public abstract Int32 OperateDouble(Double left, Double right);
 
-        public abstract AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type);
+        public abstract AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type);
 
         public override AST.Expr GetExpr(AST.Env env) {
 
             // 1. semant operands
-            AST.Expr lhs = this.Left.GetExpr(env);
-            env = lhs.Env;
-
-            AST.Expr rhs = this.Right.GetExpr(env);
-            env = rhs.Env;
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual scalar conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> r_cast = AST.TypeCast.UsualScalarConversion(lhs, rhs);
-            lhs = r_cast.Item1;
-            rhs = r_cast.Item2;
-            AST.ExprType.Kind kind = r_cast.Item3;
+            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualScalarConversion(left, right);
+            left = castReturn.Item1;
+            right = castReturn.Item2;
+            var typeKind = castReturn.Item3;
 
-            Boolean is_const = lhs.type.is_const || rhs.type.is_const;
-            Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
+            var isConst = left.type.is_const || right.type.is_const;
+            var isVolatile = left.type.is_volatile || right.type.is_volatile;
 
             // 3. if both operands are constants
-            if (lhs.IsConstExpr && rhs.IsConstExpr) {
-                switch (kind) {
+            if (left.IsConstExpr && right.IsConstExpr) {
+                switch (typeKind) {
                     case AST.ExprType.Kind.DOUBLE:
-                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)lhs).value, ((AST.ConstDouble)rhs).value), env);
+                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
                     case AST.ExprType.Kind.FLOAT:
-                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)lhs).value, ((AST.ConstFloat)rhs).value), env);
+                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
                     case AST.ExprType.Kind.ULONG:
-                        return new AST.ConstLong(OperateULong(((AST.ConstULong)lhs).value, ((AST.ConstULong)rhs).value), env);
+                        return new AST.ConstLong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
                     case AST.ExprType.Kind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)lhs).value, ((AST.ConstLong)rhs).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
                 }
             }
 
             // 4. if not both operands are constants
-            switch (kind) {
+            switch (typeKind) {
                 case AST.ExprType.Kind.DOUBLE:
-                    return ConstructExpr(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 case AST.ExprType.Kind.FLOAT:
-                    return ConstructExpr(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 case AST.ExprType.Kind.ULONG:
-                    return ConstructExpr(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 case AST.ExprType.Kind.LONG:
-                    return ConstructExpr(lhs, rhs, new AST.TLong(is_const, is_volatile));
+                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
             }
@@ -273,26 +264,26 @@ namespace SyntaxTree {
                 throw new InvalidOperationException();
             }
 
-            AST.Env env = order ? ptr.Env : offset.Env;
+            var env = order ? ptr.Env : offset.Env;
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
-                Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
-                Int32 _offset = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(_base + _scale * _offset), ptr.type, env);
+                var baseValue = (Int32)((AST.ConstPtr)ptr).value;
+                Int32 scaleValue = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
+                Int32 offsetValue = ((AST.ConstLong)offset).value;
+                return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.type, env);
             }
 
-            AST.Expr base_addr = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env);
-            AST.Expr scale = new AST.Multiply(
+            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env);
+            var scaleFactor = new AST.Multiply(
                 offset,
                 new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf, env),
                 new AST.TLong(offset.type.is_const, offset.type.is_volatile)
             );
-            AST.ExprType add_type = new AST.TLong(offset.type.is_const, offset.type.is_volatile);
-            AST.Expr add =
+            var type = new AST.TLong(offset.type.is_const, offset.type.is_volatile);
+            var add =
                 order
-                ? new AST.Add(base_addr, scale, add_type)
-                : new AST.Add(scale, base_addr, add_type);
+                ? new AST.Add(baseAddress, scaleFactor, type)
+                : new AST.Add(scaleFactor, baseAddress, type);
 
             return AST.TypeCast.ToPointer(add, ptr.type, env);
         }
@@ -300,36 +291,33 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
 
             // 1. semant the operands
-            AST.Expr lhs = this.Left.GetExpr(env);
-            env = lhs.Env;
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
 
-            AST.Expr rhs = this.Right.GetExpr(env);
-            env = rhs.Env;
-
-            if (lhs.type is AST.TArray) {
-                lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
+            if (left.type is AST.TArray) {
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.type as AST.TArray).elem_type, left.type.is_const, left.type.is_volatile));
             }
 
-            if (rhs.type is AST.TArray) {
-                rhs = AST.TypeCast.MakeCast(rhs, new AST.TPointer((rhs.type as AST.TArray).elem_type, rhs.type.is_const, rhs.type.is_volatile));
+            if (right.type is AST.TArray) {
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.type as AST.TArray).elem_type, right.type.is_const, right.type.is_volatile));
             }
 
             // 2. ptr + int
-            if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!rhs.type.IsIntegral) {
+            if (left.type.kind == AST.ExprType.Kind.POINTER) {
+                if (!right.type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
-                return GetPointerAddition(lhs, rhs);
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.type.is_const, right.type.is_volatile));
+                return GetPointerAddition(left, right);
             }
 
             // 3. int + ptr
-            if (rhs.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!lhs.type.IsIntegral) {
+            if (right.type.kind == AST.ExprType.Kind.POINTER) {
+                if (!left.type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                lhs = AST.TypeCast.MakeCast(lhs, new AST.TLong(lhs.type.is_const, lhs.type.is_volatile));
-                return GetPointerAddition(rhs, lhs, false);
+                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.type.is_const, left.type.is_volatile));
+                return GetPointerAddition(right, left, false);
             }
 
             // 4. usual arithmetic conversion
@@ -368,10 +356,10 @@ namespace SyntaxTree {
             }
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
-                Int32 _base = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 _scale = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
-                Int32 _offset = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(_base - _scale * _offset), ptr.type, offset.Env);
+                Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).value;
+                Int32 scaleFactorValue = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
+                Int32 offsetValue = ((AST.ConstLong)offset).value;
+                return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.type, offset.Env);
             }
 
             return AST.TypeCast.ToPointer(
@@ -391,56 +379,53 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
 
-            AST.Expr lhs = this.Left.GetExpr(env);
-            env = lhs.Env;
+            var left = SemantExpr(this.Left, ref env);
+            var right = SemantExpr(this.Right, ref env);
 
-            AST.Expr rhs = this.Right.GetExpr(env);
-            env = rhs.Env;
-
-            if (lhs.type is AST.TArray) {
-                lhs = AST.TypeCast.MakeCast(lhs, new AST.TPointer((lhs.type as AST.TArray).elem_type, lhs.type.is_const, lhs.type.is_volatile));
+            if (left.type is AST.TArray) {
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.type as AST.TArray).elem_type, left.type.is_const, left.type.is_volatile));
             }
 
-            if (rhs.type is AST.TArray) {
-                rhs = AST.TypeCast.MakeCast(rhs, new AST.TPointer((rhs.type as AST.TArray).elem_type, rhs.type.is_const, rhs.type.is_volatile));
+            if (right.type is AST.TArray) {
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.type as AST.TArray).elem_type, right.type.is_const, right.type.is_volatile));
             }
 
-            Boolean is_const = lhs.type.is_const || rhs.type.is_const;
-            Boolean is_volatile = lhs.type.is_volatile || rhs.type.is_volatile;
+            var isConst = left.type.is_const || right.type.is_const;
+            var isVolatile = left.type.is_volatile || right.type.is_volatile;
 
-            if (lhs.type.kind == AST.ExprType.Kind.POINTER) {
+            if (left.type.kind == AST.ExprType.Kind.POINTER) {
 
                 // 1. ptr - ptr
-                if (rhs.type.kind == AST.ExprType.Kind.POINTER) {
-                    AST.TPointer lhs_t = (AST.TPointer)(lhs.type);
-                    AST.TPointer rhs_t = (AST.TPointer)(rhs.type);
-                    if (!lhs_t.ref_t.EqualType(rhs_t.ref_t)) {
+                if (right.type.kind == AST.ExprType.Kind.POINTER) {
+                    AST.TPointer leftType = (AST.TPointer)(left.type);
+                    AST.TPointer rightType = (AST.TPointer)(right.type);
+                    if (!leftType.ref_t.EqualType(rightType.ref_t)) {
                         throw new InvalidOperationException("The 2 pointers don't match.");
                     }
 
-                    Int32 scale = lhs_t.ref_t.SizeOf;
+                    Int32 scale = leftType.ref_t.SizeOf;
 
-                    if (lhs.IsConstExpr && rhs.IsConstExpr) {
-                        return new AST.ConstLong((Int32)(((AST.ConstPtr)lhs).value - ((AST.ConstPtr)rhs).value) / scale, env);
+                    if (left.IsConstExpr && right.IsConstExpr) {
+                        return new AST.ConstLong((Int32)(((AST.ConstPtr)left).value - ((AST.ConstPtr)right).value) / scale, env);
                     }
 
                     return new AST.Divide(
                         new AST.Sub(
-                            AST.TypeCast.MakeCast(lhs, new AST.TLong(is_const, is_volatile)),
-                            AST.TypeCast.MakeCast(rhs, new AST.TLong(is_const, is_volatile)),
-                            new AST.TLong(is_const, is_volatile)
+                            AST.TypeCast.MakeCast(left, new AST.TLong(isConst, isVolatile)),
+                            AST.TypeCast.MakeCast(right, new AST.TLong(isConst, isVolatile)),
+                            new AST.TLong(isConst, isVolatile)
                         ),
                         new AST.ConstLong(scale, env),
-                        new AST.TLong(is_const, is_volatile)
+                        new AST.TLong(isConst, isVolatile)
                     );
                 }
 
                 // 2. ptr - integral
-                if (!rhs.type.IsIntegral) {
+                if (!right.type.IsIntegral) {
                     throw new InvalidOperationException("Expected an integral.");
                 }
-                rhs = AST.TypeCast.MakeCast(rhs, new AST.TLong(rhs.type.is_const, rhs.type.is_volatile));
-                return GetPointerSubtraction(lhs, rhs);
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.type.is_const, right.type.is_volatile));
+                return GetPointerSubtraction(left, right);
 
             }
 
@@ -488,13 +473,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Less(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs < rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs < rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs < rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs < rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left < right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left < right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left < right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left < right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.Less(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.Less(left, right, type);
     }
 
     /// <summary>
@@ -505,13 +490,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new LEqual(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs <= rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs <= rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs <= rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs <= rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left <= right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left <= right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left <= right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left <= right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.LEqual(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.LEqual(left, right, type);
     }
 
     /// <summary>
@@ -522,13 +507,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Greater(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs > rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs > rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs > rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs > rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left > right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left > right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left > right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left > right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.Greater(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.Greater(left, right, type);
     }
 
     /// <summary>
@@ -539,13 +524,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new GEqual(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs >= rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs >= rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs >= rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs >= rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left >= right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left >= right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left >= right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left >= right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.GEqual(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.GEqual(left, right, type);
     }
 
     /// <summary>
@@ -555,13 +540,13 @@ namespace SyntaxTree {
         public Equal(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Equal(left, right);
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs == rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs == rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs == rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs == rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left == right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left == right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left == right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left == right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.Equal(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.Equal(left, right, type);
     }
 
     /// <summary>
@@ -572,13 +557,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new NotEqual(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != rhs);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != rhs);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != rhs);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs != rhs);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left != right);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left != right);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left != right);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != right);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.NotEqual(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.NotEqual(left, right, type);
     }
 
     /// <summary>
@@ -635,13 +620,13 @@ namespace SyntaxTree {
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new LogicalAnd(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs != 0 && rhs != 0);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left != 0 && right != 0);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left != 0 && right != 0);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left != 0 && right != 0);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != 0 && right != 0);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.LogicalAnd(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.LogicalAnd(left, right, type);
     }
 
     /// <summary>
@@ -653,12 +638,12 @@ namespace SyntaxTree {
         public static Expr Create(Expr left, Expr right) =>
             new LogicalOr(left, right);
 
-        public override Int32 OperateLong(Int32 lhs, Int32 rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
-        public override Int32 OperateULong(UInt32 lhs, UInt32 rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
-        public override Int32 OperateFloat(Single lhs, Single rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
-        public override Int32 OperateDouble(Double lhs, Double rhs) => Convert.ToInt32(lhs != 0 || rhs != 0);
+        public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left != 0 || right != 0);
+        public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left != 0 || right != 0);
+        public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left != 0 || right != 0);
+        public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != 0 || right != 0);
 
-        public override AST.Expr ConstructExpr(AST.Expr lhs, AST.Expr rhs, AST.ExprType type) =>
-            new AST.LogicalOr(lhs, rhs, type);
+        public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
+            new AST.LogicalOr(left, right, type);
     }
 }
