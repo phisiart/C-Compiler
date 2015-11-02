@@ -83,7 +83,7 @@ namespace SyntaxTree {
             var namesAndTypes = this.ParamDeclns.ConvertAll(
                 paramDecln =>
                     Tuple.Create(
-                        paramDecln.GetParamName(),
+                        paramDecln.ParamDeclr.Name,
                         Semant(paramDecln.GetParamType, ref env)
                     )
             );
@@ -185,84 +185,49 @@ namespace SyntaxTree {
 
         public ImmutableList<TypeQual> TypeQuals { get; }
     }
-
-    /// <summary>
-    /// There are a bunch of declarators in C.
-    /// They are all derived from <see cref="BaseDeclr"/>.
-    /// </summary>
-    public abstract class BaseDeclr : SyntaxTreeNode, IBaseDeclr {
-        protected BaseDeclr(ImmutableList<TypeModifier> typeModifiers) {
-            this.TypeModifiers = typeModifiers;
-        }
-
-        public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
-            var type = this.TypeModifiers
-                .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
-                .Aggregate( // Wrap up the type based on the type modifiers.
-                    seed: baseType,
-                    func: (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
-                );
-
-            return SemantReturn.Create(env, type);
-        }
-
-        public ImmutableList<TypeModifier> TypeModifiers { get; }
-    }
-
-    public interface IBaseDeclr {
-        ImmutableList<TypeModifier> TypeModifiers { get; }
-        ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType);
-    }
-
+    
     /// <summary>
     /// Has a list of modifiers. Has an optional name.
     /// </summary>
-    public interface IParamDeclr : IBaseDeclr {
-        Option<String> OptionalName { get; }
+    public class ParamDeclr : AbstractDeclr {
+        protected ParamDeclr(Option<String> name, ImmutableList<TypeModifier> typeModifiers)
+            : base(typeModifiers) {
+            this.Name = name;
+        }
+
+        public static ParamDeclr Create(Declr declr) =>
+            new ParamDeclr(Option.Some(declr.Name), declr.TypeModifiers);
+
+        public static ParamDeclr Create(AbstractDeclr abstractDeclr) =>
+            new ParamDeclr(Option<String>.None, abstractDeclr.TypeModifiers);
+
+        public new static ParamDeclr Empty { get; }
+            = new ParamDeclr(Option<String>.None, ImmutableList<TypeModifier>.Empty);
+
+        public Option<String> Name { get; }
     }
 
     /// <summary>
     /// struct-declarator
-    ///   : declarator
-    ///   | [declarator]? ':' constant-expression
+    ///   : [declarator]? ':' constant-expression
+    ///   | declarator
     /// </summary>
-    public interface IStructDeclr : IBaseDeclr {
-        Boolean IsBitField { get; }
-        Declr GetDeclr { get; }
-        BitFieldDeclr GetBitFieldDeclr { get; }
-        Option<String> OptionalName { get; }
-    }
-
-    public sealed class BitFieldDeclr : BaseDeclr, IStructDeclr {
-        private BitFieldDeclr(Option<String> name, ImmutableList<TypeModifier> typeModifiers, Expr numBits)
-            : base(typeModifiers) {
-            this.Name = name;
+    public sealed class StructDeclr : ParamDeclr {
+        private StructDeclr(Option<String> name, ImmutableList<TypeModifier> typeModifiers, Option<Expr> numBits)
+            : base(name, typeModifiers) {
             this.NumBits = numBits;
         }
 
-        public static BitFieldDeclr Create(Option<Declr> declr, Expr numBits) {
-            if (declr.IsSome) {
-                return new BitFieldDeclr(Option.Some(declr.Value.Name), declr.Value.TypeModifiers, numBits);
-            } else {
-                return new BitFieldDeclr(Option<String>.None, ImmutableList<TypeModifier>.Empty, numBits);
-            }
+        public static StructDeclr Create(Option<Declr> declr, Expr numBits) {
+            return declr.IsNone
+                ? new StructDeclr(Option<String>.None, ImmutableList<TypeModifier>.Empty, Option.Some(numBits))
+                : new StructDeclr(Option.Some(declr.Value.Name), declr.Value.TypeModifiers, Option<Expr>.None);
         }
 
-        public BitFieldDeclr GetBitFieldDeclr => this;
+        public new static StructDeclr Create(Declr declr) =>
+            new StructDeclr(Option.Some(declr.Name), declr.TypeModifiers, Option<Expr>.None);
 
-        public Declr GetDeclr {
-            get {
-                throw new InvalidOperationException($"This is a {nameof(BitFieldDeclr)}, not a {nameof(Declr)}");
-            }
-        }
-
-        public Option<String> Name { get; }
-
-        public Boolean IsBitField => true;
-
-        public Expr NumBits { get; }
-
-        public Option<String> OptionalName => this.Name;
+        public Option<Expr> NumBits { get; }
     }
 
     /// <summary>
@@ -282,9 +247,10 @@ namespace SyntaxTree {
     /// 
     /// An abstract declarator is a list of (pointer, function, or array) type modifiers
     /// </summary>
-    public sealed class AbstractDeclr : BaseDeclr, IParamDeclr {
-        private AbstractDeclr(ImmutableList<TypeModifier> typeModifiers)
-            : base(typeModifiers) { }
+    public class AbstractDeclr {
+        protected AbstractDeclr(ImmutableList<TypeModifier> typeModifiers) {
+            this.TypeModifiers = typeModifiers;
+        }
         
         public static AbstractDeclr Create<Modifier>(ImmutableList<Modifier> typeModifiers) where Modifier : TypeModifier =>
             new AbstractDeclr(typeModifiers.ToImmutableList<TypeModifier>());
@@ -298,13 +264,24 @@ namespace SyntaxTree {
         public static AbstractDeclr Add(ImmutableList<PointerModifier> pointerModifiers, AbstractDeclr abstractDeclr) =>
             Create(abstractDeclr.TypeModifiers.AddRange(pointerModifiers));
 
-        public Option<String> OptionalName => Option<String>.None;
+        public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
+            var type = this.TypeModifiers
+                .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
+                .Aggregate( // Wrap up the type based on the type modifiers.
+                    seed: baseType,
+                    func: (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
+                );
+
+            return SemantReturn.Create(env, type);
+        }
+
+        public ImmutableList<TypeModifier> TypeModifiers { get; }
     }
 
     /// <summary>
     /// Has a name and a list of modifiers.
     /// </summary>
-    public sealed class Declr : BaseDeclr, IParamDeclr, IStructDeclr {
+    public sealed class Declr : AbstractDeclr {
 
         [Obsolete]
         public Declr(String name, IReadOnlyList<TypeModifier> modifiers)
@@ -313,7 +290,6 @@ namespace SyntaxTree {
         private Declr(String name, ImmutableList<TypeModifier> typeModifiers)
             : base(typeModifiers) {
             this.Name = name;
-            this.OptionalName = Option.Some(name);
         }
 
         public static Declr Create(String name, ImmutableList<TypeModifier> typeModifiers) =>
@@ -332,18 +308,6 @@ namespace SyntaxTree {
             Create(declr.Name, declr.TypeModifiers.AddRange(pointerModifiers));
 
         public String Name { get; }
-
-        public Option<String> OptionalName { get; }
-
-        public Boolean IsBitField => false;
-
-        public Declr GetDeclr => this;
-
-        public BitFieldDeclr GetBitFieldDeclr {
-            get {
-                throw new InvalidOperationException($"This is a {nameof(Declr)}, not a {nameof(BitFieldDeclr)}");
-            }
-        }
 
         /// <summary>
         /// A declarator consists of 1) a name, and 2) a list of decorators.

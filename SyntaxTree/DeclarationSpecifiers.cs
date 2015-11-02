@@ -48,8 +48,8 @@ namespace SyntaxTree {
             UNSIGNED
         }
 
-        [Obsolete]
-        public abstract Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile);
+        //[Obsolete]
+        //public abstract Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile);
 
         [SemantMethod]
         public abstract ISemantReturn<AST.ExprType> GetExprType(AST.Env env);
@@ -64,10 +64,10 @@ namespace SyntaxTree {
 
         public override Kind kind { get; }
 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
-            throw new InvalidProgramException();
-        }
+        //[Obsolete]
+        //public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+        //    throw new InvalidProgramException();
+        //}
 
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> GetExprType(AST.Env env) {
@@ -91,23 +91,23 @@ namespace SyntaxTree {
         public static TypedefName Create(String name) =>
             new TypedefName(name);
 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+        //[Obsolete]
+        //public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
 
-            var entryOpt = env.Find(this.Name);
+        //    var entryOpt = env.Find(this.Name);
 
-            if (entryOpt.IsNone) {
-                throw new InvalidOperationException($"Cannot find name \"{this.Name}\".");
-            }
+        //    if (entryOpt.IsNone) {
+        //        throw new InvalidOperationException($"Cannot find name \"{this.Name}\".");
+        //    }
 
-            var entry = entryOpt.Value;
+        //    var entry = entryOpt.Value;
 
-            if (entry.kind != AST.Env.EntryKind.TYPEDEF) {
-                throw new InvalidOperationException($"\"{this.Name}\" is not a typedef.");
-            }
+        //    if (entry.kind != AST.Env.EntryKind.TYPEDEF) {
+        //        throw new InvalidOperationException($"\"{this.Name}\" is not a typedef.");
+        //    }
 
-            return Tuple.Create(env, entry.type.GetQualifiedType(isConst, isVolatile));
-        }
+        //    return Tuple.Create(env, entry.type.GetQualifiedType(isConst, isVolatile));
+        //}
 
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> GetExprType(AST.Env env) {
@@ -266,6 +266,36 @@ namespace SyntaxTree {
         public static DeclnSpecs Add(DeclnSpecs declnSpecs, TypeQual typeQual) =>
             Create(declnSpecs.StorageClsSpecs, declnSpecs.TypeSpecs, declnSpecs.TypeQuals.Add(typeQual));
 
+        [SemantMethod]
+        public AST.Decln.StorageClass GetStorageClass() {
+            if (this.StorageClsSpecs.Count == 0) {
+                return AST.Decln.StorageClass.AUTO;
+            }
+
+            if (this.StorageClsSpecs.Count == 1) {
+                switch (this.StorageClsSpecs[0]) {
+                    case StorageClsSpec.AUTO:
+                    case StorageClsSpec.NULL:
+                    case StorageClsSpec.REGISTER:
+                        return AST.Decln.StorageClass.AUTO;
+
+                    case StorageClsSpec.EXTERN:
+                        return AST.Decln.StorageClass.EXTERN;
+
+                    case StorageClsSpec.STATIC:
+                        return AST.Decln.StorageClass.STATIC;
+
+                    case StorageClsSpec.TYPEDEF:
+                        return AST.Decln.StorageClass.TYPEDEF;
+
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+
+            throw new InvalidOperationException("Multiple storage class specifiers.");
+        }
+
         public ImmutableList<StorageClsSpec> StorageClsSpecs { get; }
 
         /// <summary>
@@ -347,36 +377,7 @@ namespace SyntaxTree {
         /// Only used by the parser.
         /// </summary>
         [Obsolete]
-        public bool IsTypedef() => StorageClsSpecs.Contains(StorageClsSpec.TYPEDEF);
-
-        [SemantMethod]
-        public AST.Decln.StorageClass GetStorageClass() {
-            if (StorageClsSpecs.Count == 0) {
-                return AST.Decln.StorageClass.AUTO;
-            }
-
-            if (StorageClsSpecs.Count == 1) {
-                switch (StorageClsSpecs[0]) {
-                    case StorageClsSpec.AUTO:
-                    case StorageClsSpec.NULL:
-                    case StorageClsSpec.REGISTER:
-                        return AST.Decln.StorageClass.AUTO;
-
-                    case StorageClsSpec.EXTERN:
-                        return AST.Decln.StorageClass.EXTERN;
-
-                    case StorageClsSpec.STATIC:
-                        return AST.Decln.StorageClass.STATIC;
-
-                    case StorageClsSpec.TYPEDEF:
-                        return AST.Decln.StorageClass.TYPEDEF;
-
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-            throw new InvalidOperationException("Multiple storage class specifiers.");
-        }
+        public bool IsTypedef() => this.StorageClsSpecs.Contains(StorageClsSpec.TYPEDEF);
     }
 
     /// <summary>
@@ -423,87 +424,87 @@ namespace SyntaxTree {
             return Tuple.Create(env, attribs);
         }
 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+        //[Obsolete]
+        //public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
 
-            // If no name is supplied, this must be a new type.
-            // Members must be supplied.
-            if (this.Name.IsNone) {
-                if (MemberDeclns.IsNone) {
-                    throw new InvalidProgramException();
-                }
+        //    // If no name is supplied, this must be a new type.
+        //    // Members must be supplied.
+        //    if (this.Name.IsNone) {
+        //        if (MemberDeclns.IsNone) {
+        //            throw new InvalidProgramException();
+        //        }
 
-                Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                env = r_attribs.Item1;
+        //        Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+        //        env = r_attribs.Item1;
 
-                if (this.StructOrUnion == StructOrUnion.STRUCT) {
-                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateStruct("<anonymous>", r_attribs.Item2, isConst, isVolatile));
-                } else {
-                    return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateUnion("<anonymous>", r_attribs.Item2, isConst, isVolatile));
-                }
+        //        if (this.StructOrUnion == StructOrUnion.STRUCT) {
+        //            return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateStruct("<anonymous>", r_attribs.Item2, isConst, isVolatile));
+        //        } else {
+        //            return new Tuple<AST.Env, AST.ExprType>(env, AST.TStructOrUnion.CreateUnion("<anonymous>", r_attribs.Item2, isConst, isVolatile));
+        //        }
 
-            } else {
-                // If a name is supplied, split into 2 cases.
+        //    } else {
+        //        // If a name is supplied, split into 2 cases.
 
-                String typeName = (this.StructOrUnion == StructOrUnion.STRUCT) ? $"struct {this.Name.Value}" : $"union {this.Name.Value}";
+        //        String typeName = (this.StructOrUnion == StructOrUnion.STRUCT) ? $"struct {this.Name.Value}" : $"union {this.Name.Value}";
 
-                if (MemberDeclns.IsNone) {
-                    // Case 1: If no attribute list supplied, then we are either
-                    //       1) mentioning an already-existed struct/union
-                    //    or 2) creating an incomplete struct/union
+        //        if (MemberDeclns.IsNone) {
+        //            // Case 1: If no attribute list supplied, then we are either
+        //            //       1) mentioning an already-existed struct/union
+        //            //    or 2) creating an incomplete struct/union
 
-                    Option<AST.Env.Entry> entry_opt = env.Find(typeName);
+        //            Option<AST.Env.Entry> entry_opt = env.Find(typeName);
 
-                    if (entry_opt.IsNone) {
-                        // If the struct/union is not in the current environment,
-                        // then add an incomplete struct/union into the environment
-                        AST.ExprType type =
-                            (this.StructOrUnion == StructOrUnion.STRUCT)
-                            ? AST.TStructOrUnion.CreateIncompleteStruct(this.Name.Value, isConst, isVolatile)
-                            : AST.TStructOrUnion.CreateIncompleteUnion(this.Name.Value, isConst, isVolatile);
+        //            if (entry_opt.IsNone) {
+        //                // If the struct/union is not in the current environment,
+        //                // then add an incomplete struct/union into the environment
+        //                AST.ExprType type =
+        //                    (this.StructOrUnion == StructOrUnion.STRUCT)
+        //                    ? AST.TStructOrUnion.CreateIncompleteStruct(this.Name.Value, isConst, isVolatile)
+        //                    : AST.TStructOrUnion.CreateIncompleteUnion(this.Name.Value, isConst, isVolatile);
 
-                        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typeName, type);
-                        return Tuple.Create(env, type);
-                    }
+        //                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typeName, type);
+        //                return Tuple.Create(env, type);
+        //            }
 
-                    if (entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                        throw new InvalidProgramException(typeName + " is not a type? This should be my fault.");
-                    }
+        //            if (entry_opt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
+        //                throw new InvalidProgramException(typeName + " is not a type? This should be my fault.");
+        //            }
 
-                    // If the struct/union is found, return it.
-                    return Tuple.Create(env, entry_opt.Value.type);
+        //            // If the struct/union is found, return it.
+        //            return Tuple.Create(env, entry_opt.Value.type);
 
-                } else {
-                    // Case 2: If an attribute list is supplied.
+        //        } else {
+        //            // Case 2: If an attribute list is supplied.
 
-                    // 1) Make sure there is no complete struct/union in the current environment.
-                    Option<AST.Env.Entry> entry_opt = env.Find(typeName);
-                    if (entry_opt.IsSome && entry_opt.Value.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)entry_opt.Value.type).IsComplete) {
-                        throw new InvalidOperationException($"Redefining {typeName}");
-                    }
+        //            // 1) Make sure there is no complete struct/union in the current environment.
+        //            Option<AST.Env.Entry> entry_opt = env.Find(typeName);
+        //            if (entry_opt.IsSome && entry_opt.Value.type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && ((AST.TStructOrUnion)entry_opt.Value.type).IsComplete) {
+        //                throw new InvalidOperationException($"Redefining {typeName}");
+        //            }
 
-                    // 2) Add an incomplete struct/union into the environment.
-                    AST.TStructOrUnion type =
-                        (this.StructOrUnion == StructOrUnion.STRUCT)
-                        ? AST.TStructOrUnion.CreateIncompleteStruct(this.Name.Value, isConst, isVolatile)
-                        : AST.TStructOrUnion.CreateIncompleteUnion(this.Name.Value, isConst, isVolatile);
-                    env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typeName, type);
+        //            // 2) Add an incomplete struct/union into the environment.
+        //            AST.TStructOrUnion type =
+        //                (this.StructOrUnion == StructOrUnion.STRUCT)
+        //                ? AST.TStructOrUnion.CreateIncompleteStruct(this.Name.Value, isConst, isVolatile)
+        //                : AST.TStructOrUnion.CreateIncompleteUnion(this.Name.Value, isConst, isVolatile);
+        //            env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, typeName, type);
 
-                    // 3) Iterate over the attributes.
-                    Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
-                    env = r_attribs.Item1;
+        //            // 3) Iterate over the attributes.
+        //            Tuple<AST.Env, List<Tuple<String, AST.ExprType>>> r_attribs = GetAttribs(env);
+        //            env = r_attribs.Item1;
 
-                    // 4) Make the type complete. This would also change the entry inside env.
-                    if (this.StructOrUnion == StructOrUnion.STRUCT) {
-                        type.DefineStruct(r_attribs.Item2);
-                    } else {
-                        type.DefineUnion(r_attribs.Item2);
-                    }
+        //            // 4) Make the type complete. This would also change the entry inside env.
+        //            if (this.StructOrUnion == StructOrUnion.STRUCT) {
+        //                type.DefineStruct(r_attribs.Item2);
+        //            } else {
+        //                type.DefineUnion(r_attribs.Item2);
+        //            }
 
-                    return new Tuple<AST.Env, AST.ExprType>(env, type);
-                }
-            }
-        }
+        //            return new Tuple<AST.Env, AST.ExprType>(env, type);
+        //        }
+        //    }
+        //}
 
         [SemantMethod]
         public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetMembers(AST.Env env, ImmutableList<StructDecln> memberDeclns) {
@@ -626,30 +627,30 @@ namespace SyntaxTree {
         public static EnumSpec Create(String name) =>
             Create(Option.Some(name), Option<ImmutableList<Enumr>>.None);
 
-        [Obsolete]
-        public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
-            if (this.Enumrs.IsNone) {
-                // if there is no content in this enum type, we must find it's definition in the environment
-                Option<AST.Env.Entry> entryOpt = env.Find($"enum {this.Name.Value}");
-                if (entryOpt.IsNone || entryOpt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
-                    throw new InvalidOperationException($"Type \"enum {this.Name.Value}\" has not been defined.");
-                }
-            } else {
-                // so there are something in this enum type, we need to put this type into the environment
-                Int32 idx = 0;
-                foreach (Enumr elem in Enumrs.Value) {
-                    Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
-                    env = r_enum.Item1;
-                    String name = r_enum.Item2;
-                    idx = r_enum.Item3;
-                    env = env.PushEnum(name, new AST.TLong(), idx);
-                    idx++;
-                }
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, $"enum {this.Name.Value}", new AST.TLong());
-            }
+        //[Obsolete]
+        //public override Tuple<AST.Env, AST.ExprType> GetExprTypeEnv(AST.Env env, Boolean isConst, Boolean isVolatile) {
+        //    if (this.Enumrs.IsNone) {
+        //        // if there is no content in this enum type, we must find it's definition in the environment
+        //        Option<AST.Env.Entry> entryOpt = env.Find($"enum {this.Name.Value}");
+        //        if (entryOpt.IsNone || entryOpt.Value.kind != AST.Env.EntryKind.TYPEDEF) {
+        //            throw new InvalidOperationException($"Type \"enum {this.Name.Value}\" has not been defined.");
+        //        }
+        //    } else {
+        //        // so there are something in this enum type, we need to put this type into the environment
+        //        Int32 idx = 0;
+        //        foreach (Enumr elem in Enumrs.Value) {
+        //            Tuple<AST.Env, String, Int32> r_enum = elem.GetEnumerator(env, idx);
+        //            env = r_enum.Item1;
+        //            String name = r_enum.Item2;
+        //            idx = r_enum.Item3;
+        //            env = env.PushEnum(name, new AST.TLong(), idx);
+        //            idx++;
+        //        }
+        //        env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, $"enum {this.Name.Value}", new AST.TLong());
+        //    }
 
-            return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, isVolatile));
-        }
+        //    return new Tuple<AST.Env, AST.ExprType>(env, new AST.TLong(isConst, isVolatile));
+        //}
 
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> GetExprType(AST.Env env) {

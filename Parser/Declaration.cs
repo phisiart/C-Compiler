@@ -243,8 +243,8 @@ namespace Parsing {
         /// struct-declarator-list
         ///   : struct-declarator [ ',' struct-declarator ]*
         /// </summary>
-        public static NamedParser<ImmutableList<IStructDeclr>>
-            StructDeclaratorList { get; } = new NamedParser<ImmutableList<IStructDeclr>>("struct-declarator-list");
+        public static NamedParser<ImmutableList<StructDeclr>>
+            StructDeclaratorList { get; } = new NamedParser<ImmutableList<StructDeclr>>("struct-declarator-list");
 
         /// <summary>
         /// struct-declarator
@@ -254,8 +254,8 @@ namespace Parsing {
         /// <remarks>
         /// Note that the second one represents a 'bit-field', which I'm not going to support.
         /// </remarks>
-        public static NamedParser<IStructDeclr>
-            StructDeclarator { get; } = new NamedParser<IStructDeclr>("struct-declarator");
+        public static NamedParser<StructDeclr>
+            StructDeclarator { get; } = new NamedParser<StructDeclr>("struct-declarator");
 
         /// <summary>
         /// parameter-declaration
@@ -634,13 +634,13 @@ namespace Parsing {
             //   | declarator
             StructDeclarator.Is(
                 (
-                    Declarator.Optional()
+                    (Declarator.Optional())
                     .Then(COLON)
                     .Then(ConstantExpression)
-                    .Then(BitFieldDeclr.Create)
-                    as IParser<IStructDeclr>
+                    .Then(StructDeclr.Create)
                 ).Or(
-                    Declarator
+                    (Declarator)
+                    .Then(StructDeclr.Create)
                 )
             );
             
@@ -649,9 +649,11 @@ namespace Parsing {
             ParameterDeclaration.Is(
                 (DeclarationSpecifiers)
                 .Then(
-                    ((IParser<IParamDeclr>)Declarator)
-                    .Or(AbstractDeclarator)
-                    .Optional(AbstractDeclr.Empty)
+                    (
+                        (Declarator).Then(ParamDeclr.Create)
+                    ).Or(
+                        (AbstractDeclarator).Then(ParamDeclr.Create)
+                    ).Optional()
                 ).Then(ParamDecln.Create)
             );
 

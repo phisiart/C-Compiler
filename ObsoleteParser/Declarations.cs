@@ -1013,7 +1013,7 @@ namespace ObsoleteParser {
                 // ';'
                 Parser.GetOperatorParser(OperatorVal.SEMICOLON),
 
-                (SpecQualList specs, List<IStructDeclr> declrs, Boolean _) => StructDecln.Create(specs, declrs.ToImmutableList())
+                (SpecQualList specs, List<StructDeclr> declrs, Boolean _) => StructDecln.Create(specs, declrs.ToImmutableList())
                 );
         }
     }
@@ -1086,7 +1086,7 @@ namespace ObsoleteParser {
     public class _struct_declarator_list : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("*a, *b[3]");
-            List<IStructDeclr> decl_list;
+            List<StructDeclr> decl_list;
             Int32 current = Parse(src, 0, out decl_list);
             if (current == -1) {
                 return false;
@@ -1094,7 +1094,7 @@ namespace ObsoleteParser {
             return true;
         }
 
-        public static Int32 Parse(List<Token> src, Int32 begin, out List<IStructDeclr> declrs) {
+        public static Int32 Parse(List<Token> src, Int32 begin, out List<StructDeclr> declrs) {
             return Parser.ParseNonEmptyListWithSep(src, begin, out declrs, _struct_declarator.Parse, OperatorVal.COMMA);
         }
     }
@@ -1111,13 +1111,13 @@ namespace ObsoleteParser {
     /// </summary>
     [Obsolete]
     public class _struct_declarator : ParseRule {
-        public static Int32 Parse(List<Token> src, Int32 begin, out IStructDeclr structDeclr) {
+        public static Int32 Parse(List<Token> src, Int32 begin, out StructDeclr structDeclr) {
             Declr declr;
             if ((begin = _declarator.Parse(src, begin, out declr)) == -1) {
                 structDeclr = null;
                 return -1;
             }
-            structDeclr = declr;
+            structDeclr = StructDeclr.Create(declr);
             return begin;
         }
     }
@@ -1157,15 +1157,15 @@ namespace ObsoleteParser {
                 Parser.GetOptionParser(
 
                     // declarator | abstract_declarator
-                    Parser.GetChoicesParser(new List<Parser.FParse<IParamDeclr>> {
-                        Parser.GetModifiedParser<IParamDeclr, Declr>(_declarator.Parse, declr => declr as IParamDeclr),
-                        Parser.GetModifiedParser<IParamDeclr, AbstractDeclr>(_abstract_declarator.Parse, declr => declr as IParamDeclr)
+                    Parser.GetChoicesParser(new List<Parser.FParse<ParamDeclr>> {
+                        Parser.GetModifiedParser<ParamDeclr, Declr>(_declarator.Parse, ParamDeclr.Create),
+                        Parser.GetModifiedParser<ParamDeclr, AbstractDeclr>(_abstract_declarator.Parse, declr => declr as ParamDeclr)
                     })
 
                 ),
                 // ]?
 
-                (DeclnSpecs specs, Option<IParamDeclr> declr) => ParamDecln.Create(specs, declr)
+                (DeclnSpecs specs, Option<ParamDeclr> declr) => ParamDecln.Create(specs, declr)
             );
         }
     }

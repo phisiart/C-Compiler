@@ -157,16 +157,16 @@ namespace SyntaxTree {
     ///   | [declarator]? ':' constant-expression
     /// </summary>
     public class StructDecln : SyntaxTreeNode {
-        protected StructDecln(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) {
+        protected StructDecln(SpecQualList specQualList, ImmutableList<StructDeclr> structDeclrs) {
             this.SpecQualList = specQualList;
             this.StructDeclrs = structDeclrs;
         }
         
-        public static StructDecln Create(SpecQualList specQualList, ImmutableList<IStructDeclr> structDeclrs) =>
+        public static StructDecln Create(SpecQualList specQualList, ImmutableList<StructDeclr> structDeclrs) =>
             new StructDecln(specQualList, structDeclrs);
 
         public SpecQualList SpecQualList { get; }
-        public ImmutableList<IStructDeclr> StructDeclrs { get; }
+        public ImmutableList<StructDeclr> StructDeclrs { get; }
 
         [SemantMethod]
         public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetMemberDeclns(AST.Env env) {
@@ -185,7 +185,7 @@ namespace SyntaxTree {
             var memberNames =
                 this.StructDeclrs
                 .ConvertAll(
-                    structDeclr => structDeclr.OptionalName
+                    structDeclr => structDeclr.Name
                 );
 
             return SemantReturn.Create(env, memberNames.Zip(memberTypes, Tuple.Create).ToImmutableList());
@@ -229,19 +229,16 @@ namespace SyntaxTree {
     /// The declarator can be completely omitted.
     /// </summary>
     public class ParamDecln : SyntaxTreeNode {
-        protected ParamDecln(DeclnSpecs declnSpecs, IParamDeclr declr) {
+        protected ParamDecln(DeclnSpecs declnSpecs, ParamDeclr paramDeclr) {
             this.DeclnSpecs = declnSpecs;
-            this.Declr = declr;
+            this.ParamDeclr = paramDeclr;
         }
 
-        public static ParamDecln Create(DeclnSpecs declnSpecs, Option<IParamDeclr> declr) =>
-            new ParamDecln(declnSpecs, declr.IsNone ? AbstractDeclr.Empty : declr.Value);
-
-        public static ParamDecln Create(DeclnSpecs declnSpecs, IParamDeclr declr) =>
-            new ParamDecln(declnSpecs, declr);
-
+        public static ParamDecln Create(DeclnSpecs declnSpecs, Option<ParamDeclr> paramDeclr) =>
+            new ParamDecln(declnSpecs, paramDeclr.IsSome ? paramDeclr.Value : ParamDeclr.Empty);
+        
         public DeclnSpecs DeclnSpecs { get; }
-        public IParamDeclr Declr { get; }
+        public ParamDeclr ParamDeclr { get; }
 
         [SemantMethod]
         // TODO: support register storage in function parameters.
@@ -262,15 +259,11 @@ namespace SyntaxTree {
                     throw new InvalidOperationException("Only register storage is allowed in function parameters.");
             }
         }
-
-        [SemantMethod]
-        public Option<String> GetParamName() =>
-            this.Declr.OptionalName;
-
+        
         [SemantMethod]
         public ISemantReturn<AST.ExprType> GetParamType(AST.Env env) {
             var baseType = Semant(this.DeclnSpecs.GetExprType, ref env);
-            var type = Semant(this.Declr.DecorateType, baseType, ref env);
+            var type = Semant(this.ParamDeclr.DecorateType, baseType, ref env);
             return SemantReturn.Create(env, type);
         }
 
@@ -281,12 +274,11 @@ namespace SyntaxTree {
             // TODO: check environment
             AST.Decln.StorageClass scs = r_specs.Item2;
             AST.ExprType type = r_specs.Item3;
+            type = this.ParamDeclr.DecorateType(env, type).Value;
 
             String name = "";
-            if (Declr.OptionalName.IsSome) {
-                Tuple<String, AST.ExprType> r_declr = (Declr as Declr).GetNameAndType(env, type);
-                name = r_declr.Item1;
-                type = r_declr.Item2;
+            if (this.ParamDeclr.Name.IsSome) {
+                name = this.ParamDeclr.Name.Value;
             }
             return Tuple.Create(name, type);
         }
