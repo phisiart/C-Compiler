@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,10 +35,10 @@ namespace ObsoleteParser {
         }
 
         public static Int32 Parse(List<Token> src, Int32 pos, out TranslnUnit unit) {
-            List<ExternDecln> list;
+            List<IExternDecln> list;
             Int32 current;
             if ((current = Parser.ParseNonEmptyList(src, pos, out list, _external_declaration.Parse)) != -1) {
-                unit = new TranslnUnit(list);
+                unit = TranslnUnit.Create(list.ToImmutableList());
                 return current;
             } else {
                 unit = null;
@@ -52,7 +53,7 @@ namespace ObsoleteParser {
     public class _external_declaration : ParseRule {
         public static Boolean Test() {
             var src = Parser.GetTokensFromString("int a;");
-            ExternDecln node;
+            IExternDecln node;
             Int32 current = Parse(src, 0, out node);
             if (current == -1) {
                 return false;
@@ -67,8 +68,8 @@ namespace ObsoleteParser {
             return true;
         }
 
-        public static Int32 Parse(List<Token> src, Int32 pos, out ExternDecln node) {
-            return Parser.Parse2Choices<ExternDecln, FuncDef, Decln>(src, pos, out node, _function_definition.Parse,
+        public static Int32 Parse(List<Token> src, Int32 pos, out IExternDecln node) {
+            return Parser.Parse2Choices<IExternDecln, FuncDef, Decln>(src, pos, out node, _function_definition.Parse,
                 _declaration.Parse);
         }
     }
@@ -118,7 +119,7 @@ namespace ObsoleteParser {
             DeclnSpecs specs;
             Int32 current = _declaration_specifiers.Parse(src, begin, out specs);
             if (current == -1) {
-                specs = DeclnSpecs.Create();
+                specs = DeclnSpecs.Empty;
                 current = begin;
             }
 

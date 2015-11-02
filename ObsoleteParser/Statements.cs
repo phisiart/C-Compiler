@@ -416,7 +416,7 @@ namespace ObsoleteParser {
                     return -1;
                 }
 
-                stmt = new CaseStmt(new None<Expr>(), stmt);
+                stmt = DefaultStmt.Create(stmt);
                 return current;
 
             } else if (Parser.IsKeyword(src[begin], KeywordVal.CASE)) {
@@ -440,7 +440,7 @@ namespace ObsoleteParser {
                     return -1;
                 }
 
-                stmt = new CaseStmt(new Some<Expr>(expr), stmt);
+                stmt = CaseStmt.Create(expr, stmt);
                 return current;
 
             } else if (src[begin].type == TokenType.IDENTIFIER) {
@@ -458,7 +458,7 @@ namespace ObsoleteParser {
                     return -1;
                 }
 
-                stmt = new LabeledStmt(label, stmt);
+                stmt = LabeledStmt.Create(label, stmt);
                 return current;
 
             } else {

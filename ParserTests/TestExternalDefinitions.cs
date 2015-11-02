@@ -21,7 +21,7 @@ public class TestExternalDefinitions {
             var tokens = scanner.Tokens;
             var env = new ParserEnvironment();
             var input = new ParserInput(env, scanner.Tokens);
-            var result = CParser.TranslationUnit.Parse(input);
+            var result = CParsers.TranslationUnit.Parse(input);
             Assert.IsTrue(result.IsSuccessful);
             Assert.IsTrue(result.Source.Count() == 1);
         }

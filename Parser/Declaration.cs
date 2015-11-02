@@ -5,7 +5,7 @@ using static Parsing.ParserCombinator;
 using SyntaxTree;
 
 namespace Parsing {
-    public partial class CParser {
+    public partial class CParsers {
 
         /// <summary>
         /// declaration
@@ -344,7 +344,7 @@ namespace Parsing {
             Declaration.Is(
                 (DeclarationSpecifiers)
                 .Then(InitDeclaratorList.Optional(ImmutableList<InitDeclr>.Empty))
-                .Then(SEMICOLON)
+                .Then(Semicolon)
                 .Then(Decln.Create)
                 .TransformResult(
                     _ => {
@@ -366,7 +366,7 @@ namespace Parsing {
             // declaration-specifiers
             //   : [ storage-class-specifier | type-specifier | type-qualifier ]+
             DeclarationSpecifiers.Is(
-                Parser.Seed(DeclnSpecs.Create())
+                Parser.Seed(DeclnSpecs.Empty)
                 .Then(
                     (
                         Given<DeclnSpecs>()
@@ -387,7 +387,7 @@ namespace Parsing {
             // init-declarator-list
             //   : init-declarator [ ',' init-declarator ]*
             InitDeclaratorList.Is(
-                InitDeclarator.OneOrMore(COMMA)
+                InitDeclarator.OneOrMore(Comma)
             );
 
             // init-declarator
@@ -395,18 +395,18 @@ namespace Parsing {
             InitDeclarator.Is(
                 (Declarator)
                 .Then(
-                    (ASSIGN).Then(Initializer).Optional()
+                    (Assign).Then(Initializer).Optional()
                 ).Then(InitDeclr.Create)
             );
 
             // storage-class-specifier
             //   : auto | register | static | extern | typedef
             StorageClassSpecifier.Is(
-                (AUTO)
-                .Or(REGISTER)
-                .Or(STATIC)
-                .Or(EXTERN)
-                .Or(TYPEDEF)
+                (Auto)
+                .Or(Register)
+                .Or(Static)
+                .Or(Extern)
+                .Or(Typedef)
             );
 
             // type-specifier
@@ -424,15 +424,15 @@ namespace Parsing {
             //   | typedef-name
             TypeSpecifier.Is(
                 (
-                    (VOID)
-                    .Or(CHAR)
-                    .Or(SHORT)
-                    .Or(INT)
-                    .Or(LONG)
-                    .Or(FLOAT)
-                    .Or(DOUBLE)
-                    .Or(SIGNED)
-                    .Or(UNSIGNED)
+                    (Void)
+                    .Or(Char)
+                    .Or(Short)
+                    .Or(Int)
+                    .Or(Long)
+                    .Or(Float)
+                    .Or(Double)
+                    .Or(Signed)
+                    .Or(Unsigned)
                     .Then(kind => new BasicTypeSpec(kind) as TypeSpec)
                 )
                 .Or(StructOrUnionSpecifier)
@@ -444,7 +444,7 @@ namespace Parsing {
             //   : const
             //   | volatile
             TypeQualifier.Is(
-                (CONST).Or(VOLATILE)
+                (Const).Or(Volatile)
             );
 
             // declarator
@@ -459,7 +459,7 @@ namespace Parsing {
             //   : [ '*' [type-qualifier-list]? ]+
             Pointer.Is(
                 (
-                    MULT.
+                    Mult.
                     Then(TypeQualifierList.Optional(ImmutableList<TypeQual>.Empty))
                     .Then(PointerModifier.Create)
                 ).OneOrMore()
@@ -471,8 +471,8 @@ namespace Parsing {
             ParameterTypeList.Is(
                 ParameterList
                 .Then(
-                    (COMMA)
-                    .Then(PERIOD).Then(PERIOD).Then(PERIOD)
+                    (Comma)
+                    .Then(Period).Then(Period).Then(Period)
                     .Optional()
                 ).Then(ParamTypeList.Create)
             );
@@ -480,7 +480,7 @@ namespace Parsing {
             // parameter-list
             //   : parameter-declaration [ ',' parameter-declaration ]*
             ParameterList.Is(
-                ParameterDeclaration.OneOrMore(COMMA)
+                ParameterDeclaration.OneOrMore(Comma)
             );
 
             // type-qualifier-list
@@ -498,23 +498,24 @@ namespace Parsing {
             //     ]*
             DirectDeclarator.Is(
                 (
-                    (IDENTIFIER).Then(Declr.Create)
-                    .Or((LEFT_PAREN).Then(Declarator).Then(RIGHT_PAREN))
+                    (Identifier).Then(Declr.Create)
+                    .Or((LeftParen).Then(Declarator).Then(RightParen))
                 ).Then(
                     (
                         Given<Declr>()
-                        .Then(LEFT_BRACKET)
-                        .Then(ConstantExpression.Optional().Then(ArrayModifier.Create))
-                        .Then(RIGHT_BRACKET)
+                        .Then(LeftBracket)
+                        .Then(
+                            ConstantExpression.Optional().Then(ArrayModifier.Create)
+                        ).Then(RightBracket)
                         .Then(Declr.Add)
                     ).Or(
                         Given<Declr>()
-                        .Then(LEFT_PAREN)
+                        .Then(LeftParen)
                         .Then(
                             ParameterTypeList
                             .Optional()
                             .Then(FunctionModifier.Create)
-                        ).Then(RIGHT_PAREN)
+                        ).Then(RightParen)
                         .Then(Declr.Add)
                     )
                     .ZeroOrMore()
@@ -525,16 +526,16 @@ namespace Parsing {
             //   : enum [identifier]? '{' enumerator-list '}'
             //   | enum identifier
             EnumSpecifier.Is(
-                (ENUM)
+                (Enum)
                 .Then(
                     (
-                        IDENTIFIER.Optional()
-                        .Then(LEFT_CURLY_BRACE)
+                        Identifier.Optional()
+                        .Then(LeftCurlyBrace)
                         .Then(EnumeratorList)
-                        .Then(RIGHT_CURLY_BRACE)
+                        .Then(RightCurlyBrace)
                         .Then(EnumSpec.Create)
                     ).Or(
-                        (IDENTIFIER)
+                        (Identifier)
                         .Then(EnumSpec.Create)
                     )
                 )
@@ -543,7 +544,7 @@ namespace Parsing {
             // enumerator-list
             //   : enumerator [ ',' enumerator ]*
             EnumeratorList.Is(
-                Enumerator.OneOrMore(COMMA)
+                Enumerator.OneOrMore(Comma)
             );
 
             // enumerator
@@ -551,7 +552,7 @@ namespace Parsing {
             Enumerator.Is(
                 EnumerationConstant
                 .Then(
-                    (ASSIGN)
+                    (Assign)
                     .Then(ConstantExpression)
                     .Optional()
                 ).Then(Enumr.Create)
@@ -560,7 +561,7 @@ namespace Parsing {
             // enumeration-constant
             //   : identifier
             EnumerationConstant.Is(
-                IDENTIFIER
+                Identifier
             );
 
             // struct-or-union-specifier
@@ -571,14 +572,14 @@ namespace Parsing {
                 .Then(
                     (
                         Given<StructOrUnion>()
-                        .Then(IDENTIFIER.Optional())
-                        .Then(LEFT_CURLY_BRACE)
+                        .Then(Identifier.Optional())
+                        .Then(LeftCurlyBrace)
                         .Then(StructDeclarationList)
-                        .Then(RIGHT_CURLY_BRACE)
+                        .Then(RightCurlyBrace)
                         .Then(StructOrUnionSpec.Create)
                     ).Or(
                         Given<StructOrUnion>()
-                        .Then(IDENTIFIER)
+                        .Then(Identifier)
                         .Then(StructOrUnionSpec.Create)
                     )
                 )
@@ -587,7 +588,7 @@ namespace Parsing {
             // struct-or-union
             //   : struct | union
             StructOrUnion.Is(
-                (STRUCT).Or(UNION)
+                (Struct).Or(Union)
             );
 
             // struct-declaration-list
@@ -601,7 +602,7 @@ namespace Parsing {
             StructDeclaration.Is(
                 (SpecifierQualifierList)
                 .Then(StructDeclaratorList)
-                .Then(SEMICOLON)
+                .Then(Semicolon)
                 .Then(StructDecln.Create)
             );
 
@@ -626,7 +627,7 @@ namespace Parsing {
             // struct-declarator-list
             //   : struct-declarator [ ',' struct-declarator ]*
             StructDeclaratorList.Is(
-                StructDeclarator.OneOrMore(COMMA)
+                StructDeclarator.OneOrMore(Comma)
             );
 
             // struct-declarator
@@ -635,7 +636,7 @@ namespace Parsing {
             StructDeclarator.Is(
                 (
                     (Declarator.Optional())
-                    .Then(COLON)
+                    .Then(Colon)
                     .Then(ConstantExpression)
                     .Then(StructDeclr.Create)
                 ).Or(
@@ -643,7 +644,7 @@ namespace Parsing {
                     .Then(StructDeclr.Create)
                 )
             );
-            
+
             // parameter-declaration
             //   : declaration-specifiers [ declarator | abstract-declarator ]?
             ParameterDeclaration.Is(
@@ -683,20 +684,20 @@ namespace Parsing {
             DirectAbstractDeclarator.Is(
                 (
                     (
-                        (LEFT_PAREN)
+                        (LeftParen)
                         .Then(AbstractDeclarator)
-                        .Then(RIGHT_PAREN)
+                        .Then(RightParen)
                     ).Or(
-                        (LEFT_BRACKET)
+                        (LeftBracket)
                         .Then(ConstantExpression.Optional())
-                        .Then(RIGHT_BRACKET)
+                        .Then(RightBracket)
                         .Then(ArrayModifier.Create)
                         .Then(ImmutableList.Create)
                         .Then(AbstractDeclr.Create)
                     ).Or(
-                        (LEFT_PAREN)
+                        (LeftParen)
                         .Then(ParameterTypeList.Optional())
-                        .Then(RIGHT_PAREN)
+                        .Then(RightParen)
                         .Then(FunctionModifier.Create)
                         .Then(ImmutableList.Create)
                         .Then(AbstractDeclr.Create)
@@ -705,9 +706,9 @@ namespace Parsing {
                     (
                         Given<AbstractDeclr>()
                         .Then(
-                            LEFT_BRACKET
+                            LeftBracket
                             .Then(ConstantExpression.Optional())
-                            .Then(RIGHT_BRACKET)
+                            .Then(RightBracket)
                             .Then(ArrayModifier.Create)
                         ).Then(
                             AbstractDeclr.Add
@@ -715,9 +716,9 @@ namespace Parsing {
                     ).Or(
                         Given<AbstractDeclr>()
                         .Then(
-                            (LEFT_PAREN)
+                            (LeftParen)
                             .Then(ParameterTypeList.Optional())
-                            .Then(RIGHT_PAREN)
+                            .Then(RightParen)
                             .Then(FunctionModifier.Create)
                         ).Then(
                             AbstractDeclr.Add
@@ -732,23 +733,25 @@ namespace Parsing {
             //   | '{' initializer-list '}'
             //   | '{' initializer-list ',' '}'
             Initializer.Is(
-                AssignmentExpression.Then(InitExpr.Create)
-                .Or(
-                    (LEFT_CURLY_BRACE)
-                    .Then(InitializerList)
-                    .Then(RIGHT_CURLY_BRACE)
+                (
+                    (AssignmentExpression)
+                    .Then(InitExpr.Create)
                 ).Or(
-                    (LEFT_CURLY_BRACE)
+                    (LeftCurlyBrace)
                     .Then(InitializerList)
-                    .Then(COMMA)
-                    .Then(RIGHT_CURLY_BRACE)
+                    .Then(RightCurlyBrace)
+                ).Or(
+                    (LeftCurlyBrace)
+                    .Then(InitializerList)
+                    .Then(Comma)
+                    .Then(RightCurlyBrace)
                 )
             );
 
             // initializer-list
             //   : initializer [ ',' initializer ]*
             InitializerList.Is(
-                Initializer.OneOrMore(COMMA)
+                Initializer.OneOrMore(Comma)
                 .Then(InitList.Create)
             );
 
@@ -756,14 +759,14 @@ namespace Parsing {
             //   : specifier-qualifier-list [abstract-declarator]?
             TypeName.Is(
                 (SpecifierQualifierList)
-                .Then(AbstractDeclarator.Optional(AbstractDeclr.Empty))
+                .Then(AbstractDeclarator.Optional())
                 .Then(SyntaxTree.TypeName.Create)
             );
 
             // typedef-name
             //   : identifier
             TypeDefName.Is(
-                (IDENTIFIER)
+                (Identifier)
                 .Check(
                     result => result.Environment.IsTypedefName(result.Result)
                 )

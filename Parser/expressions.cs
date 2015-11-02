@@ -3,7 +3,7 @@ using SyntaxTree;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {
-    public partial class CParser {
+    public partial class CParsers {
         public static NamedParser<Expr>
             Expression { get; } = Parser.Create<Expr>("expression");
 
@@ -76,7 +76,7 @@ namespace Parsing {
             //   : assignment-expression [ ',' assignment-expression ]*
             Expression.Is(
                 AssignmentExpression
-                .OneOrMore(COMMA)
+                .OneOrMore(Comma)
                 .Then(exprs => {
                     if (exprs.Count == 1) {
                         return exprs[0];
@@ -94,13 +94,13 @@ namespace Parsing {
             PrimaryExpression.Is(
                 (Variable)
                 .Or(Constant)
-                .Or(STRING_LITERAL)
-                .Or((LEFT_PAREN).Then(Expression).Then(RIGHT_PAREN))
+                .Or(StringLiteral)
+                .Or((LeftParen).Then(Expression).Then(RightParen))
             );
 
             // An identifier for a variable must not be defined as a typedef name.
             Variable.Is(
-                IDENTIFIER.Check(result => !result.Environment.IsTypedefName(result.Result)).Then(SyntaxTree.Variable.Create)
+                Identifier.Check(result => !result.Environment.IsTypedefName(result.Result)).Then(SyntaxTree.Variable.Create)
             );
 
             // constant
@@ -108,9 +108,9 @@ namespace Parsing {
             //   : const-int
             //   : const-float
             Constant.Is(
-                (CONST_CHAR)
-                .Or(CONST_INT)
-                .Or(CONST_FLOAT)
+                (ConstChar)
+                .Or(ConstInt)
+                .Or(ConstFloat)
             );
 
 
@@ -130,9 +130,9 @@ namespace Parsing {
                 (LogicalOrExpression)
                 .Then(
                     Given<Expr>()
-                    .Then(QUESTION)
+                    .Then(Question)
                     .Then(Expression)
-                    .Then(COLON)
+                    .Then(Colon)
                     .Then(ConditionalExpression)
                     .Then(SyntaxTree.ConditionalExpression.Create)
                     .Optional()
@@ -151,17 +151,17 @@ namespace Parsing {
                     AssignmentOperator(
                         UnaryExpression,
                         AssignmentExpression,
-                        BinaryOperatorBuilder.Create(ASSIGN, Assignment.Create),
-                        BinaryOperatorBuilder.Create(MULT_ASSIGN, MultAssign.Create),
-                        BinaryOperatorBuilder.Create(DIV_ASSIGN, DivAssign.Create),
-                        BinaryOperatorBuilder.Create(MOD_ASSIGN, ModAssign.Create),
-                        BinaryOperatorBuilder.Create(ADD_ASSIGN, AddAssign.Create),
-                        BinaryOperatorBuilder.Create(SUB_ASSIGN, SubAssign.Create),
-                        BinaryOperatorBuilder.Create(LEFT_SHIFT_ASSIGN, LShiftAssign.Create),
-                        BinaryOperatorBuilder.Create(RIGHT_SHIFT_ASSIGN, RShiftAssign.Create),
-                        BinaryOperatorBuilder.Create(BITWISE_AND_ASSIGN, BitwiseAndAssign.Create),
-                        BinaryOperatorBuilder.Create(XOR_ASSIGN, XorAssign.Create),
-                        BinaryOperatorBuilder.Create(BITWISE_OR_ASSIGN, BitwiseOrAssign.Create)
+                        BinaryOperatorBuilder.Create(Assign, Assignment.Create),
+                        BinaryOperatorBuilder.Create(MultAssign, SyntaxTree.MultAssign.Create),
+                        BinaryOperatorBuilder.Create(DivAssign, SyntaxTree.DivAssign.Create),
+                        BinaryOperatorBuilder.Create(ModAssign, SyntaxTree.ModAssign.Create),
+                        BinaryOperatorBuilder.Create(AddAssign, SyntaxTree.AddAssign.Create),
+                        BinaryOperatorBuilder.Create(SubAssign, SyntaxTree.SubAssign.Create),
+                        BinaryOperatorBuilder.Create(LeftShiftAssign, LShiftAssign.Create),
+                        BinaryOperatorBuilder.Create(RightShiftAssign, RShiftAssign.Create),
+                        BinaryOperatorBuilder.Create(BitwiseAndAssign, SyntaxTree.BitwiseAndAssign.Create),
+                        BinaryOperatorBuilder.Create(XorAssign, SyntaxTree.XorAssign.Create),
+                        BinaryOperatorBuilder.Create(BitwiseOrAssign, SyntaxTree.BitwiseOrAssign.Create)
                     )
                 ).Or(
                     ConditionalExpression
@@ -182,33 +182,33 @@ namespace Parsing {
                 .Then(
                     (
                         Given<Expr>()
-                        .Then(LEFT_BRACKET)
+                        .Then(LeftBracket)
                         .Then(Expression)
-                        .Then(RIGHT_BRACKET)
-                        .Then((array, index) => Dereference.Create(Add.Create(array, index)))
+                        .Then(RightBracket)
+                        .Then((array, index) => Dereference.Create(SyntaxTree.Add.Create(array, index)))
                     ).Or(
                         Given<Expr>()
-                        .Then(LEFT_PAREN)
+                        .Then(LeftParen)
                         .Then(ArgumentExpressionList.Optional(ImmutableList<Expr>.Empty))
-                        .Then(RIGHT_PAREN)
+                        .Then(RightParen)
                         .Then(FuncCall.Create)
                     ).Or(
                         Given<Expr>()
-                        .Then(PERIOD)
-                        .Then(IDENTIFIER)
-                        .Then(SyntaxTree.Attribute.Create)
+                        .Then(Period)
+                        .Then(Identifier)
+                        .Then(Attribute.Create)
                     ).Or(
                         Given<Expr>()
-                        .Then(RIGHT_ARROW)
-                        .Then(IDENTIFIER)
-                        .Then((expr, member) => SyntaxTree.Attribute.Create(Dereference.Create(expr), member))
+                        .Then(RightArrow)
+                        .Then(Identifier)
+                        .Then((expr, member) => Attribute.Create(Dereference.Create(expr), member))
                     ).Or(
                         Given<Expr>()
-                        .Then(INCREMENT)
+                        .Then(Increment)
                         .Then(PostIncrement.Create)
                     ).Or(
                         Given<Expr>()
-                        .Then(DECREMENT)
+                        .Then(Decrement)
                         .Then(PostDecrement.Create)
                     ).ZeroOrMore()
                 )
@@ -217,7 +217,7 @@ namespace Parsing {
             // argument-expression-list
             //   : assignment-expression [ ',' assignment-expression ]*
             ArgumentExpressionList.Is(
-                AssignmentExpression.OneOrMore(COMMA)
+                AssignmentExpression.OneOrMore(Comma)
             );
 
             // unary-expression
@@ -238,25 +238,25 @@ namespace Parsing {
             UnaryExpression.Is(
                 (PostfixExpression)
                 .Or(
-                    (INCREMENT).Then(UnaryExpression).Then(PreIncrement.Create)
+                    (Increment).Then(UnaryExpression).Then(PreIncrement.Create)
                 ).Or(
-                    (DECREMENT).Then(UnaryExpression).Then(PreDecrement.Create)
+                    (Decrement).Then(UnaryExpression).Then(PreDecrement.Create)
                 ).Or(
-                    (BITWISE_AND).Then(CastExpression).Then(Reference.Create)
+                    (BitwiseAnd).Then(CastExpression).Then(Reference.Create)
                 ).Or(
-                    (MULT).Then(CastExpression).Then(Dereference.Create)
+                    (Mult).Then(CastExpression).Then(Dereference.Create)
                 ).Or(
-                    (ADD).Then(CastExpression).Then(Positive.Create)
+                    (Add).Then(CastExpression).Then(Positive.Create)
                 ).Or(
-                    (SUB).Then(CastExpression).Then(Negative.Create)
+                    (Sub).Then(CastExpression).Then(Negative.Create)
                 ).Or(
-                    (BITWISE_NOT).Then(CastExpression).Then(BitwiseNot.Create)
+                    (BitwiseNot).Then(CastExpression).Then(SyntaxTree.BitwiseNot.Create)
                 ).Or(
-                    (LOGICAL_NOT).Then(CastExpression).Then(LogicalNot.Create)
+                    (LogicalNot).Then(CastExpression).Then(SyntaxTree.LogicalNot.Create)
                 ).Or(
-                    (SIZEOF).Then(UnaryExpression).Then(SizeofExpr.Create)
+                    (SizeOf).Then(UnaryExpression).Then(SizeofExpr.Create)
                 ).Or(
-                    (SIZEOF).Then(LEFT_PAREN).Then(TypeName).Then(RIGHT_PAREN).Then(SizeofType.Create)
+                    (SizeOf).Then(LeftParen).Then(TypeName).Then(RightParen).Then(SizeofType.Create)
                 )
             );
 
@@ -266,7 +266,7 @@ namespace Parsing {
             CastExpression.Is(
                 (UnaryExpression)
                 .Or(
-                    (LEFT_PAREN).Then(TypeName).Then(RIGHT_PAREN).Then(CastExpression)
+                    (LeftParen).Then(TypeName).Then(RightParen).Then(CastExpression)
                     .Then(TypeCast.Create)
                 )
             );
@@ -276,9 +276,9 @@ namespace Parsing {
             MultiplicativeExpression.Is(
                 BinaryOperator(
                     CastExpression,
-                    BinaryOperatorBuilder.Create(MULT, Multiply.Create),
-                    BinaryOperatorBuilder.Create(DIV, Divide.Create),
-                    BinaryOperatorBuilder.Create(MOD, Modulo.Create)
+                    BinaryOperatorBuilder.Create(Mult, Multiply.Create),
+                    BinaryOperatorBuilder.Create(Div, Divide.Create),
+                    BinaryOperatorBuilder.Create(Mod, Modulo.Create)
                 )
             );
 
@@ -287,8 +287,8 @@ namespace Parsing {
             AdditiveExpression.Is(
                 BinaryOperator(
                     MultiplicativeExpression,
-                    BinaryOperatorBuilder.Create(ADD, Add.Create),
-                    BinaryOperatorBuilder.Create(SUB, Sub.Create)
+                    BinaryOperatorBuilder.Create(Add, SyntaxTree.Add.Create),
+                    BinaryOperatorBuilder.Create(Sub, SyntaxTree.Sub.Create)
                 )
             );
 
@@ -297,8 +297,8 @@ namespace Parsing {
             ShiftExpression.Is(
                 BinaryOperator(
                     AdditiveExpression,
-                    BinaryOperatorBuilder.Create(LEFT_SHIFT, LShift.Create),
-                    BinaryOperatorBuilder.Create(RIGHT_SHIFT, RShift.Create)
+                    BinaryOperatorBuilder.Create(LeftShift, LShift.Create),
+                    BinaryOperatorBuilder.Create(RightShift, RShift.Create)
                 )
             );
 
@@ -307,10 +307,10 @@ namespace Parsing {
             RelationalExpression.Is(
                 BinaryOperator(
                     ShiftExpression,
-                    BinaryOperatorBuilder.Create(LESS, Less.Create),
-                    BinaryOperatorBuilder.Create(GREATER, Greater.Create),
-                    BinaryOperatorBuilder.Create(LESS_EQUAL, LEqual.Create),
-                    BinaryOperatorBuilder.Create(GREATER_EQUAL, GEqual.Create)
+                    BinaryOperatorBuilder.Create(Less, SyntaxTree.Less.Create),
+                    BinaryOperatorBuilder.Create(Greater, SyntaxTree.Greater.Create),
+                    BinaryOperatorBuilder.Create(LessEqual, LEqual.Create),
+                    BinaryOperatorBuilder.Create(GreaterEqual, GEqual.Create)
                 )
             );
 
@@ -319,8 +319,8 @@ namespace Parsing {
             EqualityExpression.Is(
                 BinaryOperator(
                     RelationalExpression,
-                    BinaryOperatorBuilder.Create(EQUAL, Equal.Create),
-                    BinaryOperatorBuilder.Create(NOT_EQUAL, NotEqual.Create)
+                    BinaryOperatorBuilder.Create(Equal, SyntaxTree.Equal.Create),
+                    BinaryOperatorBuilder.Create(NotEqual, SyntaxTree.NotEqual.Create)
                 )
             );
 
@@ -329,7 +329,7 @@ namespace Parsing {
             AndExpression.Is(
                 BinaryOperator(
                     EqualityExpression,
-                    BinaryOperatorBuilder.Create(BITWISE_AND, BitwiseAnd.Create)
+                    BinaryOperatorBuilder.Create(BitwiseAnd, SyntaxTree.BitwiseAnd.Create)
                 )
             );
 
@@ -338,7 +338,7 @@ namespace Parsing {
             ExclusiveOrExpression.Is(
                 BinaryOperator(
                     AndExpression,
-                    BinaryOperatorBuilder.Create(XOR, Xor.Create)
+                    BinaryOperatorBuilder.Create(Xor, SyntaxTree.Xor.Create)
                 )
             );
 
@@ -347,7 +347,7 @@ namespace Parsing {
             InclusiveOrExpression.Is(
                 BinaryOperator(
                     ExclusiveOrExpression,
-                    BinaryOperatorBuilder.Create(BITWISE_OR, BitwiseOr.Create)
+                    BinaryOperatorBuilder.Create(BitwiseOr, SyntaxTree.BitwiseOr.Create)
                 )
             );
 
@@ -356,7 +356,7 @@ namespace Parsing {
             LogicalAndExpression.Is(
                 BinaryOperator(
                     InclusiveOrExpression,
-                    BinaryOperatorBuilder.Create(LOGICAL_AND, LogicalAnd.Create)
+                    BinaryOperatorBuilder.Create(LogicalAnd, SyntaxTree.LogicalAnd.Create)
                 )
             );
 
@@ -365,7 +365,7 @@ namespace Parsing {
             LogicalOrExpression.Is(
                 BinaryOperator(
                     LogicalAndExpression,
-                    BinaryOperatorBuilder.Create(LOGICAL_OR, LogicalOr.Create)
+                    BinaryOperatorBuilder.Create(LogicalOr, SyntaxTree.LogicalOr.Create)
                 )
             );
         }

@@ -1,19 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using SyntaxTree;
-using static Parsing.ParserCombinator;
+﻿using SyntaxTree;
 
 namespace Parsing {
-    public partial class CParser {
+    public partial class CParsers {
+        
+        /// <summary>
+        /// translation-unit
+        ///   : [external-declaration]+
+        /// </summary>
         public static NamedParser<TranslnUnit>
             TranslationUnit { get; } = new NamedParser<TranslnUnit>("translation-unit");
 
-        public static NamedParser<ExternDecln>
-            ExternalDeclaration { get; } = new NamedParser<ExternDecln>("external-declaration");
+        /// <summary>
+        /// external-declaration
+        ///   : function-definition | declaration
+        /// </summary>
+        public static NamedParser<IExternDecln>
+            ExternalDeclaration { get; } = new NamedParser<IExternDecln>("external-declaration");
 
         /// <summary>
         /// function-definition
@@ -48,7 +50,7 @@ namespace Parsing {
             // translation-unit
             //   : [external-declaration]+
             TranslationUnit.Is(
-                ExternalDeclaration
+                (ExternalDeclaration)
                 .OneOrMore()
                 .Then(TranslnUnit.Create)
             );
@@ -56,14 +58,14 @@ namespace Parsing {
             // external-declaration
             //   : function-definition | declaration
             ExternalDeclaration.Is(
-                (FunctionDefinition as IParser<ExternDecln>)
-                .Or(Declaration)
+                (FunctionDefinition)
+                .Or<IExternDecln>(Declaration)
             );
 
             // function-definition
             //   : [declaration-specifiers]? declarator compound-statement
             FunctionDefinition.Is(
-                DeclarationSpecifiers.Optional(DeclnSpecs.Create())
+                DeclarationSpecifiers.Optional()
                 .Then(Declarator)
                 .Then(CompoundStatement)
                 .Then(FuncDef.Create)

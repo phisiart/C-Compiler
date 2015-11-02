@@ -1,53 +1,97 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 using SyntaxTree;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {
-    public partial class CParser {
+    public partial class CParsers {
+
+        /// <summary>
+        /// statement
+        ///   : labeled-statement
+        ///   | compound-statement
+        ///   | expression-statement
+        ///   | selection-statement
+        ///   | iteration-statement
+        ///   | jump-statement
+        /// </summary>
         public static NamedParser<Stmt>
             Statement = new NamedParser<Stmt>("statement");
 
+        /// <summary>
+        /// jump-statement
+        ///   : 'goto' identifier ';'
+        ///   | 'continue' ';'
+        ///   | 'break' ';'
+        ///   | 'return' [expression]? ';'
+        /// </summary>
         public static NamedParser<Stmt>
             JumpStatement = new NamedParser<Stmt>("jump-statement");
 
+        /// <summary>
+        /// compound-statement
+        ///   : '{' [declaration-list]? [statement-list]? '}'
+        /// </summary>
         public static NamedParser<Stmt>
             CompoundStatement = new NamedParser<Stmt>("compound-statement");
 
+        /// <summary>
+        /// declaration-list
+        ///   : [declaration]+
+        /// </summary>
         public static NamedParser<ImmutableList<Decln>>
             DeclarationList = new NamedParser<ImmutableList<Decln>>("declaration-list");
 
+        /// <summary>
+        /// statement-list
+        ///   : [statement]+
+        /// </summary>
         public static NamedParser<ImmutableList<Stmt>>
             StatementList = new NamedParser<ImmutableList<Stmt>>("statement-list");
 
+        /// <summary>
+        /// expression-statement
+        ///   : [expression]? ';'
+        /// </summary>
         public static NamedParser<Stmt>
             ExpressionStatement = new NamedParser<Stmt>("expression-statement");
 
+        /// <summary>
+        /// iteration-statement
+        ///   : 'while' '(' expression ')' statement
+        ///   | 'do' statement 'while' '(' expression ')' ';'
+        ///   | 'for' '(' [expression]? ';' [expression]? ';' [expression]? ')' statement
+        /// </summary>
         public static NamedParser<Stmt>
             IterationStatement = new NamedParser<Stmt>("iteration-statement");
 
+        /// <summary>
+        /// selection-statement
+        ///   : 'if' '(' expression ')' statement 'else' statement
+        ///   | 'if' '(' expression ')' statement
+        ///   | 'switch' '(' expression ')' statement
+        /// </summary>
         public static NamedParser<Stmt>
             SelectionStatement = new NamedParser<Stmt>("selection-statement");
 
+        /// <summary>
+        /// labeled-statement
+        ///   : identifier ':' statement
+        ///   | 'case' constant-expression ':' statement
+        ///   | 'default' ':' statement
+        /// </summary>
         public static NamedParser<Stmt>
             LabeledStatement = new NamedParser<Stmt>("labeled-statement");
 
         public static void SetStatementRules() {
 
-            /// <summary>
-            /// statement
-            ///   : labeled-statement
-            ///   | compound-statement
-            ///   | expression-statement
-            ///   | selection-statement
-            ///   | iteration-statement
-            ///   | jump-statement
-            /// </summary>
+            // statement
+            //   : labeled-statement
+            //   | compound-statement
+            //   | expression-statement
+            //   | selection-statement
+            //   | iteration-statement
+            //   | jump-statement
             Statement.Is(
                 (LabeledStatement)
                 .Or(CompoundStatement)
@@ -57,117 +101,103 @@ namespace Parsing {
                 .Or(JumpStatement)
             );
 
-            /// <summary>
-            /// jump-statement
-            ///   : 'goto' identifier ';'
-            ///   | 'continue' ';'
-            ///   | 'break' ';'
-            ///   | 'return' [expression]? ';'
-            /// </summary>
+            // jump-statement
+            //   : 'goto' identifier ';'
+            //   | 'continue' ';'
+            //   | 'break' ';'
+            //   | 'return' [expression]? ';'
             JumpStatement.Is(
                 (
-                    ((GOTO).Then(IDENTIFIER).Then(GotoStmt.Create))
-                    .Or(CONTINUE)
-                    .Or(BREAK)
-                    .Or((RETURN).Then(Expression.Optional()).Then(ReturnStmt.Create))
+                    ((Goto).Then(Identifier).Then(GotoStmt.Create))
+                    .Or(Continue)
+                    .Or(Break)
+                    .Or((Return).Then(Expression.Optional()).Then(ReturnStmt.Create))
                 )
-                .Then(SEMICOLON)
+                .Then(Semicolon)
             );
 
-            /// <summary>
-            /// compound-statement
-            ///   : '{' [declaration-list]? [statement-list]? '}'
-            /// </summary>
+            // compound-statement
+            //   : '{' [declaration-list]? [statement-list]? '}'
             CompoundStatement.Is(
-                (LEFT_CURLY_BRACE)
+                (LeftCurlyBrace)
                 .TransformEnvironment(env => env.InScope())
                 .Then(DeclarationList.Optional(ImmutableList<Decln>.Empty))
                 .Then(StatementList.Optional(ImmutableList<Stmt>.Empty))
-                .Then(RIGHT_CURLY_BRACE)
+                .Then(RightCurlyBrace)
                 .TransformEnvironment(env => env.OutScope())
                 .Then(CompoundStmt.Create)
             );
 
-            /// <summary>
-            /// declaration-list
-            ///   : [declaration]+
-            /// </summary>
+            // declaration-list
+            //   : [declaration]+
             DeclarationList.Is(
                 Declaration.OneOrMore()
             );
 
-            /// <summary>
-            /// statement-list
-            ///   : [statement]+
-            /// </summary>
+            // statement-list
+            //   : [statement]+
             StatementList.Is(
                 Statement.OneOrMore()
             );
 
-            /// <summary>
-            /// expression-statement
-            ///   : [expression]? ';'
-            /// </summary>
+            // expression-statement
+            //   : [expression]? ';'
             ExpressionStatement.Is(
                 Expression.Optional()
-                .Then(SEMICOLON)
+                .Then(Semicolon)
                 .Then(ExprStmt.Create)
             );
 
-            /// <summary>
-            /// iteration-statement
-            ///   : 'while' '(' expression ')' statement
-            ///   | 'do' statement 'while' '(' expression ')' ';'
-            ///   | 'for' '(' [expression]? ';' [expression]? ';' [expression]? ')' statement
-            /// </summary>
+            // iteration-statement
+            //   : 'while' '(' expression ')' statement
+            //   | 'do' statement 'while' '(' expression ')' ';'
+            //   | 'for' '(' [expression]? ';' [expression]? ';' [expression]? ')' statement
             IterationStatement.Is(
                 (
-                    (WHILE)
-                    .Then(LEFT_PAREN)
+                    (While)
+                    .Then(LeftParen)
                     .Then(Expression)
-                    .Then(RIGHT_PAREN)
+                    .Then(RightParen)
                     .Then(Statement)
                     .Then(WhileStmt.Create)
                 ).Or(
-                    (DO)
+                    (Do)
                     .Then(Statement)
-                    .Then(WHILE)
-                    .Then(LEFT_PAREN)
+                    .Then(While)
+                    .Then(LeftParen)
                     .Then(Expression)
-                    .Then(RIGHT_PAREN)
-                    .Then(SEMICOLON)
+                    .Then(RightParen)
+                    .Then(Semicolon)
                     .Then(DoWhileStmt.Create)
                 ).Or(
-                    (FOR)
-                    .Then(LEFT_PAREN)
+                    (For)
+                    .Then(LeftParen)
                     .Then(Expression.Optional())
-                    .Then(SEMICOLON)
+                    .Then(Semicolon)
                     .Then(Expression.Optional())
-                    .Then(SEMICOLON)
+                    .Then(Semicolon)
                     .Then(Expression.Optional())
-                    .Then(RIGHT_PAREN)
+                    .Then(RightParen)
                     .Then(Statement)
                     .Then(ForStmt.Create)
                 )
             );
 
-            /// <summary>
-            /// selection-statement
-            ///   : 'if' '(' expression ')' statement 'else' statement
-            ///   | 'if' '(' expression ')' statement
-            ///   | 'switch' '(' expression ')' statement
-            /// </summary>
+            // selection-statement
+            //   : 'if' '(' expression ')' statement 'else' statement
+            //   | 'if' '(' expression ')' statement
+            //   | 'switch' '(' expression ')' statement
             SelectionStatement.Is(
                 (
-                    (IF)
-                    .Then(LEFT_PAREN)
+                    (If)
+                    .Then(LeftParen)
                     .Then(Expression)
-                    .Then(RIGHT_PAREN)
+                    .Then(RightParen)
                     .Then(Statement)
                     .Then(
                         (
                             Given<Expr, Stmt>()
-                            .Then(ELSE)
+                            .Then(Else)
                             .Then(Statement)
                             .Then(IfElseStmt.Create)
                         ).Or(
@@ -176,40 +206,37 @@ namespace Parsing {
                         )
                     )
                 ).Or(
-                    (SWITCH)
-                    .Then(LEFT_PAREN)
+                    (Switch)
+                    .Then(LeftParen)
                     .Then(Expression)
-                    .Then(RIGHT_PAREN)
+                    .Then(RightParen)
                     .Then(Statement)
                     .Then(SwitchStmt.Create)
                 )
             );
 
-            /// <summary>
-            /// labeled-statement
-            ///   : identifier ':' statement
-            ///   | 'case' constant-expression ':' statement
-            ///   | 'default' ':' statement
-            /// </summary>
-            // TODO: case and default should be different
+            // labeled-statement
+            //   : identifier ':' statement
+            //   | 'case' constant-expression ':' statement
+            //   | 'default' ':' statement
             LabeledStatement.Is(
                 (
-                    (IDENTIFIER)
-                    .Then(COLON)
+                    (Identifier)
+                    .Then(Colon)
                     .Then(Statement)
                     .Then(LabeledStmt.Create)
                 )
                 .Or(
-                    (CASE)
-                    .Then(ConstantExpression.Then(_ => new Some<Expr>(_)))
-                    .Then(COLON)
+                    (Case)
+                    .Then(ConstantExpression)
+                    .Then(Colon)
                     .Then(Statement)
                     .Then(CaseStmt.Create)
                 ).Or(
-                    (DEFAULT)
-                    .Then(COLON)
+                    (Default)
+                    .Then(Colon)
                     .Then(Statement)
-                    .Then(stmt => CaseStmt.Create(new None<Expr>(), stmt))
+                    .Then(DefaultStmt.Create)
                 )
             );
         }

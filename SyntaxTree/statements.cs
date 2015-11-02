@@ -6,12 +6,14 @@ using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
 
-    public abstract class Stmt : SyntaxTreeNode {
+    public abstract class Stmt : ISyntaxTreeNode {
         public abstract Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env);
     }
 
-
-    public class GotoStmt : Stmt {
+    /// <summary>
+    /// goto label;
+    /// </summary>
+    public sealed class GotoStmt : Stmt {
         public GotoStmt(String label) {
             this.Label = label;
         }
@@ -25,22 +27,28 @@ namespace SyntaxTree {
         }
     }
 
-
-    public class ContStmt : Stmt {
+    /// <summary>
+    /// continue;
+    /// </summary>
+    public sealed class ContStmt : Stmt {
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ContStmt());
         }
     }
 
-
-    public class BreakStmt : Stmt {
+    /// <summary>
+    /// break;
+    /// </summary>
+    public sealed class BreakStmt : Stmt {
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.BreakStmt());
         }
     }
 
-
-    public class ReturnStmt : Stmt {
+    /// <summary>
+    /// return [expr];
+    /// </summary>
+    public sealed class ReturnStmt : Stmt {
         public ReturnStmt(Option<Expr> expr) {
             this.Expr = expr;
         }
@@ -57,8 +65,13 @@ namespace SyntaxTree {
         }
     }
 
-
-    public class CompoundStmt : Stmt {
+    /// <summary>
+    /// {
+    ///     declaration*
+    ///     statement*
+    /// }
+    /// </summary>
+    public sealed class CompoundStmt : Stmt {
         public CompoundStmt(List<Decln> declns, List<Stmt> stmts) {
             this.Declns = declns;
             this.Stmts = stmts;
@@ -95,8 +108,10 @@ namespace SyntaxTree {
         }
     }
 
-
-    public class ExprStmt : Stmt {
+    /// <summary>
+    /// expr;
+    /// </summary>
+    public sealed class ExprStmt : Stmt {
         public ExprStmt(Option<Expr> expr) {
             this.Expr = expr;
         }
@@ -111,7 +126,6 @@ namespace SyntaxTree {
         }
     }
 
-
     /// <summary>
     /// while (cond) {
     ///     body
@@ -119,7 +133,7 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class WhileStmt : Stmt {
+    public sealed class WhileStmt : Stmt {
         public WhileStmt(Expr cond, Stmt body) {
             this.Cond = cond;
             this.Body = body;
@@ -148,7 +162,6 @@ namespace SyntaxTree {
 
     }
 
-
     /// <summary>
     /// do {
     ///     body
@@ -156,7 +169,7 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class DoWhileStmt : Stmt {
+    public sealed class DoWhileStmt : Stmt {
         public DoWhileStmt(Stmt body, Expr cond) {
             this.Body = body;
             this.Cond = cond;
@@ -184,7 +197,6 @@ namespace SyntaxTree {
         }
     }
 
-
     /// <summary>
     /// for (init; cond; loop) {
     ///     body
@@ -192,7 +204,7 @@ namespace SyntaxTree {
     /// 
     /// cond must be of scalar type
     /// </summary>
-    public class ForStmt : Stmt {
+    public sealed class ForStmt : Stmt {
         public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
             this.Init = init;
             this.Cond = cond;
@@ -237,8 +249,11 @@ namespace SyntaxTree {
 
     }
 
-
-    public class SwitchStmt : Stmt {
+    /// <summary>
+    /// switch (expr)
+    ///     stmt
+    /// </summary>
+    public sealed class SwitchStmt : Stmt {
         public SwitchStmt(Expr expr, Stmt stmt) {
             this.Expr = expr;
             this.Stmt = stmt;
@@ -260,8 +275,11 @@ namespace SyntaxTree {
         }
     }
 
-
-    public class IfStmt : Stmt {
+    /// <summary>
+    /// if (cond)
+    ///     stmt
+    /// </summary>
+    public sealed class IfStmt : Stmt {
         public IfStmt(Expr cond, Stmt stmt) {
             this.Cond = cond;
             this.Stmt = stmt;
@@ -288,8 +306,13 @@ namespace SyntaxTree {
         }
     }
 
-
-    public class IfElseStmt : Stmt {
+    /// <summary>
+    /// if (cond)
+    ///     true-stmt
+    /// else
+    ///     false-stmt
+    /// </summary>
+    public sealed class IfElseStmt : Stmt {
         public IfElseStmt(Expr cond, Stmt trueStmt, Stmt falseStmt) {
             this.Cond = cond;
             this.TrueStmt = trueStmt;
@@ -326,8 +349,8 @@ namespace SyntaxTree {
     /// label:
     ///     stmt
     /// </summary>
-	public class LabeledStmt : Stmt {
-        public LabeledStmt(String label, Stmt stmt) {
+	public sealed class LabeledStmt : Stmt {
+        private LabeledStmt(String label, Stmt stmt) {
             this.Label = label;
             this.Stmt = stmt;
         }
@@ -346,45 +369,55 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// case Expr:
+    /// case expr:
     ///     stmt
     /// </summary>
-	public class CaseStmt : Stmt {
-        public CaseStmt(Option<Expr> expr, Stmt stmt) {
+	public sealed class CaseStmt : Stmt {
+        private CaseStmt(Expr expr, Stmt stmt) {
             this.Expr = expr;
             this.Stmt = stmt;
         }
 
-        // Expr.IsNone means 'default'
-        public Option<Expr> Expr { get; }
+        public Expr Expr { get; }
         public Stmt Stmt { get; }
 
-        public static Stmt Create(Option<Expr> expr, Stmt stmt) =>
+        public static Stmt Create(Expr expr, Stmt stmt) =>
             new CaseStmt(expr, stmt);
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
-            if (this.Expr.IsNone) {
-                Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
-                env = r_stmt.Item1;
-                return new Tuple<AST.Env, AST.Stmt>(env, new AST.DefaultStmt(r_stmt.Item2));
+            AST.Expr expr = this.Expr.GetExpr(env);
+            env = expr.Env;
 
-            } else {
-                AST.Expr expr = this.Expr.Value.GetExpr(env);
-                env = expr.Env;
-
-                expr = AST.TypeCast.MakeCast(expr, new AST.TLong());
-                if (!expr.IsConstExpr) {
-                    throw new InvalidOperationException("case Expr not const");
-                }
-                Int32 value = ((AST.ConstLong)expr).value;
-
-                Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
-                env = r_stmt.Item1;
-
-                return new Tuple<AST.Env, AST.Stmt>(env, new AST.CaseStmt(value, r_stmt.Item2));
+            expr = AST.TypeCast.MakeCast(expr, new AST.TLong());
+            if (!expr.IsConstExpr) {
+                throw new InvalidOperationException("case Expr not const");
             }
+            Int32 value = ((AST.ConstLong)expr).value;
 
+            Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+
+            return new Tuple<AST.Env, AST.Stmt>(env, new AST.CaseStmt(value, r_stmt.Item2));
         }
     }
 
+    /// <summary>
+    /// default:
+    ///     stmt
+    /// </summary>
+    public sealed class DefaultStmt : Stmt {
+        private DefaultStmt(Stmt stmt) {
+            this.Stmt = stmt;
+        }
+
+        public static DefaultStmt Create(Stmt stmt) =>
+            new DefaultStmt(stmt);
+
+        public Stmt Stmt { get; }
+
+        public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
+            var stmt = SemantStmt(this.Stmt.GetStmt, ref env);
+            return Tuple.Create(env, new AST.DefaultStmt(stmt) as AST.Stmt);
+        }
+    }
 }

@@ -61,7 +61,7 @@
     <Compile Include="Parser\ParserClasses.cs" />
     <Compile Include="Parser\Statements.cs" />
     <Compile Include="Parser\Tokens.cs" />
-    <Compile Include="Parser\CParser.cs" />
+    <Compile Include="Parser\CParsers.cs" />
     <Compile Include="Parser\ParserCombinator.cs" />
     <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

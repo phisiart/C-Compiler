@@ -1,8 +1,6 @@
-﻿using SyntaxTree;
-using System;
+﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using static Parsing.ParserCombinator;
 
 namespace Parsing {
     public class ParserThenParser<R1, R2> : IParser<Tuple<R2, R1>> {
@@ -457,7 +455,7 @@ namespace Parsing {
         public IParserResult<R> Transform(R seed, ParserInput input) =>
             ParserSucceeded.Create(seed, input.Environment, input.Source);
     }
-    
+
     public class SimpleTransformer<S, R> : ITransformer<S, R> {
         public SimpleTransformer(Func<S, R> transformFunc) {
             this.TransformFunc = transformFunc;
@@ -538,7 +536,7 @@ namespace Parsing {
         public IParserResult<R> Transform(R seed, ParserInput input) =>
             this.TransformFunc(ParserSucceeded.Create(seed, input.Environment, input.Source));
     }
-    
+
     public class ZeroOrMoreTransformer<R> : ITransformer<R, R> {
         public ZeroOrMoreTransformer(ITransformer<R, R> transformer) {
             this.Transformer = transformer;
@@ -576,6 +574,77 @@ namespace Parsing {
 
             return lastSuccessfulResult;
         }
+    }
+
+    public class OperatorConsumer : IConsumer {
+        public OperatorConsumer(OperatorVal operatorVal) {
+            this.OperatorVal = operatorVal;
+        }
+
+        public static IConsumer Create(OperatorVal operatorVal) =>
+            new OperatorConsumer(operatorVal);
+
+        public OperatorVal OperatorVal { get; }
+
+        public IParserResult Consume(ParserInput input) {
+            if ((input.Source.First() as TokenOperator)?.val == this.OperatorVal) {
+                return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
+            } else {
+                return new ParserFailed();
+            }
+        }
+    }
+
+    public class IdentifierParser : IParser<String> {
+        public RuleCombining Combining => RuleCombining.NONE;
+        public IParserResult<String> Parse(ParserInput input) {
+            var token = input.Source.First() as TokenIdentifier;
+            if (token == null) {
+                return new ParserFailed<String>();
+            }
+            return ParserSucceeded.Create(token.val, input.Environment, input.Source.Skip(1));
+        }
+    }
+
+    public class KeywordConsumer : IConsumer {
+        public KeywordConsumer(KeywordVal keywordVal) {
+            this.KeywordVal = keywordVal;
+        }
+        public KeywordVal KeywordVal { get; }
+        public static KeywordConsumer Create(KeywordVal keywordVal) =>
+            new KeywordConsumer(keywordVal);
+        public IParserResult Consume(ParserInput input) {
+            if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
+                return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
+            } else {
+                return new ParserFailed();
+            }
+        }
+    }
+
+    public class KeywordParser<R> : IParser<R> {
+        public KeywordParser(KeywordVal keywordVal, R result) {
+            this.KeywordVal = keywordVal;
+            this.Result = result;
+        }
+
+        public RuleCombining Combining => RuleCombining.NONE;
+
+        public KeywordVal KeywordVal { get; }
+        public R Result { get; }
+
+        public IParserResult<R> Parse(ParserInput input) {
+            if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
+                return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Skip(1));
+            } else {
+                return new ParserFailed<R>();
+            }
+        }
+    }
+
+    public class KeywordParser {
+        public static KeywordParser<R> Create<R>(KeywordVal keywordVal, R result) =>
+            new KeywordParser<R>(keywordVal, result);
     }
 
 }

@@ -1,55 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Parsing;
 
 public class Compiler {
-    private Compiler(String src) {
-        this.src = src;
+    private Compiler(String source) {
+        this.Source = source;
 
-        Scanner scanner = new Scanner(src);
-        this.tokens = scanner.Tokens.ToList();
+        // Lexical analysis
+        Scanner scanner = new Scanner(source);
+        this.Tokens = scanner.Tokens.ToImmutableList();
 
-        var parserResult = CParser.Parse(this.tokens);
+        // Parse
+        var parserResult = CParsers.Parse(this.Tokens);
         if (parserResult.Source.Count() != 1) {
             throw new InvalidOperationException("Error: not finished parsing");
         }
+        this.SyntaxTree = parserResult.Result;
 
-        SyntaxTree.TranslnUnit unit = parserResult.Result;
+        // Semantic analysis
+        var semantReturn = this.SyntaxTree.GetTranslnUnit();
+        this.AbstractSyntaxTree = semantReturn.Value;
+        this.Environment = semantReturn.Env;
 
-        //if (CParser.Parse(tokens)) {
-        //    throw new InvalidOperationException("Error: not finished parsing");
-        //}
-
-        //ast = unit.GetTranslationUnit_();
-
-        var ast = unit.GetTranslnUnit();
-        this.ast = Tuple.Create(ast.Env, ast.Value);
-
-        CGenState state = new CGenState();
-        this.ast.Item2.CodeGenerate(state);
-
-        assembly = state.ToString();
+        // Code generation
+        var state = new CGenState();
+        this.AbstractSyntaxTree.CodeGenerate(state);
+        this.Assembly = state.ToString();
     }
 
-    public static Compiler FromSrc(String src) {
+    public static Compiler FromSource(String src) {
         return new Compiler(src);
     }
 
-    public static Compiler FromFile(String file_name) {
-        if (File.Exists(file_name)) {
-            return new Compiler(File.ReadAllText(file_name));
+    public static Compiler FromFile(String fileName) {
+        if (File.Exists(fileName)) {
+            return new Compiler(File.ReadAllText(fileName));
         } else {
-            throw new FileNotFoundException($"{file_name} does not exist!");
+            throw new FileNotFoundException($"{fileName} does not exist!");
         }
     }
 
-    public readonly String src;
-    public readonly IReadOnlyList<Token> tokens;
-    public readonly Tuple<AST.Env, AST.TranslnUnit> ast;
-    public readonly String assembly;
+    public readonly String Source;
+    public readonly ImmutableList<Token> Tokens;
+    public readonly SyntaxTree.TranslnUnit SyntaxTree;
+    public readonly AST.TranslnUnit AbstractSyntaxTree;
+    public readonly AST.Env Environment;
+    public readonly String Assembly;
 }
 

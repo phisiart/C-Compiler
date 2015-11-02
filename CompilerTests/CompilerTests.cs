@@ -26,7 +26,7 @@ namespace CCompiler.CompilerTests {
                 var tokens = scanner.Tokens;
                 var env = new Parsing.ParserEnvironment();
                 var input = new ParserInput(env, tokens);
-                var parserResult = CParser.TranslationUnit.Parse(input);
+                var parserResult = CParsers.TranslationUnit.Parse(input);
                 var semantResult = parserResult.Result.GetTranslnUnit();
                 semantResult.Value.CodeGenerate(new CGenState());
             }

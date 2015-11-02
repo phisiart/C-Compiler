@@ -38,7 +38,7 @@ namespace ObsoleteParser {
                             ParserEnvironment.AddTypedefName(init_declr.Declr.Name);
                         }
                     }
-                    return new Decln(decln_specs, init_declrs);
+                    return Decln.Create(decln_specs, init_declrs.ToImmutableList());
                 }
                 );
         }
@@ -485,7 +485,7 @@ namespace ObsoleteParser {
                     String name = direct_declr.Name;
                     List<TypeModifier> modifiers = new List<TypeModifier>(direct_declr.TypeModifiers);
                     modifiers.AddRange(pointer_modifiers);
-                    return new Declr(name, modifiers);
+                    return Declr.Create(name, modifiers.ToImmutableList());
                 }
                 );
         }
@@ -520,7 +520,7 @@ namespace ObsoleteParser {
                     // [type_qualifier_list]?
                     Parser.GetOptionalParser(new List<TypeQual>(), _type_qualifier_list.Parse),
 
-                    (Boolean _, List<TypeQual> type_quals) => new PointerModifier(type_quals)
+                    (Boolean _, List<TypeQual> type_quals) => PointerModifier.Create(type_quals.ToImmutableList())
                     )
                 );
             // ]+
@@ -571,7 +571,7 @@ namespace ObsoleteParser {
                 // [ ',' '...' ]?
                 ParseOptionalVarArgs,
 
-                (List<ParamDecln> param_list, Boolean is_varargs) => new ParamTypeList(param_list, is_varargs)
+                (List<ParamDecln> param_list, Boolean is_varargs) => ParamTypeList.Create(param_list.ToImmutableList(), is_varargs)
                 );
         }
     }
@@ -721,7 +721,7 @@ namespace ObsoleteParser {
                 return -1;
             }
 
-            modifier = new FunctionModifier(param_type_list.ParamDeclns.ToList(), param_type_list.HasVarArgs);
+            modifier = FunctionModifier.Create(Option.Some(param_type_list));
             return begin;
         }
 
@@ -772,7 +772,7 @@ namespace ObsoleteParser {
             current = Parser.ParseList(src, current, out more_modifiers, ParseSuffixModifier);
             modifiers.AddRange(more_modifiers);
 
-            declr = new Declr(name, modifiers);
+            declr = Declr.Create(name, modifiers.ToImmutableList());
             return current;
         }
 

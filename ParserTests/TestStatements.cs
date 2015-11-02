@@ -9,7 +9,7 @@ public class TestStatements {
     [Test]
     public void Statement() {
         TestParserRule(
-            CParser.Statement,
+            CParsers.Statement,
             "finish: a = 3;",
             "{ a = 3; b = 4; }",
             "a = 3;",
@@ -22,7 +22,7 @@ public class TestStatements {
     [Test]
     public void JumpStatement() {
         TestParserRule(
-            CParser.Statement,
+            CParsers.Statement,
             "goto finish;",
             "continue;",
             "break;",
@@ -34,7 +34,7 @@ public class TestStatements {
     [Test]
     public void CompoundStatement() {
         TestParserRule(
-            CParser.CompoundStatement,
+            CParsers.CompoundStatement,
             "{ }",
             "{ int a; }",
             "{ a; }",
@@ -45,7 +45,7 @@ public class TestStatements {
     [Test]
     public void DeclarationList() {
         TestParserRule(
-            CParser.DeclarationList,
+            CParsers.DeclarationList,
             "int a, b = 3; const char *str = 0;"
         );
     }
@@ -53,7 +53,7 @@ public class TestStatements {
     [Test]
     public void StatementList() {
         TestParserRule(
-            CParser.StatementList,
+            CParsers.StatementList,
             "a = 3; 4; a = b = 5;"
         );
     }
@@ -61,7 +61,7 @@ public class TestStatements {
     [Test]
     public void ExpressionStatement() {
         TestParserRule(
-            CParser.ExpressionStatement,
+            CParsers.ExpressionStatement,
             "3;",
             "a = b;"
         );
@@ -70,7 +70,7 @@ public class TestStatements {
     [Test]
     public void IterationStatement() {
         TestParserRule(
-            CParser.IterationStatement,
+            CParsers.IterationStatement,
             "while (1) { 1; }",
             "do { 1; } while (1);",
             "for (1; 1; 1) { 1; }"
@@ -80,7 +80,7 @@ public class TestStatements {
     [Test]
     public void SelectionStatement() {
         TestParserRule(
-            CParser.SelectionStatement,
+            CParsers.SelectionStatement,
             "if (1) 1; else 2;",
             "if (1) 1;",
             "switch (1) 1;"
@@ -90,7 +90,7 @@ public class TestStatements {
     [Test]
     public void LabeledStatement() {
         TestParserRule(
-            CParser.LabeledStatement,
+            CParsers.LabeledStatement,
             "finish: return;",
             "case 3: return;",
             "default: return;"

@@ -219,7 +219,7 @@ namespace ObsoleteParser {
             FParse<T2> Parse2)
             where T1 : TRet
             where T2 : TRet
-            where TRet : SyntaxTreeNode {
+            where TRet : ISyntaxTreeNode {
             Int32 ret;
 
             T1 node1;

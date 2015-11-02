@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Parsing {
     public static class ParserCombinator {
@@ -33,13 +29,13 @@ namespace Parsing {
             parser.Then(new SimpleTransformer<S, R>(transformer));
 
         public static IParser<R> Then<I1, I2, R>(this IParser<Tuple<I2, I1>> parser, Func<I1, I2, R> transformer) =>
-            parser.Then((Tuple<I2, I1> _) => transformer(_.Item2, _.Item1));
+            parser.Then(_ => transformer(_.Item2, _.Item1));
 
         public static IParser<R> Then<I1, I2, I3, R>(this IParser<Tuple<I3, Tuple<I2, I1>>> parser, Func<I1, I2, I3, R> transformer) =>
-            parser.Then((Tuple<I3, Tuple<I2, I1>> _) => transformer(_.Item2.Item2, _.Item2.Item1, _.Item1));
+            parser.Then(_ => transformer(_.Item2.Item2, _.Item2.Item1, _.Item1));
 
         public static IParser<R> Then<I1, I2, I3, I4, R>(this IParser<Tuple<I4, Tuple<I3, Tuple<I2, I1>>>> parser, Func<I1, I2, I3, I4, R> transformer) =>
-            parser.Then((Tuple<I4, Tuple<I3, Tuple<I2, I1>>> _) => transformer(_.Item2.Item2.Item2, _.Item2.Item2.Item1, _.Item2.Item1, _.Item1));
+            parser.Then(_ => transformer(_.Item2.Item2.Item2, _.Item2.Item2.Item1, _.Item2.Item1, _.Item1));
 
         /// <summary>
         /// Consumer then Parser = Parser
@@ -80,10 +76,10 @@ namespace Parsing {
             firstTransformer.Then(new SimpleTransformer<I, R>(secondTransformer));
 
         public static ITransformer<S, R> Then<S, I1, I2, R>(this ITransformer<S, Tuple<I2, I1>> firstTransformer, Func<I1, I2, R> secondTransformer) =>
-            firstTransformer.Then((Tuple<I2, I1> _) => secondTransformer(_.Item2, _.Item1));
+            firstTransformer.Then(_ => secondTransformer(_.Item2, _.Item1));
 
         public static ITransformer<S, R> Then<S, I1, I2, I3, R>(this ITransformer<S, Tuple<I3, Tuple<I2, I1>>> firstTransformer, Func<I1, I2, I3, R> secondTransformer) =>
-            firstTransformer.Then((Tuple<I3, Tuple<I2, I1>> _) => secondTransformer(_.Item2.Item2, _.Item2.Item1, _.Item1));
+            firstTransformer.Then(_ => secondTransformer(_.Item2.Item2, _.Item2.Item1, _.Item1));
 
         /// <summary>
         /// Create an optional parser.

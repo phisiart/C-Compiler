@@ -9,7 +9,7 @@ public class TestDeclarations {
     [Test]
     public void Declaration() {
         TestParserRule(
-            CParser.Declaration,
+            CParsers.Declaration,
             "const int i = 3;",
             "const volatile *i = 0, (* const j)[3] = { 0 };"
         );
@@ -18,7 +18,7 @@ public class TestDeclarations {
     [Test]
     public void DeclarationSpecifiers() {
         TestParserRule(
-            CParser.DeclarationSpecifiers,
+            CParsers.DeclarationSpecifiers,
             "auto int const",
             "typedef struct MyStruct volatile",
             "int auto int const short"
@@ -28,7 +28,7 @@ public class TestDeclarations {
     [Test]
     public void InitDeclaratorList() {
         TestParserRule(
-            CParser.InitDeclaratorList,
+            CParsers.InitDeclaratorList,
             "var1, var2",
             "*var1 = 0, * const var2()[]"
         );
@@ -37,7 +37,7 @@ public class TestDeclarations {
     [Test]
     public void InitDeclarator() {
         TestParserRule(
-            CParser.InitDeclarator,
+            CParsers.InitDeclarator,
             "name",
             "name = 3",
             "*name = 3",
@@ -48,7 +48,7 @@ public class TestDeclarations {
     [Test]
     public void StorageClassSpecifier() {
         TestParserRule(
-            CParser.StorageClassSpecifier,
+            CParsers.StorageClassSpecifier,
             "auto",
             "register",
             "static",
@@ -60,7 +60,7 @@ public class TestDeclarations {
     [Test]
     public void TypeSpecifier() {
         TestParserRule(
-            CParser.TypeSpecifier,
+            CParsers.TypeSpecifier,
             "void",
             "char",
             "short",
@@ -77,14 +77,14 @@ public class TestDeclarations {
         TestParserRule(
             source: "MyAwesomeType",
             env: new Parsing.ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF),
-            parser: CParser.TypeDefName
+            parser: CParsers.TypeDefName
         );
     }
 
     [Test]
     public void TypeQualifier() {
         TestParserRule(
-            CParser.TypeQualifier,
+            CParsers.TypeQualifier,
             "const",
             "volatile"
         );
@@ -93,7 +93,7 @@ public class TestDeclarations {
     [Test]
     public void Declarator() {
         TestParserRule(
-            CParser.Declarator,
+            CParsers.Declarator,
             "*name[3]",
             "* const *name",
             "name[3][]",
@@ -104,7 +104,7 @@ public class TestDeclarations {
     [Test]
     public void Pointer() {
         TestParserRule(
-            CParser.Pointer,
+            CParsers.Pointer,
             "*",
             "* const volatile",
             "* const * const *"
@@ -114,7 +114,7 @@ public class TestDeclarations {
     [Test]
     public void ParameterTypeList() {
         TestParserRule(
-            CParser.ParameterTypeList,
+            CParsers.ParameterTypeList,
             "int a, int b, int",
             "int a, int b, int, ..."
         );
@@ -123,7 +123,7 @@ public class TestDeclarations {
     [Test]
     public void ParameterList() {
         TestParserRule(
-            CParser.ParameterList,
+            CParsers.ParameterList,
             "int a, int b, int"
         );
     }
@@ -131,7 +131,7 @@ public class TestDeclarations {
     [Test]
     public void TypeQualifierList() {
         TestParserRule(
-            CParser.TypeQualifierList,
+            CParsers.TypeQualifierList,
             "const const"
         );
     }
@@ -139,7 +139,7 @@ public class TestDeclarations {
     [Test]
     public void DirectDeclarator() {
         TestParserRule(
-            CParser.DirectDeclarator,
+            CParsers.DirectDeclarator,
             "name",
             "(name)",
             "name[]",
@@ -155,7 +155,7 @@ public class TestDeclarations {
     [Test]
     public void EnumSpecifier() {
         TestParserRule(
-            CParser.EnumSpecifier,
+            CParsers.EnumSpecifier,
             "enum MyEnum",
             "enum MyEnum { NAME = 1, NAME }",
             "enum { NAME = 1, NAME }"
@@ -165,7 +165,7 @@ public class TestDeclarations {
     [Test]
     public void EnumeratorList() {
         TestParserRule(
-            CParser.EnumeratorList,
+            CParsers.EnumeratorList,
             "NAME, NAME = 3, NAME, NAME = 4"
         );
     }
@@ -173,7 +173,7 @@ public class TestDeclarations {
     [Test]
     public void Enumerator() {
         TestParserRule(
-            CParser.Enumerator,
+            CParsers.Enumerator,
             "NAME = 3",
             "NAME"
         );
@@ -182,7 +182,7 @@ public class TestDeclarations {
     [Test]
     public void EnumerationConstant() {
         TestParserRule(
-            CParser.EnumerationConstant,
+            CParsers.EnumerationConstant,
             "name"
         );
     }
@@ -190,7 +190,7 @@ public class TestDeclarations {
     [Test]
     public void StructOrUnionSpecifier() {
         TestParserRule(
-            CParser.StructOrUnion,
+            CParsers.StructOrUnion,
             "struct",
             "union"
         );
@@ -199,7 +199,7 @@ public class TestDeclarations {
     [Test]
     public void StructDeclarationList() {
         TestParserRule(
-            CParser.StructDeclarationList,
+            CParsers.StructDeclarationList,
             "int a; int b;"
         );
     }
@@ -207,7 +207,7 @@ public class TestDeclarations {
     [Test]
     public void StructDeclaration() {
         TestParserRule(
-            CParser.StructDeclaration,
+            CParsers.StructDeclaration,
             "int const a[3], b : 3, * const c(int arg);"
         );
     }
@@ -215,7 +215,7 @@ public class TestDeclarations {
     [Test]
     public void SpecifierQualifierList() {
         TestParserRule(
-            CParser.SpecifierQualifierList,
+            CParsers.SpecifierQualifierList,
             "int const",
             "const int",
             "char char char",
@@ -226,7 +226,7 @@ public class TestDeclarations {
     [Test]
     public void StructDeclaratorList() {
         TestParserRule(
-            CParser.StructDeclaratorList,
+            CParsers.StructDeclaratorList,
             "name, name, name[3]",
             "name : 3, name()"
         );
@@ -235,7 +235,7 @@ public class TestDeclarations {
     [Test]
     public void StructDeclarator() {
         TestParserRule(
-            CParser.StructDeclarator,
+            CParsers.StructDeclarator,
             "name",
             "name : 3"
         );
@@ -244,7 +244,7 @@ public class TestDeclarations {
     [Test]
     public void ParameterDeclaration() {
         TestParserRule(
-            CParser.ParameterDeclaration,
+            CParsers.ParameterDeclaration,
             "register int name[3]",
             "register int[3]"
         );
@@ -253,7 +253,7 @@ public class TestDeclarations {
     [Test]
     public void AbstractDeclarator() {
         TestParserRule(
-            CParser.AbstractDeclarator,
+            CParsers.AbstractDeclarator,
             "* const (*)()[]"
         );
     }
@@ -261,7 +261,7 @@ public class TestDeclarations {
     [Test]
     public void DirectAbstractDeclarator() {
         TestParserRule(
-            CParser.DirectAbstractDeclarator,
+            CParsers.DirectAbstractDeclarator,
             "[3][]",
             "(int arg1, char arg2)()",
             "[]()",
@@ -272,7 +272,7 @@ public class TestDeclarations {
     [Test]
     public void Initializer() {
         TestParserRule(
-            CParser.Initializer,
+            CParsers.Initializer,
             "3",
             "{ 3 }",
             "{ 3, 4, }",
@@ -283,7 +283,7 @@ public class TestDeclarations {
     [Test]
     public void InitializerList() {
         TestParserRule(
-            CParser.InitializerList,
+            CParsers.InitializerList,
             "3",
             "3, 4",
             "3, 4, 5"
@@ -293,7 +293,7 @@ public class TestDeclarations {
     [Test]
     public void TypeName() {
         TestParserRule(
-            CParser.TypeName,
+            CParsers.TypeName,
             "int",
             "const int *",
             "const int (*)(int arg)"
@@ -305,7 +305,7 @@ public class TestDeclarations {
         TestParserRule(
             source: "MyAwesomeType",
             env: new Parsing.ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF),
-            parser: CParser.TypeDefName
+            parser: CParsers.TypeDefName
         );
     }
 

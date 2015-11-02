@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 public class SetOnce<T> {
     public SetOnce() {
@@ -18,7 +14,7 @@ public class SetOnce<T> {
             if (!this.IsSet) {
                 throw new InvalidOperationException("Value hasn't been set.");
             }
-            return _value;
+            return this._value;
         }
         set {
             if (this.IsSet) {

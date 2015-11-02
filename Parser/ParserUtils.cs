@@ -10,27 +10,27 @@ namespace Parsing {
     /// </summary>
     public sealed class ParserEnvironment {
         private ParserEnvironment(ImmutableStack<Scope> scopes) {
-            this.scopes = scopes;
+            this.Scopes = scopes;
         }
 
         public ParserEnvironment() 
             : this(ImmutableStack.Create(new Scope())) { }
 
         public ParserEnvironment InScope() =>
-            new ParserEnvironment(this.scopes.Push(new Scope()));
+            new ParserEnvironment(this.Scopes.Push(new Scope()));
 
         public ParserEnvironment OutScope() =>
-            new ParserEnvironment(this.scopes.Pop());
+            new ParserEnvironment(this.Scopes.Pop());
 
         public ParserEnvironment AddSymbol(String name, StorageClsSpec storageClsSpec) =>
             new ParserEnvironment(
-                this.scopes.Pop().Push(
-                    this.scopes.Peek().AddSymbol(name, storageClsSpec)
+                this.Scopes.Pop().Push(
+                    this.Scopes.Peek().AddSymbol(name, storageClsSpec)
                 )
             );
 
         public Boolean IsTypedefName(String name) {
-            foreach (var scope in this.scopes) {
+            foreach (var scope in this.Scopes) {
                 if (scope.Symbols.ContainsKey(name)) {
                     return scope.Symbols[name] == StorageClsSpec.TYPEDEF;
                 }
@@ -52,7 +52,7 @@ namespace Parsing {
             public ImmutableDictionary<String, StorageClsSpec> Symbols { get; }
         }
 
-        private ImmutableStack<Scope> scopes { get; }
+        private ImmutableStack<Scope> Scopes { get; }
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ namespace Parsing {
 
         public Boolean IsSuccessful => true;
 
-        public ParserInput ToInput() => new ParserInput(Environment, Source);
+        public ParserInput ToInput() => new ParserInput(this.Environment, this.Source);
 
         public ParserEnvironment Environment { get; }
 
@@ -169,7 +169,7 @@ namespace Parsing {
             this.Source = source;
         }
 
-        public ParserInput ToInput() => new ParserInput(Environment, Source);
+        public ParserInput ToInput() => new ParserInput(this.Environment, this.Source);
 
         public Boolean IsSuccessful => true;
 

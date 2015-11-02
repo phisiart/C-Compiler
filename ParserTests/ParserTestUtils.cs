@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Parsing;
 
-[TestFixture]
 public static class ParserTestUtils {
     public static ParserInput CreateInput(String source) {
         var scanner = new Scanner(source);

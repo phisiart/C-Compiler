@@ -72,7 +72,7 @@ namespace SyntaxTree {
             return new AST.ConstULong((UInt32)type.SizeOf, env);
         }
     }
-    
+
     /// <summary>
     /// sizeof(Expr)
     /// </summary>

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Immutable;
 
@@ -9,18 +8,12 @@ namespace SyntaxTree {
     /// <summary>
     /// Modify a type into a function, array, or pointer
     /// </summary>
-    public abstract class TypeModifier : SyntaxTreeNode {
-        [Obsolete]
-        public abstract AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type);
-
+    public abstract class TypeModifier : ISyntaxTreeNode {
+        [SemantMethod]
         public abstract ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType);
     }
 
     public sealed class FunctionModifier : TypeModifier {
-        [Obsolete]
-        public FunctionModifier(List<ParamDecln> param_declns, Boolean has_varargs)
-            : this(Option.Some(SyntaxTree.ParamTypeList.Create(param_declns.ToImmutableList(), has_varargs))) { }
-
         private FunctionModifier(Option<ParamTypeList> paramTypeList) {
             this.ParamTypeList = paramTypeList;
         }
@@ -30,12 +23,6 @@ namespace SyntaxTree {
 
         public Option<ParamTypeList> ParamTypeList { get; }
         
-        [Obsolete]
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType ret_t) {
-            var args = ParamTypeList.Value.ParamDeclns.ConvertAll(decln => decln.GetParamDecln(env));
-            return AST.TFunction.Create(ret_t, args.ToList(), ParamTypeList.Value.HasVarArgs);
-        }
-
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType returnType) {
             if (this.ParamTypeList.IsNone) {
@@ -59,11 +46,7 @@ namespace SyntaxTree {
     /// parameter-list
     ///   : parameter-declaration [ ',' parameter-declaration ]*
     /// </summary>
-    public sealed class ParamTypeList : SyntaxTreeNode {
-        [Obsolete]
-        public ParamTypeList(IEnumerable<ParamDecln> paramDeclns, Boolean hasVarArgs)
-            : this(paramDeclns.ToImmutableList(), hasVarArgs) { }
-
+    public sealed class ParamTypeList : ISyntaxTreeNode {
         private ParamTypeList(ImmutableList<ParamDecln> paramDeclns, Boolean hasVarArgs) {
             this.ParamDeclns = paramDeclns;
             this.HasVarArgs = hasVarArgs;
@@ -89,20 +72,6 @@ namespace SyntaxTree {
             );
             return SemantReturn.Create(env, namesAndTypes);
         }
-
-        [Obsolete]
-        public Tuple<Boolean, List<Tuple<AST.Env, String, AST.ExprType>>> GetParamTypesEnv(AST.Env env) {
-            return Tuple.Create(
-                HasVarArgs,
-                ParamDeclns.Select(decln => {
-                    Tuple<String, AST.ExprType> r_decln = decln.GetParamDecln(env);
-                    // Tuple<AST.Env, String, AST.ExprType> r_decln = decln.GetParamDeclnEnv(env);
-                    // env = r_decln.Item1;
-                    return Tuple.Create(env, r_decln.Item1, r_decln.Item2);
-                }).ToList()
-            );
-        }
-
     }
 
     public sealed class ArrayModifier : TypeModifier {
@@ -113,22 +82,7 @@ namespace SyntaxTree {
         public static ArrayModifier Create(Option<Expr> numElements) =>
             new ArrayModifier(numElements);
 
-        [Obsolete]
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
-
-            if (NumElems.IsNone) {
-                return new AST.TIncompleteArray(type);
-            }
-
-            AST.Expr num_elems = AST.TypeCast.MakeCast(NumElems.Value.GetExpr(env), new AST.TLong(true, true));
-
-            if (!num_elems.IsConstExpr) {
-                throw new InvalidOperationException("Expected constant length.");
-            }
-
-            return new AST.TArray(type, ((AST.ConstLong)num_elems).value);
-        }
-
+        [SemantMethod]
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType elemType) {
             if (this.NumElems.IsNone) {
                 return SemantReturn.Create(env, new AST.TIncompleteArray(elemType));
@@ -146,7 +100,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Number of elements of an array must be constant.");
             }
 
-            return SemantReturn.Create(env, new AST.TArray(elemType, (numElems as AST.ConstLong).value));
+            return SemantReturn.Create(env, new AST.TArray(elemType, ((AST.ConstLong) numElems).value));
         }
 
         public Option<Expr> NumElems { get; }
@@ -156,27 +110,11 @@ namespace SyntaxTree {
         private PointerModifier(ImmutableList<TypeQual> typeQuals) {
             this.TypeQuals = typeQuals;
         }
-
-        [Obsolete]
-        public PointerModifier(IReadOnlyList<TypeQual> type_quals)
-            : this(type_quals.ToImmutableList()) { }
-
+        
         public static PointerModifier Create(ImmutableList<TypeQual> typeQuals) =>
             new PointerModifier(typeQuals);
 
-        [Obsolete]
-        public override AST.ExprType GetDecoratedType(AST.Env env, AST.ExprType type) {
-            Boolean is_const = TypeQuals.Contains(TypeQual.CONST);
-            Boolean is_volatile = TypeQuals.Contains(TypeQual.VOLATILE);
-
-            // This is commented out, for incomplete struct declaration.
-            //if (!type.IsComplete) {
-            //    throw new InvalidOperationException("The type a pointer points to must be complete.");
-            //}
-
-            return new AST.TPointer(type, is_const, is_volatile);
-        }
-
+        [SemantMethod]
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType targetType) {
             var isConst = this.TypeQuals.Contains(TypeQual.CONST);
             var isVolatile = this.TypeQuals.Contains(TypeQual.VOLATILE);
@@ -264,6 +202,7 @@ namespace SyntaxTree {
         public static AbstractDeclr Add(ImmutableList<PointerModifier> pointerModifiers, AbstractDeclr abstractDeclr) =>
             Create(abstractDeclr.TypeModifiers.AddRange(pointerModifiers));
 
+        [SemantMethod]
         public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
             var type = this.TypeModifiers
                 .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
@@ -282,11 +221,6 @@ namespace SyntaxTree {
     /// Has a name and a list of modifiers.
     /// </summary>
     public sealed class Declr : AbstractDeclr {
-
-        [Obsolete]
-        public Declr(String name, IReadOnlyList<TypeModifier> modifiers)
-            : this(name, modifiers.ToImmutableList()) { }
-
         private Declr(String name, ImmutableList<TypeModifier> typeModifiers)
             : base(typeModifiers) {
             this.Name = name;
@@ -308,27 +242,13 @@ namespace SyntaxTree {
             Create(declr.Name, declr.TypeModifiers.AddRange(pointerModifiers));
 
         public String Name { get; }
-
-        /// <summary>
-        /// A declarator consists of 1) a name, and 2) a list of decorators.
-        /// This method returns the name, and the modified type.
-        /// </summary>
-        [Obsolete]
-        public Tuple<String, AST.ExprType> GetNameAndType(AST.Env env, AST.ExprType base_type) =>
-            Tuple.Create(
-                Name,
-                TypeModifiers
-                    .Reverse()
-                    .Aggregate(base_type, (type, modifier) => modifier.GetDecoratedType(env, type))
-            );
-
     }
 
     /// <summary>
     /// init-declarator
     ///   : declarator [ '=' initializer ]?
     /// </summary>
-    public sealed class InitDeclr : SyntaxTreeNode {
+    public sealed class InitDeclr : ISyntaxTreeNode {
         private InitDeclr(Declr declr, Option<Initr> initr) {
             this.Declr = declr;
             this.Initr = initr;
@@ -345,84 +265,52 @@ namespace SyntaxTree {
 
         [SemantMethod]
         public ISemantReturn<Tuple<AST.ExprType, Option<AST.Initr>>> GetDecoratedTypeAndInitr(AST.Env env, AST.ExprType baseType) {
-            var initrOpt = this.Initr.Map(_ => Semant(_.GetInitr, ref env));
+
+            // Get the type based on the declarator. Note that this might be an incomplete array.
             var type = Semant(this.Declr.DecorateType, baseType, ref env);
 
-            // Check that the initializer conforms to the type.
-            initrOpt = initrOpt.Map(_ => _.ConformType(type));
+            Option<AST.Initr> initrOption;
 
-            // If the object is an incomplete array, we must determine the length based on the initializer.
-            if (type.kind == AST.ExprType.Kind.INCOMPLETE_ARRAY) {
-                if (initrOpt.IsNone) {
-                    throw new InvalidOperationException("Cannot determine the length of the array without an initializer.");
-                }
+            if (this.Initr.IsNone) {
+                initrOption = Option<AST.Initr>.None;
 
-                // Now we need to determine the length.
-                // Find the last element in the init list.
-                Int32 lastOffset = -1;
-                initrOpt.Value.Iterate(type, (offset, _) => { lastOffset = offset; });
-
-                if (lastOffset == -1) {
-                    throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
-                }
-
-                AST.ExprType elemType = ((AST.TIncompleteArray)type).elem_type;
-
-                Int32 numElems = 1 + lastOffset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
-
-                type = new AST.TArray(elemType, numElems, type.is_const, type.is_volatile);
-            }
-
-            return SemantReturn.Create(env, Tuple.Create(type, initrOpt));
-        }
-
-        [Obsolete]
-        public Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String> GetInitDeclr(AST.Env env, AST.ExprType type) {
-            String name;
-            Option<AST.Initr> initr_opt;
-
-            // Get the initializer list.
-            Option<Tuple<AST.Env, AST.Initr>> r_initr = this.Initr.Map(_ => _.GetInitr_(env));
-            if (r_initr.IsSome) {
-                env = r_initr.Value.Item1;
-                initr_opt = new Some<AST.Initr>(r_initr.Value.Item2);
             } else {
-                initr_opt = new None<AST.Initr>();
-            }
+                // If an initializer is present:
 
-            // Get the declarator.
-            Tuple<String, AST.ExprType> r_declr = Declr.GetNameAndType(env, type);
-            name = r_declr.Item1;
-            type = r_declr.Item2;
+                var initr = Semant(this.Initr.Value.GetInitr, ref env);
 
-            // Implicit cast the initializer.
-            initr_opt = initr_opt.Map(_ => _.ConformType(type));
+                // Check that the initializer conforms to the type.
+                initr = initr.ConformType(type);
 
-            // If the object is an incomplete list, we must determine the length based on the initializer.
-            if (type.kind == AST.ExprType.Kind.INCOMPLETE_ARRAY) {
-                if (initr_opt.IsNone) {
-                    throw new InvalidOperationException("Cannot determine the length of the array.");
+                // If the object is an incomplete array, we must determine the length based on the initializer.
+                if (type.kind == AST.ExprType.Kind.INCOMPLETE_ARRAY) {
+                    // Now we need to determine the length.
+                    // Find the last element in the init list.
+                    var lastOffset = -1;
+                    initr.Iterate(type, (offset, _) => { lastOffset = offset; });
+
+                    if (lastOffset == -1) {
+                        throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
+                    }
+
+                    var elemType = ((AST.TIncompleteArray)type).elem_type;
+
+                    var numElems = 1 + lastOffset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
+
+                    type = new AST.TArray(elemType, numElems, type.is_const, type.is_volatile);
                 }
 
-                // Now we need to determine the length.
-                // Find the last element in the init list.
-                Int32 last_offset = -1;
-                initr_opt.Value.Iterate(type, (offset, _) => { last_offset = offset; });
-
-                if (last_offset == -1) {
-                    throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
-                }
-
-                AST.ExprType elem_type = ((AST.TIncompleteArray)type).elem_type;
-
-                Int32 num_elems = 1 + last_offset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
-
-                type = new AST.TArray(elem_type, num_elems, type.is_const, type.is_volatile);
+                initrOption = Option.Some(initr);
+            }
+            
+            // Now everything is created. Check that the type is complete.
+            if (!type.IsComplete) {
+                throw new InvalidOperationException("Cannot create an object with an incomplete type.");
             }
 
-            return new Tuple<AST.Env, AST.ExprType, Option<AST.Initr>, String>(env, type, initr_opt, name);
+            return SemantReturn.Create(env, Tuple.Create(type, initrOption));
         }
-
+        
     }
 
     /// <summary>
@@ -434,19 +322,9 @@ namespace SyntaxTree {
     /// initializer-list
     ///   : initializer [ ',' initializer ]*
     /// </summary>
-    public abstract class Initr : SyntaxTreeNode {
-        public enum Kind {
-            EXPR,
-            INIT_LIST,
-        }
-
-        [Obsolete]
-        public abstract Tuple<AST.Env, AST.Initr> GetInitr_(AST.Env env);
-
+    public abstract class Initr : ISyntaxTreeNode {
         [SemantMethod]
         public abstract ISemantReturn<AST.Initr> GetInitr(AST.Env env);
-
-        public abstract Kind kind { get; }
     }
 
     public sealed class InitExpr : Initr {
@@ -457,19 +335,12 @@ namespace SyntaxTree {
         public static InitExpr Create(Expr expr) =>
             new InitExpr(expr);
 
-        public override Kind kind => Kind.EXPR;
         public Expr Expr { get; }
 
         [SemantMethod]
         public override ISemantReturn<AST.Initr> GetInitr(AST.Env env) {
             var expr = SemantExpr(this.Expr, ref env);
             return SemantReturn.Create(env, new AST.InitExpr(expr));
-        }
-
-        [Obsolete]
-        public override Tuple<AST.Env, AST.Initr> GetInitr_(AST.Env env) {
-            // TODO: Expr should change env
-            return new Tuple<AST.Env, AST.Initr>(env, new AST.InitExpr(Expr.GetExpr(env)));
         }
     }
 
@@ -478,14 +349,9 @@ namespace SyntaxTree {
             this.Initrs = initrs;
         }
 
-        [Obsolete]
-        public InitList(List<Initr> initrs)
-            : this(initrs.ToImmutableList()) { }
-
         public static InitList Create(ImmutableList<Initr> initrs) =>
             new InitList(initrs);
 
-        public override Kind kind => Kind.INIT_LIST;
         public ImmutableList<Initr> Initrs { get; }
 
         [SemantMethod]
@@ -494,16 +360,6 @@ namespace SyntaxTree {
                 initr => Semant(initr.GetInitr, ref env)
             );
             return SemantReturn.Create(env, new AST.InitList(initrs.ToList()));
-        }
-
-        [Obsolete]
-        public override Tuple<AST.Env, AST.Initr> GetInitr_(AST.Env env) {
-            ImmutableList<AST.Initr> initrs = this.Initrs.ConvertAll(initr => {
-                Tuple<AST.Env, AST.Initr> r_initr = initr.GetInitr_(env);
-                env = r_initr.Item1;
-                return r_initr.Item2;
-            });
-            return new Tuple<AST.Env, AST.Initr>(env, new AST.InitList(initrs.ToList()));
         }
     }
 }
