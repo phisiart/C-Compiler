@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace SyntaxTree {
     using static SemanticAnalysis;
@@ -94,7 +94,7 @@ namespace SyntaxTree {
 
             // Try to cast number of elements to a integer.
             // TODO: allow float???
-            numElems = AST.TypeCast.MakeCast(numElems, new AST.TLong(is_const: true, is_volatile: false));
+            numElems = AST.TypeCast.MakeCast(numElems, new AST.TLong(true, false));
 
             if (!numElems.IsConstExpr) {
                 throw new InvalidOperationException("Number of elements of an array must be constant.");
@@ -207,8 +207,7 @@ namespace SyntaxTree {
             var type = this.TypeModifiers
                 .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
                 .Aggregate( // Wrap up the type based on the type modifiers.
-                    seed: baseType,
-                    func: (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
+                    baseType, (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
                 );
 
             return SemantReturn.Create(env, type);

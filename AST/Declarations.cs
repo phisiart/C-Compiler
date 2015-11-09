@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AST {
 
@@ -11,7 +9,7 @@ namespace AST {
             AUTO,
             STATIC,
             EXTERN,
-            TYPEDEF,
+            TYPEDEF
         }
 
         public Decln(String name, StorageClass scs, ExprType type, Option<Initr> initr) {
@@ -22,9 +20,9 @@ namespace AST {
         }
 
         public override String ToString() {
-            String str = "[" + scs.ToString() + "] ";
-            str += name;
-            str += " : " + type.ToString();
+            String str = "[" + this.scs + "] ";
+            str += this.name;
+            str += " : " + this.type;
             return str;
         }
 
@@ -43,9 +41,9 @@ namespace AST {
 
                 if (this.initr.IsSome) {
                     Initr initr = this.initr.Value;
-                    switch (scs) {
+                    switch (this.scs) {
                         case StorageClass.AUTO:
-                            state.GLOBL(name);
+                            state.GLOBL(this.name);
                             break;
 
                         case StorageClass.EXTERN:
@@ -66,10 +64,10 @@ namespace AST {
 
                     state.ALIGN(ExprType.ALIGN_LONG);
 
-                    state.CGenLabel(name);
+                    state.CGenLabel(this.name);
 
                     Int32 last = 0;
-                    initr.Iterate(type, (Int32 offset, Expr expr) => {
+                    initr.Iterate(this.type, (Int32 offset, Expr expr) => {
                         if (offset > last) {
                             state.ZERO(offset - last);
                         }
@@ -122,7 +120,7 @@ namespace AST {
 
                     // Global without initialization.
 
-                    switch (scs) {
+                    switch (this.scs) {
                         case StorageClass.AUTO:
                             // .comm name,size,align
                             break;
@@ -133,7 +131,7 @@ namespace AST {
                         case StorageClass.STATIC:
                             // .local name
                             // .comm name,size,align
-                            state.LOCAL(name);
+                            state.LOCAL(this.name);
                             break;
 
                         case StorageClass.TYPEDEF:
@@ -144,8 +142,8 @@ namespace AST {
                             throw new InvalidProgramException();
                     }
 
-                    if (type.kind != ExprType.Kind.FUNCTION) {
-                        state.COMM(name, type.SizeOf, ExprType.ALIGN_LONG);
+                    if (this.type.kind != ExprType.Kind.FUNCTION) {
+                        state.COMM(this.name, this.type.SizeOf, ExprType.ALIGN_LONG);
                     }
 
                     
@@ -161,13 +159,13 @@ namespace AST {
                 Int32 stack_size = env.StackSize;
 
                 // pos should be equal to stack_size, but whatever...
-                Int32 pos = env.Find(name).Value.offset;
+                Int32 pos = env.Find(this.name).Value.offset;
                 if (this.initr.IsNone) {
                     return;
                 }
 
                 Initr initr = this.initr.Value;
-                initr.Iterate(type, (Int32 offset, Expr expr) => {
+                initr.Iterate(this.type, (Int32 offset, Expr expr) => {
                     Reg ret = expr.CGenValue(env, state);
                     switch (expr.type.kind) {
                         case ExprType.Kind.CHAR:
@@ -253,10 +251,9 @@ namespace AST {
     ///    If the aggregate contains members that are aggregates or unions, or if the first member of a union is an aggregate or union, the rules apply recursively to the subaggregates or contained unions. If the initializer of a subaggregate or contained union begins with a left brace, the initializers enclosed by that brace and its matching right brace initialize the members of the subaggregate or the first member of the contained union. Otherwise, only enough initializers from the list are taken to account for the members of the first subaggregate or the first member of the contained union; any remaining initializers are left to initialize the next member of the aggregate of which the current subaggregate or contained union is a part.
     /// </summary>
     public abstract class Initr {
-        public Initr() { }
         public enum Kind {
             EXPR,
-            INIT_LIST,
+            INIT_LIST
         }
         public abstract Kind kind { get; }
 
@@ -312,9 +309,9 @@ namespace AST {
 
         public override void Iterate(MemberIterator iter, Action<Int32, Expr> action) {
             iter.InBrace();
-            for (Int32 i = 0; i < initrs.Count; ++i) {
-                initrs[i].Iterate(iter, action);
-                if (i != initrs.Count - 1) {
+            for (Int32 i = 0; i < this.initrs.Count; ++i) {
+                this.initrs[i].Iterate(iter, action);
+                if (i != this.initrs.Count - 1) {
                     iter.Next();
                 }
             }
@@ -324,18 +321,18 @@ namespace AST {
 
     public class MemberIterator {
         public MemberIterator(ExprType type) {
-            trace = new List<Status> { new Status(type) };
+            this.trace = new List<Status> { new Status(type) };
         }
 
         public class Status {
             public Status(ExprType base_type) {
                 this.base_type = base_type;
-                indices = new List<Int32>();
+                this.indices = new List<Int32>();
             }
 
-            public ExprType CurType => GetType(base_type, indices);
+            public ExprType CurType => GetType(this.base_type, this.indices);
 
-            public Int32 CurOffset => GetOffset(base_type, indices);
+            public Int32 CurOffset => GetOffset(this.base_type, this.indices);
 
             //public List<Tuple<ExprType, Int32>> GetPath(ExprType base_type, IReadOnlyList<Int32> indices) {
             //    ExprType type = base_type;
@@ -411,12 +408,12 @@ namespace AST {
             public void Next() {
 
                 // From base_type to CurType.
-                List<ExprType> types = GetTypes(base_type, indices);
+                List<ExprType> types = GetTypes(this.base_type, this.indices);
 
                 // We try to jump as many levels out as we can.
                 do {
-                    Int32 index = indices.Last();
-                    indices.RemoveAt(indices.Count - 1);
+                    Int32 index = this.indices.Last();
+                    this.indices.RemoveAt(this.indices.Count - 1);
 
                     types.RemoveAt(types.Count - 1);
                     ExprType type = types.Last();
@@ -425,20 +422,20 @@ namespace AST {
                         case ExprType.Kind.ARRAY:
                             if (index < ((TArray)type).num_elems - 1) {
                                 // There are more elements in the array.
-                                indices.Add(index + 1);
+                                this.indices.Add(index + 1);
                                 return;
                             }
                             break;
 
                         case ExprType.Kind.INCOMPLETE_ARRAY:
-                            indices.Add(index + 1);
+                            this.indices.Add(index + 1);
                             return;
 
                         case ExprType.Kind.STRUCT_OR_UNION:
                             if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
                                 // There are more members in the struct.
                                 // (not union, since we can only initialize the first member of a union)
-                                indices.Add(index + 1);
+                                this.indices.Add(index + 1);
                                 return;
                             }
                             break;
@@ -447,7 +444,7 @@ namespace AST {
                             break;
                     }
 
-                } while (indices.Any());
+                } while (this.indices.Any());
             }
 
             /// <summary>
@@ -470,8 +467,8 @@ namespace AST {
             /// This step doesn't check what scalar it is. Further steps would perform implicit conversions.
             /// </summary>
             private void LocateScalar() {
-                while (!CurType.IsScalar) {
-                    indices.Add(0);
+                while (!this.CurType.IsScalar) {
+                    this.indices.Add(0);
                 }
             }
 
@@ -480,13 +477,13 @@ namespace AST {
             /// Go down to find the first element of the same struct type.
             /// </summary>
             private void LocateStruct(TStructOrUnion type) {
-                while (!CurType.EqualType(type)) {
-                    if (CurType.IsScalar) {
+                while (!this.CurType.EqualType(type)) {
+                    if (this.CurType.IsScalar) {
                         throw new InvalidOperationException("Trying to match a struct or union, but found a scalar.");
                     }
 
                     // Go down one level.
-                    indices.Add(0);
+                    this.indices.Add(0);
                 }
             }
 
@@ -494,27 +491,27 @@ namespace AST {
             public readonly List<Int32> indices;
         }
 
-        public ExprType CurType => trace.Last().CurType;
+        public ExprType CurType => this.trace.Last().CurType;
 
-        public Int32 CurOffset => trace.Select(_ => _.CurOffset).Sum();
+        public Int32 CurOffset => this.trace.Select(_ => _.CurOffset).Sum();
 
-        public void Next() => trace.Last().Next();
+        public void Next() => this.trace.Last().Next();
 
-        public void Locate(ExprType type) => trace.Last().Locate(type);
+        public void Locate(ExprType type) => this.trace.Last().Locate(type);
 
         public void InBrace() {
 
             /// Push the current position into the stack, so that we can get back by <see cref="OutBrace"/>
-            trace.Add(new Status(trace.Last().CurType));
+            this.trace.Add(new Status(this.trace.Last().CurType));
 
             // For aggregate types, go inside and locate the first member.
-            if (!CurType.IsScalar) {
-                trace.Last().indices.Add(0);
+            if (!this.CurType.IsScalar) {
+                this.trace.Last().indices.Add(0);
             }
             
         }
 
-        public void OutBrace() => trace.RemoveAt(trace.Count - 1);
+        public void OutBrace() => this.trace.RemoveAt(this.trace.Count - 1);
 
         public readonly List<Status> trace;
     }

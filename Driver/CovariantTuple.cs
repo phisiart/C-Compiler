@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 public interface ICovariantTuple<out T1, out T2> {
     T1 Head { get; }

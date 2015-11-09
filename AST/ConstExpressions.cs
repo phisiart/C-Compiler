@@ -8,11 +8,10 @@ namespace AST {
     public abstract class ConstExpr : Expr {
         public ConstExpr(ExprType type, Env env)
             : base(type) {
-            this._env = env;
+            this.Env = env;
         }
 
-        public override Env Env => _env;
-        private Env _env;
+        public override Env Env { get; }
 
         public override Boolean IsConstExpr => true;
 
@@ -28,16 +27,16 @@ namespace AST {
         }
         public readonly Int32 value;
 
-        public override String ToString() => $"{value}";
+        public override String ToString() => $"{this.value}";
 
         public override Reg CGenValue(Env env, CGenState state) {
-            state.MOVL(value, Reg.EAX);
+            state.MOVL(this.value, Reg.EAX);
             return Reg.EAX;
         }
 
         [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
-            state.CGenPushLong(value);
+            state.CGenPushLong(this.value);
     }
 
     public class ConstULong : ConstExpr {
@@ -47,16 +46,16 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-        public override String ToString() => $"{value}u";
+        public override String ToString() => $"{this.value}u";
 
         public override Reg CGenValue(Env env, CGenState state) {
-            state.MOVL((Int32)value, Reg.EAX);
+            state.MOVL((Int32) this.value, Reg.EAX);
             return Reg.EAX;
         }
 
         [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
-            state.CGenPushLong((Int32)value);
+            state.CGenPushLong((Int32) this.value);
     }
 
     public class ConstPtr : ConstExpr {
@@ -66,16 +65,16 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-        public override String ToString() => $"({type} *)0x{value.ToString("X8")}";
+        public override String ToString() => $"({this.type} *)0x{this.value.ToString("X8")}";
 
         public override Reg CGenValue(Env env, CGenState state) {
-            state.MOVL((Int32)value, Reg.EAX);
+            state.MOVL((Int32) this.value, Reg.EAX);
             return Reg.EAX;
         }
 
         [Obsolete]
         public override void CGenPush(Env env, CGenState state) =>
-            state.CGenPushLong((Int32)value);
+            state.CGenPushLong((Int32) this.value);
         
     }
 
@@ -86,13 +85,13 @@ namespace AST {
         }
         public readonly Single value;
 
-        public override String ToString() => $"{value}f";
+        public override String ToString() => $"{this.value}f";
 
         /// <summary>
         /// flds addr
         /// </summary>
         public override Reg CGenValue(Env env, CGenState state) {
-            byte[] bytes = BitConverter.GetBytes(value);
+            byte[] bytes = BitConverter.GetBytes(this.value);
             Int32 intval = BitConverter.ToInt32(bytes, 0);
             String name = state.CGenLongConst(intval);
             state.FLDS(name);
@@ -107,13 +106,13 @@ namespace AST {
         }
         public readonly Double value;
 
-        public override String ToString() => $"{value}";
+        public override String ToString() => $"{this.value}";
 
         /// <summary>
         /// fldl addr
         /// </summary>
         public override Reg CGenValue(Env env, CGenState state) {
-            byte[] bytes = BitConverter.GetBytes(value);
+            byte[] bytes = BitConverter.GetBytes(this.value);
             Int32 first_int = BitConverter.ToInt32(bytes, 0);
             Int32 second_int = BitConverter.ToInt32(bytes, 4);
             String name = state.CGenLongLongConst(first_int, second_int);
@@ -129,10 +128,10 @@ namespace AST {
         }
         public readonly String value;
 
-        public override String ToString() => $"\"{value}\"";
+        public override String ToString() => $"\"{this.value}\"";
 
         public override Reg CGenValue(Env env, CGenState state) {
-            String name = state.CGenString(value);
+            String name = state.CGenString(this.value);
             state.LEA(name, Reg.EAX);
             return Reg.EAX;
         }

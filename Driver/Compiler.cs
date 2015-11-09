@@ -37,9 +37,8 @@ public class Compiler {
     public static Compiler FromFile(String fileName) {
         if (File.Exists(fileName)) {
             return new Compiler(File.ReadAllText(fileName));
-        } else {
-            throw new FileNotFoundException($"{fileName} does not exist!");
         }
+        throw new FileNotFoundException($"{fileName} does not exist!");
     }
 
     public readonly String Source;

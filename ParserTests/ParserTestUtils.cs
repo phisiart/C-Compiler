@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using Parsing;
 
 public static class ParserTestUtils {
     public static ParserInput CreateInput(String source) {
         var scanner = new Scanner(source);
-        return new ParserInput(new Parsing.ParserEnvironment(), scanner.Tokens);
+        return new ParserInput(new ParserEnvironment(), scanner.Tokens);
     }
 
-    public static void TestParserRule<R>(String source, Parsing.ParserEnvironment env, IParser<R> parser) {
+    public static void TestParserRule<R>(String source, ParserEnvironment env, IParser<R> parser) {
         var scanner = new Scanner(source);
         var input = new ParserInput(env, scanner.Tokens);
         var result = parser.Parse(input);
@@ -21,7 +18,7 @@ public static class ParserTestUtils {
     }
 
     public static void TestParserRule<R>(String source, IParser<R> parser) =>
-        TestParserRule(source, new Parsing.ParserEnvironment(), parser);
+        TestParserRule(source, new ParserEnvironment(), parser);
 
     public static void TestParserRule<R>(IParser<R> parser, params String[] sources) {
         foreach (var source in sources) {

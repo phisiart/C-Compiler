@@ -62,7 +62,7 @@ public sealed class TokenOperator : Token {
     public override TokenKind Kind { get; } = TokenKind.OPERATOR;
     public OperatorVal Val { get; }
 
-    public static Dictionary<String, OperatorVal> Operators { get; } = new Dictionary<String, OperatorVal>() {
+    public static Dictionary<String, OperatorVal> Operators { get; } = new Dictionary<String, OperatorVal> {
         { "[",    OperatorVal.LBRACKET     },
         { "]",    OperatorVal.RBRACKET     },
         { "(",    OperatorVal.LPAREN       },
@@ -111,7 +111,7 @@ public sealed class TokenOperator : Token {
     };
 
     public override String ToString() {
-        return this.Kind.ToString() + " [" + this.Val.ToString() + "]: " + Operators.First(pair => pair.Value == this.Val).Key;
+        return this.Kind + " [" + this.Val + "]: " + Operators.First(pair => pair.Value == this.Val).Key;
     }
 }
 

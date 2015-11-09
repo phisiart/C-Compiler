@@ -1,7 +1,7 @@
 ﻿public static class HList {
     public static HNil HNil() => hnil;
     public static HCons<H, T> HCons<H, T>(H head, T tail) where T : HList<T> => new HCons<H, T>(head, tail);
-    private static HNil hnil = new HNil();
+    private static readonly HNil hnil = new HNil();
 }
 
 public class HList<T> { }

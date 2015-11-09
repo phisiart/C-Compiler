@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -313,9 +312,7 @@ namespace SyntaxTree {
 
         [SemantMethod]
         public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetMembers(AST.Env env, ImmutableList<StructDecln> memberDeclns) {
-            var result = memberDeclns.Aggregate(
-                seed: ImmutableList<Tuple<Option<String>, AST.ExprType>>.Empty,
-                func: (acc, decln) => acc.AddRange(Semant(decln.GetMemberDeclns, ref env))
+            var result = memberDeclns.Aggregate(ImmutableList<Tuple<Option<String>, AST.ExprType>>.Empty, (acc, decln) => acc.AddRange(Semant(decln.GetMemberDeclns, ref env))
             );
 
             return SemantReturn.Create(env, result);

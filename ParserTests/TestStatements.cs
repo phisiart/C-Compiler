@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using Parsing;
-using SyntaxTree;
 using static ParserTestUtils;
 
 [TestFixture]

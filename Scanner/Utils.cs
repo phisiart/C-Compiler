@@ -44,13 +44,14 @@ static class Utils {
     public static Int64 GetHexDigit(Char ch) {
         if (ch >= '0' && ch <= '9') {
             return ch - '0';
-        } else if (ch >= 'a' && ch <= 'f') {
-            return ch - 'a' + 0xA;
-        } else if (ch >= 'A' && ch <= 'F') {
-            return ch - 'A' + 0xA;
-        } else {
-            throw new Exception("GetHexDigit: Character is not a hex digit. You should first call IsHexDigit(ch) for a check.");
         }
+        if (ch >= 'a' && ch <= 'f') {
+            return ch - 'a' + 0xA;
+        }
+        if (ch >= 'A' && ch <= 'F') {
+            return ch - 'A' + 0xA;
+        }
+        throw new Exception("GetHexDigit: Character is not a hex digit. You should first call IsHexDigit(ch) for a check.");
     }
 
     // IsSpace : Char -> Boolean

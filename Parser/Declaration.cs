@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using static Parsing.ParserCombinator;
 using SyntaxTree;
+using static Parsing.ParserCombinator;
 
 namespace Parsing {
     public partial class CParsers {
@@ -350,9 +350,7 @@ namespace Parsing {
                     _ => {
                         var result = _.Result;
                         var env = _.Environment;
-                        env = result.InitDeclrs.Aggregate(
-                            seed: env,
-                            func: (currentEnv, initDeclr) =>
+                        env = result.InitDeclrs.Aggregate(env, (currentEnv, initDeclr) =>
                                       currentEnv.AddSymbol(
                                           initDeclr.Declr.Name,
                                           result.DeclnSpecs.StorageClsSpecs.DefaultIfEmpty(StorageClsSpec.AUTO).First()
@@ -692,14 +690,14 @@ namespace Parsing {
                         .Then(ConstantExpression.Optional())
                         .Then(RightBracket)
                         .Then(ArrayModifier.Create)
-                        .Then(ImmutableList.Create)
+                        .Then<ArrayModifier, ImmutableList<ArrayModifier>>(ImmutableList.Create)
                         .Then(AbstractDeclr.Create)
                     ).Or(
                         (LeftParen)
                         .Then(ParameterTypeList.Optional())
                         .Then(RightParen)
                         .Then(FunctionModifier.Create)
-                        .Then(ImmutableList.Create)
+                        .Then<FunctionModifier, ImmutableList<FunctionModifier>>(ImmutableList.Create)
                         .Then(AbstractDeclr.Create)
                     )
                 ).Then(

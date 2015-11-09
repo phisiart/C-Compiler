@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics;
 
 namespace AST {
@@ -13,7 +10,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
-        public override Env Env => expr.Env;
+        public override Env Env => this.expr.Env;
 
         // Integral
         // Before the actual calculation, the state is set to this.
@@ -72,7 +69,7 @@ namespace AST {
             // | ..... | <- %esp
             // +-------+
             // 
-            expr.CGenAddress(env, state);
+            this.expr.CGenAddress(env, state);
 
             // 2. Push address.
             // 
@@ -120,7 +117,7 @@ namespace AST {
             // | Expr  | <- %st(0)
             // +-------+
             // 
-            Reg ret = expr.CGenValue(env, state);
+            Reg ret = this.expr.CGenValue(env, state);
 
             switch (ret) {
                 case Reg.EAX:
@@ -166,7 +163,7 @@ namespace AST {
                     // | ..... | <- %esp
                     // +-------+
                     // 
-                    switch (expr.type.kind) {
+                    switch (this.expr.type.kind) {
                         case ExprType.Kind.CHAR:
                         case ExprType.Kind.UCHAR:
                             CalcAndSaveByte(state);
@@ -240,7 +237,7 @@ namespace AST {
                     // | Expr or (epxr +- 1) | <- %st(0)
                     // +---------------------+
                     // 
-                    switch (expr.type.kind) {
+                    switch (this.expr.type.kind) {
                         case ExprType.Kind.FLOAT:
                             CalcAndSaveFloat(state);
                             return Reg.ST0;
@@ -310,7 +307,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(expr.type.SizeOf, Reg.EBX);
+            state.ADDL(this.expr.type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -422,7 +419,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(expr.type.SizeOf, Reg.EBX);
+            state.SUBL(this.expr.type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -534,7 +531,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(expr.type.SizeOf, Reg.EAX);
+            state.ADDL(this.expr.type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 
@@ -646,7 +643,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(expr.type.SizeOf, Reg.EAX);
+            state.SUBL(this.expr.type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 
@@ -716,7 +713,7 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
-        public override Env Env => expr.Env;
+        public override Env Env => this.expr.Env;
     }
 
     /// <summary>
@@ -733,7 +730,7 @@ namespace AST {
             : base(expr, type) { }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = expr.CGenValue(env, state);
+            Reg ret = this.expr.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.NEG(Reg.EAX);
@@ -761,7 +758,7 @@ namespace AST {
             : base(expr, type) { }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = expr.CGenValue(env, state);
+            Reg ret = this.expr.CGenValue(env, state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }
@@ -786,7 +783,7 @@ namespace AST {
             : base(expr, type) { }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = expr.CGenValue(env, state);
+            Reg ret = this.expr.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);

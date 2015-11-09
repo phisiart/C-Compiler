@@ -19,7 +19,7 @@ namespace AST {
             CASE,
             DEFAULT,
             IF,
-            IF_ELSE,
+            IF_ELSE
         }
         public abstract Kind kind { get; }
 
@@ -106,8 +106,6 @@ namespace AST {
     public class ContStmt : Stmt {
         public override Kind kind => Kind.CONT;
 
-        public ContStmt() { }
-
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.ContinueLabel;
             state.JMP(label);
@@ -123,8 +121,6 @@ namespace AST {
     /// </summary>
     public class BreakStmt : Stmt {
         public override Kind kind => Kind.BREAK;
-
-        public BreakStmt() { }
 
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.BreakLabel;
@@ -168,10 +164,10 @@ namespace AST {
         public readonly List<Tuple<Env, Stmt>> stmts;
 
         public override void CGenStmt(Env env, CGenState state) {
-            foreach (Tuple<Env, Decln> decln in declns) {
+            foreach (Tuple<Env, Decln> decln in this.declns) {
                 decln.Item2.CGenDecln(decln.Item1, state);
             }
-            foreach (Tuple<Env, Stmt> stmt in stmts) {
+            foreach (Tuple<Env, Stmt> stmt in this.stmts) {
                 stmt.Item2.CGenStmt(stmt.Item1, state);
             }
         }
@@ -252,7 +248,7 @@ namespace AST {
             state.CGenLabel(start_label);
 
             // test cond
-            Reg ret = CGenExprStmt(env, cond, state);
+            Reg ret = CGenExprStmt(env, this.cond, state);
             CGenTest(env, ret, state);
 
             // jz finish
@@ -260,7 +256,7 @@ namespace AST {
 
             // body
             state.InLoop(start_label, finish_label);
-            body.CGenStmt(env, state);
+            this.body.CGenStmt(env, state);
             state.OutLabels();
 
             // jmp start
@@ -309,13 +305,13 @@ namespace AST {
 
             // body
             state.InLoop(continue_label, finish_label);
-            body.CGenStmt(env, state);
+            this.body.CGenStmt(env, state);
             state.OutLabels();
 
             state.CGenLabel(continue_label);
 
             // test cond
-            Reg ret = CGenExprStmt(env, cond, state);
+            Reg ret = CGenExprStmt(env, this.cond, state);
             CGenTest(env, ret, state);
 
             state.JNZ(start_label);
@@ -360,7 +356,7 @@ namespace AST {
 
         public override void CGenStmt(Env env, CGenState state) {
             // init
-            init.Map(_ => CGenExprStmt(env, _, state));
+            this.init.Map(_ => CGenExprStmt(env, _, state));
 
             Int32 start_label = state.RequestLabel();
             Int32 finish_label = state.RequestLabel();
@@ -370,7 +366,7 @@ namespace AST {
             state.CGenLabel(start_label);
 
             // test cont
-            cond.Map(_ => {
+            this.cond.Map(_ => {
                 Reg ret = CGenExprStmt(env, _, state);
                 CGenTest(env, ret, state);
                 return ret;
@@ -381,14 +377,14 @@ namespace AST {
 
             // body
             state.InLoop(continue_label, finish_label);
-            body.CGenStmt(env, state);
+            this.body.CGenStmt(env, state);
             state.OutLabels();
 
             // continue:
             state.CGenLabel(continue_label);
 
             // loop
-            loop.Map(_ => CGenExprStmt(env, _, state));
+            this.loop.Map(_ => CGenExprStmt(env, _, state));
 
             // jmp start
             state.JMP(start_label);
@@ -437,10 +433,10 @@ namespace AST {
             // but the stack size should be changed.
             List<Tuple<Env, Decln>> declns;
             List<Tuple<Env, Stmt>> stmts;
-            switch (stmt.kind) {
+            switch (this.stmt.kind) {
                 case Kind.COMPOUND:
-                    declns = ((CompoundStmt)stmt).declns;
-                    stmts = ((CompoundStmt)stmt).stmts;
+                    declns = ((CompoundStmt) this.stmt).declns;
+                    stmts = ((CompoundStmt) this.stmt).stmts;
                     break;
                 default:
                     throw new NotImplementedException();
@@ -474,7 +470,7 @@ namespace AST {
                 saved_stack_size;
 
             // 1. Evaluate Expr.
-            CGenExprStmt(env, expr, state);
+            CGenExprStmt(env, this.expr, state);
 
             // 2. Expand stack.
             state.CGenForceStackSizeTo(stack_size);
@@ -517,9 +513,9 @@ namespace AST {
         public readonly Stmt stmt;
 
         public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.CaseLabel(value);
+            Int32 label = state.CaseLabel(this.value);
             state.CGenLabel(label);
-            stmt.CGenStmt(env, state);
+            this.stmt.CGenStmt(env, state);
         }
 
         public override void Accept(StmtVisitor visitor) =>
@@ -536,7 +532,7 @@ namespace AST {
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.DefaultLabel;
             state.CGenLabel(label);
-            stmt.CGenStmt(env, state);
+            this.stmt.CGenStmt(env, state);
         }
 
         public override void Accept(StmtVisitor visitor) =>
@@ -563,7 +559,7 @@ namespace AST {
         public readonly Stmt stmt;
 
         public override void CGenStmt(Env env, CGenState state) {
-            Reg ret = CGenExprStmt(env, cond, state);
+            Reg ret = CGenExprStmt(env, this.cond, state);
 
             Int32 finish_label = state.RequestLabel();
 
@@ -571,7 +567,7 @@ namespace AST {
 
             state.JZ(finish_label);
 
-            stmt.CGenStmt(env, state);
+            this.stmt.CGenStmt(env, state);
 
             state.CGenLabel(finish_label);
         }
@@ -609,7 +605,7 @@ namespace AST {
         public readonly Stmt false_stmt;
 
         public override void CGenStmt(Env env, CGenState state) {
-            Reg ret = CGenExprStmt(env, cond, state);
+            Reg ret = CGenExprStmt(env, this.cond, state);
 
             CGenTest(env, ret, state);
 
@@ -618,13 +614,13 @@ namespace AST {
 
             state.JZ(false_label);
 
-            true_stmt.CGenStmt(env, state);
+            this.true_stmt.CGenStmt(env, state);
 
             state.JMP(finish_label);
 
             state.CGenLabel(false_label);
 
-            false_stmt.CGenStmt(env, state);
+            this.false_stmt.CGenStmt(env, state);
 
             state.CGenLabel(finish_label);
 

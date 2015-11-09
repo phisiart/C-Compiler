@@ -4,12 +4,12 @@ using System.Collections.Generic;
 namespace AST {
     public class TranslnUnit {
         public TranslnUnit(List<Tuple<Env, ExternDecln>> _declns) {
-            declns = _declns;
+            this.declns = _declns;
         }
         public readonly List<Tuple<Env, ExternDecln>> declns;
 
         public void CodeGenerate(CGenState state) {
-            foreach (Tuple<Env, ExternDecln> decln in declns) {
+            foreach (Tuple<Env, ExternDecln> decln in this.declns) {
                 decln.Item2.CGenDecln(decln.Item1, state);
             }
 
@@ -28,7 +28,7 @@ namespace AST {
             this.stmt = stmt;
         }
 
-        public override String ToString() => $"fn {name}: {type}";
+        public override String ToString() => $"fn {this.name}: {this.type}";
 
         public void CGenDecln(Env env, CGenState state) {
             //     .text
@@ -38,14 +38,14 @@ namespace AST {
             //     movl %esp, %ebp
             // 
             state.TEXT();
-            Env.Entry entry = env.Find(name).Value;
+            Env.Entry entry = env.Find(this.name).Value;
             state.COMMENT(ToString());
             switch (entry.kind) {
             case Env.EntryKind.GLOBAL:
-                switch (scs) {
+                switch (this.scs) {
                 case Decln.StorageClass.AUTO:
                 case Decln.StorageClass.EXTERN:
-                    state.GLOBL(name);
+                    state.GLOBL(this.name);
                     break;
                 case Decln.StorageClass.STATIC:
                     // static definition
@@ -57,11 +57,11 @@ namespace AST {
             default:
                 throw new InvalidOperationException();
             }
-            state.CGenFuncStart(name);
+            state.CGenFuncStart(this.name);
 
             state.InFunction(GotoLabelsGrabber.GrabLabels(this.stmt));
 
-            stmt.CGenStmt(env, state);
+            this.stmt.CGenStmt(env, state);
 
             state.CGenLabel(state.ReturnLabel);
             state.OutFunction();

@@ -74,10 +74,7 @@ public class TestDeclarations {
             "enum MyEnum"
         );
 
-        TestParserRule(
-            source: "MyAwesomeType",
-            env: new Parsing.ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF),
-            parser: CParsers.TypeDefName
+        TestParserRule("MyAwesomeType", new ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF), CParsers.TypeDefName
         );
     }
 
@@ -302,10 +299,7 @@ public class TestDeclarations {
 
     [Test]
     public void TypeDefName() {
-        TestParserRule(
-            source: "MyAwesomeType",
-            env: new Parsing.ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF),
-            parser: CParsers.TypeDefName
+        TestParserRule("MyAwesomeType", new ParserEnvironment().AddSymbol("MyAwesomeType", StorageClsSpec.TYPEDEF), CParsers.TypeDefName
         );
     }
 

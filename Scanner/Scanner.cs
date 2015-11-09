@@ -23,9 +23,8 @@ public sealed class Scanner {
         if (File.Exists(fileName)) {
             String source = File.ReadAllText(fileName);
             return FromSource(source);
-        } else {
-            throw new FileNotFoundException("Source file does not exist.", fileName);
         }
+        throw new FileNotFoundException("Source file does not exist.", fileName);
     }
 
     public static Scanner FromSource(String source) {

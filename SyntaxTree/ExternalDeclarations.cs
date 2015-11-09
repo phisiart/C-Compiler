@@ -20,9 +20,7 @@ namespace SyntaxTree {
         [SemantMethod]
         public ISemantReturn<AST.TranslnUnit> GetTranslnUnit() {
             var env = new AST.Env();
-            var externDeclns = this.Declns.Aggregate(
-                seed: ImmutableList<Tuple<AST.Env, AST.ExternDecln>>.Empty,
-                func: (acc, externDecln) => acc.AddRange(Semant(externDecln.GetExternDecln, ref env))
+            var externDeclns = this.Declns.Aggregate(ImmutableList<Tuple<AST.Env, AST.ExternDecln>>.Empty, (acc, externDecln) => acc.AddRange(Semant(externDecln.GetExternDecln, ref env))
             );
             return SemantReturn.Create(env, new AST.TranslnUnit(externDeclns.ToList()));
         }

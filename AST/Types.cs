@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 
 namespace AST {
     /* From 3.1.2.5 Types (modified):
@@ -106,7 +105,7 @@ namespace AST {
             FUNCTION,
             ARRAY,
             INCOMPLETE_ARRAY,
-            STRUCT_OR_UNION,
+            STRUCT_OR_UNION
         }
 
         protected ExprType(Boolean is_const, Boolean is_volatile) {
@@ -190,7 +189,7 @@ namespace AST {
         protected ArithmeticType(Boolean is_const, Boolean is_volatile)
             : base(is_const, is_volatile) { }
         public override Boolean IsArith => true;
-        public override Boolean EqualType(ExprType other) => kind == other.kind;
+        public override Boolean EqualType(ExprType other) => this.kind == other.kind;
     }
 
     public abstract class IntegralType : ArithmeticType {
@@ -303,10 +302,10 @@ namespace AST {
         public override Int32 Alignment => ALIGN_POINTER;
         public readonly ExprType ref_t;
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) =>
-            new TPointer(ref_t, is_const, is_volatile);
+            new TPointer(this.ref_t, is_const, is_volatile);
         public override Boolean EqualType(ExprType other) =>
-            other.kind == Kind.POINTER && ((TPointer)other).ref_t.EqualType(ref_t);
-        public override String ToString() => $"{DumpQualifiers()}ptr<{ref_t}>";
+            other.kind == Kind.POINTER && ((TPointer)other).ref_t.EqualType(this.ref_t);
+        public override String ToString() => $"{DumpQualifiers()}ptr<{this.ref_t}>";
     }
 
     /// <summary>
@@ -329,13 +328,13 @@ namespace AST {
         public override Int32 Alignment => this.elem_type.Alignment;
 
         public override ExprType GetQualifiedType(Boolean is_const, Boolean is_volatile) =>
-            new TIncompleteArray(elem_type, is_const, is_volatile);
+            new TIncompleteArray(this.elem_type, is_const, is_volatile);
 
         public override Boolean EqualType(ExprType other) => false;
 
         public override Boolean IsComplete => false;
 
-        public ExprType Complete(Int32 num_elems) => new TArray(elem_type, num_elems, is_const, is_volatile);
+        public ExprType Complete(Int32 num_elems) => new TArray(this.elem_type, num_elems, this.is_const, this.is_volatile);
 
         public override String ToString() => $"{this.elem_type}[]";
 
@@ -414,18 +413,17 @@ namespace AST {
         }
 
         public String Dump(Boolean dump_attribs) {
-            if (!IsComplete) {
+            if (!this.IsComplete) {
                 return "incompleted type " + this._layout.TypeName;
-            } else {
-                String str = $"{this._layout.TypeName} (size = {this.SizeOf})";
-                if (dump_attribs) {
-                    str += "\n";
-                    foreach (Utils.StoreEntry attrib in this._layout.Attribs) {
-                        str += $"  [base + {attrib.offset}] {attrib.name} : {attrib.type}\n";
-                    }
-                }
-                return str;
             }
+            String str = $"{this._layout.TypeName} (size = {this.SizeOf})";
+            if (dump_attribs) {
+                str += "\n";
+                foreach (Utils.StoreEntry attrib in this._layout.Attribs) {
+                    str += $"  [base + {attrib.offset}] {attrib.name} : {attrib.type}\n";
+                }
+            }
+            return str;
         }
 
         public override String ToString() => Dump(false);
@@ -547,7 +545,7 @@ namespace AST {
     // TODO: name is optional
     public class TFunction : ExprType {
         protected TFunction(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
-            : base(is_const: true, is_volatile: false) {
+            : base(true, false) {
             this.args = args;
             this.ret_t = ret_t;
             this.is_varargs = is_varargs;
@@ -587,9 +585,7 @@ namespace AST {
             }
             return new TFunction(
                 ret_type,
-                Enumerable.Zip(
-                    args,
-                    offsets,
+                args.Zip(offsets,
                     (name_type, offset) => new Utils.StoreEntry(name_type.Item1, name_type.Item2, offset)
                 ).ToList(),
                 is_varargs
@@ -607,7 +603,7 @@ namespace AST {
             String str = "function";
             if (dump_args) {
                 str += "\n";
-                foreach (Utils.StoreEntry arg in args) {
+                foreach (Utils.StoreEntry arg in this.args) {
                     str += $"  [%ebp + {arg.offset}] {arg.name} : {arg.type}\n";
                 }
             }

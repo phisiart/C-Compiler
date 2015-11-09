@@ -219,9 +219,8 @@ namespace Parsing {
             var result = this.Parser.Parse(input);
             if (result.IsSuccessful) {
                 return ParserSucceeded.Create(new Some<R>(result.Result), result.Environment, result.Source);
-            } else {
-                return ParserSucceeded.Create(new None<R>(), input.Environment, input.Source);
             }
+            return ParserSucceeded.Create(new None<R>(), input.Environment, input.Source);
         }
     }
 
@@ -237,9 +236,8 @@ namespace Parsing {
             var result = this.Parser.Parse(input);
             if (result.IsSuccessful) {
                 return result;
-            } else {
-                return ParserSucceeded.Create(this.DefaultValue, input.Environment, input.Source);
             }
+            return ParserSucceeded.Create(this.DefaultValue, input.Environment, input.Source);
         }
     }
 
@@ -282,9 +280,8 @@ namespace Parsing {
             var result1 = this.FirstParser.Parse(input);
             if (result1.IsSuccessful) {
                 return result1;
-            } else {
-                return this.SecondParser.Parse(input);
             }
+            return this.SecondParser.Parse(input);
         }
     }
 
@@ -390,9 +387,8 @@ namespace Parsing {
         public override String ToString() {
             if (this.Consumer.IsSet) {
                 return this.Consumer.Value.ToString();
-            } else {
-                return "<Unset Consumer>";
             }
+            return "<Unset Consumer>";
         }
     }
 
@@ -482,9 +478,8 @@ namespace Parsing {
         public override String ToString() {
             if (this.Transformer.IsSet) {
                 return this.Transformer.Value.ToString();
-            } else {
-                return "<Unset transformer>";
             }
+            return "<Unset transformer>";
         }
     }
 
@@ -497,9 +492,8 @@ namespace Parsing {
             var result = this.Transformer.Transform(seed, input);
             if (result.IsSuccessful) {
                 return result;
-            } else {
-                return ParserSucceeded.Create(seed, input.Environment, input.Source);
             }
+            return ParserSucceeded.Create(seed, input.Environment, input.Source);
         }
     }
 
@@ -589,9 +583,8 @@ namespace Parsing {
         public IParserResult Consume(ParserInput input) {
             if ((input.Source.First() as TokenOperator)?.Val == this.OperatorVal) {
                 return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
-            } else {
-                return new ParserFailed();
             }
+            return new ParserFailed();
         }
     }
 
@@ -616,9 +609,8 @@ namespace Parsing {
         public IParserResult Consume(ParserInput input) {
             if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
                 return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
-            } else {
-                return new ParserFailed();
             }
+            return new ParserFailed();
         }
     }
 
@@ -636,9 +628,8 @@ namespace Parsing {
         public IParserResult<R> Parse(ParserInput input) {
             if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
                 return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Skip(1));
-            } else {
-                return new ParserFailed<R>();
             }
+            return new ParserFailed<R>();
         }
     }
 

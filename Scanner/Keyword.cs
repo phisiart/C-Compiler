@@ -81,7 +81,7 @@ public class TokenKeyword : Token {
     };
 
     public override String ToString() {
-        return this.Kind.ToString() + ": " + this.Val.ToString();
+        return this.Kind + ": " + this.Val;
     }
 
 }

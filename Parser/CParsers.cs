@@ -1,7 +1,7 @@
-﻿using SyntaxTree;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SyntaxTree;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {

@@ -196,13 +196,7 @@ namespace SyntaxTree {
             // Update the environment to add this function type.
             if ((this.Func is Variable) && env.Find((this.Func as Variable).Name).IsNone) {
                 // TODO: get this env used.
-                env = env.PushEntry(
-                    loc: AST.Env.EntryKind.TYPEDEF,
-                    name: (this.Func as Variable).Name,
-                    type: AST.TFunction.Create(
-                        ret_type: new AST.TLong(is_const: true),
-                        args: args.ConvertAll(_ => Tuple.Create("", _.type)),
-                        is_varargs: false
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.TFunction.Create(new AST.TLong(true), args.ConvertAll(_ => Tuple.Create("", _.type)), false
                     )
                 );
             }
@@ -244,9 +238,7 @@ namespace SyntaxTree {
             }
 
             // Make implicit cast.
-            args = Enumerable.Zip(
-                args.GetRange(0, num_args_prototype),
-                func_type.args,
+            args = args.GetRange(0, num_args_prototype).Zip(func_type.args,
                 (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)
             ).Concat(args.GetRange(num_args_prototype, num_args_actual - num_args_prototype)).ToList();
 

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-
 using SyntaxTree;
 using static Parsing.ParserCombinator;
 

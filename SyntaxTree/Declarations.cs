@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Immutable;
+using System.Linq;
+using AST;
 using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
@@ -115,7 +116,7 @@ namespace SyntaxTree {
                     structDeclr => structDeclr.Name
                 );
 
-            return SemantReturn.Create(env, memberNames.Zip(memberTypes, Tuple.Create).ToImmutableList());
+            return SemantReturn.Create(env, memberNames.Zip<Option<String>, ExprType, Tuple<Option<String>, ExprType>>(memberTypes, Tuple.Create).ToImmutableList());
         }
 
     }

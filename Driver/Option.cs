@@ -4,10 +4,10 @@ public abstract class Option<T> {
     public Option<O> Map<O>(Converter<T, O> converter) {
         if (this.IsSome) {
             return new Some<O>(converter(this.Value));
-        } else {
-            return new None<O>();
         }
+        return new None<O>();
     }
+
     public abstract T Value { get; }
     public abstract Boolean IsSome { get; }
     public abstract Boolean IsNone { get; }

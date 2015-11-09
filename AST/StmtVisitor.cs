@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace AST {
     public abstract class StmtVisitor {
-        public StmtVisitor() {}
         public virtual void Visit(Stmt stmt) {}
         public virtual void Visit(GotoStmt stmt) {}
         public virtual void Visit(LabeledStmt stmt) {}
@@ -23,8 +22,8 @@ namespace AST {
     }
 
     public class CaseLabelsGrabber : StmtVisitor {
-        private List<Int32> _labels = new List<Int32>();
-        public IReadOnlyList<Int32> Labels => _labels;
+        private readonly List<Int32> _labels = new List<Int32>();
+        public IReadOnlyList<Int32> Labels => this._labels;
 
         public static IReadOnlyList<Int32> GrabLabels(SwitchStmt stmt) {
             CaseLabelsGrabber grabber = new CaseLabelsGrabber();
@@ -67,7 +66,7 @@ namespace AST {
 
         public override void Visit(CaseStmt stmt) {
             // Record the value.
-            _labels.Add(stmt.value);
+            this._labels.Add(stmt.value);
             stmt.stmt.Accept(this);
         }
 
@@ -84,8 +83,8 @@ namespace AST {
     }
 
     public class GotoLabelsGrabber : StmtVisitor {
-        private List<String> _labels = new List<String>();
-        public IReadOnlyList<String> Labels => _labels;
+        private readonly List<String> _labels = new List<String>();
+        public IReadOnlyList<String> Labels => this._labels;
 
         public static IReadOnlyList<String> GrabLabels(Stmt stmt) {
             GotoLabelsGrabber grabber = new GotoLabelsGrabber();

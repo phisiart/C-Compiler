@@ -80,9 +80,8 @@ namespace Parsing {
                 .Then(exprs => {
                     if (exprs.Count == 1) {
                         return exprs[0];
-                    } else {
-                        return AssignmentList.Create(exprs);
                     }
+                    return AssignmentList.Create(exprs);
                 })
             );
 

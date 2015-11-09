@@ -2,7 +2,6 @@
 using System.Linq;
 using NUnit.Framework;
 using Parsing;
-using static ParserTestUtils;
 
 [TestFixture]
 public class TestExternalDefinitions {

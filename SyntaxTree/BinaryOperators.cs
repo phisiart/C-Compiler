@@ -362,8 +362,7 @@ namespace SyntaxTree {
                 return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.type, offset.Env);
             }
 
-            return AST.TypeCast.ToPointer(
-                expr: new AST.Sub(
+            return AST.TypeCast.ToPointer(new AST.Sub(
                     AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env),
                     new AST.Multiply(
                         offset,
@@ -371,9 +370,7 @@ namespace SyntaxTree {
                         new AST.TLong(offset.type.is_const, offset.type.is_volatile)
                     ),
                     new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-                ),
-                type: ptr.type,
-                env: offset.Env
+                ), ptr.type, offset.Env
             );
         }
 
