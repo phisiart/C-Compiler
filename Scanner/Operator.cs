@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 // operator
@@ -53,14 +54,15 @@ public enum OperatorVal {
     RCURL
 }
 
-public class TokenOperator : Token {
-    public TokenOperator(OperatorVal _val)
-        : base(TokenType.OPERATOR) {
-        val = _val;
+public sealed class TokenOperator : Token {
+    public TokenOperator(OperatorVal val) {
+        this.Val = val;
     }
-    public readonly OperatorVal val;
 
-    public static Dictionary<String, OperatorVal> ops = new Dictionary<String, OperatorVal>() {
+    public override TokenKind Kind { get; } = TokenKind.OPERATOR;
+    public OperatorVal Val { get; }
+
+    public static Dictionary<String, OperatorVal> Operators { get; } = new Dictionary<String, OperatorVal>() {
         { "[",    OperatorVal.LBRACKET     },
         { "]",    OperatorVal.RBRACKET     },
         { "(",    OperatorVal.LPAREN       },
@@ -109,7 +111,7 @@ public class TokenOperator : Token {
     };
 
     public override String ToString() {
-        return type.ToString() + " [" + val.ToString() + "]: " + ops.First(pair => pair.Value == val).Key;
+        return this.Kind.ToString() + " [" + this.Val.ToString() + "]: " + Operators.First(pair => pair.Value == this.Val).Key;
     }
 }
 
@@ -135,7 +137,7 @@ public class FSAOperator : FSA {
         XOR
     };
 
-    public static List<Char> opchars = new List<Char>() {
+    public static ImmutableHashSet<Char> OperatorChars { get; } = ImmutableHashSet.Create(
         '[',
         ']',
         '(',
@@ -160,251 +162,251 @@ public class FSAOperator : FSA {
         ';',
         '{',
         '}'
-    };
+    );
 
-    private State state;
-    private String scanned;
+    private State _state;
+    private String _scanned;
 
     public FSAOperator() {
-        state = State.START;
-        scanned = "";
+        this._state = State.START;
+        this._scanned = "";
     }
 
     public override sealed void Reset() {
-        state = State.START;
-        scanned = "";
+        this._state = State.START;
+        this._scanned = "";
     }
 
     public override sealed FSAStatus GetStatus() {
-        switch (state) {
-        case State.START:
-            return FSAStatus.NONE;
-        case State.END:
-            return FSAStatus.END;
-        case State.ERROR:
-            return FSAStatus.ERROR;
-        default:
-            return FSAStatus.RUNNING;
+        switch (this._state) {
+            case State.START:
+                return FSAStatus.NONE;
+            case State.END:
+                return FSAStatus.END;
+            case State.ERROR:
+                return FSAStatus.ERROR;
+            default:
+                return FSAStatus.RUNNING;
         }
     }
 
     public override sealed Token RetrieveToken() {
-        return new TokenOperator(TokenOperator.ops[scanned.Substring(0, scanned.Length - 1)]);
+        return new TokenOperator(TokenOperator.Operators[this._scanned.Substring(0, this._scanned.Length - 1)]);
     }
 
     public override sealed void ReadChar(Char ch) {
-        scanned = scanned + ch;
-        switch (state) {
-        case State.END:
-        case State.ERROR:
-            state = State.ERROR;
-            break;
-        case State.START:
-            if (opchars.Exists(x => x == ch)) {
-                switch (ch) {
-                case '-':
-                    state = State.SUB;
-                    break;
-                case '+':
-                    state = State.ADD;
-                    break;
-                case '&':
-                    state = State.AMP;
-                    break;
-                case '*':
-                    state = State.MULT;
-                    break;
-                case '<':
-                    state = State.LT;
-                    break;
-                case '>':
-                    state = State.GT;
-                    break;
-                case '=':
-                    state = State.EQ;
-                    break;
-                case '|':
-                    state = State.OR;
-                    break;
-                case '!':
-                    state = State.NOT;
-                    break;
-                case '/':
-                    state = State.DIV;
-                    break;
-                case '%':
-                    state = State.MOD;
-                    break;
-                case '^':
-                    state = State.XOR;
-                    break;
-                default:
-                    state = State.FINISH;
-                    break;
+        this._scanned = this._scanned + ch;
+        switch (this._state) {
+            case State.END:
+            case State.ERROR:
+                this._state = State.ERROR;
+                break;
+            case State.START:
+                if (OperatorChars.Contains(ch)) {
+                    switch (ch) {
+                        case '-':
+                            this._state = State.SUB;
+                            break;
+                        case '+':
+                            this._state = State.ADD;
+                            break;
+                        case '&':
+                            this._state = State.AMP;
+                            break;
+                        case '*':
+                            this._state = State.MULT;
+                            break;
+                        case '<':
+                            this._state = State.LT;
+                            break;
+                        case '>':
+                            this._state = State.GT;
+                            break;
+                        case '=':
+                            this._state = State.EQ;
+                            break;
+                        case '|':
+                            this._state = State.OR;
+                            break;
+                        case '!':
+                            this._state = State.NOT;
+                            break;
+                        case '/':
+                            this._state = State.DIV;
+                            break;
+                        case '%':
+                            this._state = State.MOD;
+                            break;
+                        case '^':
+                            this._state = State.XOR;
+                            break;
+                        default:
+                            this._state = State.FINISH;
+                            break;
+                    }
+                } else {
+                    this._state = State.ERROR;
                 }
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.FINISH:
-            state = State.END;
-            break;
-        case State.SUB:
-            switch (ch) {
-            case '>':
-            case '-':
-            case '=':
-                state = State.FINISH;
+                break;
+            case State.FINISH:
+                this._state = State.END;
+                break;
+            case State.SUB:
+                switch (ch) {
+                    case '>':
+                    case '-':
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.ADD:
+                switch (ch) {
+                    case '+':
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.AMP:
+                switch (ch) {
+                    case '&':
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.MULT:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.LT:
+                switch (ch) {
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    case '<':
+                        this._state = State.LTLT;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.GT:
+                switch (ch) {
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    case '>':
+                        this._state = State.GTGT;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.EQ:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.OR:
+                switch (ch) {
+                    case '|':
+                    case '=':
+                        this._state = State.FINISH;
+                        break;
+                    default:
+                        this._state = State.END;
+                        break;
+                }
+                break;
+            case State.NOT:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.DIV:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.MOD:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.XOR:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.LTLT:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.GTGT:
+                if (ch == '=') {
+                    this._state = State.FINISH;
+                } else {
+                    this._state = State.END;
+                }
                 break;
             default:
-                state = State.END;
+                this._state = State.ERROR;
                 break;
-            }
-            break;
-        case State.ADD:
-            switch (ch) {
-            case '+':
-            case '=':
-                state = State.FINISH;
-                break;
-            default:
-                state = State.END;
-                break;
-            }
-            break;
-        case State.AMP:
-            switch (ch) {
-            case '&':
-            case '=':
-                state = State.FINISH;
-                break;
-            default:
-                state = State.END;
-                break;
-            }
-            break;
-        case State.MULT:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.LT:
-            switch (ch) {
-            case '=':
-                state = State.FINISH;
-                break;
-            case '<':
-                state = State.LTLT;
-                break;
-            default:
-                state = State.END;
-                break;
-            }
-            break;
-        case State.GT:
-            switch (ch) {
-            case '=':
-                state = State.FINISH;
-                break;
-            case '>':
-                state = State.GTGT;
-                break;
-            default:
-                state = State.END;
-                break;
-            }
-            break;
-        case State.EQ:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.OR:
-            switch (ch) {
-            case '|':
-            case '=':
-                state = State.FINISH;
-                break;
-            default:
-                state = State.END;
-                break;
-            }
-            break;
-        case State.NOT:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.DIV:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.MOD:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.XOR:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.LTLT:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.GTGT:
-            if (ch == '=') {
-                state = State.FINISH;
-            } else {
-                state = State.END;
-            }
-            break;
-        default:
-            state = State.ERROR;
-            break;
         }
     }
 
     public override sealed void ReadEOF() {
-        scanned = scanned + '0';
-        switch (state) {
-        case State.FINISH:
-        case State.SUB:
-        case State.ADD:
-        case State.AMP:
-        case State.MULT:
-        case State.LT:
-        case State.LTLT:
-        case State.GT:
-        case State.GTGT:
-        case State.EQ:
-        case State.OR:
-        case State.NOT:
-        case State.DIV:
-        case State.MOD:
-        case State.XOR:
-            state = State.END;
-            break;
-        default:
-            state = State.ERROR;
-            break;
+        this._scanned = this._scanned + '0';
+        switch (this._state) {
+            case State.FINISH:
+            case State.SUB:
+            case State.ADD:
+            case State.AMP:
+            case State.MULT:
+            case State.LT:
+            case State.LTLT:
+            case State.GT:
+            case State.GTGT:
+            case State.EQ:
+            case State.OR:
+            case State.NOT:
+            case State.DIV:
+            case State.MOD:
+            case State.XOR:
+                this._state = State.END;
+                break;
+            default:
+                this._state = State.ERROR;
+                break;
         }
     }
 

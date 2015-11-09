@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 
-public class Scanner {
+public sealed class Scanner {
     public Scanner(String source) {
         this.Source = source;
         this.FSAs = ImmutableList.Create<FSA>(
@@ -17,7 +16,7 @@ public class Scanner {
             new FSACharConst(),
             new FSAString()
         );
-        this.Tokens = this.Lex();
+        this.Tokens = Lex();
     }
 
     public static Scanner FromFile(String fileName) {
@@ -34,46 +33,39 @@ public class Scanner {
     }
 
     private IEnumerable<Token> Lex() {
-        List<Token> tokens = new List<Token>();
-        for (Int32 i = 0; i < Source.Length; ++i) {
-
-            FSAs.ForEach(fsa => fsa.ReadChar(Source[i]));
+        var tokens = new List<Token>();
+        for (Int32 i = 0; i < this.Source.Length; ++i) {
+            this.FSAs.ForEach(fsa => fsa.ReadChar(this.Source[i]));
 
             // if no running
-            if (FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.RUNNING) == -1) {
-                Int32 idx = FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
+            if (this.FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.RUNNING) == -1) {
+                Int32 idx = this.FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
                 if (idx != -1) {
-                    // Console.WriteLine("> " + src.Substring(pos, i - pos));
-                    Token token = FSAs[idx].RetrieveToken();
-                    if (token.type != TokenType.NONE) {
+                    Token token = this.FSAs[idx].RetrieveToken();
+                    if (token.Kind != TokenKind.NONE) {
                         tokens.Add(token);
-                        // yield return token;
                     }
-                    //Console.WriteLine(fsas[idx].RetrieveToken());
                     i--;
-                    FSAs.ForEach(fsa => fsa.Reset());
+                    this.FSAs.ForEach(fsa => fsa.Reset());
                 } else {
                     Console.WriteLine("error");
                 }
             }
         }
 
-        FSAs.ForEach(fsa => fsa.ReadEOF());
+        this.FSAs.ForEach(fsa => fsa.ReadEOF());
         // find END
-        Int32 idx2 = FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
+        Int32 idx2 = this.FSAs.FindIndex(fsa => fsa.GetStatus() == FSAStatus.END);
         if (idx2 != -1) {
-            Token token = FSAs[idx2].RetrieveToken();
-            if (token.type != TokenType.NONE) {
+            Token token = this.FSAs[idx2].RetrieveToken();
+            if (token.Kind != TokenKind.NONE) {
                 tokens.Add(token);
-                //yield return token;
             }
-            //Console.WriteLine("> " + src.Substring(pos, src.Length - pos));
         } else {
             Console.WriteLine("error");
         }
 
         tokens.Add(new EmptyToken());
-        //yield return new EmptyToken();
         return tokens;
     }
 

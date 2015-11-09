@@ -4,91 +4,92 @@
 // ===============
 // If the identifier is found to be a keyword, then it will be a keyword
 // 
-public class TokenIdentifier : Token {
-    public TokenIdentifier(String _val)
-        : base(TokenType.IDENTIFIER) {
-        val = _val;
+public sealed class TokenIdentifier : Token {
+    public TokenIdentifier(String val) {
+        this.Val = val;
     }
-    public readonly String val;
+
+    public override TokenKind Kind { get; } = TokenKind.IDENTIFIER;
+    public String Val { get; }
     public override String ToString() {
-        return type.ToString() + ": " + val;
+        return this.Kind + ": " + this.Val;
     }
 }
 
-public class FSAIdentifier : FSA {
+public sealed class FSAIdentifier : FSA {
     private enum State {
         START,
         END,
         ERROR,
         ID
     };
-    private State state;
-    private String scanned;
+    private State _state;
+    private String _scanned;
 
     public FSAIdentifier() {
-        state = State.START;
-        scanned = "";
+        this._state = State.START;
+        this._scanned = "";
     }
 
-    public override sealed void Reset() {
-        state = State.START;
-        scanned = "";
+    public override void Reset() {
+        this._state = State.START;
+        this._scanned = "";
     }
 
-    public override sealed FSAStatus GetStatus() {
-        if (state == State.START) {
+    public override FSAStatus GetStatus() {
+        if (this._state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == State.END) {
+        }
+        if (this._state == State.END) {
             return FSAStatus.END;
-        } else if (state == State.ERROR) {
+        }
+        if (this._state == State.ERROR) {
             return FSAStatus.ERROR;
-        } else {
-            return FSAStatus.RUNNING;
+        }
+        return FSAStatus.RUNNING;
+    }
+
+    public override Token RetrieveToken() {
+        String name = this._scanned.Substring(0, this._scanned.Length - 1);
+        if (TokenKeyword.Keywords.ContainsKey(name)) {
+            return new TokenKeyword(TokenKeyword.Keywords[name]);
+        }
+        return new TokenIdentifier(name);
+    }
+
+    public override void ReadChar(Char ch) {
+        this._scanned = this._scanned + ch;
+        switch (this._state) {
+            case State.END:
+            case State.ERROR:
+                this._state = State.ERROR;
+                break;
+            case State.START:
+                if (ch == '_' || Char.IsLetter(ch)) {
+                    this._state = State.ID;
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.ID:
+                if (Char.IsLetterOrDigit(ch) || ch == '_') {
+                    this._state = State.ID;
+                } else {
+                    this._state = State.END;
+                }
+                break;
         }
     }
 
-    public override sealed Token RetrieveToken() {
-        String name = scanned.Substring(0, scanned.Length - 1);
-        if (TokenKeyword.keywords.ContainsKey(name)) {
-            return new TokenKeyword(TokenKeyword.keywords[name]);
-        } else {
-            return new TokenIdentifier(name);
-        }
-    }
-
-    public override sealed void ReadChar(Char ch) {
-        scanned = scanned + ch;
-        switch (state) {
-        case State.END:
-        case State.ERROR:
-            state = State.ERROR;
-            break;
-        case State.START:
-            if (ch == '_' || Char.IsLetter(ch)) {
-                state = State.ID;
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.ID:
-            if (Char.IsLetterOrDigit(ch) || ch == '_') {
-                state = State.ID;
-            } else {
-                state = State.END;
-            }
-            break;
-        }
-    }
-
-    public override sealed void ReadEOF() {
-        scanned = scanned + '0';
-        switch (state) {
-        case State.ID:
-            state = State.END;
-            break;
-        default:
-            state = State.ERROR;
-            break;
+    public override void ReadEOF() {
+        this._scanned = this._scanned + '0';
+        switch (this._state) {
+            case State.ID:
+                this._state = State.END;
+                break;
+            default:
+                this._state = State.ERROR;
+                break;
         }
     }
 }

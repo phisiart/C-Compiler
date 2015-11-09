@@ -4,15 +4,16 @@
 // ==============
 // A character constant
 // 
-public class TokenCharConst : Token {
-    public TokenCharConst(String raw, Char value)
-        : base(TokenType.CHAR) {
-        this.raw = raw;
-        this.value = value;
+public sealed class TokenCharConst : Token {
+    public TokenCharConst(String raw, Char value) {
+        this.Raw = raw;
+        this.Value = value;
     }
-    public readonly String raw;
-    public readonly Char value;
-    public override String ToString() => $"{type}: '{raw}'";
+
+    public override TokenKind Kind { get; } = TokenKind.CHAR;
+    public String Raw { get; }
+    public Char Value { get; }
+    public override String ToString() => $"{this.Kind}: '{this.Raw}'";
 }
 
 // FSAChar
@@ -44,7 +45,7 @@ public class TokenCharConst : Token {
 // 
 // * A hexadecimal number after a backslash and an 'x' or 'X'. FOr example : \xFF.
 // 
-public class FSAChar : FSA {
+public sealed class FSAChar : FSA {
     private enum State {
         START,
         END,
@@ -59,35 +60,36 @@ public class FSAChar : FSA {
         SXHH
     }
 
-    private State state;
-    private String scanned;
-    
+    private State _state;
+    private String _scanned;
+
     // quote : Char
     // ============
     // \' in a Char, and \" in a String.
-    private Char quote;
+    private readonly Char _quote;
 
-    public FSAChar(Char _quote) {
-        state = State.START;
-        quote = _quote;
-        scanned = "";
+    public FSAChar(Char quote) {
+        this._state = State.START;
+        this._quote = quote;
+        this._scanned = "";
     }
 
-    public override sealed void Reset() {
-        scanned = "";
-        state = State.START;
+    public override void Reset() {
+        this._scanned = "";
+        this._state = State.START;
     }
 
-    public override sealed FSAStatus GetStatus() {
-        if (state == State.START) {
+    public override FSAStatus GetStatus() {
+        if (this._state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == State.END) {
-            return FSAStatus.END;
-        } else if (state == State.ERROR) {
-            return FSAStatus.ERROR;
-        } else {
-            return FSAStatus.RUNNING;
         }
+        if (this._state == State.END) {
+            return FSAStatus.END;
+        }
+        if (this._state == State.ERROR) {
+            return FSAStatus.ERROR;
+        }
+        return FSAStatus.RUNNING;
     }
 
     // IsChar : Char -> Boolean
@@ -95,7 +97,7 @@ public class FSAChar : FSA {
     // the character is a 'normal' Char, other than <quote> \\ or \n
     // 
     private Boolean IsChar(Char ch) {
-        return ch != quote && ch != '\\' && ch != '\n';
+        return ch != this._quote && ch != '\\' && ch != '\n';
     }
 
 
@@ -104,50 +106,49 @@ public class FSAChar : FSA {
     // ==========================
     // 
     public String RetrieveRaw() {
-        return scanned.Substring(0, scanned.Length - 1);
+        return this._scanned.Substring(0, this._scanned.Length - 1);
     }
 
     // RetrieveChar : () -> Char
     // =========================
     // 
     public Char RetrieveChar() {
-        if (scanned.Length == 3) {
-            switch (scanned[1]) {
-            case 'a':
-                return '\a';
-            case 'b':
-                return '\b';
-            case 'f':
-                return '\f';
-            case 'n':
-                return '\n';
-            case 'r':
-                return '\r';
-            case 't':
-                return '\t';
-            case 'v':
-                return '\v';
-            case '\'':
-                return '\'';
-            case '\"':
-                return '\"';
-            case '\\':
-                return '\\';
-            case '?':
-                return '?';
-            default:
-                return scanned[1];
+        if (this._scanned.Length == 3) {
+            switch (this._scanned[1]) {
+                case 'a':
+                    return '\a';
+                case 'b':
+                    return '\b';
+                case 'f':
+                    return '\f';
+                case 'n':
+                    return '\n';
+                case 'r':
+                    return '\r';
+                case 't':
+                    return '\t';
+                case 'v':
+                    return '\v';
+                case '\'':
+                    return '\'';
+                case '\"':
+                    return '\"';
+                case '\\':
+                    return '\\';
+                case '?':
+                    return '?';
+                default:
+                    return this._scanned[1];
             }
-        } else {
-            return scanned[0];
         }
+        return this._scanned[0];
     }
 
     // RetrieveToken : () -> Token
     // ===========================
     // Note that this function never gets used, because FSAChar is just an inner FSA for other FSAs.
     // 
-    public override sealed Token RetrieveToken() {
+    public override Token RetrieveToken() {
         return new EmptyToken();
     }
 
@@ -155,93 +156,93 @@ public class FSAChar : FSA {
     // =====================
     // Implementation of the FSA
     // 
-    public override sealed void ReadChar(Char ch) {
-        scanned = scanned + ch;
-        switch (state) {
-        case State.END:
-        case State.ERROR:
-            state = State.ERROR;
-            break;
-        case State.START:
-            if (IsChar(ch)) {
-                state = State.C;
-            } else if (ch == '\\') {
-                state = State.S;
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.C:
-            state = State.END;
-            break;
-        case State.S:
-            if (Utils.IsEscapeChar(ch)) {
-                state = State.C;
-            } else if (Utils.IsOctDigit(ch)) {
-                state = State.SO;
-            } else if (ch == 'x' || ch == 'X') {
-                state = State.SX;
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.SX:
-            if (Utils.IsHexDigit(ch)) {
-                state = State.SXH;
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.SXH:
-            if (Utils.IsHexDigit(ch)) {
-                state = State.SXHH;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.SXHH:
-            state = State.END;
-            break;
-        case State.SO:
-            if (Utils.IsOctDigit(ch)) {
-                state = State.SOO;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.SOO:
-            if (Utils.IsOctDigit(ch)) {
-                state = State.SOOO;
-            } else {
-                state = State.END;
-            }
-            break;
-        case State.SOOO:
-            state = State.END;
-            break;
-        default:
-            state = State.ERROR;
-            break;
+    public override void ReadChar(Char ch) {
+        this._scanned = this._scanned + ch;
+        switch (this._state) {
+            case State.END:
+            case State.ERROR:
+                this._state = State.ERROR;
+                break;
+            case State.START:
+                if (IsChar(ch)) {
+                    this._state = State.C;
+                } else if (ch == '\\') {
+                    this._state = State.S;
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.C:
+                this._state = State.END;
+                break;
+            case State.S:
+                if (Utils.IsEscapeChar(ch)) {
+                    this._state = State.C;
+                } else if (Utils.IsOctDigit(ch)) {
+                    this._state = State.SO;
+                } else if (ch == 'x' || ch == 'X') {
+                    this._state = State.SX;
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.SX:
+                if (Utils.IsHexDigit(ch)) {
+                    this._state = State.SXH;
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.SXH:
+                if (Utils.IsHexDigit(ch)) {
+                    this._state = State.SXHH;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.SXHH:
+                this._state = State.END;
+                break;
+            case State.SO:
+                if (Utils.IsOctDigit(ch)) {
+                    this._state = State.SOO;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.SOO:
+                if (Utils.IsOctDigit(ch)) {
+                    this._state = State.SOOO;
+                } else {
+                    this._state = State.END;
+                }
+                break;
+            case State.SOOO:
+                this._state = State.END;
+                break;
+            default:
+                this._state = State.ERROR;
+                break;
         }
     }
 
     // ReadEOF : () -> ()
     // ==================
     // 
-    public override sealed void ReadEOF() {
-        scanned = scanned + '0';
-        switch (state) {
-        case State.C:
-        case State.SO:
-        case State.SOO:
-        case State.SOOO:
-        case State.SXH:
-        case State.SXHH:
-            state = State.END;
-            break;
-        default:
-            state = State.ERROR;
-            break;
+    public override void ReadEOF() {
+        this._scanned = this._scanned + '0';
+        switch (this._state) {
+            case State.C:
+            case State.SO:
+            case State.SOO:
+            case State.SOOO:
+            case State.SXH:
+            case State.SXHH:
+                this._state = State.END;
+                break;
+            default:
+                this._state = State.ERROR;
+                break;
         }
     }
 
@@ -260,7 +261,7 @@ public class FSAChar : FSA {
 // The character inside the quotes is read by FSAChar.
 // Note that if the inner character is a single quote, it needs to be escaped.
 // 
-public class FSACharConst : FSA {
+public sealed class FSACharConst : FSA {
     private enum State {
         START,
         END,
@@ -271,103 +272,104 @@ public class FSACharConst : FSA {
         QCQ
     };
 
-    private State state;
-    private Char val;
-    private String raw;
-    private FSAChar fsachar;
+    private State _state;
+    private Char _val;
+    private String _raw;
+    private readonly FSAChar _fsachar;
 
     public FSACharConst() {
-        state = State.START;
-        fsachar = new FSAChar('\'');
+        this._state = State.START;
+        this._fsachar = new FSAChar('\'');
     }
 
-    public override sealed void Reset() {
-        state = State.START;
-        fsachar.Reset();
+    public override void Reset() {
+        this._state = State.START;
+        this._fsachar.Reset();
     }
 
-    public override sealed FSAStatus GetStatus() {
-        if (state == State.START) {
+    public override FSAStatus GetStatus() {
+        if (this._state == State.START) {
             return FSAStatus.NONE;
-        } else if (state == State.END) {
+        }
+        if (this._state == State.END) {
             return FSAStatus.END;
-        } else if (state == State.ERROR) {
+        }
+        if (this._state == State.ERROR) {
             return FSAStatus.ERROR;
-        } else {
-            return FSAStatus.RUNNING;
+        }
+        return FSAStatus.RUNNING;
+    }
+
+    public override Token RetrieveToken() {
+        return new TokenCharConst(this._raw, this._val);
+    }
+
+    public override void ReadChar(Char ch) {
+        switch (this._state) {
+            case State.END:
+            case State.ERROR:
+                this._state = State.ERROR;
+                break;
+            case State.START:
+                switch (ch) {
+                    case 'L':
+                        this._state = State.L;
+                        break;
+                    case '\'':
+                        this._state = State.Q;
+                        this._fsachar.Reset();
+                        break;
+                    default:
+                        this._state = State.ERROR;
+                        break;
+                }
+                break;
+            case State.L:
+                if (ch == '\'') {
+                    this._state = State.Q;
+                    this._fsachar.Reset();
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.Q:
+                this._fsachar.ReadChar(ch);
+                switch (this._fsachar.GetStatus()) {
+                    case FSAStatus.END:
+                        this._state = State.QC;
+                        this._raw = this._fsachar.RetrieveRaw();
+                        this._val = this._fsachar.RetrieveChar();
+                        this._fsachar.Reset();
+                        ReadChar(ch);
+                        break;
+                    case FSAStatus.ERROR:
+                        this._state = State.ERROR;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case State.QC:
+                if (ch == '\'') {
+                    this._state = State.QCQ;
+                } else {
+                    this._state = State.ERROR;
+                }
+                break;
+            case State.QCQ:
+                this._state = State.END;
+                break;
+            default:
+                this._state = State.ERROR;
+                break;
         }
     }
 
-    public override sealed Token RetrieveToken() {
-        return new TokenCharConst(raw, val);
-    }
-
-    public override sealed void ReadChar(Char ch) {
-        switch (state) {
-        case State.END:
-        case State.ERROR:
-            state = State.ERROR;
-            break;
-        case State.START:
-            switch (ch) {
-            case 'L':
-                state = State.L;
-                break;
-            case '\'':
-                state = State.Q;
-                fsachar.Reset();
-                break;
-            default:
-                state = State.ERROR;
-                break;
-            }
-            break;
-        case State.L:
-            if (ch == '\'') {
-                state = State.Q;
-                fsachar.Reset();
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.Q:
-            fsachar.ReadChar(ch);
-            switch (fsachar.GetStatus()) {
-            case FSAStatus.END:
-                state = State.QC;
-                raw = fsachar.RetrieveRaw();
-                val = fsachar.RetrieveChar();
-                fsachar.Reset();
-                ReadChar(ch);
-                break;
-            case FSAStatus.ERROR:
-                state = State.ERROR;
-                break;
-            default:
-                break;
-            }
-            break;
-        case State.QC:
-            if (ch == '\'') {
-                state = State.QCQ;
-            } else {
-                state = State.ERROR;
-            }
-            break;
-        case State.QCQ:
-            state = State.END;
-            break;
-        default:
-            state = State.ERROR;
-            break;
-        }
-    }
-
-    public override sealed void ReadEOF() {
-        if (state == State.QCQ) {
-            state = State.END;
+    public override void ReadEOF() {
+        if (this._state == State.QCQ) {
+            this._state = State.END;
         } else {
-            state = State.ERROR;
+            this._state = State.ERROR;
         }
     }
 

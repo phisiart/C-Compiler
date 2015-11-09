@@ -8,19 +8,19 @@ namespace SyntaxTree {
 	/// May be a float or double
 	/// </summary>
 	public class ConstFloat : Constant {
-		public ConstFloat(Double value, TokenFloat.Suffix suffix) {
+		public ConstFloat(Double value, TokenFloat.FloatSuffix floatSuffix) {
 			this.Value = value;
-			this.Suffix = suffix;
+			this.FloatSuffix = floatSuffix;
 		}
-		public TokenFloat.Suffix Suffix { get; }
+		public TokenFloat.FloatSuffix FloatSuffix { get; }
 		public Double Value { get; }
 
         public override AST.Expr GetExpr(AST.Env env) {
-            switch (this.Suffix) {
-                case TokenFloat.Suffix.F:
+            switch (this.FloatSuffix) {
+                case TokenFloat.FloatSuffix.F:
                     return new AST.ConstFloat((Single)this.Value, env);
-                case TokenFloat.Suffix.NONE:
-                case TokenFloat.Suffix.L:
+                case TokenFloat.FloatSuffix.NONE:
+                case TokenFloat.FloatSuffix.L:
                     return new AST.ConstDouble(this.Value, env);
                 default:
                     throw new InvalidOperationException();
@@ -33,20 +33,20 @@ namespace SyntaxTree {
     /// C doesn't have char constant, only int constant
 	/// </summary>
 	public class ConstInt : Constant {
-		public ConstInt(Int64 value, TokenInt.Suffix suffix) {
+		public ConstInt(Int64 value, TokenInt.IntSuffix suffix) {
 			this.Value = value;
 			this.Suffix = suffix;
 		}
-		public TokenInt.Suffix Suffix { get; }
+		public TokenInt.IntSuffix Suffix { get; }
 		public Int64 Value { get; }
 
         public override AST.Expr GetExpr(AST.Env env) {
             switch (this.Suffix) {
-                case TokenInt.Suffix.U:
-                case TokenInt.Suffix.UL:
+                case TokenInt.IntSuffix.U:
+                case TokenInt.IntSuffix.UL:
                     return new AST.ConstULong((UInt32)this.Value, env);
-                case TokenInt.Suffix.NONE:
-                case TokenInt.Suffix.L:
+                case TokenInt.IntSuffix.NONE:
+                case TokenInt.IntSuffix.L:
                     return new AST.ConstLong((Int32)this.Value, env);
                 default:
                     throw new InvalidOperationException();

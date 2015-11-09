@@ -1,26 +1,26 @@
 ﻿using System;
 
 static class Utils {
-    
+
     // IsEscapeChar : Char -> Boolean
     // ==============================
     // 
     public static Boolean IsEscapeChar(Char ch) {
         switch (ch) {
-        case 'a':
-        case 'b':
-        case 'f':
-        case 'n':
-        case 'r':
-        case 't':
-        case 'v':
-        case '\'':
-        case '\"':
-        case '\\':
-        case '?':
-            return true;
-        default:
-            return false;
+            case 'a':
+            case 'b':
+            case 'f':
+            case 'n':
+            case 'r':
+            case 't':
+            case 'v':
+            case '\'':
+            case '\"':
+            case '\\':
+            case '?':
+                return true;
+            default:
+                return false;
         }
     }
 

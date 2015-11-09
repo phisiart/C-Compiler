@@ -587,7 +587,7 @@ namespace Parsing {
         public OperatorVal OperatorVal { get; }
 
         public IParserResult Consume(ParserInput input) {
-            if ((input.Source.First() as TokenOperator)?.val == this.OperatorVal) {
+            if ((input.Source.First() as TokenOperator)?.Val == this.OperatorVal) {
                 return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
             } else {
                 return new ParserFailed();
@@ -602,7 +602,7 @@ namespace Parsing {
             if (token == null) {
                 return new ParserFailed<String>();
             }
-            return ParserSucceeded.Create(token.val, input.Environment, input.Source.Skip(1));
+            return ParserSucceeded.Create(token.Val, input.Environment, input.Source.Skip(1));
         }
     }
 
@@ -614,7 +614,7 @@ namespace Parsing {
         public static KeywordConsumer Create(KeywordVal keywordVal) =>
             new KeywordConsumer(keywordVal);
         public IParserResult Consume(ParserInput input) {
-            if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
+            if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
                 return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
             } else {
                 return new ParserFailed();
@@ -634,7 +634,7 @@ namespace Parsing {
         public R Result { get; }
 
         public IParserResult<R> Parse(ParserInput input) {
-            if ((input.Source.First() as TokenKeyword)?.val == this.KeywordVal) {
+            if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
                 return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Skip(1));
             } else {
                 return new ParserFailed<R>();

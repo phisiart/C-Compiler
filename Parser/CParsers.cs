@@ -23,7 +23,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstInt(token.value, TokenInt.Suffix.NONE), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new ConstInt(token.Value, TokenInt.IntSuffix.NONE), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -34,7 +34,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstInt(token.val, token.suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new ConstInt(token.Val, token.Suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -45,7 +45,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstFloat(token.value, token.suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new ConstFloat(token.Value, token.Suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -56,7 +56,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new StringLiteral(token.raw), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new StringLiteral(token.Raw), input.Environment, input.Source.Skip(1));
             }
         }
 

@@ -39,12 +39,13 @@ public enum KeywordVal {
 }
 
 public class TokenKeyword : Token {
-    public TokenKeyword(KeywordVal _val)
-        : base(TokenType.KEYWORD) {
-        val = _val;
+    public TokenKeyword(KeywordVal val) {
+        this.Val = val;
     }
-    public readonly KeywordVal val;
-    public static Dictionary<String, KeywordVal> keywords = new Dictionary<String, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
+
+    public override TokenKind Kind { get; } = TokenKind.KEYWORD;
+    public KeywordVal Val { get; }
+    public static Dictionary<String, KeywordVal> Keywords { get; } = new Dictionary<String, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
         { "AUTO",        KeywordVal.AUTO      },
         { "DOUBLE",      KeywordVal.DOUBLE    },
         { "INT",         KeywordVal.INT       },
@@ -80,7 +81,7 @@ public class TokenKeyword : Token {
     };
 
     public override String ToString() {
-        return type.ToString() + ": " + val.ToString();
+        return this.Kind.ToString() + ": " + this.Val.ToString();
     }
 
 }
