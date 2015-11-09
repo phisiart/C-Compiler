@@ -1,154 +1,156 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{2CCC585A-99DA-4F10-B008-923F77C58E0E}</ProjectGuid>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B6ACC54F-C763-46B7-BE95-D07B1CF0C7D6}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>CCompiler</RootNamespace>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>C_Compiler</RootNamespace>
     <AssemblyName>C-Compiler</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
-    <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>../../TestPrograms/StructReturn.c</Commandlineparameters>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DebugType>full</DebugType>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>driver.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable, Version=1.1.38.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Collections.Immutable.1.1.38-beta-23225\lib\dotnet\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.0.5790.16288, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>packages\NUnit.3.0.0-rc-2\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.1.38.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Collections.Immutable.1.1.38-beta-23409\lib\dotnet\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AST\BinaryOperators.cs" />
+    <Compile Include="AST\CGen.cs" />
+    <Compile Include="AST\ConstExpressions.cs" />
+    <Compile Include="AST\Declarations.cs" />
+    <Compile Include="AST\Environment.cs" />
+    <Compile Include="AST\Expressions.cs" />
+    <Compile Include="AST\ExternalDefinitions.cs" />
+    <Compile Include="AST\Statements.cs" />
+    <Compile Include="AST\StmtVisitor.cs" />
+    <Compile Include="AST\TypeCast.cs" />
+    <Compile Include="AST\Types.cs" />
+    <Compile Include="AST\UnaryOperators.cs" />
+    <Compile Include="AST\Utils.cs" />
     <Compile Include="CompilerTests\CompilerTests.cs" />
     <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Compiler.cs" />
     <Compile Include="Driver\CovariantTuple.cs" />
     <Compile Include="Driver\HList.cs" />
     <Compile Include="Driver\Option.cs" />
+    <Compile Include="Driver\Program.cs" />
     <Compile Include="Driver\SetOnce.cs" />
     <Compile Include="ParserTests\ParserTestUtils.cs" />
     <Compile Include="ParserTests\TestDeclarations.cs" />
+    <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="ParserTests\TestExternalDefinitions.cs" />
     <Compile Include="ParserTests\TestStatements.cs" />
+    <Compile Include="Parser\CParsers.cs" />
     <Compile Include="Parser\Declaration.cs" />
     <Compile Include="Parser\Expressions.cs" />
     <Compile Include="Parser\ExternalDefinitions.cs" />
     <Compile Include="Parser\ParserClasses.cs" />
+    <Compile Include="Parser\ParserCombinator.cs" />
+    <Compile Include="Parser\ParserUtils.cs" />
     <Compile Include="Parser\Statements.cs" />
     <Compile Include="Parser\Tokens.cs" />
-    <Compile Include="Parser\CParsers.cs" />
-    <Compile Include="Parser\ParserCombinator.cs" />
-    <Compile Include="ParserTests\TestExpressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AST\BinaryOperators.cs" />
-    <Compile Include="AST\ConstExpressions.cs" />
-    <Compile Include="AST\cgen.cs" />
-    <Compile Include="AST\environment.cs" />
-    <Compile Include="AST\expressions.cs" />
-    <Compile Include="AST\external_declarations.cs" />
-    <Compile Include="AST\statements.cs" />
-    <Compile Include="AST\TypeCast.cs" />
-    <Compile Include="AST\types.cs" />
-    <Compile Include="AST\utils.cs" />
+    <Compile Include="Scanner\Char.cs" />
+    <Compile Include="Scanner\Float.cs" />
+    <Compile Include="Scanner\FSA.cs" />
+    <Compile Include="Scanner\Identifier.cs" />
+    <Compile Include="Scanner\Int.cs" />
+    <Compile Include="Scanner\Keyword.cs" />
+    <Compile Include="Scanner\Operator.cs" />
+    <Compile Include="Scanner\Scanner.cs" />
+    <Compile Include="Scanner\String.cs" />
+    <Compile Include="Scanner\Tokens.cs" />
+    <Compile Include="Scanner\Utils.cs" />
     <Compile Include="SyntaxTree\AssignmentOperators.cs" />
     <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
-    <Compile Include="SyntaxTree\declarations.cs" />
+    <Compile Include="SyntaxTree\Declarations.cs" />
     <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
     <Compile Include="SyntaxTree\Declarators.cs" />
-    <Compile Include="SyntaxTree\expressions.cs" />
+    <Compile Include="SyntaxTree\Expressions.cs" />
     <Compile Include="SyntaxTree\ExternalDeclarations.cs" />
     <Compile Include="SyntaxTree\SemantUtils.cs" />
-    <Compile Include="SyntaxTree\statements.cs" />
+    <Compile Include="SyntaxTree\Statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
-    <Compile Include="Driver\Program.cs" />
-    <Compile Include="ObsoleteParser\Declarations.cs" />
-    <Compile Include="ObsoleteParser\ParserEnvironment.cs" />
-    <Compile Include="ObsoleteParser\Expressions.cs" />
-    <Compile Include="ObsoleteParser\ExternalDefinitions.cs" />
-    <Compile Include="ObsoleteParser\Parser.cs" />
-    <Compile Include="ObsoleteParser\Statements.cs" />
-    <Compile Include="Scanner\char.cs" />
-    <Compile Include="Scanner\float.cs" />
-    <Compile Include="Scanner\fsa.cs" />
-    <Compile Include="Scanner\identifier.cs" />
-    <Compile Include="Scanner\int.cs" />
-    <Compile Include="Scanner\keyword.cs" />
-    <Compile Include="Scanner\operator.cs" />
-    <Compile Include="Scanner\scanner.cs" />
-    <Compile Include="Scanner\string.cs" />
-    <Compile Include="Scanner\strtable.cs" />
-    <Compile Include="Scanner\tokens.cs" />
-    <Compile Include="Scanner\utils.cs" />
-    <Compile Include="AST\UnaryOperators.cs" />
-    <Compile Include="AST\Declarations.cs" />
-    <Compile Include="AST\StmtVisitor.cs" />
-    <Compile Include="Parser\ParserUtils.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="Scanner\FSAGraphs\README.md" />
+    <None Include="packages.config" />
     <None Include="Scanner\FSAGraphs\char.dot" />
-    <None Include="Scanner\FSAGraphs\char.svg" />
     <None Include="Scanner\FSAGraphs\constchar.dot" />
-    <None Include="Scanner\FSAGraphs\constchar.svg" />
     <None Include="Scanner\FSAGraphs\draw_fsas.py" />
     <None Include="Scanner\FSAGraphs\float.dot" />
-    <None Include="Scanner\FSAGraphs\float.svg" />
     <None Include="Scanner\FSAGraphs\identifier.dot" />
-    <None Include="Scanner\FSAGraphs\identifier.svg" />
     <None Include="Scanner\FSAGraphs\int.dot" />
-    <None Include="Scanner\FSAGraphs\int.svg" />
     <None Include="Scanner\FSAGraphs\newline.dot" />
     <None Include="Scanner\FSAGraphs\operator.dot" />
-    <None Include="Scanner\FSAGraphs\operator.svg" />
+    <None Include="Scanner\FSAGraphs\README.md" />
     <None Include="Scanner\FSAGraphs\space.dot" />
-    <None Include="Scanner\FSAGraphs\space.svg" />
     <None Include="Scanner\FSAGraphs\string.dot" />
-    <None Include="Scanner\FSAGraphs\string.svg" />
     <None Include="TestPrograms\clean_all.py" />
-    <None Include="TestPrograms\FloatCalculation.c" />
-    <None Include="TestPrograms\FunctionPointer.c" />
     <None Include="TestPrograms\test_all.py" />
-    <None Include="TestPrograms\ExternFunction.c" />
-    <None Include="TestPrograms\IfElseStmt.c" />
-    <None Include="TestPrograms\StaticFunction.c" />
-    <None Include="TestPrograms\StaticObject.c" />
-    <None Include="TestPrograms\SwitchStmt.c" />
-    <None Include="TestPrograms\WeiredSwitch.c" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Scanner\FSAGraphs\char.svg" />
+    <Content Include="Scanner\FSAGraphs\constchar.svg" />
+    <Content Include="Scanner\FSAGraphs\float.svg" />
+    <Content Include="Scanner\FSAGraphs\identifier.svg" />
+    <Content Include="Scanner\FSAGraphs\int.svg" />
+    <Content Include="Scanner\FSAGraphs\operator.svg" />
+    <Content Include="Scanner\FSAGraphs\space.svg" />
+    <Content Include="Scanner\FSAGraphs\string.svg" />
+    <Content Include="TestPrograms\ExternFunction.c" />
+    <Content Include="TestPrograms\FloatCalculation.c" />
+    <Content Include="TestPrograms\FunctionPointer.c" />
     <Content Include="TestPrograms\Goto.c" />
+    <Content Include="TestPrograms\IfElseStmt.c" />
     <Content Include="TestPrograms\LinkedList.c" />
+    <Content Include="TestPrograms\StaticFunction.c" />
+    <Content Include="TestPrograms\StaticObject.c" />
     <Content Include="TestPrograms\StructReturn.c" />
+    <Content Include="TestPrograms\SwitchStmt.c" />
+    <Content Include="TestPrograms\WeiredSwitch.c" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
 </Project>

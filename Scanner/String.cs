@@ -3,15 +3,13 @@
 // String literal
 // --------------
 public class TokenString : Token {
-    public TokenString(String _val, Int32 _idx, String _raw)
+    public TokenString(String _val, String _raw)
         : base(TokenType.STRING) {
         val = _val;
-        idx = _idx;
         raw = _raw;
     }
     public readonly String raw;
     public readonly String val;
-    public readonly Int32 idx;
 
     public override String ToString() {
         return type.ToString() + ": " + "\"" + raw + "\"" + "\n\"" + val + "\"";
@@ -60,12 +58,7 @@ public class FSAString : FSA {
     }
 
     public override sealed Token RetrieveToken() {
-        Int32 idx;
-        if ((idx = StringTable.entrys.FindIndex(x => x == raw)) == -1) {
-            StringTable.entrys.Add(raw);
-            idx = StringTable.entrys.Count - 1;
-        }
-        return new TokenString(val, idx, raw);
+        return new TokenString(val, raw);
     }
 
     public override sealed void ReadChar(Char ch) {
