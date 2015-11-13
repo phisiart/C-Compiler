@@ -23,7 +23,7 @@ namespace SyntaxTree {
         public ImmutableList<InitDeclr> InitDeclrs { get; }
 
         [SemantMethod]
-        public ISemantReturn<ImmutableList<Tuple<AST.Env, AST.Decln>>> GetDeclns(AST.Env env) {
+        public ISemantReturn<ImmutableList<Tuple<Env, AST.Decln>>> GetDeclns(Env env) {
             var storageClass = this.DeclnSpecs.GetStorageClass();
             var baseType = Semant(this.DeclnSpecs.GetExprType, ref env);
 
@@ -35,23 +35,23 @@ namespace SyntaxTree {
                     var name = initDeclr.GetName();
 
                     // Add the new symbol into the environment.
-                    AST.Env.EntryKind kind;
+                    Env.EntryKind kind;
                     switch (storageClass) {
-                        case AST.Decln.StorageClass.AUTO:
+                        case StorageClass.AUTO:
                             if (env.IsGlobal()) {
-                                kind = AST.Env.EntryKind.GLOBAL;
+                                kind = Env.EntryKind.GLOBAL;
                             } else {
-                                kind = AST.Env.EntryKind.STACK;
+                                kind = Env.EntryKind.STACK;
                             }
                             break;
-                        case AST.Decln.StorageClass.EXTERN:
-                            kind = AST.Env.EntryKind.GLOBAL;
+                        case StorageClass.EXTERN:
+                            kind = Env.EntryKind.GLOBAL;
                             break;
-                        case AST.Decln.StorageClass.STATIC:
-                            kind = AST.Env.EntryKind.GLOBAL;
+                        case StorageClass.STATIC:
+                            kind = Env.EntryKind.GLOBAL;
                             break;
-                        case AST.Decln.StorageClass.TYPEDEF:
-                            kind = AST.Env.EntryKind.TYPEDEF;
+                        case StorageClass.TYPEDEF:
+                            kind = Env.EntryKind.TYPEDEF;
                             break;
                         default:
                             throw new InvalidOperationException();
@@ -66,9 +66,9 @@ namespace SyntaxTree {
         }
 
         [SemantMethod]
-        public ISemantReturn<ImmutableList<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
+        public ISemantReturn<ImmutableList<Tuple<Env, ExternDecln>>> GetExternDecln(Env env) {
             var declns = Semant(GetDeclns, ref env);
-            var externDeclns = declns.ConvertAll(_ => Tuple.Create(_.Item1, _.Item2 as AST.ExternDecln));
+            var externDeclns = declns.ConvertAll(_ => Tuple.Create(_.Item1, _.Item2 as ExternDecln));
             return SemantReturn.Create(env, externDeclns);
         }
     }
@@ -97,7 +97,7 @@ namespace SyntaxTree {
         public ImmutableList<StructDeclr> StructDeclrs { get; }
 
         [SemantMethod]
-        public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetMemberDeclns(AST.Env env) {
+        public ISemantReturn<ImmutableList<Tuple<Option<String>, ExprType>>> GetMemberDeclns(Env env) {
             // Semant specifier-qualifier-list.
             var baseType = Semant(this.SpecQualList.GetExprType, ref env);
 
@@ -145,7 +145,7 @@ namespace SyntaxTree {
         public ParamDeclr ParamDeclr { get; }
 
         [SemantMethod]
-        public ISemantReturn<AST.ExprType> GetParamType(AST.Env env) {
+        public ISemantReturn<ExprType> GetParamType(Env env) {
             var baseType = Semant(this.DeclnSpecs.GetExprType, ref env);
             var type = Semant(this.ParamDeclr.DecorateType, baseType, ref env);
             return SemantReturn.Create(env, type);
@@ -169,7 +169,7 @@ namespace SyntaxTree {
         public AbstractDeclr AbstractDeclr { get; }
 
         [SemantMethod]
-        public ISemantReturn<AST.ExprType> GetExprType(AST.Env env) {
+        public ISemantReturn<ExprType> GetExprType(Env env) {
             var baseType = Semant(this.SpecQualList.GetExprType, ref env);
             var type = Semant(this.AbstractDeclr.DecorateType, baseType, ref env);
             return SemantReturn.Create(env, type);

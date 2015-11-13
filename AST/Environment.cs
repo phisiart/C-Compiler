@@ -331,11 +331,7 @@ namespace AST {
         // output: Int32
         // return the current stack size
         // 
-        public Int32 StackSize {
-            get {
-                return -this.env_scopes.Peek().esp_pos;
-            }
-        }
+        public Int32 StackSize => -this.env_scopes.Peek().esp_pos;
 
         public Option<Entry> Find(String name) {
             Entry entry = null;

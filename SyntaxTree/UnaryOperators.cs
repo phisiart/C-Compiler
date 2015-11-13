@@ -22,7 +22,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsScalar) {
+            if (!expr.Type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -42,7 +42,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsScalar) {
+            if (!expr.Type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -85,7 +85,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
-            return new AST.ConstULong((UInt32)expr.type.SizeOf, env);
+            return new AST.ConstULong((UInt32)expr.Type.SizeOf, env);
         }
     }
 
@@ -102,7 +102,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsScalar) {
+            if (!expr.Type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -123,7 +123,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsScalar) {
+            if (!expr.Type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar.");
             }
 
@@ -162,11 +162,11 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (expr.type.kind != AST.ExprType.Kind.POINTER) {
+            if (expr.Type.kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Expected a pointer.");
             }
 
-            AST.ExprType type = ((AST.TPointer)expr.type).ref_t;
+            AST.ExprType type = ((AST.TPointer)expr.Type).ref_t;
             if (type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).IsComplete) {
                 throw new InvalidOperationException("Cannot dereference incomplete type.");
             }
@@ -187,7 +187,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsArith) {
+            if (!expr.Type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
@@ -207,16 +207,16 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsArith) {
+            if (!expr.Type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
-            if (expr.type.IsIntegral) {
+            if (expr.Type.IsIntegral) {
                 expr = AST.TypeCast.IntegralPromotion(expr).Item1;
             }
 
             if (expr.IsConstExpr) {
-                switch (expr.type.kind) {
+                switch (expr.Type.kind) {
                     case AST.ExprType.Kind.LONG:
                         return new AST.ConstLong(-((AST.ConstLong)expr).value, env);
 
@@ -234,7 +234,7 @@ namespace SyntaxTree {
                 }
             }
 
-            return new AST.Negative(expr, expr.type);
+            return new AST.Negative(expr, expr.Type);
         }
     }
 
@@ -250,14 +250,14 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsIntegral) {
+            if (!expr.Type.IsIntegral) {
                 throw new InvalidOperationException("Expected integral type.");
             }
 
             expr = AST.TypeCast.IntegralPromotion(expr).Item1;
 
             if (expr.IsConstExpr) {
-                switch (expr.type.kind) {
+                switch (expr.Type.kind) {
                     case AST.ExprType.Kind.LONG:
                         return new AST.ConstLong(~((AST.ConstLong)expr).value, env);
                     case AST.ExprType.Kind.ULONG:
@@ -267,7 +267,7 @@ namespace SyntaxTree {
                 }
             }
 
-            return new AST.BitwiseNot(expr, expr.type);
+            return new AST.BitwiseNot(expr, expr.Type);
         }
     }
 
@@ -284,17 +284,17 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             var expr = this.Expr.GetExpr(env);
 
-            if (!expr.type.IsArith) {
+            if (!expr.Type.IsArith) {
                 throw new InvalidOperationException("Expected arithmetic type.");
             }
 
-            if (expr.type.IsIntegral) {
+            if (expr.Type.IsIntegral) {
                 expr = AST.TypeCast.IntegralPromotion(expr).Item1;
             }
 
             if (expr.IsConstExpr) {
                 Boolean isZero;
-                switch (expr.type.kind) {
+                switch (expr.Type.kind) {
                     case AST.ExprType.Kind.LONG:
                         isZero = ((AST.ConstLong)expr).value == 0;
                         break;
@@ -313,7 +313,7 @@ namespace SyntaxTree {
                 return new AST.ConstLong(Convert.ToInt32(isZero), env);
             }
 
-            return new AST.LogicalNot(expr, new AST.TLong(expr.type.is_const, expr.type.is_volatile));
+            return new AST.LogicalNot(expr, new AST.TLong(expr.Type.is_const, expr.Type.is_volatile));
         }
     }
 

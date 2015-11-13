@@ -1,10 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using CodeGeneration;
+using LexicalAnalysis;
 using NUnit.Framework;
 using Parsing;
 
-namespace CCompiler.CompilerTests {
+namespace CompilerTests {
     [TestFixture]
     public class CompilerTests {
 

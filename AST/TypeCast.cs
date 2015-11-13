@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using CodeGeneration;
 
 namespace AST {
     public class TypeCast : Expr {
@@ -98,7 +99,7 @@ namespace AST {
         ///     char, uchar, short, ushort, long, ulong, float double
         /// </summary>
         public static Expr SignedIntegralToArith(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind from = expr.Type.kind;
             ExprType.Kind to = type.kind;
 
             Env env = expr.Env;
@@ -240,7 +241,7 @@ namespace AST {
         /// However, I just treat unsigned long as long.
         /// </remarks>
         public static Expr UnsignedIntegralToArith(Expr expr, ExprType type) {
-            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind from = expr.Type.kind;
             ExprType.Kind to = type.kind;
 
             Env env = expr.Env;
@@ -366,7 +367,7 @@ namespace AST {
         /// </remarks>
         public static Expr FloatToArith(Expr expr, ExprType type) {
 
-            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind from = expr.Type.kind;
             ExprType.Kind to = type.kind;
             Env env = expr.Env;
 
@@ -471,7 +472,7 @@ namespace AST {
         ///     pointer, integral
         /// </summary>
         public static Expr FromPointer(Expr expr, ExprType type, Env env) {
-            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind from = expr.Type.kind;
             ExprType.Kind to = type.kind;
 
             if (from != ExprType.Kind.POINTER) {
@@ -507,7 +508,7 @@ namespace AST {
         ///     pointer
         /// </summary>
         public static Expr ToPointer(Expr expr, ExprType type, Env env) {
-            ExprType.Kind from = expr.type.kind;
+            ExprType.Kind from = expr.Type.kind;
             ExprType.Kind to = type.kind;
 
             if (to != ExprType.Kind.POINTER) {
@@ -521,11 +522,11 @@ namespace AST {
                 return new TypeCast(Kind.NOP, expr, type, env);
             }
 
-            if (expr.type.IsIntegral) {
+            if (expr.Type.IsIntegral) {
                 // if we are casting from an integral
 
                 // whatever integral -> ulong
-                switch (expr.type.kind) {
+                switch (expr.Type.kind) {
                     case ExprType.Kind.CHAR:
                     case ExprType.Kind.SHORT:
                     case ExprType.Kind.LONG:
@@ -546,8 +547,8 @@ namespace AST {
                 }
                 return new TypeCast(Kind.NOP, expr, type, env);
             }
-            if (expr.type is TFunction) {
-                if (!expr.type.EqualType((type as TPointer).ref_t)) {
+            if (expr.Type is TFunction) {
+                if (!expr.Type.EqualType((type as TPointer).ref_t)) {
                     throw new InvalidOperationException("Casting from an incompatible function.");
                 }
 
@@ -555,7 +556,7 @@ namespace AST {
                 return new TypeCast(Kind.NOP, expr, type, env);
 
             }
-            if (expr.type is TArray) {
+            if (expr.Type is TArray) {
 
                 // TODO: allow any pointer type to cast to?
                 return new TypeCast(Kind.NOP, expr, type, env);
@@ -573,12 +574,12 @@ namespace AST {
         public static Expr MakeCast(Expr expr, ExprType type, Env env) {
 
             // if two types are equal, return Expr
-            if (EqualType(expr.type, type)) {
+            if (EqualType(expr.Type, type)) {
                 return expr;
             }
 
             // from pointer
-            if (expr.type.kind == ExprType.Kind.POINTER) {
+            if (expr.Type.kind == ExprType.Kind.POINTER) {
                 return FromPointer(expr, type, env);
             }
 
@@ -587,7 +588,7 @@ namespace AST {
                 return ToPointer(expr, type, env);
             }
 
-            switch (expr.type.kind) {
+            switch (expr.Type.kind) {
                 // from signed integral
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.SHORT:
@@ -629,8 +630,8 @@ namespace AST {
         // possible return type: double, float, ulong, long
         // 
         public static Tuple<Expr, Expr, ExprType.Kind> UsualArithmeticConversion(Expr e1, Expr e2) {
-            ExprType t1 = e1.type;
-            ExprType t2 = e2.type;
+            ExprType t1 = e1.Type;
+            ExprType t2 = e2.Type;
 
             Boolean c1 = t1.is_const;
             Boolean v1 = t1.is_volatile;
@@ -665,30 +666,30 @@ namespace AST {
         // possible return type: double, float, ulong, long
         // 
         public static Tuple<Expr, Expr, ExprType.Kind> UsualScalarConversion(Expr e1, Expr e2) {
-            if (e1.type.kind == ExprType.Kind.POINTER) {
-                e1 = FromPointer(e1, new TULong(e1.type.is_const, e1.type.is_volatile), e2.Env);
+            if (e1.Type.kind == ExprType.Kind.POINTER) {
+                e1 = FromPointer(e1, new TULong(e1.Type.is_const, e1.Type.is_volatile), e2.Env);
             }
-            if (e2.type.kind == ExprType.Kind.POINTER) {
-                e2 = FromPointer(e2, new TULong(e2.type.is_const, e2.type.is_volatile), e2.Env);
+            if (e2.Type.kind == ExprType.Kind.POINTER) {
+                e2 = FromPointer(e2, new TULong(e2.Type.is_const, e2.Type.is_volatile), e2.Env);
             }
             return UsualArithmeticConversion(e1, e2);
         }
 
         public static Tuple<Expr, ExprType.Kind> IntegralPromotion(Expr expr) {
-            if (!expr.type.IsIntegral) {
+            if (!expr.Type.IsIntegral) {
                 throw new InvalidProgramException();
             }
 
-            switch (expr.type.kind) {
+            switch (expr.Type.kind) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.SHORT:
                 case ExprType.Kind.LONG:
-                    return Tuple.Create(MakeCast(expr, new TLong(expr.type.is_const, expr.type.is_volatile)), ExprType.Kind.LONG);
+                    return Tuple.Create(MakeCast(expr, new TLong(expr.Type.is_const, expr.Type.is_volatile)), ExprType.Kind.LONG);
 
                 case ExprType.Kind.UCHAR:
                 case ExprType.Kind.USHORT:
                 case ExprType.Kind.ULONG:
-                    return Tuple.Create(MakeCast(expr, new TULong(expr.type.is_const, expr.type.is_volatile)), ExprType.Kind.ULONG);
+                    return Tuple.Create(MakeCast(expr, new TULong(expr.Type.is_const, expr.Type.is_volatile)), ExprType.Kind.ULONG);
 
                 case ExprType.Kind.VOID:
                 case ExprType.Kind.FLOAT:

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+using CodeGeneration;
 
 namespace AST {
 
     public abstract class IncDecExpr : Expr {
-        public IncDecExpr(Expr expr)
-            : base(expr.type) {
-            Debug.Assert(expr.type.IsScalar);
+        protected IncDecExpr(Expr expr)
+            : base(expr.Type) {
+            Debug.Assert(expr.Type.IsScalar);
             this.expr = expr;
         }
         public readonly Expr expr;
@@ -163,7 +164,7 @@ namespace AST {
                     // | ..... | <- %esp
                     // +-------+
                     // 
-                    switch (this.expr.type.kind) {
+                    switch (this.expr.Type.kind) {
                         case ExprType.Kind.CHAR:
                         case ExprType.Kind.UCHAR:
                             CalcAndSaveByte(state);
@@ -237,7 +238,7 @@ namespace AST {
                     // | Expr or (epxr +- 1) | <- %st(0)
                     // +---------------------+
                     // 
-                    switch (this.expr.type.kind) {
+                    switch (this.expr.Type.kind) {
                         case ExprType.Kind.FLOAT:
                             CalcAndSaveFloat(state);
                             return Reg.ST0;
@@ -262,7 +263,7 @@ namespace AST {
     /// 
     /// If Expr is an array, it is converted to a pointer in semantic analysis.
     /// </summary>
-    public class PostIncrement : IncDecExpr {
+    public sealed class PostIncrement : IncDecExpr {
         public PostIncrement(Expr expr)
             : base(expr) { }
 
@@ -307,7 +308,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(this.expr.type.SizeOf, Reg.EBX);
+            state.ADDL(this.expr.Type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -374,7 +375,7 @@ namespace AST {
     /// <summary>
     /// Expr--: must be a scalar
     /// </summary>
-    public class PostDecrement : IncDecExpr {
+    public sealed class PostDecrement : IncDecExpr {
         public PostDecrement(Expr expr)
             : base(expr) { }
 
@@ -419,7 +420,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(this.expr.type.SizeOf, Reg.EBX);
+            state.SUBL(this.expr.Type.SizeOf, Reg.EBX);
             state.MOVL(Reg.EBX, 0, Reg.ECX);
         }
 
@@ -486,7 +487,7 @@ namespace AST {
     /// <summary>
     /// ++Expr: must be a scalar
     /// </summary>
-    public class PreIncrement : IncDecExpr {
+    public sealed class PreIncrement : IncDecExpr {
         public PreIncrement(Expr expr)
             : base(expr) { }
 
@@ -531,7 +532,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(this.expr.type.SizeOf, Reg.EAX);
+            state.ADDL(this.expr.Type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 
@@ -598,7 +599,7 @@ namespace AST {
     /// <summary>
     /// --Expr: must be a scalar
     /// </summary>
-    public class PreDecrement : IncDecExpr {
+    public sealed class PreDecrement : IncDecExpr {
         public PreDecrement(Expr expr)
             : base(expr) { }
 
@@ -643,7 +644,7 @@ namespace AST {
         }
 
         public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(this.expr.type.SizeOf, Reg.EAX);
+            state.SUBL(this.expr.Type.SizeOf, Reg.EAX);
             state.MOVL(Reg.EAX, 0, Reg.ECX);
         }
 
@@ -708,7 +709,7 @@ namespace AST {
     }
 
     public abstract class UnaryArithOp : Expr {
-        public UnaryArithOp(Expr expr, ExprType type)
+        protected UnaryArithOp(Expr expr, ExprType type)
             : base(type) {
             this.expr = expr;
         }
@@ -725,7 +726,7 @@ namespace AST {
     /// 3) float
     /// 4) double
     /// </summary>
-    public class Negative : UnaryArithOp {
+    public sealed class Negative : UnaryArithOp {
         public Negative(Expr expr, ExprType type)
             : base(expr, type) { }
 
@@ -753,7 +754,7 @@ namespace AST {
     /// 1) long
     /// 2) ulong
     /// </summary>
-    public class BitwiseNot : UnaryArithOp {
+    public sealed class BitwiseNot : UnaryArithOp {
         public BitwiseNot(Expr expr, ExprType type)
             : base(expr, type) { }
 
@@ -778,7 +779,7 @@ namespace AST {
     /// 
     /// Pointers are converted to ulongs.
     /// </summary>
-    public class LogicalNot : UnaryArithOp {
+    public sealed class LogicalNot : UnaryArithOp {
         public LogicalNot(Expr expr, ExprType type)
             : base(expr, type) { }
 

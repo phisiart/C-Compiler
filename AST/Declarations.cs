@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CodeGeneration;
 
 namespace AST {
+    public enum StorageClass {
+        AUTO,
+        STATIC,
+        EXTERN,
+        TYPEDEF
+    }
 
-    public class Decln : ExternDecln {
-        public enum StorageClass {
-            AUTO,
-            STATIC,
-            EXTERN,
-            TYPEDEF
-        }
-
+    public sealed class Decln : ExternDecln {
         public Decln(String name, StorageClass scs, ExprType type, Option<Initr> initr) {
             this.name = name;
             this.scs = scs;
@@ -76,7 +76,7 @@ namespace AST {
                             throw new InvalidOperationException("Cannot initialize with non-const expression.");
                         }
 
-                        switch (expr.type.kind) {
+                        switch (expr.Type.kind) {
                             // TODO: without const char/short, how do I initialize?
                             case ExprType.Kind.CHAR:
                             case ExprType.Kind.UCHAR:
@@ -113,7 +113,7 @@ namespace AST {
                                 throw new InvalidProgramException();
                         }
 
-                        last = offset + expr.type.SizeOf;
+                        last = offset + expr.Type.SizeOf;
                     });
 
                 } else {
@@ -167,7 +167,7 @@ namespace AST {
                 Initr initr = this.initr.Value;
                 initr.Iterate(this.type, (Int32 offset, Expr expr) => {
                     Reg ret = expr.CGenValue(env, state);
-                    switch (expr.type.kind) {
+                    switch (expr.Type.kind) {
                         case ExprType.Kind.CHAR:
                         case ExprType.Kind.UCHAR:
                             state.MOVB(Reg.EAX, pos + offset, Reg.EBP);
@@ -195,13 +195,13 @@ namespace AST {
                         case ExprType.Kind.STRUCT_OR_UNION:
                             state.MOVL(Reg.EAX, Reg.ESI);
                             state.LEA(pos + offset, Reg.EBP, Reg.EDI);
-                            state.MOVL(expr.type.SizeOf, Reg.ECX);
+                            state.MOVL(expr.Type.SizeOf, Reg.ECX);
                             state.CGenMemCpy();
                             break;
 
                         case ExprType.Kind.ARRAY:
                         case ExprType.Kind.FUNCTION:
-                            throw new InvalidProgramException($"How could a {expr.type.kind} be in a init list?");
+                            throw new InvalidProgramException($"How could a {expr.Type.kind} be in a init list?");
 
                         default:
                             throw new InvalidProgramException();
@@ -219,6 +219,8 @@ namespace AST {
         private readonly ExprType type;
         private readonly Option<Initr> initr;
     }
+
+    
 
     /// <summary>
     /// 1. Scalar: an expression, optionally enclosed in braces.
@@ -274,13 +276,13 @@ namespace AST {
         public override Kind kind => Kind.EXPR;
 
         public override Initr ConformType(MemberIterator iter) {
-            iter.Locate(this.expr.type);
+            iter.Locate(this.expr.Type);
             Expr expr = TypeCast.MakeCast(this.expr, iter.CurType);
             return new InitExpr(expr);
         }
 
         public override void Iterate(MemberIterator iter, Action<Int32, Expr> action) {
-            iter.Locate(this.expr.type);
+            iter.Locate(this.expr.Type);
             Int32 offset = iter.CurOffset;
             Expr expr = this.expr;
             action(offset, expr);

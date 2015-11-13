@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace driver {
+namespace Driver {
     class Program {
         static void Main(String[] args) {
             if (!args.Any()) {

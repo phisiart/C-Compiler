@@ -149,7 +149,7 @@ namespace SyntaxTree {
             AST.Expr cond = this.Cond.GetExpr(env);
             env = cond.Env;
 
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -189,7 +189,7 @@ namespace SyntaxTree {
             AST.Expr cond = this.Cond.GetExpr(env);
             env = cond.Env;
 
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -231,7 +231,7 @@ namespace SyntaxTree {
                 env = cond.Value.Env;
             }
 
-            if (cond.IsSome && !cond.Value.type.IsScalar) {
+            if (cond.IsSome && !cond.Value.Type.IsScalar) {
                 throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
             }
 
@@ -294,7 +294,7 @@ namespace SyntaxTree {
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             AST.Expr cond = this.Cond.GetExpr(env);
 
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidOperationException("Error: expected scalar type");
             }
 
@@ -329,7 +329,7 @@ namespace SyntaxTree {
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             AST.Expr cond = this.Cond.GetExpr(env);
 
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidOperationException("Error: expected scalar type");
             }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using CodeGeneration;
 
 namespace AST {
 
@@ -65,7 +66,7 @@ namespace AST {
         }
         public readonly UInt32 value;
 
-        public override String ToString() => $"({this.type} *)0x{this.value.ToString("X8")}";
+        public override String ToString() => $"({this.Type} *)0x{this.value.ToString("X8")}";
 
         public override Reg CGenValue(Env env, CGenState state) {
             state.MOVL((Int32) this.value, Reg.EAX);

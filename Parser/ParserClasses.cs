@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using LexicalAnalysis;
 
 namespace Parsing {
     public class ParserThenParser<R1, R2> : IParser<Tuple<R2, R1>> {

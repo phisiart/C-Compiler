@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CodeGeneration;
 
 namespace AST {
     // Expr 
@@ -18,7 +19,7 @@ namespace AST {
 
     public abstract class Expr {
         protected Expr(ExprType type) {
-            this.type = type;
+            this.Type = type;
         }
         public virtual Boolean IsConstExpr => false;
         public abstract Env Env { get; }
@@ -36,7 +37,7 @@ namespace AST {
         public virtual void CGenPush(Env env, CGenState state) {
             Reg ret = CGenValue(env, state);
 
-            switch (this.type.kind) {
+            switch (this.Type.kind) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.UCHAR:
                 case ExprType.Kind.SHORT:
@@ -80,7 +81,7 @@ namespace AST {
 
                 case ExprType.Kind.INCOMPLETE_ARRAY:
                 case ExprType.Kind.VOID:
-                    throw new InvalidProgramException(this.type.kind + " can't be pushed onto the stack");
+                    throw new InvalidProgramException(this.Type.kind + " can't be pushed onto the stack");
 
                 case ExprType.Kind.STRUCT_OR_UNION:
                     throw new NotImplementedException();
@@ -88,7 +89,7 @@ namespace AST {
 
         }
 
-        public readonly ExprType type;
+        public ExprType Type { get; }
     }
 
     public class Variable : Expr {
@@ -141,7 +142,7 @@ namespace AST {
                 case Env.EntryKind.STACK:
                     // 2. If the variable is a function argument or a local variable,
                     //    the address would be offset(%ebp).
-                    switch (this.type.kind) {
+                    switch (this.Type.kind) {
                         case ExprType.Kind.LONG:
                         case ExprType.Kind.ULONG:
                         case ExprType.Kind.POINTER:
@@ -209,11 +210,11 @@ namespace AST {
                             return Reg.EAX;
 
                         default:
-                            throw new InvalidOperationException($"Cannot get value of {this.type.kind}");
+                            throw new InvalidOperationException($"Cannot get value of {this.Type.kind}");
                     }
 
                 case Env.EntryKind.GLOBAL:
-                    switch (this.type.kind) {
+                    switch (this.Type.kind) {
                         case ExprType.Kind.CHAR:
                             state.MOVSBL(this.name, Reg.EAX);
                             return Reg.EAX;
@@ -269,7 +270,7 @@ namespace AST {
                             return Reg.EAX;
 
                         default:
-                            throw new InvalidProgramException("cannot get the value of a " + this.type.kind);
+                            throw new InvalidProgramException("cannot get the value of a " + this.Type.kind);
                     }
 
                 case Env.EntryKind.TYPEDEF:
@@ -315,7 +316,7 @@ namespace AST {
             Int32 pos = state.CGenPushLong(Reg.EAX);
 
             Reg ret = this.rvalue.CGenValue(env, state);
-            switch (this.lvalue.type.kind) {
+            switch (this.lvalue.Type.kind) {
                 case ExprType.Kind.CHAR:
                 case ExprType.Kind.UCHAR:
                     // pop %ebx
@@ -379,7 +380,7 @@ namespace AST {
                     state.MOVL(Reg.EAX, Reg.ESI);
 
                     // %ecx = nbytes
-                    state.MOVL(this.lvalue.type.SizeOf, Reg.ECX);
+                    state.MOVL(this.lvalue.Type.SizeOf, Reg.ECX);
 
                     state.CGenMemCpy();
 
@@ -393,7 +394,7 @@ namespace AST {
                 case ExprType.Kind.ARRAY:
                 case ExprType.Kind.INCOMPLETE_ARRAY:
                 default:
-                    throw new InvalidProgramException("cannot assign to a " + this.type.kind);
+                    throw new InvalidProgramException("cannot assign to a " + this.Type.kind);
             }
         }
     }
@@ -522,16 +523,16 @@ namespace AST {
             state.NEWLINE();
             state.COMMENT($"Before pushing the arguments, stack size = {state.StackSize}.");
 
-            var r_pack = Utils.PackArguments(this.args.Select(_ => _.type).ToList());
+            var r_pack = Utils.PackArguments(this.args.Select(_ => _.Type).ToList());
             Int32 pack_size = r_pack.Item1;
             IReadOnlyList<Int32> offsets = r_pack.Item2;
 
-            if (this.type is TStructOrUnion) {
+            if (this.Type is TStructOrUnion) {
                 // If the function returns a struct
 
                 // Allocate space for return value.
                 state.COMMENT("Allocate space for returning stack.");
-                state.CGenExpandStackWithAlignment(this.type.SizeOf, this.type.Alignment);
+                state.CGenExpandStackWithAlignment(this.Type.SizeOf, this.Type.Alignment);
 
                 // Temporarily store the address in %eax.
                 state.MOVL(Reg.ESP, Reg.EAX);
@@ -548,7 +549,7 @@ namespace AST {
             state.NEWLINE();
 
             // Store the address as the first argument.
-            if (this.type is TStructOrUnion) {
+            if (this.Type is TStructOrUnion) {
                 state.COMMENT("Putting extra argument for struct return address.");
                 state.MOVL(Reg.EAX, 0, Reg.ESP);
                 state.NEWLINE();
@@ -565,7 +566,7 @@ namespace AST {
                 state.COMMENT($"Argument {i} is at {pos}");
 
                 Reg ret = arg.CGenValue(env, state);
-                switch (arg.type.kind) {
+                switch (arg.Type.kind) {
                     case ExprType.Kind.ARRAY:
                     case ExprType.Kind.CHAR:
                     case ExprType.Kind.UCHAR:
@@ -600,7 +601,7 @@ namespace AST {
                         }
                         state.MOVL(Reg.EAX, Reg.ESI);
                         state.LEA(pos, Reg.EBP, Reg.EDI);
-                        state.MOVL(arg.type.SizeOf, Reg.ECX);
+                        state.MOVL(arg.Type.SizeOf, Reg.ECX);
                         state.CGenMemCpy();
                         break;
 
@@ -617,9 +618,9 @@ namespace AST {
             state.CGenForceStackSizeTo(-header_base);
 
             // Get function address
-            if (this.func.type is TFunction) {
+            if (this.func.Type is TFunction) {
                 this.func.CGenAddress(env, state);
-            } else if (this.func.type is TPointer) {
+            } else if (this.func.Type is TPointer) {
                 this.func.CGenValue(env, state);
             } else {
                 throw new InvalidProgramException();
@@ -630,7 +631,7 @@ namespace AST {
             state.COMMENT("Function returned.");
             state.NEWLINE();
 
-            if (this.type.kind == ExprType.Kind.FLOAT || this.type.kind == ExprType.Kind.DOUBLE) {
+            if (this.Type.kind == ExprType.Kind.FLOAT || this.Type.kind == ExprType.Kind.DOUBLE) {
                 return Reg.ST0;
             }
             return Reg.EAX;
@@ -657,21 +658,21 @@ namespace AST {
                 throw new InvalidProgramException();
             }
 
-            if (this.expr.type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+            if (this.expr.Type.kind != ExprType.Kind.STRUCT_OR_UNION) {
                 throw new InvalidProgramException();
             }
 
             // size of the struct or union
-            Int32 struct_size = this.expr.type.SizeOf;
+            Int32 struct_size = this.expr.Type.SizeOf;
 
             // offset inside the pack
-            Int32 attrib_offset = ((TStructOrUnion) this.expr.type)
+            Int32 attrib_offset = ((TStructOrUnion) this.expr.Type)
                         .Attribs
                         .First(_ => _.name == this.name)
                         .offset;
 
             // can't be a function designator.
-            switch (this.type.kind) {
+            switch (this.Type.kind) {
                 case ExprType.Kind.ARRAY:
                 case ExprType.Kind.STRUCT_OR_UNION:
                     state.ADDL(attrib_offset, Reg.EAX);
@@ -713,7 +714,7 @@ namespace AST {
         }
 
         public override void CGenAddress(Env env, CGenState state) {
-            if (this.expr.type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+            if (this.expr.Type.kind != ExprType.Kind.STRUCT_OR_UNION) {
                 throw new InvalidProgramException();
             }
 
@@ -721,7 +722,7 @@ namespace AST {
             this.expr.CGenAddress(env, state);
 
             // offset inside the pack
-            Int32 offset = ((TStructOrUnion) this.expr.type)
+            Int32 offset = ((TStructOrUnion) this.expr.Type)
                         .Attribs
                         .First(_ => _.name == this.name)
                         .offset;
@@ -735,7 +736,7 @@ namespace AST {
     /// </summary>
     public class Reference : Expr {
         public Reference(Expr expr)
-            : base(new TPointer(expr.type)) {
+            : base(new TPointer(expr.Type)) {
             this.expr = expr;
         }
         public readonly Expr expr;
@@ -767,11 +768,11 @@ namespace AST {
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }
-            if (this.expr.type.kind != ExprType.Kind.POINTER) {
+            if (this.expr.Type.kind != ExprType.Kind.POINTER) {
                 throw new InvalidProgramException();
             }
 
-            ExprType type = ((TPointer) this.expr.type).ref_t;
+            ExprType type = ((TPointer) this.expr.Type).ref_t;
             switch (type.kind) {
                 case ExprType.Kind.ARRAY:
                 case ExprType.Kind.FUNCTION:

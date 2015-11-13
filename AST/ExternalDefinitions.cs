@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CodeGeneration;
 
 namespace AST {
     public class TranslnUnit {
@@ -21,7 +22,7 @@ namespace AST {
     }
 
     public class FuncDef : ExternDecln {
-        public FuncDef(String name, Decln.StorageClass scs, TFunction type, Stmt stmt) {
+        public FuncDef(String name, StorageClass scs, TFunction type, Stmt stmt) {
             this.name = name;
             this.scs  = scs;
             this.type = type;
@@ -43,11 +44,11 @@ namespace AST {
             switch (entry.kind) {
             case Env.EntryKind.GLOBAL:
                 switch (this.scs) {
-                case Decln.StorageClass.AUTO:
-                case Decln.StorageClass.EXTERN:
+                case StorageClass.AUTO:
+                case StorageClass.EXTERN:
                     state.GLOBL(this.name);
                     break;
-                case Decln.StorageClass.STATIC:
+                case StorageClass.STATIC:
                     // static definition
                     break;
                 default:
@@ -74,7 +75,7 @@ namespace AST {
         }
 
         public readonly String      name;
-        public readonly Decln.StorageClass   scs;
+        public readonly StorageClass   scs;
         public readonly TFunction   type;
         public readonly Stmt        stmt;
     }

@@ -38,8 +38,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.type.is_const || right.type.is_const;
-            var isVolatile = left.type.is_volatile || right.type.is_volatile;
+            var isConst = left.Type.is_const || right.Type.is_const;
+            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -88,8 +88,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.type.is_const || right.type.is_const;
-            var isVolatile = left.type.is_volatile || right.type.is_volatile;
+            var isConst = left.Type.is_const || right.Type.is_const;
+            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -150,8 +150,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.type.is_const || right.type.is_const;
-            var isVolatile = left.type.is_volatile || right.type.is_volatile;
+            var isConst = left.Type.is_const || right.Type.is_const;
+            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -189,8 +189,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Multiplication: perform usual arithmetic conversion.
     /// </summary>
-    public class Multiply : BinaryArithmeticOp {
-        public Multiply(Expr left, Expr right)
+    public sealed class Multiply : BinaryArithmeticOp {
+        private Multiply(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Multiply(left, right);
 
@@ -206,8 +206,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Division: perform usual arithmetic conversion.
     /// </summary>
-    public class Divide : BinaryArithmeticOp {
-        public Divide(Expr left, Expr right)
+    public sealed class Divide : BinaryArithmeticOp {
+        private Divide(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Divide(left, right);
 
@@ -223,8 +223,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Modulo: only accepts integrals.
     /// </summary>
-    public class Modulo : BinaryIntegralOp {
-        public Modulo(Expr left, Expr right)
+    public sealed class Modulo : BinaryIntegralOp {
+        private Modulo(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Modulo(left, right);
 
@@ -243,8 +243,8 @@ namespace SyntaxTree {
     /// 2. one operand is a pointer, and the other is an integral
     /// 
     /// </summary>
-    public class Add : BinaryArithmeticOp {
-        public Add(Expr left, Expr right)
+    public sealed class Add : BinaryArithmeticOp {
+        private Add(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Add(left, right);
 
@@ -257,10 +257,10 @@ namespace SyntaxTree {
             new AST.Add(left, right, type);
 
         public AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset, Boolean order = true) {
-            if (ptr.type.kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.Type.kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException();
             }
-            if (offset.type.kind != AST.ExprType.Kind.LONG) {
+            if (offset.Type.kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException();
             }
 
@@ -268,24 +268,24 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 var baseValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleValue = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
+                Int32 scaleValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.type, env);
+                return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.Type, env);
             }
 
-            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env);
+            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env);
             var scaleFactor = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf, env),
-                new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, env),
+                new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
             );
-            var type = new AST.TLong(offset.type.is_const, offset.type.is_volatile);
+            var type = new AST.TLong(offset.Type.is_const, offset.Type.is_volatile);
             var add =
                 order
                 ? new AST.Add(baseAddress, scaleFactor, type)
                 : new AST.Add(scaleFactor, baseAddress, type);
 
-            return AST.TypeCast.ToPointer(add, ptr.type, env);
+            return AST.TypeCast.ToPointer(add, ptr.Type, env);
         }
 
         public override AST.Expr GetExpr(AST.Env env) {
@@ -294,29 +294,29 @@ namespace SyntaxTree {
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
 
-            if (left.type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.type as AST.TArray).elem_type, left.type.is_const, left.type.is_volatile));
+            if (left.Type is AST.TArray) {
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
             }
 
-            if (right.type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.type as AST.TArray).elem_type, right.type.is_const, right.type.is_volatile));
+            if (right.Type is AST.TArray) {
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
             }
 
             // 2. ptr + int
-            if (left.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!right.type.IsIntegral) {
+            if (left.Type.kind == AST.ExprType.Kind.POINTER) {
+                if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.type.is_const, right.type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
                 return GetPointerAddition(left, right);
             }
 
             // 3. int + ptr
-            if (right.type.kind == AST.ExprType.Kind.POINTER) {
-                if (!left.type.IsIntegral) {
+            if (right.Type.kind == AST.ExprType.Kind.POINTER) {
+                if (!left.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.type.is_const, left.type.is_volatile));
+                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.Type.is_const, left.Type.is_volatile));
                 return GetPointerAddition(right, left, false);
             }
 
@@ -334,8 +334,8 @@ namespace SyntaxTree {
     /// 2. pointer - integral
     /// 3. pointer - pointer
     /// </summary>
-    public class Sub : BinaryArithmeticOp {
-        public Sub(Expr left, Expr right)
+    public sealed class Sub : BinaryArithmeticOp {
+        private Sub(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Sub(left, right);
 
@@ -348,29 +348,29 @@ namespace SyntaxTree {
             new AST.Sub(left, right, type);
 
         public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.type.kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.Type.kind != AST.ExprType.Kind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.type.kind != AST.ExprType.Kind.LONG) {
+            if (offset.Type.kind != AST.ExprType.Kind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleFactorValue = ((AST.TPointer)(ptr.type)).ref_t.SizeOf;
+                Int32 scaleFactorValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
-                return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.type, offset.Env);
+                return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.Type, offset.Env);
             }
 
             return AST.TypeCast.ToPointer(new AST.Sub(
-                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.type.is_const, ptr.type.is_volatile), ptr.Env),
+                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.TPointer)(ptr.type)).ref_t.SizeOf, offset.Env),
-                        new AST.TLong(offset.type.is_const, offset.type.is_volatile)
+                        new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, offset.Env),
+                        new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
                     ),
-                    new AST.TLong(offset.type.is_const, offset.type.is_volatile)
-                ), ptr.type, offset.Env
+                    new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                ), ptr.Type, offset.Env
             );
         }
 
@@ -379,23 +379,23 @@ namespace SyntaxTree {
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
 
-            if (left.type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.type as AST.TArray).elem_type, left.type.is_const, left.type.is_volatile));
+            if (left.Type is AST.TArray) {
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
             }
 
-            if (right.type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.type as AST.TArray).elem_type, right.type.is_const, right.type.is_volatile));
+            if (right.Type is AST.TArray) {
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
             }
 
-            var isConst = left.type.is_const || right.type.is_const;
-            var isVolatile = left.type.is_volatile || right.type.is_volatile;
+            var isConst = left.Type.is_const || right.Type.is_const;
+            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
 
-            if (left.type.kind == AST.ExprType.Kind.POINTER) {
+            if (left.Type.kind == AST.ExprType.Kind.POINTER) {
 
                 // 1. ptr - ptr
-                if (right.type.kind == AST.ExprType.Kind.POINTER) {
-                    AST.TPointer leftType = (AST.TPointer)(left.type);
-                    AST.TPointer rightType = (AST.TPointer)(right.type);
+                if (right.Type.kind == AST.ExprType.Kind.POINTER) {
+                    AST.TPointer leftType = (AST.TPointer)(left.Type);
+                    AST.TPointer rightType = (AST.TPointer)(right.Type);
                     if (!leftType.ref_t.EqualType(rightType.ref_t)) {
                         throw new InvalidOperationException("The 2 pointers don't match.");
                     }
@@ -418,10 +418,10 @@ namespace SyntaxTree {
                 }
 
                 // 2. ptr - integral
-                if (!right.type.IsIntegral) {
+                if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected an integral.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.type.is_const, right.type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
                 return GetPointerSubtraction(left, right);
 
             }
@@ -434,8 +434,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Left Shift: takes in two integrals, returns an integer.
     /// </summary>
-    public class LShift : BinaryIntegralOp {
-        public LShift(Expr left, Expr right)
+    public sealed class LShift : BinaryIntegralOp {
+        private LShift(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new LShift(left, right);
 
@@ -449,8 +449,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Right Shift: takes in two integrals, returns an integer;
     /// </summary>
-    public class RShift : BinaryIntegralOp {
-        public RShift(Expr left, Expr right)
+    public sealed class RShift : BinaryIntegralOp {
+        private RShift(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new RShift(left, right);
 
@@ -465,8 +465,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Less than
     /// </summary>
-    public class Less : BinaryLogicalOp {
-        public Less(Expr left, Expr right)
+    public sealed class Less : BinaryLogicalOp {
+        private Less(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Less(left, right);
 
@@ -482,8 +482,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Less or Equal than
     /// </summary>
-    public class LEqual : BinaryLogicalOp {
-        public LEqual(Expr left, Expr right)
+    public sealed class LEqual : BinaryLogicalOp {
+        private LEqual(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new LEqual(left, right);
 
@@ -499,8 +499,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Greater than
     /// </summary>
-	public class Greater : BinaryLogicalOp {
-        public Greater(Expr left, Expr right)
+	public sealed class Greater : BinaryLogicalOp {
+        private Greater(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Greater(left, right);
 
@@ -516,8 +516,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Greater or Equal than
     /// </summary>
-    public class GEqual : BinaryLogicalOp {
-        public GEqual(Expr left, Expr right)
+    public sealed class GEqual : BinaryLogicalOp {
+        private GEqual(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new GEqual(left, right);
 
@@ -533,10 +533,11 @@ namespace SyntaxTree {
     /// <summary>
     /// Equal
     /// </summary>
-	public class Equal : BinaryLogicalOp {
-        public Equal(Expr left, Expr right)
+	public sealed class Equal : BinaryLogicalOp {
+        private Equal(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Equal(left, right);
+
         public override Int32 OperateLong(Int32 left, Int32 right) => Convert.ToInt32(left == right);
         public override Int32 OperateULong(UInt32 left, UInt32 right) => Convert.ToInt32(left == right);
         public override Int32 OperateFloat(Single left, Single right) => Convert.ToInt32(left == right);
@@ -549,8 +550,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Not equal
     /// </summary>
-    public class NotEqual : BinaryLogicalOp {
-        public NotEqual(Expr left, Expr right)
+    public sealed class NotEqual : BinaryLogicalOp {
+        private NotEqual(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new NotEqual(left, right);
 
@@ -566,8 +567,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Bitwise And: returns an integer.
     /// </summary>
-    public class BitwiseAnd : BinaryIntegralOp {
-        public BitwiseAnd(Expr left, Expr right)
+    public sealed class BitwiseAnd : BinaryIntegralOp {
+        private BitwiseAnd(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new BitwiseAnd(left, right);
 
@@ -582,8 +583,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Xor: returns an integer.
     /// </summary>
-    public class Xor : BinaryIntegralOp {
-        public Xor(Expr left, Expr right)
+    public sealed class Xor : BinaryIntegralOp {
+        private Xor(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new Xor(left, right);
 
@@ -597,8 +598,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Bitwise Or: accepts two integrals, returns an integer.
     /// </summary>
-    public class BitwiseOr : BinaryIntegralOp {
-        public BitwiseOr(Expr left, Expr right)
+    public sealed class BitwiseOr : BinaryIntegralOp {
+        private BitwiseOr(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new BitwiseOr(left, right);
 
@@ -612,8 +613,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Logical and: both operands need to be non-zero.
     /// </summary>
-	public class LogicalAnd : BinaryLogicalOp {
-        public LogicalAnd(Expr left, Expr right)
+	public sealed class LogicalAnd : BinaryLogicalOp {
+        private LogicalAnd(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) => new LogicalAnd(left, right);
 
@@ -629,8 +630,8 @@ namespace SyntaxTree {
     /// <summary>
     /// Logical or: at least one of operands needs to be non-zero.
     /// </summary>
-	public class LogicalOr : BinaryLogicalOp {
-        public LogicalOr(Expr left, Expr right)
+	public sealed class LogicalOr : BinaryLogicalOp {
+        private LogicalOr(Expr left, Expr right)
             : base(left, right) { }
         public static Expr Create(Expr left, Expr right) =>
             new LogicalOr(left, right);

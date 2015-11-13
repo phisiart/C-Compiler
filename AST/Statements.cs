@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CodeGeneration;
 
 namespace AST {
     public abstract class Stmt {
@@ -193,10 +194,10 @@ namespace AST {
                 this.expr.Value.CGenValue(env, state);
 
                 // If the function returns a struct, copy it to the address given by 8(%ebp).
-                if (this.expr.Value.type is TStructOrUnion) {
+                if (this.expr.Value.Type is TStructOrUnion) {
                     state.MOVL(Reg.EAX, Reg.ESI);
                     state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
-                    state.MOVL(this.expr.Value.type.SizeOf, Reg.ECX);
+                    state.MOVL(this.expr.Value.Type.SizeOf, Reg.ECX);
                     state.CGenMemCpy();
                     state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EAX);
                 }
@@ -231,7 +232,7 @@ namespace AST {
     public class WhileStmt : Stmt {
         public override Kind kind => Kind.WHILE;
         public WhileStmt(Expr cond, Stmt body) {
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidProgramException();
             }
             this.cond = cond;

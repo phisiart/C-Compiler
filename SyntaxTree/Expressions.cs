@@ -81,7 +81,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             ImmutableList<AST.Expr> exprs = this.Exprs.ConvertAll(expr => expr.GetExpr(env));
-            return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).type);
+            return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).Type);
         }
     }
 
@@ -114,11 +114,11 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr cond = this.Cond.GetExpr(env);
 
-            if (!cond.type.IsScalar) {
+            if (!cond.Type.IsScalar) {
                 throw new InvalidOperationException("Expected a scalar condition in conditional expression.");
             }
 
-            if (cond.type.IsIntegral) {
+            if (cond.Type.IsIntegral) {
                 cond = AST.TypeCast.IntegralPromotion(cond).Item1;
             }
 
@@ -127,37 +127,37 @@ namespace SyntaxTree {
 
             // 1. if both true_expr and false_Expr have arithmetic types:
             //    perform usual arithmetic conversion
-            if (true_expr.type.IsArith && false_expr.type.IsArith) {
+            if (true_expr.Type.IsArith && false_expr.Type.IsArith) {
                 var r_cast = AST.TypeCast.UsualArithmeticConversion(true_expr, false_expr);
                 true_expr = r_cast.Item1;
                 false_expr = r_cast.Item2;
-                return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
+                return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
             }
 
-            if (true_expr.type.kind != false_expr.type.kind) {
+            if (true_expr.Type.kind != false_expr.Type.kind) {
                 throw new InvalidOperationException("Operand types not match in conditional expression.");
             }
 
-            switch (true_expr.type.kind) {
+            switch (true_expr.Type.kind) {
                 // 2. if both true_expr and false_expr have struct or union type
                 //    make sure they are compatible
                 case AST.ExprType.Kind.STRUCT_OR_UNION:
-                    if (!true_expr.type.EqualType(false_expr.type)) {
+                    if (!true_expr.Type.EqualType(false_expr.Type)) {
                         throw new InvalidOperationException("Expected compatible types in conditional expression.");
                     }
-                    return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
+                    return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
 
                 // 3. if both true_expr and false_expr have void type
                 //    return void
                 case AST.ExprType.Kind.VOID:
-                    return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.type);
+                    return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
 
                 // 4. if both true_expr and false_expr have pointer type
                 case AST.ExprType.Kind.POINTER:
 
                     // if either points to void, convert to void *
-                    if (((AST.TPointer)true_expr.type).ref_t.kind == AST.ExprType.Kind.VOID
-                        || ((AST.TPointer)false_expr.type).ref_t.kind == AST.ExprType.Kind.VOID) {
+                    if (((AST.TPointer)true_expr.Type).ref_t.kind == AST.ExprType.Kind.VOID
+                        || ((AST.TPointer)false_expr.Type).ref_t.kind == AST.ExprType.Kind.VOID) {
                         return new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid()));
                     }
 
@@ -196,7 +196,7 @@ namespace SyntaxTree {
             // Update the environment to add this function type.
             if ((this.Func is Variable) && env.Find((this.Func as Variable).Name).IsNone) {
                 // TODO: get this env used.
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.TFunction.Create(new AST.TLong(true), args.ConvertAll(_ => Tuple.Create("", _.type)), false
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.TFunction.Create(new AST.TLong(true), args.ConvertAll(_ => Tuple.Create("", _.Type)), false
                     )
                 );
             }
@@ -206,13 +206,13 @@ namespace SyntaxTree {
 
             // Step 3: get the function type.
             AST.TFunction func_type;
-            switch (func.type.kind) {
+            switch (func.Type.kind) {
                 case AST.ExprType.Kind.FUNCTION:
-                    func_type = func.type as AST.TFunction;
+                    func_type = func.Type as AST.TFunction;
                     break;
 
                 case AST.ExprType.Kind.POINTER:
-                    var ref_t = (func.type as AST.TPointer).ref_t;
+                    var ref_t = (func.Type as AST.TPointer).ref_t;
                     if (!(ref_t is AST.TFunction)) {
                         throw new InvalidOperationException("Expected a function pointer.");
                     }
@@ -265,11 +265,11 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
             String name = this.Member;
 
-            if (expr.type.kind != AST.ExprType.Kind.STRUCT_OR_UNION) {
+            if (expr.Type.kind != AST.ExprType.Kind.STRUCT_OR_UNION) {
                 throw new InvalidOperationException("Must get the attribute from a struct or union.");
             }
 
-            AST.Utils.StoreEntry entry = (expr.type as AST.TStructOrUnion).Attribs.First(_ => _.name == name);
+            AST.Utils.StoreEntry entry = (expr.Type as AST.TStructOrUnion).Attribs.First(_ => _.name == name);
             AST.ExprType type = entry.type;
 
             return new AST.Attribute(expr, name, type);

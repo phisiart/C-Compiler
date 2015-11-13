@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using AST;
 using static SyntaxTree.SemanticAnalysis;
 
 namespace SyntaxTree {
@@ -19,8 +20,8 @@ namespace SyntaxTree {
 
         [SemantMethod]
         public ISemantReturn<AST.TranslnUnit> GetTranslnUnit() {
-            var env = new AST.Env();
-            var externDeclns = this.Declns.Aggregate(ImmutableList<Tuple<AST.Env, AST.ExternDecln>>.Empty, (acc, externDecln) => acc.AddRange(Semant(externDecln.GetExternDecln, ref env))
+            var env = new Env();
+            var externDeclns = this.Declns.Aggregate(ImmutableList<Tuple<Env, ExternDecln>>.Empty, (acc, externDecln) => acc.AddRange(Semant(externDecln.GetExternDecln, ref env))
             );
             return SemantReturn.Create(env, new AST.TranslnUnit(externDeclns.ToList()));
         }
@@ -31,7 +32,7 @@ namespace SyntaxTree {
 
     public interface IExternDecln : ISyntaxTreeNode {
         [SemantMethod]
-        ISemantReturn<ImmutableList<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env);
+        ISemantReturn<ImmutableList<Tuple<Env, ExternDecln>>> GetExternDecln(Env env);
     }
 
     /// <summary>
@@ -52,24 +53,24 @@ namespace SyntaxTree {
         public CompoundStmt Stmt { get; }
         
         [SemantMethod]
-        public ISemantReturn<ImmutableList<Tuple<AST.Env, AST.ExternDecln>>> GetExternDecln(AST.Env env) {
+        public ISemantReturn<ImmutableList<Tuple<Env, ExternDecln>>> GetExternDecln(Env env) {
             var storageClass = this.Specs.GetStorageClass();
             var baseType = Semant(this.Specs.GetExprType, ref env);
             var name = this.Declr.Name;
             var type = Semant(this.Declr.DecorateType, baseType, ref env);
 
-            var funcType = type as AST.TFunction;
+            var funcType = type as TFunction;
             if (funcType == null) {
                 throw new InvalidOperationException("Expected a function type.");
             }
 
             switch (storageClass) {
-                case AST.Decln.StorageClass.AUTO:
-                case AST.Decln.StorageClass.EXTERN:
-                case AST.Decln.StorageClass.STATIC:
-                    env = env.PushEntry(AST.Env.EntryKind.GLOBAL, name, type);
+                case StorageClass.AUTO:
+                case StorageClass.EXTERN:
+                case StorageClass.STATIC:
+                    env = env.PushEntry(Env.EntryKind.GLOBAL, name, type);
                     break;
-                case AST.Decln.StorageClass.TYPEDEF:
+                case StorageClass.TYPEDEF:
                 default:
                     throw new InvalidOperationException("Invalid storage class specifier for function definition.");
             }
@@ -79,7 +80,7 @@ namespace SyntaxTree {
             var stmt = SemantStmt(this.Stmt.GetStmt, ref env);
             env = env.OutScope();
 
-            return SemantReturn.Create(env, ImmutableList.Create(Tuple.Create(env, new AST.FuncDef(name, storageClass, funcType, stmt) as AST.ExternDecln)));
+            return SemantReturn.Create(env, ImmutableList.Create(Tuple.Create(env, new AST.FuncDef(name, storageClass, funcType, stmt) as ExternDecln)));
         }
     }
 
