@@ -172,7 +172,7 @@ namespace AST {
                 }
 
                 // search the function arguments
-                if ((store_entry = this.func.args.FindLast(entry => entry.name == name)) != null) {
+                if ((store_entry = this.func.Args.FindLast(entry => entry.name == name)) != null) {
                     return new Entry(EntryKind.FRAME, store_entry.type, store_entry.offset);
                 }
 
@@ -198,7 +198,7 @@ namespace AST {
                 }
 
                 String str = "";
-                foreach (Utils.StoreEntry entry in this.func.args) {
+                foreach (Utils.StoreEntry entry in this.func.Args) {
                     str += indent;
                     str += "[%ebp + " + entry.offset + "] " + entry.name + " : " + entry.type + "\n";
                 }

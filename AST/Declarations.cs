@@ -76,32 +76,32 @@ namespace AST {
                             throw new InvalidOperationException("Cannot initialize with non-const expression.");
                         }
 
-                        switch (expr.Type.kind) {
+                        switch (expr.Type.Kind) {
                             // TODO: without const char/short, how do I initialize?
-                            case ExprType.Kind.CHAR:
-                            case ExprType.Kind.UCHAR:
-                            case ExprType.Kind.SHORT:
-                            case ExprType.Kind.USHORT:
+                            case ExprTypeKind.CHAR:
+                            case ExprTypeKind.UCHAR:
+                            case ExprTypeKind.SHORT:
+                            case ExprTypeKind.USHORT:
                                 throw new NotImplementedException();
-                            case ExprType.Kind.LONG:
+                            case ExprTypeKind.LONG:
                                 state.LONG(((ConstLong)expr).value);
                                 break;
 
-                            case ExprType.Kind.ULONG:
+                            case ExprTypeKind.ULONG:
                                 state.LONG((Int32)((ConstULong)expr).value);
                                 break;
 
-                            case ExprType.Kind.POINTER:
+                            case ExprTypeKind.POINTER:
                                 state.LONG((Int32)((ConstPtr)expr).value);
                                 break;
 
-                            case ExprType.Kind.FLOAT:
+                            case ExprTypeKind.FLOAT:
                                 byte[] float_bytes = BitConverter.GetBytes(((ConstFloat)expr).value);
                                 Int32 intval = BitConverter.ToInt32(float_bytes, 0);
                                 state.LONG(intval);
                                 break;
 
-                            case ExprType.Kind.DOUBLE:
+                            case ExprTypeKind.DOUBLE:
                                 byte[] double_bytes = BitConverter.GetBytes(((ConstDouble)expr).value);
                                 Int32 first_int = BitConverter.ToInt32(double_bytes, 0);
                                 Int32 second_int = BitConverter.ToInt32(double_bytes, 4);
@@ -142,7 +142,7 @@ namespace AST {
                             throw new InvalidProgramException();
                     }
 
-                    if (this.type.kind != ExprType.Kind.FUNCTION) {
+                    if (this.type.Kind != ExprTypeKind.FUNCTION) {
                         state.COMM(this.name, this.type.SizeOf, ExprType.ALIGN_LONG);
                     }
 
@@ -167,41 +167,41 @@ namespace AST {
                 Initr initr = this.initr.Value;
                 initr.Iterate(this.type, (Int32 offset, Expr expr) => {
                     Reg ret = expr.CGenValue(env, state);
-                    switch (expr.Type.kind) {
-                        case ExprType.Kind.CHAR:
-                        case ExprType.Kind.UCHAR:
+                    switch (expr.Type.Kind) {
+                        case ExprTypeKind.CHAR:
+                        case ExprTypeKind.UCHAR:
                             state.MOVB(Reg.EAX, pos + offset, Reg.EBP);
                             break;
 
-                        case ExprType.Kind.SHORT:
-                        case ExprType.Kind.USHORT:
+                        case ExprTypeKind.SHORT:
+                        case ExprTypeKind.USHORT:
                             state.MOVW(Reg.EAX, pos + offset, Reg.EBP);
                             break;
 
-                        case ExprType.Kind.DOUBLE:
+                        case ExprTypeKind.DOUBLE:
                             state.FSTPL(pos + offset, Reg.EBP);
                             break;
 
-                        case ExprType.Kind.FLOAT:
+                        case ExprTypeKind.FLOAT:
                             state.FSTPS(pos + offset, Reg.EBP);
                             break;
 
-                        case ExprType.Kind.LONG:
-                        case ExprType.Kind.ULONG:
-                        case ExprType.Kind.POINTER:
+                        case ExprTypeKind.LONG:
+                        case ExprTypeKind.ULONG:
+                        case ExprTypeKind.POINTER:
                             state.MOVL(Reg.EAX, pos + offset, Reg.EBP);
                             break;
 
-                        case ExprType.Kind.STRUCT_OR_UNION:
+                        case ExprTypeKind.STRUCT_OR_UNION:
                             state.MOVL(Reg.EAX, Reg.ESI);
                             state.LEA(pos + offset, Reg.EBP, Reg.EDI);
                             state.MOVL(expr.Type.SizeOf, Reg.ECX);
                             state.CGenMemCpy();
                             break;
 
-                        case ExprType.Kind.ARRAY:
-                        case ExprType.Kind.FUNCTION:
-                            throw new InvalidProgramException($"How could a {expr.Type.kind} be in a init list?");
+                        case ExprTypeKind.ARRAY:
+                        case ExprTypeKind.FUNCTION:
+                            throw new InvalidProgramException($"How could a {expr.Type.Kind} be in a init list?");
 
                         default:
                             throw new InvalidProgramException();
@@ -353,14 +353,14 @@ namespace AST {
             //}
 
             public static ExprType GetType(ExprType from_type, Int32 to_index) {
-                switch (from_type.kind) {
-                    case ExprType.Kind.ARRAY:
+                switch (from_type.Kind) {
+                    case ExprTypeKind.ARRAY:
                         return ((TArray)from_type).elem_type;
 
-                    case ExprType.Kind.INCOMPLETE_ARRAY:
+                    case ExprTypeKind.INCOMPLETE_ARRAY:
                         return ((TIncompleteArray)from_type).elem_type;
 
-                    case ExprType.Kind.STRUCT_OR_UNION:
+                    case ExprTypeKind.STRUCT_OR_UNION:
                         return ((TStructOrUnion)from_type).Attribs[to_index].type;
 
                     default:
@@ -372,14 +372,14 @@ namespace AST {
                 indices.Aggregate(base_type, GetType);
 
             public static Int32 GetOffset(ExprType from_type, Int32 to_index) {
-                switch (from_type.kind) {
-                    case ExprType.Kind.ARRAY:
+                switch (from_type.Kind) {
+                    case ExprTypeKind.ARRAY:
                         return to_index * ((TArray)from_type).elem_type.SizeOf;
 
-                    case ExprType.Kind.INCOMPLETE_ARRAY:
+                    case ExprTypeKind.INCOMPLETE_ARRAY:
                         return to_index * ((TIncompleteArray)from_type).elem_type.SizeOf;
 
-                    case ExprType.Kind.STRUCT_OR_UNION:
+                    case ExprTypeKind.STRUCT_OR_UNION:
                         return ((TStructOrUnion)from_type).Attribs[to_index].offset;
 
                     default:
@@ -420,8 +420,8 @@ namespace AST {
                     types.RemoveAt(types.Count - 1);
                     ExprType type = types.Last();
 
-                    switch (type.kind) {
-                        case ExprType.Kind.ARRAY:
+                    switch (type.Kind) {
+                        case ExprTypeKind.ARRAY:
                             if (index < ((TArray)type).num_elems - 1) {
                                 // There are more elements in the array.
                                 this.indices.Add(index + 1);
@@ -429,11 +429,11 @@ namespace AST {
                             }
                             break;
 
-                        case ExprType.Kind.INCOMPLETE_ARRAY:
+                        case ExprTypeKind.INCOMPLETE_ARRAY:
                             this.indices.Add(index + 1);
                             return;
 
-                        case ExprType.Kind.STRUCT_OR_UNION:
+                        case ExprTypeKind.STRUCT_OR_UNION:
                             if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
                                 // There are more members in the struct.
                                 // (not union, since we can only initialize the first member of a union)
@@ -453,8 +453,8 @@ namespace AST {
             /// Read an expression in the initializer list, locate the corresponding position.
             /// </summary>
             public void Locate(ExprType type) {
-                switch (type.kind) {
-                    case ExprType.Kind.STRUCT_OR_UNION:
+                switch (type.Kind) {
+                    case ExprTypeKind.STRUCT_OR_UNION:
                         LocateStruct((TStructOrUnion)type);
                         return;
                     default:

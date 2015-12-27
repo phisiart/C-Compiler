@@ -70,10 +70,6 @@ namespace SyntaxTree {
             this.Exprs = exprs;
         }
 
-        [Obsolete]
-        public AssignmentList(IEnumerable<Expr> exprs)
-            : this(exprs.ToImmutableList()) { }
-
         public ImmutableList<Expr> Exprs { get; }
 
         public static Expr Create(ImmutableList<Expr> exprs) =>
@@ -81,7 +77,7 @@ namespace SyntaxTree {
 
         public override AST.Expr GetExpr(AST.Env env) {
             ImmutableList<AST.Expr> exprs = this.Exprs.ConvertAll(expr => expr.GetExpr(env));
-            return new AST.AssignList(exprs.ToList(), exprs.FindLast(_ => true).Type);
+            return new AST.AssignList(exprs);
         }
     }
 
@@ -134,14 +130,14 @@ namespace SyntaxTree {
                 return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
             }
 
-            if (true_expr.Type.kind != false_expr.Type.kind) {
+            if (true_expr.Type.Kind != false_expr.Type.Kind) {
                 throw new InvalidOperationException("Operand types not match in conditional expression.");
             }
 
-            switch (true_expr.Type.kind) {
+            switch (true_expr.Type.Kind) {
                 // 2. if both true_expr and false_expr have struct or union type
                 //    make sure they are compatible
-                case AST.ExprType.Kind.STRUCT_OR_UNION:
+                case AST.ExprTypeKind.STRUCT_OR_UNION:
                     if (!true_expr.Type.EqualType(false_expr.Type)) {
                         throw new InvalidOperationException("Expected compatible types in conditional expression.");
                     }
@@ -149,15 +145,15 @@ namespace SyntaxTree {
 
                 // 3. if both true_expr and false_expr have void type
                 //    return void
-                case AST.ExprType.Kind.VOID:
+                case AST.ExprTypeKind.VOID:
                     return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
 
                 // 4. if both true_expr and false_expr have pointer type
-                case AST.ExprType.Kind.POINTER:
+                case AST.ExprTypeKind.POINTER:
 
                     // if either points to void, convert to void *
-                    if (((AST.TPointer)true_expr.Type).ref_t.kind == AST.ExprType.Kind.VOID
-                        || ((AST.TPointer)false_expr.Type).ref_t.kind == AST.ExprType.Kind.VOID) {
+                    if (((AST.TPointer)true_expr.Type).ref_t.Kind == AST.ExprTypeKind.VOID
+                        || ((AST.TPointer)false_expr.Type).ref_t.Kind == AST.ExprTypeKind.VOID) {
                         return new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid()));
                     }
 
@@ -206,12 +202,12 @@ namespace SyntaxTree {
 
             // Step 3: get the function type.
             AST.TFunction func_type;
-            switch (func.Type.kind) {
-                case AST.ExprType.Kind.FUNCTION:
+            switch (func.Type.Kind) {
+                case AST.ExprTypeKind.FUNCTION:
                     func_type = func.Type as AST.TFunction;
                     break;
 
-                case AST.ExprType.Kind.POINTER:
+                case AST.ExprTypeKind.POINTER:
                     var ref_t = (func.Type as AST.TPointer).ref_t;
                     if (!(ref_t is AST.TFunction)) {
                         throw new InvalidOperationException("Expected a function pointer.");
@@ -224,11 +220,11 @@ namespace SyntaxTree {
             }
 
 
-            Int32 num_args_prototype = func_type.args.Count;
+            Int32 num_args_prototype = func_type.Args.Count;
             Int32 num_args_actual = args.Count;
 
             // If this function doesn't take varargs, make sure the number of arguments match that in the prototype.
-            if (!func_type.is_varargs && num_args_actual != num_args_prototype) {
+            if (!func_type.HasVarArgs && num_args_actual != num_args_prototype) {
                 throw new InvalidOperationException("Number of arguments mismatch.");
             }
 
@@ -238,7 +234,7 @@ namespace SyntaxTree {
             }
 
             // Make implicit cast.
-            args = args.GetRange(0, num_args_prototype).Zip(func_type.args,
+            args = args.GetRange(0, num_args_prototype).Zip(func_type.Args,
                 (arg, entry) => AST.TypeCast.MakeCast(arg, entry.type)
             ).Concat(args.GetRange(num_args_prototype, num_args_actual - num_args_prototype)).ToList();
 
@@ -265,7 +261,7 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
             String name = this.Member;
 
-            if (expr.Type.kind != AST.ExprType.Kind.STRUCT_OR_UNION) {
+            if (expr.Type.Kind != AST.ExprTypeKind.STRUCT_OR_UNION) {
                 throw new InvalidOperationException("Must get the attribute from a struct or union.");
             }
 

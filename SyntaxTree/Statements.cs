@@ -60,7 +60,7 @@ namespace SyntaxTree {
 
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             var expr = this.Expr.Map(_ => _.GetExpr(env));
-            expr = expr.Map(_ => AST.TypeCast.MakeCast(_, env.GetCurrentFunction().ret_t));
+            expr = expr.Map(_ => AST.TypeCast.MakeCast(_, env.GetCurrentFunction().ReturnType));
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.ReturnStmt(expr));
         }
     }

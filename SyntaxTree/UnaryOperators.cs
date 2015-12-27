@@ -162,12 +162,12 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             AST.Expr expr = this.Expr.GetExpr(env);
 
-            if (expr.Type.kind != AST.ExprType.Kind.POINTER) {
+            if (expr.Type.Kind != AST.ExprTypeKind.POINTER) {
                 throw new InvalidOperationException("Expected a pointer.");
             }
 
             AST.ExprType type = ((AST.TPointer)expr.Type).ref_t;
-            if (type.kind == AST.ExprType.Kind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).IsComplete) {
+            if (type.Kind == AST.ExprTypeKind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).IsComplete) {
                 throw new InvalidOperationException("Cannot dereference incomplete type.");
             }
 
@@ -216,17 +216,17 @@ namespace SyntaxTree {
             }
 
             if (expr.IsConstExpr) {
-                switch (expr.Type.kind) {
-                    case AST.ExprType.Kind.LONG:
+                switch (expr.Type.Kind) {
+                    case AST.ExprTypeKind.LONG:
                         return new AST.ConstLong(-((AST.ConstLong)expr).value, env);
 
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).value, env);
 
-                    case AST.ExprType.Kind.FLOAT:
+                    case AST.ExprTypeKind.FLOAT:
                         return new AST.ConstFloat(-((AST.ConstFloat)expr).value, env);
 
-                    case AST.ExprType.Kind.DOUBLE:
+                    case AST.ExprTypeKind.DOUBLE:
                         return new AST.ConstDouble(-((AST.ConstDouble)expr).value, env);
 
                     default:
@@ -257,10 +257,10 @@ namespace SyntaxTree {
             expr = AST.TypeCast.IntegralPromotion(expr).Item1;
 
             if (expr.IsConstExpr) {
-                switch (expr.Type.kind) {
-                    case AST.ExprType.Kind.LONG:
+                switch (expr.Type.Kind) {
+                    case AST.ExprTypeKind.LONG:
                         return new AST.ConstLong(~((AST.ConstLong)expr).value, env);
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         return new AST.ConstULong(~((AST.ConstULong)expr).value, env);
                     default:
                         throw new InvalidOperationException();
@@ -294,17 +294,17 @@ namespace SyntaxTree {
 
             if (expr.IsConstExpr) {
                 Boolean isZero;
-                switch (expr.Type.kind) {
-                    case AST.ExprType.Kind.LONG:
+                switch (expr.Type.Kind) {
+                    case AST.ExprTypeKind.LONG:
                         isZero = ((AST.ConstLong)expr).value == 0;
                         break;
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         isZero = ((AST.ConstULong)expr).value == 0;
                         break;
-                    case AST.ExprType.Kind.FLOAT:
+                    case AST.ExprTypeKind.FLOAT:
                         isZero = ((AST.ConstFloat)expr).value == 0;
                         break;
-                    case AST.ExprType.Kind.DOUBLE:
+                    case AST.ExprTypeKind.DOUBLE:
                         isZero = ((AST.ConstDouble)expr).value == 0;
                         break;
                     default:

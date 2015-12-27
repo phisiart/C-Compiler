@@ -13,6 +13,7 @@ namespace AST {
         public Expr Left { get; }
         public Expr Right { get; }
         public override Env Env => this.Right.Env;
+        public override Boolean IsLValue => false;
     }
 
     /// <summary>
@@ -106,15 +107,15 @@ namespace AST {
         }
 
         public override Reg CGenValue(Env env, CGenState state) {
-            switch (this.Left.Type.kind) {
-                case ExprType.Kind.LONG:
-                    if (this.Left.Type.kind != ExprType.Kind.LONG || this.Right.Type.kind != ExprType.Kind.LONG) {
+            switch (this.Left.Type.Kind) {
+                case ExprTypeKind.LONG:
+                    if (this.Left.Type.Kind != ExprTypeKind.LONG || this.Right.Type.Kind != ExprTypeKind.LONG) {
                         throw new InvalidOperationException();
                     }
                     return CGenLong(env, state);
 
-                case ExprType.Kind.ULONG:
-                    if (this.Left.Type.kind != ExprType.Kind.ULONG || this.Right.Type.kind != ExprType.Kind.ULONG) {
+                case ExprTypeKind.ULONG:
+                    if (this.Left.Type.Kind != ExprTypeKind.ULONG || this.Right.Type.Kind != ExprTypeKind.ULONG) {
                         throw new InvalidOperationException();
                     }
                     return CGenULong(env, state);
@@ -321,15 +322,15 @@ namespace AST {
         }
 
         public override sealed Reg CGenValue(Env env, CGenState state) {
-            switch (this.Type.kind) {
-                case ExprType.Kind.FLOAT:
-                    if (this.Left.Type.kind != ExprType.Kind.FLOAT || this.Right.Type.kind != ExprType.Kind.FLOAT) {
+            switch (this.Type.Kind) {
+                case ExprTypeKind.FLOAT:
+                    if (this.Left.Type.Kind != ExprTypeKind.FLOAT || this.Right.Type.Kind != ExprTypeKind.FLOAT) {
                         throw new InvalidOperationException();
                     }
                     return CGenFloat(env, state);
 
-                case ExprType.Kind.DOUBLE:
-                    if (this.Left.Type.kind != ExprType.Kind.DOUBLE || this.Right.Type.kind != ExprType.Kind.DOUBLE) {
+                case ExprTypeKind.DOUBLE:
+                    if (this.Left.Type.Kind != ExprTypeKind.DOUBLE || this.Right.Type.Kind != ExprTypeKind.DOUBLE) {
                         throw new InvalidOperationException();
                     }
                     return CGenDouble(env, state);
@@ -353,10 +354,10 @@ namespace AST {
     public class Multiply : BinaryArithmeticOp {
         public Multiply(Expr left, Expr right, ExprType type)
             : base(left, right, type) {
-            Debug.Assert((type.kind == ExprType.Kind.LONG && left.Type.kind == ExprType.Kind.LONG && right.Type.kind == ExprType.Kind.LONG)
-                        || (type.kind == ExprType.Kind.ULONG && left.Type.kind == ExprType.Kind.ULONG && right.Type.kind == ExprType.Kind.ULONG)
-                        || (type.kind == ExprType.Kind.FLOAT && left.Type.kind == ExprType.Kind.FLOAT && right.Type.kind == ExprType.Kind.FLOAT)
-                        || (type.kind == ExprType.Kind.DOUBLE && left.Type.kind == ExprType.Kind.DOUBLE && right.Type.kind == ExprType.Kind.DOUBLE));
+            Debug.Assert((type.Kind == ExprTypeKind.LONG && left.Type.Kind == ExprTypeKind.LONG && right.Type.Kind == ExprTypeKind.LONG)
+                        || (type.Kind == ExprTypeKind.ULONG && left.Type.Kind == ExprTypeKind.ULONG && right.Type.Kind == ExprTypeKind.ULONG)
+                        || (type.Kind == ExprTypeKind.FLOAT && left.Type.Kind == ExprTypeKind.FLOAT && right.Type.Kind == ExprTypeKind.FLOAT)
+                        || (type.Kind == ExprTypeKind.DOUBLE && left.Type.Kind == ExprTypeKind.DOUBLE && right.Type.Kind == ExprTypeKind.DOUBLE));
         }
 
         public override void OperateLong(CGenState state) => state.IMUL(Reg.EBX);
@@ -827,15 +828,11 @@ namespace AST {
     ///             |
     /// 
     /// </summary>
-    public class LogicalAnd : Expr {
-        public LogicalAnd(Expr lhs, Expr rhs, ExprType type)
-            : base(type) {
-            this.lhs = lhs;
-            this.rhs = rhs;
-        }
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-        public override Env Env => this.rhs.Env;
+    public class LogicalAnd : BinaryOp {
+        public LogicalAnd(Expr left, Expr right, ExprType type)
+            : base(left, right, type) { }
+
+        public override Env Env => this.Right.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Int32 label_reset = state.label_idx;
@@ -843,7 +840,7 @@ namespace AST {
             Int32 label_finish = state.label_idx;
             state.label_idx++;
 
-            Reg ret = this.lhs.CGenValue(env, state);
+            Reg ret = this.Left.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -861,7 +858,7 @@ namespace AST {
                     throw new InvalidProgramException();
             }
 
-            ret = this.rhs.CGenValue(env, state);
+            ret = this.Right.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -936,16 +933,11 @@ namespace AST {
     ///             |
     /// 
     /// </summary>
-    public class LogicalOr : Expr {
-        public LogicalOr(Expr _lhs, Expr _rhs, ExprType _type)
-            : base(_type) {
-            this.lhs = _lhs;
-            this.rhs = _rhs;
-        }
-
-        public readonly Expr lhs;
-        public readonly Expr rhs;
-        public override Env Env => this.rhs.Env;
+    public class LogicalOr : BinaryOp {
+        public LogicalOr(Expr left, Expr right, ExprType type)
+            : base(left, right, type) { }
+        
+        public override Env Env => this.Right.Env;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Int32 label_set = state.label_idx;
@@ -953,7 +945,7 @@ namespace AST {
             Int32 label_finish = state.label_idx;
             state.label_idx++;
 
-            Reg ret = this.lhs.CGenValue(env, state);
+            Reg ret = this.Left.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -971,7 +963,7 @@ namespace AST {
                     throw new InvalidProgramException();
             }
 
-            ret = this.rhs.CGenValue(env, state);
+            ret = this.Right.CGenValue(env, state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);

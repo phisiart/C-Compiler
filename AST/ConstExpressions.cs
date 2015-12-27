@@ -16,6 +16,8 @@ namespace AST {
 
         public override Boolean IsConstExpr => true;
 
+        public override Boolean IsLValue => false;
+
         public override void CGenAddress(Env env, CGenState state) {
             throw new InvalidOperationException("Cannot get the address of a constant");
         }
