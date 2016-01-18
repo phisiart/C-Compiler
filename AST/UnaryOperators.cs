@@ -10,8 +10,12 @@ namespace AST {
             Debug.Assert(expr.Type.IsScalar);
             this.expr = expr;
         }
+
         public readonly Expr expr;
+
         public override Env Env => this.expr.Env;
+
+        public override Boolean IsLValue => false;
 
         // Integral
         // Before the actual calculation, the state is set to this.
@@ -164,23 +168,23 @@ namespace AST {
                     // | ..... | <- %esp
                     // +-------+
                     // 
-                    switch (this.expr.Type.kind) {
-                        case ExprType.Kind.CHAR:
-                        case ExprType.Kind.UCHAR:
+                    switch (this.expr.Type.Kind) {
+                        case ExprTypeKind.CHAR:
+                        case ExprTypeKind.UCHAR:
                             CalcAndSaveByte(state);
                             return Reg.EAX;
 
-                        case ExprType.Kind.SHORT:
-                        case ExprType.Kind.USHORT:
+                        case ExprTypeKind.SHORT:
+                        case ExprTypeKind.USHORT:
                             CalcAndSaveWord(state);
                             return Reg.EAX;
 
-                        case ExprType.Kind.LONG:
-                        case ExprType.Kind.ULONG:
+                        case ExprTypeKind.LONG:
+                        case ExprTypeKind.ULONG:
                             CalcAndSaveByte(state);
                             return Reg.EAX;
 
-                        case ExprType.Kind.POINTER:
+                        case ExprTypeKind.POINTER:
                             CalcAndSavePtr(state);
                             return Reg.EAX;
 
@@ -238,12 +242,12 @@ namespace AST {
                     // | Expr or (epxr +- 1) | <- %st(0)
                     // +---------------------+
                     // 
-                    switch (this.expr.Type.kind) {
-                        case ExprType.Kind.FLOAT:
+                    switch (this.expr.Type.Kind) {
+                        case ExprTypeKind.FLOAT:
                             CalcAndSaveFloat(state);
                             return Reg.ST0;
 
-                        case ExprType.Kind.DOUBLE:
+                        case ExprTypeKind.DOUBLE:
                             CalcAndSaveDouble(state);
                             return Reg.ST0;
 
@@ -714,7 +718,10 @@ namespace AST {
             this.expr = expr;
         }
         public readonly Expr expr;
+
         public override Env Env => this.expr.Env;
+
+        public override Boolean IsLValue => false;
     }
 
     /// <summary>

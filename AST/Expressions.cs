@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using CodeGeneration;
 
@@ -21,8 +22,19 @@ namespace AST {
         protected Expr(ExprType type) {
             this.Type = type;
         }
+
+        /// <summary>
+        /// Whether the value is known at compile time.
+        /// </summary>
         public virtual Boolean IsConstExpr => false;
+
+        /// <summary>
+        /// Whether the expression refers to an object (that can be assigned to).
+        /// </summary>
+        public abstract Boolean IsLValue { get; }
+
         public abstract Env Env { get; }
+
         public abstract Reg CGenValue(Env env, CGenState state);
 
         public virtual void CGenAddress(Env env, CGenState state) {
@@ -37,13 +49,13 @@ namespace AST {
         public virtual void CGenPush(Env env, CGenState state) {
             Reg ret = CGenValue(env, state);
 
-            switch (this.Type.kind) {
-                case ExprType.Kind.CHAR:
-                case ExprType.Kind.UCHAR:
-                case ExprType.Kind.SHORT:
-                case ExprType.Kind.USHORT:
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
+            switch (this.Type.Kind) {
+                case ExprTypeKind.CHAR:
+                case ExprTypeKind.UCHAR:
+                case ExprTypeKind.SHORT:
+                case ExprTypeKind.USHORT:
+                case ExprTypeKind.LONG:
+                case ExprTypeKind.ULONG:
                     // Integral
                     if (ret != Reg.EAX) {
                         throw new InvalidProgramException("Integral values should be returned to %eax");
@@ -51,7 +63,7 @@ namespace AST {
                     state.CGenPushLong(Reg.EAX);
                     break;
 
-                case ExprType.Kind.FLOAT:
+                case ExprTypeKind.FLOAT:
                     // Float
                     if (ret != Reg.ST0) {
                         throw new InvalidProgramException("Floats should be returned to %st(0)");
@@ -60,7 +72,7 @@ namespace AST {
                     state.FSTS(0, Reg.ESP);
                     break;
 
-                case ExprType.Kind.DOUBLE:
+                case ExprTypeKind.DOUBLE:
                     // Double
                     if (ret != Reg.ST0) {
                         throw new InvalidProgramException("Doubles should be returned to %st(0)");
@@ -69,9 +81,9 @@ namespace AST {
                     state.FSTL(0, Reg.ESP);
                     break;
 
-                case ExprType.Kind.ARRAY:
-                case ExprType.Kind.FUNCTION:
-                case ExprType.Kind.POINTER:
+                case ExprTypeKind.ARRAY:
+                case ExprTypeKind.FUNCTION:
+                case ExprTypeKind.POINTER:
                     // Pointer
                     if (ret != Reg.EAX) {
                         throw new InvalidProgramException("Pointer values should be returned to %eax");
@@ -79,11 +91,11 @@ namespace AST {
                     state.CGenPushLong(Reg.EAX);
                     break;
 
-                case ExprType.Kind.INCOMPLETE_ARRAY:
-                case ExprType.Kind.VOID:
-                    throw new InvalidProgramException(this.Type.kind + " can't be pushed onto the stack");
+                case ExprTypeKind.INCOMPLETE_ARRAY:
+                case ExprTypeKind.VOID:
+                    throw new InvalidProgramException(this.Type.Kind + " can't be pushed onto the stack");
 
-                case ExprType.Kind.STRUCT_OR_UNION:
+                case ExprTypeKind.STRUCT_OR_UNION:
                     throw new NotImplementedException();
             }
 
@@ -101,6 +113,8 @@ namespace AST {
         public readonly String name;
 
         public override Env Env { get; }
+
+        public override Boolean IsLValue => !(Type is TFunction);
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(this.name).Value;
@@ -142,25 +156,25 @@ namespace AST {
                 case Env.EntryKind.STACK:
                     // 2. If the variable is a function argument or a local variable,
                     //    the address would be offset(%ebp).
-                    switch (this.Type.kind) {
-                        case ExprType.Kind.LONG:
-                        case ExprType.Kind.ULONG:
-                        case ExprType.Kind.POINTER:
+                    switch (this.Type.Kind) {
+                        case ExprTypeKind.LONG:
+                        case ExprTypeKind.ULONG:
+                        case ExprTypeKind.POINTER:
                             // %eax = offset(%ebp)
                             state.MOVL(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.FLOAT:
+                        case ExprTypeKind.FLOAT:
                             // %st(0) = offset(%ebp)
                             state.FLDS(offset, Reg.EBP);
                             return Reg.ST0;
 
-                        case ExprType.Kind.DOUBLE:
+                        case ExprTypeKind.DOUBLE:
                             // %st(0) = offset(%ebp)
                             state.FLDL(offset, Reg.EBP);
                             return Reg.ST0;
 
-                        case ExprType.Kind.STRUCT_OR_UNION:
+                        case ExprTypeKind.STRUCT_OR_UNION:
                             // %eax = address
                             state.LEA(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
@@ -172,84 +186,84 @@ namespace AST {
                             //state.CGenMemCpy();
                             //return Reg.STACK;
 
-                        case ExprType.Kind.VOID:
+                        case ExprTypeKind.VOID:
                             throw new InvalidProgramException("How could a variable be void?");
                             // %eax = $0
                             // state.MOVL(0, Reg.EAX);
                             // return Reg.EAX;
 
-                        case ExprType.Kind.FUNCTION:
+                        case ExprTypeKind.FUNCTION:
                             throw new InvalidProgramException("How could a variable be a function designator?");
                             // %eax = function_name
                             // state.MOVL(name, Reg.EAX);
                             // return Reg.EAX;
 
-                        case ExprType.Kind.CHAR:
+                        case ExprTypeKind.CHAR:
                             // %eax = [char -> long](off(%ebp))
                             state.MOVSBL(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.UCHAR:
+                        case ExprTypeKind.UCHAR:
                             // %eax = [uchar -> ulong](off(%ebp))
                             state.MOVZBL(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.SHORT:
+                        case ExprTypeKind.SHORT:
                             // %eax = [short -> long](off(%ebp))
                             state.MOVSWL(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.USHORT:
+                        case ExprTypeKind.USHORT:
                             // %eax = [ushort -> ulong](off(%ebp))
                             state.MOVZWL(offset, Reg.EBP, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.ARRAY:
+                        case ExprTypeKind.ARRAY:
                             // %eax = (off(%ebp))
                             state.LEA(offset, Reg.EBP, Reg.EAX); // source address
                             return Reg.EAX;
 
                         default:
-                            throw new InvalidOperationException($"Cannot get value of {this.Type.kind}");
+                            throw new InvalidOperationException($"Cannot get value of {this.Type.Kind}");
                     }
 
                 case Env.EntryKind.GLOBAL:
-                    switch (this.Type.kind) {
-                        case ExprType.Kind.CHAR:
+                    switch (this.Type.Kind) {
+                        case ExprTypeKind.CHAR:
                             state.MOVSBL(this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.UCHAR:
+                        case ExprTypeKind.UCHAR:
                             state.MOVZBL(this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.SHORT:
+                        case ExprTypeKind.SHORT:
                             state.MOVSWL(this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.USHORT:
+                        case ExprTypeKind.USHORT:
                             state.MOVZWL(this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.LONG:
-                        case ExprType.Kind.ULONG:
-                        case ExprType.Kind.POINTER:
+                        case ExprTypeKind.LONG:
+                        case ExprTypeKind.ULONG:
+                        case ExprTypeKind.POINTER:
                             state.MOVL(this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.FUNCTION:
+                        case ExprTypeKind.FUNCTION:
                             state.MOVL("$" + this.name, Reg.EAX);
                             return Reg.EAX;
 
-                        case ExprType.Kind.FLOAT:
+                        case ExprTypeKind.FLOAT:
                             state.FLDS(this.name);
                             return Reg.ST0;
 
-                        case ExprType.Kind.DOUBLE:
+                        case ExprTypeKind.DOUBLE:
                             state.FLDL(this.name);
                             return Reg.ST0;
 
-                        case ExprType.Kind.STRUCT_OR_UNION:
+                        case ExprTypeKind.STRUCT_OR_UNION:
                             state.MOVL($"${this.name}", Reg.EAX);
                             return Reg.EAX;
 
@@ -260,17 +274,17 @@ namespace AST {
                             //state.CGenMemCpy();
                             //return Reg.STACK;
 
-                        case ExprType.Kind.VOID:
+                        case ExprTypeKind.VOID:
                             throw new InvalidProgramException("How could a variable be void?");
                             //state.MOVL(0, Reg.EAX);
                             //return Reg.EAX;
 
-                        case ExprType.Kind.ARRAY:
+                        case ExprTypeKind.ARRAY:
                             state.MOVL($"${this.name}", Reg.EAX);
                             return Reg.EAX;
 
                         default:
-                            throw new InvalidProgramException("cannot get the value of a " + this.Type.kind);
+                            throw new InvalidProgramException("cannot get the value of a " + this.Type.Kind);
                     }
 
                 case Env.EntryKind.TYPEDEF:
@@ -281,16 +295,20 @@ namespace AST {
     }
 
     public class AssignList : Expr {
-        public AssignList(List<Expr> exprs, ExprType type)
-            : base(type) {
-            this.exprs = exprs;
+        public AssignList(ImmutableList<Expr> exprs)
+            : base(exprs.Last().Type) {
+            this.Exprs = exprs;
         }
-        public readonly List<Expr> exprs;
-        public override Env Env => this.exprs.Last().Env;
+
+        public readonly ImmutableList<Expr> Exprs;
+
+        public override Env Env => this.Exprs.Last().Env;
+
+        public override Boolean IsLValue => false;
 
         public override Reg CGenValue(Env env, CGenState state) {
             Reg reg = Reg.EAX;
-            foreach (Expr expr in this.exprs) {
+            foreach (Expr expr in this.Exprs) {
                 reg = expr.CGenValue(env, state);
             }
             return reg;
@@ -298,27 +316,35 @@ namespace AST {
     }
 
     public class Assign : Expr {
-        public Assign(Expr lvalue, Expr rvalue, ExprType type)
-            : base(type) {
-            this.lvalue = lvalue;
-            this.rvalue = rvalue;
+        public Assign(Expr left, Expr right)
+            : base(left.Type) {
+            this.Left = left;
+            this.Right = right;
+
+            if (!this.Left.IsLValue) {
+                throw new InvalidOperationException("Can only assign to lvalue.");
+            }
         }
-        public readonly Expr lvalue;
-        public readonly Expr rvalue;
-        public override Env Env => this.rvalue.Env;
+
+        public readonly Expr Left;
+        public readonly Expr Right;
+
+        public override Env Env => this.Right.Env;
+
+        public override Boolean IsLValue => false;
 
         public override Reg CGenValue(Env env, CGenState state) {
 
             // 1. %eax = &Left
-            this.lvalue.CGenAddress(env, state);
+            this.Left.CGenAddress(env, state);
 
             // 2. push %eax
             Int32 pos = state.CGenPushLong(Reg.EAX);
 
-            Reg ret = this.rvalue.CGenValue(env, state);
-            switch (this.lvalue.Type.kind) {
-                case ExprType.Kind.CHAR:
-                case ExprType.Kind.UCHAR:
+            Reg ret = this.Right.CGenValue(env, state);
+            switch (this.Left.Type.Kind) {
+                case ExprTypeKind.CHAR:
+                case ExprTypeKind.UCHAR:
                     // pop %ebx
                     // now %ebx = %Left
                     state.CGenPopLong(pos, Reg.EBX);
@@ -328,8 +354,8 @@ namespace AST {
 
                     return Reg.EAX;
 
-                case ExprType.Kind.SHORT:
-                case ExprType.Kind.USHORT:
+                case ExprTypeKind.SHORT:
+                case ExprTypeKind.USHORT:
                     // pop %ebx
                     // now %ebx = %Left
                     state.CGenPopLong(pos, Reg.EBX);
@@ -339,9 +365,9 @@ namespace AST {
 
                     return Reg.EAX;
 
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.POINTER:
+                case ExprTypeKind.LONG:
+                case ExprTypeKind.ULONG:
+                case ExprTypeKind.POINTER:
                     // pop %ebx
                     // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
@@ -351,7 +377,7 @@ namespace AST {
 
                     return Reg.EAX;
 
-                case ExprType.Kind.FLOAT:
+                case ExprTypeKind.FLOAT:
                     // pop %ebx
                     // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
@@ -361,7 +387,7 @@ namespace AST {
 
                     return Reg.ST0;
 
-                case ExprType.Kind.DOUBLE:
+                case ExprTypeKind.DOUBLE:
                     // pop %ebx
                     // now %ebx = &Left
                     state.CGenPopLong(pos, Reg.EBX);
@@ -371,7 +397,7 @@ namespace AST {
 
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT_OR_UNION:
+                case ExprTypeKind.STRUCT_OR_UNION:
                     // pop %edi
                     // now %edi = &Left
                     state.CGenPopLong(pos, Reg.EDI);
@@ -380,7 +406,7 @@ namespace AST {
                     state.MOVL(Reg.EAX, Reg.ESI);
 
                     // %ecx = nbytes
-                    state.MOVL(this.lvalue.Type.SizeOf, Reg.ECX);
+                    state.MOVL(this.Left.Type.SizeOf, Reg.ECX);
 
                     state.CGenMemCpy();
 
@@ -389,12 +415,12 @@ namespace AST {
 
                     return Reg.EAX;
 
-                case ExprType.Kind.FUNCTION:
-                case ExprType.Kind.VOID:
-                case ExprType.Kind.ARRAY:
-                case ExprType.Kind.INCOMPLETE_ARRAY:
+                case ExprTypeKind.FUNCTION:
+                case ExprTypeKind.VOID:
+                case ExprTypeKind.ARRAY:
+                case ExprTypeKind.INCOMPLETE_ARRAY:
                 default:
-                    throw new InvalidProgramException("cannot assign to a " + this.Type.kind);
+                    throw new InvalidProgramException("cannot assign to a " + this.Type.Kind);
             }
         }
     }
@@ -406,9 +432,13 @@ namespace AST {
             this.true_expr = true_expr;
             this.false_expr = false_expr;
         }
+
         public readonly Expr cond;
         public readonly Expr true_expr;
         public readonly Expr false_expr;
+
+        public override Boolean IsLValue => false;
+
         public override Env Env => this.false_expr.Env;
 
         // 
@@ -463,17 +493,19 @@ namespace AST {
     }
         
     public class FuncCall : Expr {
-        public FuncCall(Expr func, TFunction func_type, List<Expr> args)
-            : base(func_type.ret_t) {
-            this.func = func;
-            this.func_type = func_type;
-            this.args = args;
+        public FuncCall(Expr func, TFunction funcType, List<Expr> args)
+            : base(funcType.ReturnType) {
+            this.Func = func;
+            this.FuncType = funcType;
+            this.Args = args;
         }
-        public readonly Expr func;
-        public readonly TFunction func_type;
-        public readonly IReadOnlyList<Expr> args;
+        public readonly Expr Func;
+        public readonly TFunction FuncType;
+        public readonly IReadOnlyList<Expr> Args;
 
-        public override Env Env => this.args.Any() ? this.args.Last().Env : this.func.Env;
+        public override Env Env => this.Args.Any() ? this.Args.Last().Env : this.Func.Env;
+
+        public override Boolean IsLValue => false;
 
         public override void CGenAddress(Env env, CGenState state) {
             throw new Exception("Error: cannot get the address of a function call.");
@@ -523,7 +555,7 @@ namespace AST {
             state.NEWLINE();
             state.COMMENT($"Before pushing the arguments, stack size = {state.StackSize}.");
 
-            var r_pack = Utils.PackArguments(this.args.Select(_ => _.Type).ToList());
+            var r_pack = Utils.PackArguments(this.Args.Select(_ => _.Type).ToList());
             Int32 pack_size = r_pack.Item1;
             IReadOnlyList<Int32> offsets = r_pack.Item2;
 
@@ -559,43 +591,43 @@ namespace AST {
             Int32 header_base = -state.StackSize;
 
             // Push the arguments onto the stack in reverse order
-            for (Int32 i = this.args.Count; i-- > 0;) {
-                Expr arg = this.args[i];
+            for (Int32 i = this.Args.Count; i-- > 0;) {
+                Expr arg = this.Args[i];
                 Int32 pos = header_base + offsets[i];
 
                 state.COMMENT($"Argument {i} is at {pos}");
 
                 Reg ret = arg.CGenValue(env, state);
-                switch (arg.Type.kind) {
-                    case ExprType.Kind.ARRAY:
-                    case ExprType.Kind.CHAR:
-                    case ExprType.Kind.UCHAR:
-                    case ExprType.Kind.SHORT:
-                    case ExprType.Kind.USHORT:
-                    case ExprType.Kind.LONG:
-                    case ExprType.Kind.ULONG:
-                    case ExprType.Kind.POINTER:
+                switch (arg.Type.Kind) {
+                    case ExprTypeKind.ARRAY:
+                    case ExprTypeKind.CHAR:
+                    case ExprTypeKind.UCHAR:
+                    case ExprTypeKind.SHORT:
+                    case ExprTypeKind.USHORT:
+                    case ExprTypeKind.LONG:
+                    case ExprTypeKind.ULONG:
+                    case ExprTypeKind.POINTER:
                         if (ret != Reg.EAX) {
                             throw new InvalidProgramException();
                         }
                         state.MOVL(Reg.EAX, pos, Reg.EBP);
                         break;
 
-                    case ExprType.Kind.DOUBLE:
+                    case ExprTypeKind.DOUBLE:
                         if (ret != Reg.ST0) {
                             throw new InvalidProgramException();
                         }
                         state.FSTPL(pos, Reg.EBP);
                         break;
 
-                    case ExprType.Kind.FLOAT:
+                    case ExprTypeKind.FLOAT:
                         if (ret != Reg.ST0) {
                             throw new InvalidProgramException();
                         }
                         state.FSTPL(pos, Reg.EBP);
                         break;
 
-                    case ExprType.Kind.STRUCT_OR_UNION:
+                    case ExprTypeKind.STRUCT_OR_UNION:
                         if (ret != Reg.EAX) {
                             throw new InvalidProgramException();
                         }
@@ -618,10 +650,10 @@ namespace AST {
             state.CGenForceStackSizeTo(-header_base);
 
             // Get function address
-            if (this.func.Type is TFunction) {
-                this.func.CGenAddress(env, state);
-            } else if (this.func.Type is TPointer) {
-                this.func.CGenValue(env, state);
+            if (this.Func.Type is TFunction) {
+                this.Func.CGenAddress(env, state);
+            } else if (this.Func.Type is TPointer) {
+                this.Func.CGenValue(env, state);
             } else {
                 throw new InvalidProgramException();
             }
@@ -631,7 +663,7 @@ namespace AST {
             state.COMMENT("Function returned.");
             state.NEWLINE();
 
-            if (this.Type.kind == ExprType.Kind.FLOAT || this.Type.kind == ExprType.Kind.DOUBLE) {
+            if (this.Type.Kind == ExprTypeKind.FLOAT || this.Type.Kind == ExprTypeKind.DOUBLE) {
                 return Reg.ST0;
             }
             return Reg.EAX;
@@ -647,9 +679,20 @@ namespace AST {
             this.expr = expr;
             this.name = name;
         }
+
         public readonly Expr expr;
+
         public readonly String name;
+
         public override Env Env => this.expr.Env;
+
+        // You might want to think of some special case like this.
+        // struct EvilStruct {
+        //     int a[10];
+        // } evil;
+        // evil.a <--- is this an lvalue?
+        // Yes, it is. It cannot be assigned, but that's because of the wrong type.
+        public override Boolean IsLValue => this.expr.IsLValue;
 
         public override Reg CGenValue(Env env, CGenState state) {
 
@@ -658,7 +701,7 @@ namespace AST {
                 throw new InvalidProgramException();
             }
 
-            if (this.expr.Type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+            if (this.expr.Type.Kind != ExprTypeKind.STRUCT_OR_UNION) {
                 throw new InvalidProgramException();
             }
 
@@ -672,39 +715,39 @@ namespace AST {
                         .offset;
 
             // can't be a function designator.
-            switch (this.Type.kind) {
-                case ExprType.Kind.ARRAY:
-                case ExprType.Kind.STRUCT_OR_UNION:
+            switch (this.Type.Kind) {
+                case ExprTypeKind.ARRAY:
+                case ExprTypeKind.STRUCT_OR_UNION:
                     state.ADDL(attrib_offset, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.CHAR:
+                case ExprTypeKind.CHAR:
                     state.MOVSBL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.UCHAR:
+                case ExprTypeKind.UCHAR:
                     state.MOVZBL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.SHORT:
+                case ExprTypeKind.SHORT:
                     state.MOVSWL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.USHORT:
+                case ExprTypeKind.USHORT:
                     state.MOVZWL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.POINTER:
+                case ExprTypeKind.LONG:
+                case ExprTypeKind.ULONG:
+                case ExprTypeKind.POINTER:
                     state.MOVL(attrib_offset, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.FLOAT:
+                case ExprTypeKind.FLOAT:
                     state.FLDS(attrib_offset, Reg.EAX);
                     return Reg.ST0;
 
-                case ExprType.Kind.DOUBLE:
+                case ExprTypeKind.DOUBLE:
                     state.FLDL(attrib_offset, Reg.EAX);
                     return Reg.ST0;
 
@@ -714,7 +757,7 @@ namespace AST {
         }
 
         public override void CGenAddress(Env env, CGenState state) {
-            if (this.expr.Type.kind != ExprType.Kind.STRUCT_OR_UNION) {
+            if (this.expr.Type.Kind != ExprTypeKind.STRUCT_OR_UNION) {
                 throw new InvalidProgramException();
             }
 
@@ -742,6 +785,13 @@ namespace AST {
         public readonly Expr expr;
         public override Env Env => this.expr.Env;
 
+        // You might want to think of some special case like this.
+        // int *a;
+        // &(*a) = 3; // Is this okay?
+        // But this should lead to an error: lvalue required.
+        // The 'reference' operator only gets the 'current address'.
+        public override Boolean IsLValue => false;
+
         public override Reg CGenValue(Env env, CGenState state) {
             this.expr.CGenAddress(env, state);
             return Reg.EAX;
@@ -763,52 +813,54 @@ namespace AST {
         public readonly Expr expr;
         public override Env Env => this.expr.Env;
 
+        public override Boolean IsLValue => true;
+
         public override Reg CGenValue(Env env, CGenState state) {
             Reg ret = this.expr.CGenValue(env, state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }
-            if (this.expr.Type.kind != ExprType.Kind.POINTER) {
+            if (this.expr.Type.Kind != ExprTypeKind.POINTER) {
                 throw new InvalidProgramException();
             }
 
             ExprType type = ((TPointer) this.expr.Type).ref_t;
-            switch (type.kind) {
-                case ExprType.Kind.ARRAY:
-                case ExprType.Kind.FUNCTION:
+            switch (type.Kind) {
+                case ExprTypeKind.ARRAY:
+                case ExprTypeKind.FUNCTION:
                     return Reg.EAX;
 
-                case ExprType.Kind.CHAR:
+                case ExprTypeKind.CHAR:
                     state.MOVSBL(0, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.UCHAR:
+                case ExprTypeKind.UCHAR:
                     state.MOVZBL(0, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.SHORT:
+                case ExprTypeKind.SHORT:
                     state.MOVSWL(0, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.USHORT:
+                case ExprTypeKind.USHORT:
                     state.MOVZWL(0, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.LONG:
-                case ExprType.Kind.ULONG:
-                case ExprType.Kind.POINTER:
+                case ExprTypeKind.LONG:
+                case ExprTypeKind.ULONG:
+                case ExprTypeKind.POINTER:
                     state.MOVL(0, Reg.EAX, Reg.EAX);
                     return Reg.EAX;
 
-                case ExprType.Kind.FLOAT:
+                case ExprTypeKind.FLOAT:
                     state.FLDS(0, Reg.EAX);
                     return Reg.ST0;
 
-                case ExprType.Kind.DOUBLE:
+                case ExprTypeKind.DOUBLE:
                     state.FLDL(0, Reg.EAX);
                     return Reg.ST0;
 
-                case ExprType.Kind.STRUCT_OR_UNION:
+                case ExprTypeKind.STRUCT_OR_UNION:
                     //// %esi = src address
                     //state.MOVL(Reg.EAX, Reg.ESI);
 
@@ -824,7 +876,7 @@ namespace AST {
                     //return Reg.STACK;
                     return Reg.EAX;
 
-                case ExprType.Kind.VOID:
+                case ExprTypeKind.VOID:
                 default:
                     throw new InvalidProgramException();
             }

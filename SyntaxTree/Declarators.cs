@@ -282,7 +282,7 @@ namespace SyntaxTree {
                 initr = initr.ConformType(type);
 
                 // If the object is an incomplete array, we must determine the length based on the initializer.
-                if (type.kind == AST.ExprType.Kind.INCOMPLETE_ARRAY) {
+                if (type.Kind == AST.ExprTypeKind.INCOMPLETE_ARRAY) {
                     // Now we need to determine the length.
                     // Find the last element in the init list.
                     var lastOffset = -1;

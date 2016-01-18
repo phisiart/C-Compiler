@@ -23,7 +23,7 @@
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
             right = AST.TypeCast.MakeCast(right, left.Type);
-            return new AST.Assign(left, right, left.Type);
+            return new AST.Assign(left, right);
         }
     }
 

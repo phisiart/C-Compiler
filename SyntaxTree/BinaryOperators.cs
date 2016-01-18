@@ -33,7 +33,7 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual arithmetic conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
+            Tuple<AST.Expr, AST.Expr, AST.ExprTypeKind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
             left = castReturn.Item1;
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
@@ -44,9 +44,9 @@ namespace SyntaxTree {
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
-                    case AST.ExprType.Kind.LONG:
+                    case AST.ExprTypeKind.LONG:
                         return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected long or unsigned long.");
@@ -55,9 +55,9 @@ namespace SyntaxTree {
 
             // 4. if not both operands are constants
             switch (typeKind) {
-                case AST.ExprType.Kind.ULONG:
+                case AST.ExprTypeKind.ULONG:
                     return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
-                case AST.ExprType.Kind.LONG:
+                case AST.ExprTypeKind.LONG:
                     return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected long or unsigned long.");
@@ -83,7 +83,7 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual arithmetic conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
+            Tuple<AST.Expr, AST.Expr, AST.ExprTypeKind> castReturn = AST.TypeCast.UsualArithmeticConversion(left, right);
             left = castReturn.Item1;
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
@@ -94,13 +94,13 @@ namespace SyntaxTree {
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
-                    case AST.ExprType.Kind.DOUBLE:
+                    case AST.ExprTypeKind.DOUBLE:
                         return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
-                    case AST.ExprType.Kind.FLOAT:
+                    case AST.ExprTypeKind.FLOAT:
                         return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
-                    case AST.ExprType.Kind.LONG:
+                    case AST.ExprTypeKind.LONG:
                         return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
@@ -109,13 +109,13 @@ namespace SyntaxTree {
 
             // 4. if not both operands are constants
             switch (typeKind) {
-                case AST.ExprType.Kind.DOUBLE:
+                case AST.ExprTypeKind.DOUBLE:
                     return ConstructExpr(left, right, new AST.TDouble(isConst, isVolatile));
-                case AST.ExprType.Kind.FLOAT:
+                case AST.ExprTypeKind.FLOAT:
                     return ConstructExpr(left, right, new AST.TFloat(isConst, isVolatile));
-                case AST.ExprType.Kind.ULONG:
+                case AST.ExprTypeKind.ULONG:
                     return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
-                case AST.ExprType.Kind.LONG:
+                case AST.ExprTypeKind.LONG:
                     return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
@@ -145,7 +145,7 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             // 2. perform usual scalar conversion
-            Tuple<AST.Expr, AST.Expr, AST.ExprType.Kind> castReturn = AST.TypeCast.UsualScalarConversion(left, right);
+            Tuple<AST.Expr, AST.Expr, AST.ExprTypeKind> castReturn = AST.TypeCast.UsualScalarConversion(left, right);
             left = castReturn.Item1;
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
@@ -156,13 +156,13 @@ namespace SyntaxTree {
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
-                    case AST.ExprType.Kind.DOUBLE:
+                    case AST.ExprTypeKind.DOUBLE:
                         return new AST.ConstLong(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
-                    case AST.ExprType.Kind.FLOAT:
+                    case AST.ExprTypeKind.FLOAT:
                         return new AST.ConstLong(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
-                    case AST.ExprType.Kind.ULONG:
+                    case AST.ExprTypeKind.ULONG:
                         return new AST.ConstLong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
-                    case AST.ExprType.Kind.LONG:
+                    case AST.ExprTypeKind.LONG:
                         return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
                     default:
                         throw new InvalidOperationException("Expected arithmetic type.");
@@ -171,13 +171,13 @@ namespace SyntaxTree {
 
             // 4. if not both operands are constants
             switch (typeKind) {
-                case AST.ExprType.Kind.DOUBLE:
+                case AST.ExprTypeKind.DOUBLE:
                     return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
-                case AST.ExprType.Kind.FLOAT:
+                case AST.ExprTypeKind.FLOAT:
                     return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
-                case AST.ExprType.Kind.ULONG:
+                case AST.ExprTypeKind.ULONG:
                     return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
-                case AST.ExprType.Kind.LONG:
+                case AST.ExprTypeKind.LONG:
                     return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
@@ -257,10 +257,10 @@ namespace SyntaxTree {
             new AST.Add(left, right, type);
 
         public AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset, Boolean order = true) {
-            if (ptr.Type.kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.Type.Kind != AST.ExprTypeKind.POINTER) {
                 throw new InvalidOperationException();
             }
-            if (offset.Type.kind != AST.ExprType.Kind.LONG) {
+            if (offset.Type.Kind != AST.ExprTypeKind.LONG) {
                 throw new InvalidOperationException();
             }
 
@@ -303,7 +303,7 @@ namespace SyntaxTree {
             }
 
             // 2. ptr + int
-            if (left.Type.kind == AST.ExprType.Kind.POINTER) {
+            if (left.Type.Kind == AST.ExprTypeKind.POINTER) {
                 if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
@@ -312,7 +312,7 @@ namespace SyntaxTree {
             }
 
             // 3. int + ptr
-            if (right.Type.kind == AST.ExprType.Kind.POINTER) {
+            if (right.Type.Kind == AST.ExprTypeKind.POINTER) {
                 if (!left.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
@@ -348,10 +348,10 @@ namespace SyntaxTree {
             new AST.Sub(left, right, type);
 
         public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
-            if (ptr.Type.kind != AST.ExprType.Kind.POINTER) {
+            if (ptr.Type.Kind != AST.ExprTypeKind.POINTER) {
                 throw new InvalidOperationException("Error: expect a pointer");
             }
-            if (offset.Type.kind != AST.ExprType.Kind.LONG) {
+            if (offset.Type.Kind != AST.ExprTypeKind.LONG) {
                 throw new InvalidOperationException("Error: expect an integer");
             }
 
@@ -390,10 +390,10 @@ namespace SyntaxTree {
             var isConst = left.Type.is_const || right.Type.is_const;
             var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
 
-            if (left.Type.kind == AST.ExprType.Kind.POINTER) {
+            if (left.Type.Kind == AST.ExprTypeKind.POINTER) {
 
                 // 1. ptr - ptr
-                if (right.Type.kind == AST.ExprType.Kind.POINTER) {
+                if (right.Type.Kind == AST.ExprTypeKind.POINTER) {
                     AST.TPointer leftType = (AST.TPointer)(left.Type);
                     AST.TPointer rightType = (AST.TPointer)(right.Type);
                     if (!leftType.ref_t.EqualType(rightType.ref_t)) {

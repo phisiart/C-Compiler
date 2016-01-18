@@ -185,7 +185,7 @@ namespace AST {
         public readonly Option<Expr> expr;
 
         public override void CGenStmt(Env env, CGenState state) {
-            ExprType ret_type = env.GetCurrentFunction().ret_t;
+            ExprType ret_type = env.GetCurrentFunction().ReturnType;
 
             Int32 stack_size = state.StackSize;
 
