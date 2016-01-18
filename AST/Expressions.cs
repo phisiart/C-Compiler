@@ -824,7 +824,7 @@ namespace AST {
                 throw new InvalidProgramException();
             }
 
-            ExprType type = ((TPointer) this.expr.Type).ref_t;
+            ExprType type = ((TPointer) this.expr.Type).RefType;
             switch (type.Kind) {
                 case ExprTypeKind.ARRAY:
                 case ExprTypeKind.FUNCTION:

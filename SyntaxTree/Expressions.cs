@@ -152,8 +152,8 @@ namespace SyntaxTree {
                 case AST.ExprTypeKind.POINTER:
 
                     // if either points to void, convert to void *
-                    if (((AST.TPointer)true_expr.Type).ref_t.Kind == AST.ExprTypeKind.VOID
-                        || ((AST.TPointer)false_expr.Type).ref_t.Kind == AST.ExprTypeKind.VOID) {
+                    if (((AST.TPointer)true_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID
+                        || ((AST.TPointer)false_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID) {
                         return new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid()));
                     }
 
@@ -208,7 +208,7 @@ namespace SyntaxTree {
                     break;
 
                 case AST.ExprTypeKind.POINTER:
-                    var ref_t = (func.Type as AST.TPointer).ref_t;
+                    var ref_t = (func.Type as AST.TPointer).RefType;
                     if (!(ref_t is AST.TFunction)) {
                         throw new InvalidOperationException("Expected a function pointer.");
                     }
