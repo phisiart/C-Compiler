@@ -26,7 +26,7 @@ namespace SyntaxTree {
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType returnType) {
             if (this.ParamTypeList.IsNone) {
-                return SemantReturn.Create(env, AST.TFunction.Create(returnType));
+                return SemantReturn.Create(env, AST.FunctionType.Create(returnType));
             }
 
             var paramTypeList = this.ParamTypeList.Value;
@@ -34,7 +34,7 @@ namespace SyntaxTree {
             var namesAndTypes = Semant(paramTypeList.GetNamesAndTypes, ref env);
             var hasVarArgs = paramTypeList.HasVarArgs;
 
-            return SemantReturn.Create(env, AST.TFunction.Create(returnType, namesAndTypes, hasVarArgs));
+            return SemantReturn.Create(env, AST.FunctionType.Create(returnType, namesAndTypes, hasVarArgs));
         }
 
     }
@@ -85,7 +85,7 @@ namespace SyntaxTree {
         [SemantMethod]
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType elemType) {
             if (this.NumElems.IsNone) {
-                return SemantReturn.Create(env, new AST.TIncompleteArray(elemType));
+                return SemantReturn.Create(env, new AST.IncompleteArrayType(elemType));
             }
 
             // Get number of elements.
@@ -94,13 +94,13 @@ namespace SyntaxTree {
 
             // Try to cast number of elements to a integer.
             // TODO: allow float???
-            numElems = AST.TypeCast.MakeCast(numElems, new AST.TLong(true, false));
+            numElems = AST.TypeCast.MakeCast(numElems, new AST.LongType(true, false));
 
             if (!numElems.IsConstExpr) {
                 throw new InvalidOperationException("Number of elements of an array must be constant.");
             }
 
-            return SemantReturn.Create(env, new AST.TArray(elemType, ((AST.ConstLong) numElems).value));
+            return SemantReturn.Create(env, new AST.ArrayType(elemType, ((AST.ConstLong) numElems).value));
         }
 
         public Option<Expr> NumElems { get; }
@@ -118,7 +118,7 @@ namespace SyntaxTree {
         public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType targetType) {
             var isConst = this.TypeQuals.Contains(TypeQual.CONST);
             var isVolatile = this.TypeQuals.Contains(TypeQual.VOLATILE);
-            return SemantReturn.Create(env, new AST.TPointer(targetType, isConst, isVolatile));
+            return SemantReturn.Create(env, new AST.PointerType(targetType, isConst, isVolatile));
         }
 
         public ImmutableList<TypeQual> TypeQuals { get; }
@@ -292,11 +292,11 @@ namespace SyntaxTree {
                         throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
                     }
 
-                    var elemType = ((AST.TIncompleteArray)type).elem_type;
+                    var elemType = ((AST.IncompleteArrayType)type).ElemType;
 
-                    var numElems = 1 + lastOffset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
+                    var numElems = 1 + lastOffset / ((AST.IncompleteArrayType)type).ElemType.SizeOf;
 
-                    type = new AST.TArray(elemType, numElems, type.is_const, type.is_volatile);
+                    type = new AST.ArrayType(elemType, numElems, type.IsConst, type.IsVolatile);
                 }
 
                 initrOption = Option.Some(initr);

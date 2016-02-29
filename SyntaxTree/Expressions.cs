@@ -152,9 +152,9 @@ namespace SyntaxTree {
                 case AST.ExprTypeKind.POINTER:
 
                     // if either points to void, convert to void *
-                    if (((AST.TPointer)true_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID
-                        || ((AST.TPointer)false_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID) {
-                        return new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.TPointer(new AST.TVoid()));
+                    if (((AST.PointerType)true_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID
+                        || ((AST.PointerType)false_expr.Type).RefType.Kind == AST.ExprTypeKind.VOID) {
+                        return new AST.ConditionalExpr(cond, true_expr, false_expr, new AST.PointerType(new AST.VoidType()));
                     }
 
                     throw new NotImplementedException("More comparisons here.");
@@ -192,7 +192,7 @@ namespace SyntaxTree {
             // Update the environment to add this function type.
             if ((this.Func is Variable) && env.Find((this.Func as Variable).Name).IsNone) {
                 // TODO: get this env used.
-                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.TFunction.Create(new AST.TLong(true), args.ConvertAll(_ => Tuple.Create("", _.Type)), false
+                env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.FunctionType.Create(new AST.LongType(true), args.ConvertAll(_ => Tuple.Create("", _.Type)), false
                     )
                 );
             }
@@ -201,18 +201,18 @@ namespace SyntaxTree {
             AST.Expr func = this.Func.GetExpr(env);
 
             // Step 3: get the function type.
-            AST.TFunction func_type;
+            AST.FunctionType func_type;
             switch (func.Type.Kind) {
                 case AST.ExprTypeKind.FUNCTION:
-                    func_type = func.Type as AST.TFunction;
+                    func_type = func.Type as AST.FunctionType;
                     break;
 
                 case AST.ExprTypeKind.POINTER:
-                    var ref_t = (func.Type as AST.TPointer).RefType;
-                    if (!(ref_t is AST.TFunction)) {
+                    var ref_t = (func.Type as AST.PointerType).RefType;
+                    if (!(ref_t is AST.FunctionType)) {
                         throw new InvalidOperationException("Expected a function pointer.");
                     }
-                    func_type = ref_t as AST.TFunction;
+                    func_type = ref_t as AST.FunctionType;
                     break;
 
                 default:
@@ -265,7 +265,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Must get the attribute from a struct or union.");
             }
 
-            AST.Utils.StoreEntry entry = (expr.Type as AST.TStructOrUnion).Attribs.First(_ => _.name == name);
+            AST.Utils.StoreEntry entry = (expr.Type as AST.StructOrUnionType).Attribs.First(_ => _.name == name);
             AST.ExprType type = entry.type;
 
             return new AST.Attribute(expr, name, type);

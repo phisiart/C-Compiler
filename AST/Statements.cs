@@ -194,7 +194,7 @@ namespace AST {
                 this.expr.Value.CGenValue(env, state);
 
                 // If the function returns a struct, copy it to the address given by 8(%ebp).
-                if (this.expr.Value.Type is TStructOrUnion) {
+                if (this.expr.Value.Type is StructOrUnionType) {
                     state.MOVL(Reg.EAX, Reg.ESI);
                     state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
                     state.MOVL(this.expr.Value.Type.SizeOf, Reg.ECX);

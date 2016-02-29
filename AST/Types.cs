@@ -162,8 +162,8 @@ namespace AST {
 
     
 
-    public class TVoid : ExprType {
-        public TVoid(Boolean isConst = false, Boolean isVolatile = false)
+    public class VoidType : ExprType {
+        public VoidType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
         }
 
@@ -174,7 +174,7 @@ namespace AST {
         public override Int32 Alignment => SIZEOF_POINTER;
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TVoid(isConst, isVolatile);
+            new VoidType(isConst, isVolatile);
         
         public override String ToString() =>
             DumpQualifiers() + "void";
@@ -202,121 +202,168 @@ namespace AST {
         public override Boolean IsIntegral => true;
     }
 
-    public class TChar : IntegralType {
-        public TChar(Boolean isConst = false, Boolean isVolatile = false)
+    public class CharType : IntegralType {
+        public CharType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.CHAR;
+
         public override Int32 SizeOf => SIZEOF_CHAR;
+
         public override Int32 Alignment => ALIGN_CHAR;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TChar(isConst, isVolatile);
+            new CharType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "char";
     }
 
-    public class TUChar : IntegralType {
-        public TUChar(Boolean isConst = false, Boolean isVolatile = false)
+    public class UCharType : IntegralType {
+        public UCharType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.UCHAR;
+
         public override Int32 SizeOf => SIZEOF_CHAR;
+
         public override Int32 Alignment => ALIGN_CHAR;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TUChar(isConst, isVolatile);
+            new UCharType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "unsigned char";
     }
 
-    public class TShort : IntegralType {
-        public TShort(Boolean isConst = false, Boolean isVolatile = false)
+    public class ShortType : IntegralType {
+        public ShortType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.SHORT;
+
         public override Int32 SizeOf => SIZEOF_SHORT;
+
         public override Int32 Alignment => ALIGN_SHORT;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TShort(isConst, isVolatile);
+            new ShortType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "short";
     }
 
-    public class TUShort : IntegralType {
-        public TUShort(Boolean isConst = false, Boolean isVolatile = false)
+    public class UShortType : IntegralType {
+        public UShortType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.USHORT;
+
         public override Int32 SizeOf => SIZEOF_SHORT;
+
         public override Int32 Alignment => ALIGN_SHORT;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TUShort(isConst, isVolatile);
+            new UShortType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "unsigned short";
     }
 
-    public class TLong : IntegralType {
-        public TLong(Boolean isConst = false, Boolean isVolatile = false)
+    public class LongType : IntegralType {
+        public LongType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.LONG;
+
         public override Int32 SizeOf => SIZEOF_LONG;
+
         public override Int32 Alignment => ALIGN_LONG;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
-            return new TLong(isConst, isVolatile);
+            return new LongType(isConst, isVolatile);
         }
+
         public override String ToString() {
             return DumpQualifiers() + "long";
         }
     }
 
-    public class TULong : IntegralType {
-        public TULong(Boolean isConst = false, Boolean isVolatile = false)
+    public class ULongType : IntegralType {
+        public ULongType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.ULONG;
+
         public override Int32 SizeOf => SIZEOF_LONG;
+
         public override Int32 Alignment => ALIGN_LONG;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
-            return new TULong(isConst, isVolatile);
+            return new ULongType(isConst, isVolatile);
         }
+
         public override String ToString() {
             return DumpQualifiers() + "unsigned long";
         }
     }
 
-    public class TFloat : ArithmeticType {
-        public TFloat(Boolean isConst = false, Boolean isVolatile = false)
+    public class FloatType : ArithmeticType {
+        public FloatType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.FLOAT;
+
         public override Int32 SizeOf => SIZEOF_FLOAT;
+
         public override Int32 Alignment => ALIGN_FLOAT;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TFloat(isConst, isVolatile);
+            new FloatType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "float";
     }
 
-    public class TDouble : ArithmeticType {
-        public TDouble(Boolean isConst = false, Boolean isVolatile = false)
+    public class DoubleType : ArithmeticType {
+        public DoubleType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
+
         public override ExprTypeKind Kind => ExprTypeKind.DOUBLE;
+
         public override Int32 SizeOf => SIZEOF_DOUBLE;
+
         public override Int32 Alignment => ALIGN_DOUBLE;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TDouble(isConst, isVolatile);
+            new DoubleType(isConst, isVolatile);
+
         public override String ToString() => DumpQualifiers() + "double";
     }
 
-    public class TPointer : ScalarType {
-        public TPointer(ExprType refType, Boolean isConst = false, Boolean isVolatile = false)
+    public class PointerType : ScalarType {
+        public PointerType(ExprType refType, Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
             this.RefType = refType;
         }
+
         public override ExprTypeKind Kind => ExprTypeKind.POINTER;
+
         public override Int32 SizeOf => SIZEOF_POINTER;
+
         public override Int32 Alignment => ALIGN_POINTER;
+
         public readonly ExprType RefType;
+
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TPointer(this.RefType, isConst, isVolatile);
+            new PointerType(this.RefType, isConst, isVolatile);
+
         public override Boolean EqualType(ExprType other) =>
-            other.Kind == ExprTypeKind.POINTER && ((TPointer)other).RefType.EqualType(this.RefType);
+            other.Kind == ExprTypeKind.POINTER && ((PointerType)other).RefType.EqualType(this.RefType);
+
         public override String ToString() => $"{DumpQualifiers()}ptr<{this.RefType}>";
     }
 
     /// <summary>
     /// Incomplete array: an array with unknown length.
     /// </summary>
-    public class TIncompleteArray : ExprType {
-        public TIncompleteArray(ExprType elemType, Boolean isConst = false, Boolean isVolatile = false)
+    public class IncompleteArrayType : ExprType {
+        public IncompleteArrayType(ExprType elemType, Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
             this.ElemType = elemType;
         }
@@ -332,43 +379,47 @@ namespace AST {
         public override Int32 Alignment => this.ElemType.Alignment;
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TIncompleteArray(this.ElemType, isConst, isVolatile);
+            new IncompleteArrayType(this.ElemType, isConst, isVolatile);
 
         public override Boolean EqualType(ExprType other) => false;
 
         public override Boolean IsComplete => false;
 
-        public ExprType Complete(Int32 numElems) => new TArray(this.ElemType, numElems, this.IsConst, this.IsVolatile);
+        public ExprType Complete(Int32 numElems) => new ArrayType(this.ElemType, numElems, this.IsConst, this.IsVolatile);
 
         public override String ToString() => $"{this.ElemType}[]";
 
         public readonly ExprType ElemType;
     }
 
-    public class TArray : ExprType {
-        public TArray(ExprType elemType, Int32 numElems, Boolean isConst = false, Boolean isVolatile = false)
+    public class ArrayType : ExprType {
+        public ArrayType(ExprType elemType, Int32 numElems, Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
             this.ElemType = elemType;
             this.NumElems = numElems;
         }
 
         public override ExprTypeKind Kind => ExprTypeKind.ARRAY;
+
         public override Int32 SizeOf => this.ElemType.SizeOf * this.NumElems;
+
         public override Int32 Alignment => this.ElemType.Alignment;
+
         public readonly ExprType ElemType;
+
         public readonly Int32 NumElems;
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TArray(this.ElemType, this.NumElems, isConst, isVolatile);
+            new ArrayType(this.ElemType, this.NumElems, isConst, isVolatile);
 
         public override Boolean EqualType(ExprType other) =>
-            other.Kind == ExprTypeKind.ARRAY && ((TArray)other).ElemType.EqualType(this.ElemType);
+            other.Kind == ExprTypeKind.ARRAY && ((ArrayType)other).ElemType.EqualType(this.ElemType);
 
         public override String ToString() => $"Arr[{this.NumElems}, {this.ElemType}]";
     }
     
-    public class TStructOrUnion : ExprType {
-        private TStructOrUnion(StructOrUnionLayout layout, Boolean isConst, Boolean isVolatile)
+    public class StructOrUnionType : ExprType {
+        private StructOrUnionType(StructOrUnionLayout layout, Boolean isConst, Boolean isVolatile)
             : base(isConst, isVolatile) {
             this._layout = layout;
         }
@@ -376,29 +427,29 @@ namespace AST {
         public override ExprTypeKind Kind => ExprTypeKind.STRUCT_OR_UNION;
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new TStructOrUnion(this._layout, isConst, isVolatile);
+            new StructOrUnionType(this._layout, isConst, isVolatile);
 
-        public static TStructOrUnion CreateIncompleteStruct(String name, Boolean is_const, Boolean is_volatile) =>
-            new TStructOrUnion(new StructOrUnionLayout($"struct {name}"), is_const, is_volatile);
+        public static StructOrUnionType CreateIncompleteStruct(String name, Boolean is_const, Boolean is_volatile) =>
+            new StructOrUnionType(new StructOrUnionLayout($"struct {name}"), is_const, is_volatile);
 
-        public static TStructOrUnion CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
-            new TStructOrUnion(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
+        public static StructOrUnionType CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
+            new StructOrUnionType(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
 
-        public static TStructOrUnion CreateIncompleteType(SyntaxTree.StructOrUnion structOrUnion, String name) =>
+        public static StructOrUnionType CreateIncompleteType(SyntaxTree.StructOrUnion structOrUnion, String name) =>
             structOrUnion == SyntaxTree.StructOrUnion.STRUCT
                 ? CreateIncompleteStruct(name, false, false)
                 : CreateIncompleteUnion(name, false, false);
 
-        public static TStructOrUnion CreateStruct(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
+        public static StructOrUnionType CreateStruct(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
             StructOrUnionLayout layout = new StructOrUnionLayout($"struct {name}");
             layout.DefineStruct(attribs);
-            return new TStructOrUnion(layout, is_const, is_volatile);
+            return new StructOrUnionType(layout, is_const, is_volatile);
         }
 
-        public static TStructOrUnion CreateUnion(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
+        public static StructOrUnionType CreateUnion(String name, IReadOnlyList<Tuple<String, ExprType>> attribs, Boolean is_const, Boolean is_volatile) {
             StructOrUnionLayout layout = new StructOrUnionLayout($"union {name}");
             layout.DefineUnion(attribs);
-            return new TStructOrUnion(layout, is_const, is_volatile);
+            return new StructOrUnionType(layout, is_const, is_volatile);
         }
 
         public void DefineStruct(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineStruct(attribs);
@@ -433,7 +484,7 @@ namespace AST {
         public override String ToString() => Dump(false);
 
         public override Boolean EqualType(ExprType other) =>
-            other.Kind == ExprTypeKind.STRUCT_OR_UNION && ReferenceEquals(((TStructOrUnion)other)._layout, this._layout);
+            other.Kind == ExprTypeKind.STRUCT_OR_UNION && ReferenceEquals(((StructOrUnionType)other)._layout, this._layout);
 
         public override Boolean IsComplete => this._layout.IsComplete;
 
@@ -538,7 +589,7 @@ namespace AST {
         }
     }
 
-    // class TFunction
+    // class FunctionType
     // ===============
     // represents the function type
     // stores the names, types, and offsets of arguments
@@ -547,8 +598,8 @@ namespace AST {
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
     // TODO: name is optional
-    public class TFunction : ExprType {
-        protected TFunction(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
+    public class FunctionType : ExprType {
+        protected FunctionType(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
             : base(true, false) {
             this.Args = args;
             this.ReturnType = ret_t;
@@ -562,32 +613,32 @@ namespace AST {
         public override Int32 Alignment => ALIGN_POINTER;
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
-            return new TFunction(this.ReturnType, this.Args, this.HasVarArgs);
+            return new FunctionType(this.ReturnType, this.Args, this.HasVarArgs);
         }
 
         public override Boolean EqualType(ExprType other) {
-            return (other is TFunction)
-                && (other as TFunction).HasVarArgs == this.HasVarArgs
+            return (other is FunctionType)
+                && (other as FunctionType).HasVarArgs == this.HasVarArgs
 
                 // same return type
-                && (other as TFunction).ReturnType.EqualType(this.ReturnType)
+                && (other as FunctionType).ReturnType.EqualType(this.ReturnType)
 
                 // same number of arguments
-                && (other as TFunction).Args.Count == this.Args.Count
+                && (other as FunctionType).Args.Count == this.Args.Count
 
                 // same argument types
-                && (other as TFunction).Args.Zip(this.Args, (entry1, entry2) => entry1.type.EqualType(entry2.type)).All(_ => _);
+                && (other as FunctionType).Args.Zip(this.Args, (entry1, entry2) => entry1.type.EqualType(entry2.type)).All(_ => _);
         }
 
-        public static TFunction Create(ExprType ret_type, List<Tuple<String, ExprType>> args, Boolean is_varargs) {
+        public static FunctionType Create(ExprType ret_type, List<Tuple<String, ExprType>> args, Boolean is_varargs) {
             Tuple<Int32, IReadOnlyList<Int32>> r_pack = Utils.PackArguments(args.ConvertAll(_ => _.Item2));
             IReadOnlyList<Int32> offsets = r_pack.Item2;
-            if (ret_type is TStructOrUnion) {
+            if (ret_type is StructOrUnionType) {
                 offsets = offsets.Select(_ => _ + 3 * SIZEOF_POINTER).ToList();
             } else {
                 offsets = offsets.Select(_ => _ + 2 * SIZEOF_POINTER).ToList();
             }
-            return new TFunction(
+            return new FunctionType(
                 ret_type,
                 args.Zip(offsets,
                     (name_type, offset) => new Utils.StoreEntry(name_type.Item1, name_type.Item2, offset)
@@ -597,10 +648,10 @@ namespace AST {
         }
 
         // TODO: param name should be optional
-        public static TFunction Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) =>
+        public static FunctionType Create(ExprType returnType, ImmutableList<Tuple<Option<String>, ExprType>> args, Boolean hasVarArgs) =>
             Create(returnType, args.Select(_ => Tuple.Create(_.Item1.IsSome ? _.Item1.Value : "", _.Item2)).ToList(), hasVarArgs);
 
-        public static TFunction Create(ExprType returnType) =>
+        public static FunctionType Create(ExprType returnType) =>
             Create(returnType, ImmutableList<Tuple<Option<String>, ExprType>>.Empty, true);
 
         public String Dump(Boolean dump_args = false) {
@@ -633,12 +684,12 @@ namespace AST {
         public readonly List<Utils.StoreEntry> Args;
     }
 
-    // class TEmptyFunction
+    // class EmptyFunctionType
     // ====================
     // defines an empty function: no arguments, returns void
     // 
-    public class TEmptyFunction : TFunction {
-        public TEmptyFunction() : base(new TVoid(), new List<Utils.StoreEntry>(), false) {
+    public class EmptyFunctionType : FunctionType {
+        public EmptyFunctionType() : base(new VoidType(), new List<Utils.StoreEntry>(), false) {
         }
     }
 

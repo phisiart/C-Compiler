@@ -114,7 +114,7 @@ namespace AST {
 
         public override Env Env { get; }
 
-        public override Boolean IsLValue => !(Type is TFunction);
+        public override Boolean IsLValue => !(Type is FunctionType);
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(this.name).Value;
@@ -493,14 +493,14 @@ namespace AST {
     }
         
     public class FuncCall : Expr {
-        public FuncCall(Expr func, TFunction funcType, List<Expr> args)
+        public FuncCall(Expr func, FunctionType funcType, List<Expr> args)
             : base(funcType.ReturnType) {
             this.Func = func;
             this.FuncType = funcType;
             this.Args = args;
         }
         public readonly Expr Func;
-        public readonly TFunction FuncType;
+        public readonly FunctionType FuncType;
         public readonly IReadOnlyList<Expr> Args;
 
         public override Env Env => this.Args.Any() ? this.Args.Last().Env : this.Func.Env;
@@ -559,7 +559,7 @@ namespace AST {
             Int32 pack_size = r_pack.Item1;
             IReadOnlyList<Int32> offsets = r_pack.Item2;
 
-            if (this.Type is TStructOrUnion) {
+            if (this.Type is StructOrUnionType) {
                 // If the function returns a struct
 
                 // Allocate space for return value.
@@ -581,7 +581,7 @@ namespace AST {
             state.NEWLINE();
 
             // Store the address as the first argument.
-            if (this.Type is TStructOrUnion) {
+            if (this.Type is StructOrUnionType) {
                 state.COMMENT("Putting extra argument for struct return address.");
                 state.MOVL(Reg.EAX, 0, Reg.ESP);
                 state.NEWLINE();
@@ -650,9 +650,9 @@ namespace AST {
             state.CGenForceStackSizeTo(-header_base);
 
             // Get function address
-            if (this.Func.Type is TFunction) {
+            if (this.Func.Type is FunctionType) {
                 this.Func.CGenAddress(env, state);
-            } else if (this.Func.Type is TPointer) {
+            } else if (this.Func.Type is PointerType) {
                 this.Func.CGenValue(env, state);
             } else {
                 throw new InvalidProgramException();
@@ -709,7 +709,7 @@ namespace AST {
             Int32 struct_size = this.expr.Type.SizeOf;
 
             // offset inside the pack
-            Int32 attrib_offset = ((TStructOrUnion) this.expr.Type)
+            Int32 attrib_offset = ((StructOrUnionType) this.expr.Type)
                         .Attribs
                         .First(_ => _.name == this.name)
                         .offset;
@@ -765,7 +765,7 @@ namespace AST {
             this.expr.CGenAddress(env, state);
 
             // offset inside the pack
-            Int32 offset = ((TStructOrUnion) this.expr.Type)
+            Int32 offset = ((StructOrUnionType) this.expr.Type)
                         .Attribs
                         .First(_ => _.name == this.name)
                         .offset;
@@ -779,7 +779,7 @@ namespace AST {
     /// </summary>
     public class Reference : Expr {
         public Reference(Expr expr)
-            : base(new TPointer(expr.Type)) {
+            : base(new PointerType(expr.Type)) {
             this.expr = expr;
         }
         public readonly Expr expr;
@@ -824,7 +824,7 @@ namespace AST {
                 throw new InvalidProgramException();
             }
 
-            ExprType type = ((TPointer) this.expr.Type).RefType;
+            ExprType type = ((PointerType) this.expr.Type).RefType;
             switch (type.Kind) {
                 case ExprTypeKind.ARRAY:
                 case ExprTypeKind.FUNCTION:

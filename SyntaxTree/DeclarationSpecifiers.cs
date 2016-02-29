@@ -140,38 +140,38 @@ namespace SyntaxTree {
 
             BasicTypeSpecLookupTable = ImmutableDictionary<ImmutableSortedSet<TypeSpec.Kind>, ExprType>.Empty
                 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.VOID), new TVoid())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.VOID), new VoidType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR), new TChar())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR, TypeSpec.Kind.SIGNED), new TChar())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR), new CharType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR, TypeSpec.Kind.SIGNED), new CharType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR, TypeSpec.Kind.UNSIGNED), new TUChar())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.CHAR, TypeSpec.Kind.UNSIGNED), new UCharType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT), new TShort())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.SIGNED), new TShort())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT), new TShort())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED), new TShort())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT), new ShortType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.SIGNED), new ShortType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT), new ShortType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED), new ShortType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.UNSIGNED), new TUShort())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT, TypeSpec.Kind.UNSIGNED), new TUShort())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.UNSIGNED), new UShortType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SHORT, TypeSpec.Kind.INT, TypeSpec.Kind.UNSIGNED), new UShortType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.LONG), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED, TypeSpec.Kind.LONG), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SIGNED), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SIGNED, TypeSpec.Kind.LONG), new TLong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.LONG), new TLong())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.LONG), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.INT, TypeSpec.Kind.SIGNED, TypeSpec.Kind.LONG), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SIGNED), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.SIGNED, TypeSpec.Kind.LONG), new LongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.LONG), new LongType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED), new TULong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.INT), new TULong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.LONG), new TULong())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.INT, TypeSpec.Kind.LONG), new TULong())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED), new ULongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.INT), new ULongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.LONG), new ULongType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.UNSIGNED, TypeSpec.Kind.INT, TypeSpec.Kind.LONG), new ULongType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.FLOAT), new TFloat())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.FLOAT), new FloatType())
 
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.DOUBLE), new TDouble())
-            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.DOUBLE, TypeSpec.Kind.LONG), new TDouble())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.DOUBLE), new DoubleType())
+            .Add(ImmutableSortedSet.Create(TypeSpec.Kind.DOUBLE, TypeSpec.Kind.LONG), new DoubleType())
             ;
         }
 
@@ -185,7 +185,7 @@ namespace SyntaxTree {
 
             // If no type specifier is given, assume long type.
             if (this.TypeSpecs.IsEmpty) {
-                return SemantReturn.Create(env, new TLong(isConst, isVolatile));
+                return SemantReturn.Create(env, new LongType(isConst, isVolatile));
             }
 
             // If every type specifier is basic, go to the lookup table.
@@ -331,7 +331,7 @@ namespace SyntaxTree {
         [SemantMethod]
         public override ISemantReturn<ExprType> GetExprType(Env env) {
 
-            TStructOrUnion type;
+            StructOrUnionType type;
 
             // If no members provided, then we need to find the type in the current environment.
             if (this.MemberDeclns.IsNone) {
@@ -348,7 +348,7 @@ namespace SyntaxTree {
 
                 // If name not found: create an incomplete type and add it into the environment.
                 if (entryOpt.IsNone) {
-                    type = TStructOrUnion.CreateIncompleteType(this.StructOrUnion, name);
+                    type = StructOrUnionType.CreateIncompleteType(this.StructOrUnion, name);
                     env = env.PushEntry(Env.EntryKind.TYPEDEF, typeName, type);
                     return SemantReturn.Create(env, type);
                 }
@@ -375,7 +375,7 @@ namespace SyntaxTree {
 
                 // If name not found: create an incomplete type and add it into the environment.
                 if (entryOpt.IsNone) {
-                    type = TStructOrUnion.CreateIncompleteType(this.StructOrUnion, name);
+                    type = StructOrUnionType.CreateIncompleteType(this.StructOrUnion, name);
                     env = env.PushEntry(Env.EntryKind.TYPEDEF, typeName, type);
                 } else {
                     if (entryOpt.Value.kind != Env.EntryKind.TYPEDEF) {
@@ -383,7 +383,7 @@ namespace SyntaxTree {
                             "A struct or union in env that is not typedef? This should not appear.");
                     }
 
-                    type = entryOpt.Value.type as TStructOrUnion;
+                    type = entryOpt.Value.type as StructOrUnionType;
                     if (type == null) {
                         throw new InvalidProgramException(
                             $"{typeName} is not a struct or union? This should not appear.");
@@ -397,7 +397,7 @@ namespace SyntaxTree {
 
             } else {
                 var typeName = (this.StructOrUnion == StructOrUnion.STRUCT ? "struct" : "union") + " <unnamed>";
-                type = TStructOrUnion.CreateIncompleteType(this.StructOrUnion, typeName);
+                type = StructOrUnionType.CreateIncompleteType(this.StructOrUnion, typeName);
             }
 
             var members = Semant(GetMembers, this.MemberDeclns.Value, ref env);
@@ -446,7 +446,7 @@ namespace SyntaxTree {
                     throw new InvalidOperationException($"enum {name} has not been defined.");
                 }
 
-                return SemantReturn.Create(env, new TLong());
+                return SemantReturn.Create(env, new LongType());
             }
 
             // If enumerators are provided: add names to environment
@@ -456,14 +456,14 @@ namespace SyntaxTree {
                 if (enumr.Init.IsSome) {
                     // If the user provides an initialization value, use it.
                     var init = SemantExpr(enumr.Init.Value, ref env);
-                    init = AST.TypeCast.MakeCast(init, new TLong());
+                    init = AST.TypeCast.MakeCast(init, new LongType());
                     if (!init.IsConstExpr) {
                         throw new InvalidOperationException("Enumerator initialization must have a constant value.");
                     }
                     offset = ((ConstLong)init).value;
                 }
 
-                env = env.PushEnum(enumr.Name, new TLong(), offset);
+                env = env.PushEnum(enumr.Name, new LongType(), offset);
 
                 offset++;
             }
@@ -475,10 +475,10 @@ namespace SyntaxTree {
                 if (env.FindInCurrentScope(typeName).IsSome) {
                     throw new InvalidOperationException($"{typeName} is already defined.");
                 }
-                env = env.PushEntry(Env.EntryKind.TYPEDEF, typeName, new TLong());
+                env = env.PushEntry(Env.EntryKind.TYPEDEF, typeName, new LongType());
             }
 
-            return SemantReturn.Create(env, new TLong());
+            return SemantReturn.Create(env, new LongType());
         }
 
         public Option<String> Name { get; }
@@ -512,7 +512,7 @@ namespace SyntaxTree {
 
             AST.Expr init = this.Init.Value.GetExpr(env);
 
-            init = AST.TypeCast.MakeCast(init, new TLong());
+            init = AST.TypeCast.MakeCast(init, new LongType());
             if (!init.IsConstExpr) {
                 throw new InvalidOperationException("Error: expected constant integer");
             }

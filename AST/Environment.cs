@@ -49,7 +49,7 @@ namespace AST {
             private Scope(List<Utils.StoreEntry> stack_entries,
                           Int32 stack_offset,
                           List<Utils.StoreEntry> global_entries,
-                          TFunction curr_func,
+                          FunctionType curr_func,
                           List<Utils.StoreEntry> typedef_entries,
                           List<Utils.StoreEntry> enum_entries) {
                 this.locals = stack_entries;
@@ -78,7 +78,7 @@ namespace AST {
                 : this(new List<Utils.StoreEntry>(),
                        0,
                        new List<Utils.StoreEntry>(),
-                       new TEmptyFunction(),
+                       new EmptyFunctionType(),
                        new List<Utils.StoreEntry>(),
                        new List<Utils.StoreEntry>()) {}
 
@@ -140,7 +140,7 @@ namespace AST {
             // SetCurrFunc
             // ===========
             // set the current function
-            public Scope SetCurrentFunction(TFunction type) {
+            public Scope SetCurrentFunction(FunctionType type) {
                 return new Scope(this.locals, this.esp_pos, this.globals,
                     type, this.typedefs, this.enums
                 );
@@ -227,7 +227,7 @@ namespace AST {
             //  private members
             // ================================================================
             public readonly List<Utils.StoreEntry> locals;
-            public readonly TFunction              func;
+            public readonly FunctionType              func;
             public readonly List<Utils.StoreEntry> globals;
             public readonly List<Utils.StoreEntry> typedefs;
             public readonly List<Utils.StoreEntry> enums;
@@ -308,7 +308,7 @@ namespace AST {
         // ouput: Environment
         // return a new environment which sets the current function
         // 
-        public Env SetCurrentFunction(TFunction type) {
+        public Env SetCurrentFunction(FunctionType type) {
             Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
             Scope top = scopes.Pop().SetCurrentFunction(type);
             scopes.Push(top);
@@ -318,10 +318,10 @@ namespace AST {
         // GetCurrentFunction
         // ==================
         // input: void
-        // output: TFunction
+        // output: FunctionType
         // return the type of the current function
         // 
-        public TFunction GetCurrentFunction() {
+        public FunctionType GetCurrentFunction() {
             return this.env_scopes.Peek().func;
         }
 

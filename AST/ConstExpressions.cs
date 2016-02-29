@@ -25,7 +25,7 @@ namespace AST {
 
     public class ConstLong : ConstExpr {
         public ConstLong(Int32 value, Env env)
-            : base(new TLong(true), env) {
+            : base(new LongType(true), env) {
             this.value = value;
         }
         public readonly Int32 value;
@@ -44,7 +44,7 @@ namespace AST {
 
     public class ConstULong : ConstExpr {
         public ConstULong(UInt32 value, Env env)
-            : base(new TULong(true), env) {
+            : base(new ULongType(true), env) {
             this.value = value;
         }
         public readonly UInt32 value;
@@ -83,7 +83,7 @@ namespace AST {
 
     public class ConstFloat : ConstExpr {
         public ConstFloat(Single value, Env env)
-            : base(new TFloat(true), env) {
+            : base(new FloatType(true), env) {
             this.value = value;
         }
         public readonly Single value;
@@ -104,7 +104,7 @@ namespace AST {
 
     public class ConstDouble : ConstExpr {
         public ConstDouble(Double value, Env env)
-            : base(new TDouble(true), env) {
+            : base(new DoubleType(true), env) {
             this.value = value;
         }
         public readonly Double value;
@@ -126,7 +126,7 @@ namespace AST {
 
     public class ConstStringLiteral : ConstExpr {
         public ConstStringLiteral(String value, Env env)
-            : base(new TPointer(new TChar(true), true), env) {
+            : base(new PointerType(new CharType(true), true), env) {
             this.value = value;
         }
         public readonly String value;

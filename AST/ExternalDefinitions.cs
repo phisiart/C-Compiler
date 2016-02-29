@@ -22,7 +22,7 @@ namespace AST {
     }
 
     public class FuncDef : ExternDecln {
-        public FuncDef(String name, StorageClass scs, TFunction type, Stmt stmt) {
+        public FuncDef(String name, StorageClass scs, FunctionType type, Stmt stmt) {
             this.name = name;
             this.scs  = scs;
             this.type = type;
@@ -76,7 +76,7 @@ namespace AST {
 
         public readonly String      name;
         public readonly StorageClass   scs;
-        public readonly TFunction   type;
+        public readonly FunctionType   type;
         public readonly Stmt        stmt;
     }
 }

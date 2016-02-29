@@ -38,8 +38,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -56,9 +56,9 @@ namespace SyntaxTree {
             // 4. if not both operands are constants
             switch (typeKind) {
                 case AST.ExprTypeKind.ULONG:
-                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.ULongType(isConst, isVolatile));
                 case AST.ExprTypeKind.LONG:
-                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.ULongType(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected long or unsigned long.");
             }
@@ -88,8 +88,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -110,13 +110,13 @@ namespace SyntaxTree {
             // 4. if not both operands are constants
             switch (typeKind) {
                 case AST.ExprTypeKind.DOUBLE:
-                    return ConstructExpr(left, right, new AST.TDouble(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.DoubleType(isConst, isVolatile));
                 case AST.ExprTypeKind.FLOAT:
-                    return ConstructExpr(left, right, new AST.TFloat(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.FloatType(isConst, isVolatile));
                 case AST.ExprTypeKind.ULONG:
-                    return ConstructExpr(left, right, new AST.TULong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.ULongType(isConst, isVolatile));
                 case AST.ExprTypeKind.LONG:
-                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
             }
@@ -150,8 +150,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -172,13 +172,13 @@ namespace SyntaxTree {
             // 4. if not both operands are constants
             switch (typeKind) {
                 case AST.ExprTypeKind.DOUBLE:
-                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 case AST.ExprTypeKind.FLOAT:
-                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 case AST.ExprTypeKind.ULONG:
-                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 case AST.ExprTypeKind.LONG:
-                    return ConstructExpr(left, right, new AST.TLong(isConst, isVolatile));
+                    return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 default:
                     throw new InvalidOperationException("Expected arithmetic type.");
             }
@@ -268,18 +268,18 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 var baseValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
+                Int32 scaleValue = ((AST.PointerType)(ptr.Type)).RefType.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.Type, env);
             }
 
-            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env);
+            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.LongType(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env);
             var scaleFactor = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, env),
-                new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, env),
+                new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
             );
-            var type = new AST.TLong(offset.Type.is_const, offset.Type.is_volatile);
+            var type = new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile);
             var add =
                 order
                 ? new AST.Add(baseAddress, scaleFactor, type)
@@ -294,12 +294,12 @@ namespace SyntaxTree {
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
 
-            if (left.Type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
+            if (left.Type is AST.ArrayType) {
+                left = AST.TypeCast.MakeCast(left, new AST.PointerType((left.Type as AST.ArrayType).ElemType, left.Type.IsConst, left.Type.IsVolatile));
             }
 
-            if (right.Type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
+            if (right.Type is AST.ArrayType) {
+                right = AST.TypeCast.MakeCast(right, new AST.PointerType((right.Type as AST.ArrayType).ElemType, right.Type.IsConst, right.Type.IsVolatile));
             }
 
             // 2. ptr + int
@@ -307,7 +307,7 @@ namespace SyntaxTree {
                 if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.LongType(right.Type.IsConst, right.Type.IsVolatile));
                 return GetPointerAddition(left, right);
             }
 
@@ -316,7 +316,7 @@ namespace SyntaxTree {
                 if (!left.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.Type.is_const, left.Type.is_volatile));
+                left = AST.TypeCast.MakeCast(left, new AST.LongType(left.Type.IsConst, left.Type.IsVolatile));
                 return GetPointerAddition(right, left, false);
             }
 
@@ -357,19 +357,19 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleFactorValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
+                Int32 scaleFactorValue = ((AST.PointerType)(ptr.Type)).RefType.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.Type, offset.Env);
             }
 
             return AST.TypeCast.ToPointer(new AST.Sub(
-                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env),
+                    AST.TypeCast.FromPointer(ptr, new AST.LongType(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, offset.Env),
-                        new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                        new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, offset.Env),
+                        new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
                     ),
-                    new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                    new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
                 ), ptr.Type, offset.Env
             );
         }
@@ -379,28 +379,28 @@ namespace SyntaxTree {
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
 
-            if (left.Type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
+            if (left.Type is AST.ArrayType) {
+                left = AST.TypeCast.MakeCast(left, new AST.PointerType((left.Type as AST.ArrayType).ElemType, left.Type.IsConst, left.Type.IsVolatile));
             }
 
-            if (right.Type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
+            if (right.Type is AST.ArrayType) {
+                right = AST.TypeCast.MakeCast(right, new AST.PointerType((right.Type as AST.ArrayType).ElemType, right.Type.IsConst, right.Type.IsVolatile));
             }
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             if (left.Type.Kind == AST.ExprTypeKind.POINTER) {
 
                 // 1. ptr - ptr
                 if (right.Type.Kind == AST.ExprTypeKind.POINTER) {
-                    AST.TPointer leftType = (AST.TPointer)(left.Type);
-                    AST.TPointer rightType = (AST.TPointer)(right.Type);
-                    if (!leftType.ref_t.EqualType(rightType.ref_t)) {
+                    AST.PointerType leftType = (AST.PointerType)(left.Type);
+                    AST.PointerType rightType = (AST.PointerType)(right.Type);
+                    if (!leftType.RefType.EqualType(rightType.RefType)) {
                         throw new InvalidOperationException("The 2 pointers don't match.");
                     }
 
-                    Int32 scale = leftType.ref_t.SizeOf;
+                    Int32 scale = leftType.RefType.SizeOf;
 
                     if (left.IsConstExpr && right.IsConstExpr) {
                         return new AST.ConstLong((Int32)(((AST.ConstPtr)left).value - ((AST.ConstPtr)right).value) / scale, env);
@@ -408,12 +408,12 @@ namespace SyntaxTree {
 
                     return new AST.Divide(
                         new AST.Sub(
-                            AST.TypeCast.MakeCast(left, new AST.TLong(isConst, isVolatile)),
-                            AST.TypeCast.MakeCast(right, new AST.TLong(isConst, isVolatile)),
-                            new AST.TLong(isConst, isVolatile)
+                            AST.TypeCast.MakeCast(left, new AST.LongType(isConst, isVolatile)),
+                            AST.TypeCast.MakeCast(right, new AST.LongType(isConst, isVolatile)),
+                            new AST.LongType(isConst, isVolatile)
                         ),
                         new AST.ConstLong(scale, env),
-                        new AST.TLong(isConst, isVolatile)
+                        new AST.LongType(isConst, isVolatile)
                     );
                 }
 
@@ -421,7 +421,7 @@ namespace SyntaxTree {
                 if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected an integral.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.LongType(right.Type.IsConst, right.Type.IsVolatile));
                 return GetPointerSubtraction(left, right);
 
             }

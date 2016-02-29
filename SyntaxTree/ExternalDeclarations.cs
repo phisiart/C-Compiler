@@ -59,7 +59,7 @@ namespace SyntaxTree {
             var name = this.Declr.Name;
             var type = Semant(this.Declr.DecorateType, baseType, ref env);
 
-            var funcType = type as TFunction;
+            var funcType = type as FunctionType;
             if (funcType == null) {
                 throw new InvalidOperationException("Expected a function type.");
             }

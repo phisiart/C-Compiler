@@ -342,7 +342,7 @@ namespace AST {
             //    foreach (Int32 index in indices) {
             //        switch (type.kind) {
             //            case ExprType.Kind.ARRAY:
-            //                type = ((TArray)type).elem_type;
+            //                type = ((ArrayType)type).ElemType;
             //                break;
             //            case ExprType.Kind.INCOMPLETE_ARRAY:
             //            case ExprType.Kind.STRUCT_OR_UNION:
@@ -355,13 +355,13 @@ namespace AST {
             public static ExprType GetType(ExprType from_type, Int32 to_index) {
                 switch (from_type.Kind) {
                     case ExprTypeKind.ARRAY:
-                        return ((TArray)from_type).elem_type;
+                        return ((ArrayType)from_type).ElemType;
 
                     case ExprTypeKind.INCOMPLETE_ARRAY:
-                        return ((TIncompleteArray)from_type).elem_type;
+                        return ((IncompleteArrayType)from_type).ElemType;
 
                     case ExprTypeKind.STRUCT_OR_UNION:
-                        return ((TStructOrUnion)from_type).Attribs[to_index].type;
+                        return ((StructOrUnionType)from_type).Attribs[to_index].type;
 
                     default:
                         throw new InvalidProgramException("Not an aggregate type.");
@@ -374,13 +374,13 @@ namespace AST {
             public static Int32 GetOffset(ExprType from_type, Int32 to_index) {
                 switch (from_type.Kind) {
                     case ExprTypeKind.ARRAY:
-                        return to_index * ((TArray)from_type).elem_type.SizeOf;
+                        return to_index * ((ArrayType)from_type).ElemType.SizeOf;
 
                     case ExprTypeKind.INCOMPLETE_ARRAY:
-                        return to_index * ((TIncompleteArray)from_type).elem_type.SizeOf;
+                        return to_index * ((IncompleteArrayType)from_type).ElemType.SizeOf;
 
                     case ExprTypeKind.STRUCT_OR_UNION:
-                        return ((TStructOrUnion)from_type).Attribs[to_index].offset;
+                        return ((StructOrUnionType)from_type).Attribs[to_index].offset;
 
                     default:
                         throw new InvalidProgramException("Not an aggregate type.");
@@ -422,7 +422,7 @@ namespace AST {
 
                     switch (type.Kind) {
                         case ExprTypeKind.ARRAY:
-                            if (index < ((TArray)type).num_elems - 1) {
+                            if (index < ((ArrayType)type).NumElems - 1) {
                                 // There are more elements in the array.
                                 this.indices.Add(index + 1);
                                 return;
@@ -434,7 +434,7 @@ namespace AST {
                             return;
 
                         case ExprTypeKind.STRUCT_OR_UNION:
-                            if (((TStructOrUnion)type).IsStruct && index < ((TStructOrUnion)type).Attribs.Count - 1) {
+                            if (((StructOrUnionType)type).IsStruct && index < ((StructOrUnionType)type).Attribs.Count - 1) {
                                 // There are more members in the struct.
                                 // (not union, since we can only initialize the first member of a union)
                                 this.indices.Add(index + 1);
@@ -455,7 +455,7 @@ namespace AST {
             public void Locate(ExprType type) {
                 switch (type.Kind) {
                     case ExprTypeKind.STRUCT_OR_UNION:
-                        LocateStruct((TStructOrUnion)type);
+                        LocateStruct((StructOrUnionType)type);
                         return;
                     default:
                         // Even if the expression is of array type, treat it as a scalar (pointer).
@@ -478,7 +478,7 @@ namespace AST {
             /// Try to match a given struct.
             /// Go down to find the first element of the same struct type.
             /// </summary>
-            private void LocateStruct(TStructOrUnion type) {
+            private void LocateStruct(StructOrUnionType type) {
                 while (!this.CurType.EqualType(type)) {
                     if (this.CurType.IsScalar) {
                         throw new InvalidOperationException("Trying to match a struct or union, but found a scalar.");

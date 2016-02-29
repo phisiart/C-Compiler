@@ -388,7 +388,7 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
             env = expr.Env;
 
-            expr = AST.TypeCast.MakeCast(expr, new AST.TLong());
+            expr = AST.TypeCast.MakeCast(expr, new AST.LongType());
             if (!expr.IsConstExpr) {
                 throw new InvalidOperationException("case Expr not const");
             }
