@@ -355,10 +355,10 @@ namespace AST {
             public static ExprType GetType(ExprType from_type, Int32 to_index) {
                 switch (from_type.Kind) {
                     case ExprTypeKind.ARRAY:
-                        return ((TArray)from_type).elem_type;
+                        return ((TArray)from_type).ElemType;
 
                     case ExprTypeKind.INCOMPLETE_ARRAY:
-                        return ((TIncompleteArray)from_type).elem_type;
+                        return ((TIncompleteArray)from_type).ElemType;
 
                     case ExprTypeKind.STRUCT_OR_UNION:
                         return ((TStructOrUnion)from_type).Attribs[to_index].type;
@@ -374,10 +374,10 @@ namespace AST {
             public static Int32 GetOffset(ExprType from_type, Int32 to_index) {
                 switch (from_type.Kind) {
                     case ExprTypeKind.ARRAY:
-                        return to_index * ((TArray)from_type).elem_type.SizeOf;
+                        return to_index * ((TArray)from_type).ElemType.SizeOf;
 
                     case ExprTypeKind.INCOMPLETE_ARRAY:
-                        return to_index * ((TIncompleteArray)from_type).elem_type.SizeOf;
+                        return to_index * ((TIncompleteArray)from_type).ElemType.SizeOf;
 
                     case ExprTypeKind.STRUCT_OR_UNION:
                         return ((TStructOrUnion)from_type).Attribs[to_index].offset;
@@ -422,7 +422,7 @@ namespace AST {
 
                     switch (type.Kind) {
                         case ExprTypeKind.ARRAY:
-                            if (index < ((TArray)type).num_elems - 1) {
+                            if (index < ((TArray)type).NumElems - 1) {
                                 // There are more elements in the array.
                                 this.indices.Add(index + 1);
                                 return;

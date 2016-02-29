@@ -292,11 +292,11 @@ namespace SyntaxTree {
                         throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
                     }
 
-                    var elemType = ((AST.TIncompleteArray)type).elem_type;
+                    var elemType = ((AST.TIncompleteArray)type).ElemType;
 
-                    var numElems = 1 + lastOffset / ((AST.TIncompleteArray)type).elem_type.SizeOf;
+                    var numElems = 1 + lastOffset / ((AST.TIncompleteArray)type).ElemType.SizeOf;
 
-                    type = new AST.TArray(elemType, numElems, type.is_const, type.is_volatile);
+                    type = new AST.TArray(elemType, numElems, type.IsConst, type.IsVolatile);
                 }
 
                 initrOption = Option.Some(initr);

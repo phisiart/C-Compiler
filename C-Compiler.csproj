@@ -46,6 +46,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AST2\Expressions.cs" />
+    <Compile Include="AST2\TypeCastExpressions.cs" />
+    <Compile Include="AST2\TypeSystem\FunctionType.cs" />
+    <Compile Include="AST2\TypeSystem\IntegralTypes.cs" />
+    <Compile Include="AST2\TypeSystem\StructOrUnionType.cs" />
+    <Compile Include="AST2\TypeSystem\Types.cs" />
     <Compile Include="AST\BinaryOperators.cs" />
     <Compile Include="AST\CGen.cs" />
     <Compile Include="AST\ConstExpressions.cs" />

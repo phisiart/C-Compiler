@@ -51,6 +51,7 @@
 	public sealed class MultAssign : AssignOp {
         private MultAssign(Expr left, Expr right)
             : base(left, right) { }
+
         public static Expr Create(Expr left, Expr right) => new MultAssign(left, right);
         public override Expr ConstructBinaryOp() => Multiply.Create(this.Left, this.Right);
     }

@@ -166,7 +166,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Expected a pointer.");
             }
 
-            AST.ExprType type = ((AST.TPointer)expr.Type).ref_t;
+            AST.ExprType type = ((AST.TPointer)expr.Type).RefType;
             if (type.Kind == AST.ExprTypeKind.STRUCT_OR_UNION && !((AST.TStructOrUnion)type).IsComplete) {
                 throw new InvalidOperationException("Cannot dereference incomplete type.");
             }
@@ -313,7 +313,7 @@ namespace SyntaxTree {
                 return new AST.ConstLong(Convert.ToInt32(isZero), env);
             }
 
-            return new AST.LogicalNot(expr, new AST.TLong(expr.Type.is_const, expr.Type.is_volatile));
+            return new AST.LogicalNot(expr, new AST.TLong(expr.Type.IsConst, expr.Type.IsVolatile));
         }
     }
 

@@ -38,8 +38,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -88,8 +88,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -150,8 +150,8 @@ namespace SyntaxTree {
             right = castReturn.Item2;
             var typeKind = castReturn.Item3;
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             // 3. if both operands are constants
             if (left.IsConstExpr && right.IsConstExpr) {
@@ -268,18 +268,18 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 var baseValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
+                Int32 scaleValue = ((AST.TPointer)(ptr.Type)).RefType.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.Type, env);
             }
 
-            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env);
+            var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env);
             var scaleFactor = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, env),
-                new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                new AST.ConstLong(((AST.TPointer)(ptr.Type)).RefType.SizeOf, env),
+                new AST.TLong(offset.Type.IsConst, offset.Type.IsVolatile)
             );
-            var type = new AST.TLong(offset.Type.is_const, offset.Type.is_volatile);
+            var type = new AST.TLong(offset.Type.IsConst, offset.Type.IsVolatile);
             var add =
                 order
                 ? new AST.Add(baseAddress, scaleFactor, type)
@@ -295,11 +295,11 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             if (left.Type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).ElemType, left.Type.IsConst, left.Type.IsVolatile));
             }
 
             if (right.Type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).ElemType, right.Type.IsConst, right.Type.IsVolatile));
             }
 
             // 2. ptr + int
@@ -307,7 +307,7 @@ namespace SyntaxTree {
                 if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.IsConst, right.Type.IsVolatile));
                 return GetPointerAddition(left, right);
             }
 
@@ -316,7 +316,7 @@ namespace SyntaxTree {
                 if (!left.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected integral to be added to a pointer.");
                 }
-                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.Type.is_const, left.Type.is_volatile));
+                left = AST.TypeCast.MakeCast(left, new AST.TLong(left.Type.IsConst, left.Type.IsVolatile));
                 return GetPointerAddition(right, left, false);
             }
 
@@ -357,19 +357,19 @@ namespace SyntaxTree {
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
                 Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).value;
-                Int32 scaleFactorValue = ((AST.TPointer)(ptr.Type)).ref_t.SizeOf;
+                Int32 scaleFactorValue = ((AST.TPointer)(ptr.Type)).RefType.SizeOf;
                 Int32 offsetValue = ((AST.ConstLong)offset).value;
                 return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.Type, offset.Env);
             }
 
             return AST.TypeCast.ToPointer(new AST.Sub(
-                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.is_const, ptr.Type.is_volatile), ptr.Env),
+                    AST.TypeCast.FromPointer(ptr, new AST.TLong(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.TPointer)(ptr.Type)).ref_t.SizeOf, offset.Env),
-                        new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                        new AST.ConstLong(((AST.TPointer)(ptr.Type)).RefType.SizeOf, offset.Env),
+                        new AST.TLong(offset.Type.IsConst, offset.Type.IsVolatile)
                     ),
-                    new AST.TLong(offset.Type.is_const, offset.Type.is_volatile)
+                    new AST.TLong(offset.Type.IsConst, offset.Type.IsVolatile)
                 ), ptr.Type, offset.Env
             );
         }
@@ -380,15 +380,15 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             if (left.Type is AST.TArray) {
-                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).elem_type, left.Type.is_const, left.Type.is_volatile));
+                left = AST.TypeCast.MakeCast(left, new AST.TPointer((left.Type as AST.TArray).ElemType, left.Type.IsConst, left.Type.IsVolatile));
             }
 
             if (right.Type is AST.TArray) {
-                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).elem_type, right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TPointer((right.Type as AST.TArray).ElemType, right.Type.IsConst, right.Type.IsVolatile));
             }
 
-            var isConst = left.Type.is_const || right.Type.is_const;
-            var isVolatile = left.Type.is_volatile || right.Type.is_volatile;
+            var isConst = left.Type.IsConst || right.Type.IsConst;
+            var isVolatile = left.Type.IsVolatile || right.Type.IsVolatile;
 
             if (left.Type.Kind == AST.ExprTypeKind.POINTER) {
 
@@ -396,11 +396,11 @@ namespace SyntaxTree {
                 if (right.Type.Kind == AST.ExprTypeKind.POINTER) {
                     AST.TPointer leftType = (AST.TPointer)(left.Type);
                     AST.TPointer rightType = (AST.TPointer)(right.Type);
-                    if (!leftType.ref_t.EqualType(rightType.ref_t)) {
+                    if (!leftType.RefType.EqualType(rightType.RefType)) {
                         throw new InvalidOperationException("The 2 pointers don't match.");
                     }
 
-                    Int32 scale = leftType.ref_t.SizeOf;
+                    Int32 scale = leftType.RefType.SizeOf;
 
                     if (left.IsConstExpr && right.IsConstExpr) {
                         return new AST.ConstLong((Int32)(((AST.ConstPtr)left).value - ((AST.ConstPtr)right).value) / scale, env);
@@ -421,7 +421,7 @@ namespace SyntaxTree {
                 if (!right.Type.IsIntegral) {
                     throw new InvalidOperationException("Expected an integral.");
                 }
-                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.is_const, right.Type.is_volatile));
+                right = AST.TypeCast.MakeCast(right, new AST.TLong(right.Type.IsConst, right.Type.IsVolatile));
                 return GetPointerSubtraction(left, right);
 
             }
