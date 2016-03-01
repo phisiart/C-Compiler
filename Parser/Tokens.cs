@@ -66,15 +66,15 @@ namespace Parsing {
         public static IParser<StorageClsSpec> Extern { get; } = KeywordParser.Create(KeywordVal.EXTERN, StorageClsSpec.EXTERN);
         public static IParser<StorageClsSpec> Typedef { get; } = KeywordParser.Create(KeywordVal.TYPEDEF, StorageClsSpec.TYPEDEF);
 
-        public static IParser<TypeSpec.Kind> Void { get; } = KeywordParser.Create(KeywordVal.VOID, TypeSpec.Kind.VOID);
-        public static IParser<TypeSpec.Kind> Char { get; } = KeywordParser.Create(KeywordVal.CHAR, TypeSpec.Kind.CHAR);
-        public static IParser<TypeSpec.Kind> Short { get; } = KeywordParser.Create(KeywordVal.SHORT, TypeSpec.Kind.SHORT);
-        public static IParser<TypeSpec.Kind> Int { get; } = KeywordParser.Create(KeywordVal.INT, TypeSpec.Kind.INT);
-        public static IParser<TypeSpec.Kind> Long { get; } = KeywordParser.Create(KeywordVal.LONG, TypeSpec.Kind.LONG);
-        public static IParser<TypeSpec.Kind> Float { get; } = KeywordParser.Create(KeywordVal.FLOAT, TypeSpec.Kind.FLOAT);
-        public static IParser<TypeSpec.Kind> Double { get; } = KeywordParser.Create(KeywordVal.DOUBLE, TypeSpec.Kind.DOUBLE);
-        public static IParser<TypeSpec.Kind> Signed { get; } = KeywordParser.Create(KeywordVal.SIGNED, TypeSpec.Kind.SIGNED);
-        public static IParser<TypeSpec.Kind> Unsigned { get; } = KeywordParser.Create(KeywordVal.UNSIGNED, TypeSpec.Kind.UNSIGNED);
+        public static IParser<TypeSpecKind> Void { get; } = KeywordParser.Create(KeywordVal.VOID, TypeSpecKind.VOID);
+        public static IParser<TypeSpecKind> Char { get; } = KeywordParser.Create(KeywordVal.CHAR, TypeSpecKind.CHAR);
+        public static IParser<TypeSpecKind> Short { get; } = KeywordParser.Create(KeywordVal.SHORT, TypeSpecKind.SHORT);
+        public static IParser<TypeSpecKind> Int { get; } = KeywordParser.Create(KeywordVal.INT, TypeSpecKind.INT);
+        public static IParser<TypeSpecKind> Long { get; } = KeywordParser.Create(KeywordVal.LONG, TypeSpecKind.LONG);
+        public static IParser<TypeSpecKind> Float { get; } = KeywordParser.Create(KeywordVal.FLOAT, TypeSpecKind.FLOAT);
+        public static IParser<TypeSpecKind> Double { get; } = KeywordParser.Create(KeywordVal.DOUBLE, TypeSpecKind.DOUBLE);
+        public static IParser<TypeSpecKind> Signed { get; } = KeywordParser.Create(KeywordVal.SIGNED, TypeSpecKind.SIGNED);
+        public static IParser<TypeSpecKind> Unsigned { get; } = KeywordParser.Create(KeywordVal.UNSIGNED, TypeSpecKind.UNSIGNED);
 
         public static IParser<TypeQual> Const { get; } = KeywordParser.Create(KeywordVal.CONST, TypeQual.CONST);
         public static IParser<TypeQual> Volatile { get; } = KeywordParser.Create(KeywordVal.VOLATILE, TypeQual.VOLATILE);

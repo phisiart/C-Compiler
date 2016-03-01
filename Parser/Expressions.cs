@@ -91,10 +91,12 @@ namespace Parsing {
             //   | string-literal      
             //   | '(' expression ')'
             PrimaryExpression.Is(
-                (Variable)
+                Either(Variable)
                 .Or(Constant)
                 .Or(StringLiteral)
-                .Or((LeftParen).Then(Expression).Then(RightParen))
+                .Or(
+                    (LeftParen).Then(Expression).Then(RightParen)
+                )
             );
 
             // An identifier for a variable must not be defined as a typedef name.
@@ -107,7 +109,7 @@ namespace Parsing {
             //   : const-int
             //   : const-float
             Constant.Is(
-                (ConstChar)
+                Either(ConstChar)
                 .Or(ConstInt)
                 .Or(ConstFloat)
             );
@@ -146,7 +148,7 @@ namespace Parsing {
             //   Assignment operators are:
             //     '=', '*=', '/=', '%=', '+=', '-=', '<<=', '>>=', '&=', '^=', '|='
             AssignmentExpression.Is(
-                (
+                Either(
                     AssignmentOperator(
                         UnaryExpression,
                         AssignmentExpression,
@@ -179,7 +181,7 @@ namespace Parsing {
             PostfixExpression.Is(
                 PrimaryExpression
                 .Then(
-                    (
+                    Either(
                         Given<Expr>()
                         .Then(LeftBracket)
                         .Then(Expression)
@@ -225,7 +227,7 @@ namespace Parsing {
             //   | '--' unary-expression            # first-set = { '--' }
             //   | unary-operator cast-expression   # first-set = { '&', '*', '+', '-', '~', '!' }
             //   | 'sizeof' unary-expression        # first-set = { 'sizeof' }
-            //   | 'sizeof' '(' type-name ')'       # first-set = { 'sizeof' }
+            //   | 'sizeof' '(' Type-name ')'       # first-set = { 'sizeof' }
             // 
             // Notes:
             // 1. unary-operator can be '&', '*', '+', '-', '~', '!'.
@@ -235,8 +237,9 @@ namespace Parsing {
             //              = first_set(primary-expression) + { '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
             //              = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
             UnaryExpression.Is(
-                (PostfixExpression)
-                .Or(
+                Either(
+                    PostfixExpression
+                ).Or(
                     (Increment).Then(UnaryExpression).Then(PreIncrement.Create)
                 ).Or(
                     (Decrement).Then(UnaryExpression).Then(PreDecrement.Create)
@@ -263,8 +266,9 @@ namespace Parsing {
             //   : unary-expression                     # first-set = { id, const, string, '++', '--', '&', '*', '+', '-', '~', '!', 'sizeof' }
             //   | '(' type_name ')' cast-expression    # first-set = '('
             CastExpression.Is(
-                (UnaryExpression)
-                .Or(
+                Either(
+                    UnaryExpression
+                ).Or(
                     (LeftParen).Then(TypeName).Then(RightParen).Then(CastExpression)
                     .Then(TypeCast.Create)
                 )

@@ -4,25 +4,32 @@ using System.Linq;
 using CodeGeneration;
 
 namespace AST {
+    public enum StmtKind {
+        GOTO,
+        LABELED,
+        CONT,
+        BREAK,
+        EXPR,
+        COMPOUND,
+        RETURN,
+        WHILE,
+        DO,
+        FOR,
+        SWITCH,
+        CASE,
+        DEFAULT,
+        IF,
+        IF_ELSE
+    }
+
     public abstract class Stmt {
-        public enum Kind {
-            GOTO,
-            LABELED,
-            CONT,
-            BREAK,
-            EXPR,
-            COMPOUND,
-            RETURN,
-            WHILE,
-            DO,
-            FOR,
-            SWITCH,
-            CASE,
-            DEFAULT,
-            IF,
-            IF_ELSE
-        }
-        public abstract Kind kind { get; }
+        //protected Stmt(Env env) {
+        //    this.Env = env;
+        //}
+
+        public abstract StmtKind Kind { get; }
+
+        public Env Env { get; }
 
         public abstract void CGenStmt(Env env, CGenState state);
 
@@ -36,7 +43,7 @@ namespace AST {
         }
 
         public void CGenTest(Env env, Reg ret, CGenState state) {
-            // test cond
+            // test Cond
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -61,28 +68,28 @@ namespace AST {
     /// Goto Statement
     /// </summary>
     public class GotoStmt : Stmt {
-        public override Kind kind => Kind.GOTO;
+        public override StmtKind Kind => StmtKind.GOTO;
 
         public GotoStmt(String label) {
-            this.label = label;
+            this.Label = label;
         }
 
         public override void Accept(StmtVisitor visitor) =>
             visitor.Visit(this);
 
         public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.GotoLabel(this.label);
+            Int32 label = state.GotoLabel(this.Label);
             state.JMP(label);
         }
 
-        public readonly String label;
+        public readonly String Label;
     }
 
     /// <summary>
     /// Labeled Statement
     /// </summary>
     public class LabeledStmt : Stmt {
-        public override Kind kind => Kind.LABELED;
+        public override StmtKind Kind => StmtKind.LABELED;
         public LabeledStmt(String label, Stmt stmt) {
             this.label = label;
             this.stmt = stmt;
@@ -105,7 +112,7 @@ namespace AST {
     /// Continue Statement
     /// </summary>
     public class ContStmt : Stmt {
-        public override Kind kind => Kind.CONT;
+        public override StmtKind Kind => StmtKind.CONT;
 
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.ContinueLabel;
@@ -121,7 +128,7 @@ namespace AST {
     /// Break Statement
     /// </summary>
     public class BreakStmt : Stmt {
-        public override Kind kind => Kind.BREAK;
+        public override StmtKind Kind => StmtKind.BREAK;
 
         public override void CGenStmt(Env env, CGenState state) {
             Int32 label = state.BreakLabel;
@@ -136,7 +143,7 @@ namespace AST {
     /// Expression Statement
     /// </summary>
     public class ExprStmt : Stmt {
-        public override Kind kind => Kind.EXPR;
+        public override StmtKind Kind => StmtKind.EXPR;
         public ExprStmt(Option<Expr> expr) {
             this.expr = expr;
         }
@@ -155,7 +162,7 @@ namespace AST {
     }
 
     public class CompoundStmt : Stmt {
-        public override Kind kind => Kind.COMPOUND;
+        public override StmtKind Kind => StmtKind.COMPOUND;
         public CompoundStmt(List<Tuple<Env, Decln>> declns, List<Tuple<Env, Stmt>> stmts) {
             this.declns = declns;
             this.stmts = stmts;
@@ -178,7 +185,7 @@ namespace AST {
     }
 
     public class ReturnStmt : Stmt {
-        public override Kind kind => Kind.RETURN;
+        public override StmtKind Kind => StmtKind.RETURN;
         public ReturnStmt(Option<Expr> expr) {
             this.expr = expr;
         }
@@ -190,7 +197,7 @@ namespace AST {
             Int32 stack_size = state.StackSize;
 
             if (this.expr.IsSome) {
-                // Evaluate the value.
+                // Evaluate the Value.
                 this.expr.Value.CGenValue(env, state);
 
                 // If the function returns a struct, copy it to the address given by 8(%ebp).
@@ -216,21 +223,21 @@ namespace AST {
     /// <summary>
     /// While Statement
     /// 
-    /// while (cond) {
-    ///     body
+    /// while (Cond) {
+    ///     Body
     /// }
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// </summary>
     // +--> start: continue:
-    // |        test cond
+    // |        test Cond
     // |        jz finish --+
-    // |        body        |
+    // |        Body        |
     // +------- jmp start   |
     //      finish: <-------+
     // 
     public class WhileStmt : Stmt {
-        public override Kind kind => Kind.WHILE;
+        public override StmtKind Kind => StmtKind.WHILE;
         public WhileStmt(Expr cond, Stmt body) {
             if (!cond.Type.IsScalar) {
                 throw new InvalidProgramException();
@@ -248,14 +255,14 @@ namespace AST {
             // start:
             state.CGenLabel(start_label);
 
-            // test cond
+            // test Cond
             Reg ret = CGenExprStmt(env, this.cond, state);
             CGenTest(env, ret, state);
 
             // jz finish
             state.JZ(finish_label);
 
-            // body
+            // Body
             state.InLoop(start_label, finish_label);
             this.body.CGenStmt(env, state);
             state.OutLabels();
@@ -276,19 +283,19 @@ namespace AST {
     /// Do-while Stmt
     /// 
     /// do {
-    ///     body
-    /// } while (cond);
+    ///     Body
+    /// } while (Cond);
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// </summary>
     // +--> start:
-    // |        body
+    // |        Body
     // |    continue:
-    // |        test cond
+    // |        test Cond
     // +------- jnz start
     //      finish:
     public class DoWhileStmt : Stmt {
-        public override Kind kind => Kind.DO;
+        public override StmtKind Kind => StmtKind.DO;
         public DoWhileStmt(Stmt body, Expr cond) {
             this.body = body;
             this.cond = cond;
@@ -304,14 +311,14 @@ namespace AST {
             // start:
             state.CGenLabel(start_label);
 
-            // body
+            // Body
             state.InLoop(continue_label, finish_label);
             this.body.CGenStmt(env, state);
             state.OutLabels();
 
             state.CGenLabel(continue_label);
 
-            // test cond
+            // test Cond
             Reg ret = CGenExprStmt(env, this.cond, state);
             CGenTest(env, ret, state);
 
@@ -325,39 +332,41 @@ namespace AST {
     }
 
     /// <summary>
-    /// for (init; cond; loop) {
-    ///     body
+    /// for (Init; Cond; Loop) {
+    ///     Body
     /// }
     /// 
-    /// cond must be scalar
+    /// Cond must be scalar
     /// </summary>
     // 
-    //          init
+    //          Init
     // +--> start:
-    // |        test cond
+    // |        test Cond
     // |        jz finish --+
-    // |        body        |
+    // |        Body        |
     // |    continue:       |
-    // |        loop        |
+    // |        Loop        |
     // +------- jmp start   |
     //      finish: <-------+
     // 
-    public class ForStmt : Stmt {
-        public override Kind kind => Kind.FOR;
+    public sealed class ForStmt : Stmt {
+        public override StmtKind Kind => StmtKind.FOR;
+
         public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
-            this.init = init;
-            this.cond = cond;
-            this.loop = loop;
-            this.body = body;
+            this.Init = init;
+            this.Cond = cond;
+            this.Loop = loop;
+            this.Body = body;
         }
-        public readonly Option<Expr> init;
-        public readonly Option<Expr> cond;
-        public readonly Option<Expr> loop;
-        public readonly Stmt body;
+
+        public readonly Option<Expr> Init;
+        public readonly Option<Expr> Cond;
+        public readonly Option<Expr> Loop;
+        public readonly Stmt Body;
 
         public override void CGenStmt(Env env, CGenState state) {
-            // init
-            this.init.Map(_ => CGenExprStmt(env, _, state));
+            // Init
+            this.Init.Map(_ => CGenExprStmt(env, _, state));
 
             Int32 start_label = state.RequestLabel();
             Int32 finish_label = state.RequestLabel();
@@ -367,7 +376,7 @@ namespace AST {
             state.CGenLabel(start_label);
 
             // test cont
-            this.cond.Map(_ => {
+            this.Cond.Map(_ => {
                 Reg ret = CGenExprStmt(env, _, state);
                 CGenTest(env, ret, state);
                 return ret;
@@ -376,16 +385,16 @@ namespace AST {
             // jz finish
             state.JZ(finish_label);
 
-            // body
+            // Body
             state.InLoop(continue_label, finish_label);
-            this.body.CGenStmt(env, state);
+            this.Body.CGenStmt(env, state);
             state.OutLabels();
 
             // continue:
             state.CGenLabel(continue_label);
 
-            // loop
-            this.loop.Map(_ => CGenExprStmt(env, _, state));
+            // Loop
+            this.Loop.Map(_ => CGenExprStmt(env, _, state));
 
             // jmp start
             state.JMP(start_label);
@@ -402,12 +411,12 @@ namespace AST {
     /// Switch Statement
     /// </summary>
     //
-    //     cmp cond, value1
+    //     cmp Cond, value1
     //     je case1
-    //     cmp cond, value2
+    //     cmp Cond, value2
     //     je case2
     //     ...
-    //     cmp cond, value_n
+    //     cmp Cond, value_n
     //     je case_n
     //     jmp default # if no default, then default = finish
     //     
@@ -420,7 +429,7 @@ namespace AST {
     //     stmt
     // finish:
     public class SwitchStmt : Stmt {
-        public override Kind kind => Kind.SWITCH;
+        public override StmtKind Kind => StmtKind.SWITCH;
         public SwitchStmt(Expr expr, Stmt stmt) {
             this.expr = expr;
             this.stmt = stmt;
@@ -434,8 +443,8 @@ namespace AST {
             // but the stack size should be changed.
             List<Tuple<Env, Decln>> declns;
             List<Tuple<Env, Stmt>> stmts;
-            switch (this.stmt.kind) {
-                case Kind.COMPOUND:
+            switch (this.stmt.Kind) {
+                case StmtKind.COMPOUND:
                     declns = ((CompoundStmt) this.stmt).declns;
                     stmts = ((CompoundStmt) this.stmt).stmts;
                     break;
@@ -455,7 +464,7 @@ namespace AST {
 
             Int32 label_finish = state.RequestLabel();
 
-            Int32 num_default_stmts = stmts.Count(_ => _.Item2.kind == Kind.DEFAULT);
+            Int32 num_default_stmts = stmts.Count(_ => _.Item2.Kind == StmtKind.DEFAULT);
             if (num_default_stmts > 1) {
                 throw new InvalidOperationException("duplicate defaults.");
             }
@@ -505,7 +514,7 @@ namespace AST {
     /// Case Statement
     /// </summary>
     public class CaseStmt : Stmt {
-        public override Kind kind => Kind.CASE;
+        public override StmtKind Kind => StmtKind.CASE;
         public CaseStmt(Int32 value, Stmt stmt) {
             this.value = value;
             this.stmt = stmt;
@@ -524,7 +533,7 @@ namespace AST {
     }
 
     public class DefaultStmt : Stmt {
-        public override Kind kind => Kind.DEFAULT;
+        public override StmtKind Kind => StmtKind.DEFAULT;
         public DefaultStmt(Stmt stmt) {
             this.stmt = stmt;
         }
@@ -541,17 +550,17 @@ namespace AST {
     }
 
     /// <summary>
-    /// If Statement: if (cond) stmt;
-    /// If cond is non-zero, stmt is executed.
+    /// If Statement: if (Cond) stmt;
+    /// If Cond is non-zero, stmt is executed.
     /// 
-    /// cond must be arithmetic or pointer type.
+    /// Cond must be arithmetic or pointer Type.
     /// </summary>
-    //          test cond
+    //          test Cond
     // +------- jz finish
-    // |        body
+    // |        Body
     // +--> finish:
     public class IfStmt : Stmt {
-        public override Kind kind => Kind.IF;
+        public override StmtKind Kind => StmtKind.IF;
         public IfStmt(Expr cond, Stmt stmt) {
             this.cond = cond;
             this.stmt = stmt;
@@ -579,14 +588,14 @@ namespace AST {
 
     /// <summary>
     /// If-else Statement
-    /// if (cond) {
+    /// if (Cond) {
     ///     true_stmt
     /// } else {
     ///     false_stmt
     /// }
     /// </summary>
     ///
-    //          test cond
+    //          test Cond
     // +------- jz false
     // |        true_stmt
     // |        jmp finish --+
@@ -595,7 +604,7 @@ namespace AST {
     //      finish: <--------+
     // 
     public class IfElseStmt : Stmt {
-        public override Kind kind => Kind.IF_ELSE;
+        public override StmtKind Kind => StmtKind.IF_ELSE;
         public IfElseStmt(Expr cond, Stmt true_stmt, Stmt false_stmt) {
             this.cond = cond;
             this.true_stmt = true_stmt;

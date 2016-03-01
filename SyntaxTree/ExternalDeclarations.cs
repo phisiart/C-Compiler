@@ -61,7 +61,7 @@ namespace SyntaxTree {
 
             var funcType = type as FunctionType;
             if (funcType == null) {
-                throw new InvalidOperationException("Expected a function type.");
+                throw new InvalidOperationException("Expected a function Type.");
             }
 
             switch (storageClass) {

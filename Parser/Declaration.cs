@@ -9,38 +9,38 @@ namespace Parsing {
 
         /// <summary>
         /// declaration
-        ///   : declaration-specifiers [init-declarator-list]? ';'
+        ///   : declaration-specifiers [Init-declarator-list]? ';'
         /// </summary>
         public static NamedParser<Decln>
             Declaration { get; } = new NamedParser<Decln>("declaration");
 
         /// <summary>
         /// declaration-specifiers
-        ///   : [ storage-class-specifier | type-specifier | type-qualifier ]+
+        ///   : [ storage-class-specifier | Type-specifier | Type-qualifier ]+
         /// </summary>
         /// <remarks>
         /// 1. You can only have **one** storage class specifier.
-        /// 2. You can have duplicate type qualifiers, since it doesn't cause ambiguity.
+        /// 2. You can have duplicate Type qualifiers, since it doesn't cause ambiguity.
         /// </remarks>
         public static NamedParser<DeclnSpecs>
             DeclarationSpecifiers { get; } = new NamedParser<DeclnSpecs>("declaration-specifiers");
 
         /// <summary>
-        /// init-declarator-list
-        ///   : init-declarator [ ',' init-declarator ]*
+        /// Init-declarator-list
+        ///   : Init-declarator [ ',' Init-declarator ]*
         /// </summary>
         /// <remarks>
         /// a non-empty list of init_declarators separated by ','
         /// </remarks>
         public static NamedParser<ImmutableList<InitDeclr>>
-            InitDeclaratorList { get; } = new NamedParser<ImmutableList<InitDeclr>>("init-declarator-list");
+            InitDeclaratorList { get; } = new NamedParser<ImmutableList<InitDeclr>>("Init-declarator-list");
 
         /// <summary>
-        /// init-declarator
+        /// Init-declarator
         ///   : declarator [ '=' initializer ]?
         /// </summary>
         public static NamedParser<InitDeclr>
-            InitDeclarator { get; } = new NamedParser<InitDeclr>("init-declarator");
+            InitDeclarator { get; } = new NamedParser<InitDeclr>("Init-declarator");
 
         /// <summary>
         /// storage-class-specifier
@@ -53,7 +53,7 @@ namespace Parsing {
             StorageClassSpecifier { get; } = new NamedParser<StorageClsSpec>("storage-class-specifier");
 
         /// <summary>
-        /// type-specifier
+        /// Type-specifier
         ///   : void
         ///   | char
         ///   | short
@@ -68,46 +68,46 @@ namespace Parsing {
         ///   | typedef-name
         /// </summary>
         /// <remarks>
-        /// 1. void, char, short, int, long, float, double, signed, unsigned are called "basic type specifiers".
+        /// 1. void, char, short, int, long, float, double, signed, unsigned are called "basic Type specifiers".
         /// 2. struct-or-union_specifier and enum-specifier need more complicated parsing.
         /// 3. Parsing typedef-name actually requires the environment to participate. For example, consider this statement:
         ///      T *v;
-        ///    Is T a type or an object? If T is a type, then this statement is a declaration: v is a pointer; if T is a object, then this statement is an expression.
+        ///    Is T a Type or an object? If T is a Type, then this statement is a declaration: v is a pointer; if T is a object, then this statement is an expression.
         ///    So, we need to keep track of the typedefs in the environment even in the parsing stage!
         /// </remarks>
         public static NamedParser<TypeSpec>
-            TypeSpecifier { get; } = new NamedParser<TypeSpec>("type-specifier");
+            TypeSpecifier { get; } = new NamedParser<TypeSpec>("Type-specifier");
 
         /// <summary>
-        /// type-qualifier
+        /// Type-qualifier
         ///   : const
         ///   | volatile
         /// </summary>
         /// <remarks>
-        /// Note that there can be multiple type qualifiers in one declarations.
+        /// Note that there can be multiple Type qualifiers in one declarations.
         /// </remarks>
         public static NamedParser<TypeQual>
-            TypeQualifier { get; } = new NamedParser<TypeQual>("type-qualifier");
+            TypeQualifier { get; } = new NamedParser<TypeQual>("Type-qualifier");
 
         /// <summary>
         /// declarator
         ///   : [pointer]? direct-declarator
         /// </summary>
         /// <remarks>
-        /// A declarator gives a name to the object and also modifies the type.
+        /// A declarator gives a name to the object and also modifies the Type.
         /// </remarks>
         public static NamedParser<Declr>
             Declarator { get; } = new NamedParser<Declr>("declarator");
 
         /// <summary>
         /// pointer
-        ///   : [ '*' [type-qualifier-list]? ]+
+        ///   : [ '*' [Type-qualifier-list]? ]+
         /// </summary>
         public static NamedParser<ImmutableList<PointerModifier>>
             Pointer { get; } = new NamedParser<ImmutableList<PointerModifier>>("pointer");
 
         /// <summary>
-        /// parameter-type-list
+        /// parameter-Type-list
         ///   : parameter-list [ ',' '...' ]?
         /// </summary>
         /// <remarks>
@@ -115,7 +115,7 @@ namespace Parsing {
         /// Used in function declarations.
         /// </remarks>
         public static NamedParser<ParamTypeList>
-            ParameterTypeList { get; } = new NamedParser<ParamTypeList>("parameter-type-list");
+            ParameterTypeList { get; } = new NamedParser<ParamTypeList>("parameter-Type-list");
 
         /// <summary>
         /// parameter-list
@@ -129,14 +129,14 @@ namespace Parsing {
             ParameterList { get; } = new NamedParser<ImmutableList<ParamDecln>>("parameter-list");
 
         /// <summary>
-        /// type-qualifier-list
-        ///   : [type-qualifier]+
+        /// Type-qualifier-list
+        ///   : [Type-qualifier]+
         /// </summary>
         /// <remarks>
-        /// A non-empty list of type qualifiers.
+        /// A non-empty list of Type qualifiers.
         /// </remarks>
         public static NamedParser<ImmutableList<TypeQual>>
-            TypeQualifierList { get; } = new NamedParser<ImmutableList<TypeQual>>("type-qualifier-list");
+            TypeQualifierList { get; } = new NamedParser<ImmutableList<TypeQual>>("Type-qualifier-list");
 
         /// <summary>
         /// direct-declarator
@@ -144,7 +144,7 @@ namespace Parsing {
         ///         identifier | '(' declarator ')'
         ///     ] [
         ///         '[' [constant-expression]? ']'
-        ///       | '(' [parameter-type-list]? ')'
+        ///       | '(' [parameter-Type-list]? ')'
         ///     ]*
         /// </summary>
         /// <remarks>
@@ -203,7 +203,7 @@ namespace Parsing {
         ///   | struct-or-union identifier
         /// </summary>
         /// <remarks>
-        /// Note: if no struct-declaration-list given, the type is considered incomplete.
+        /// Note: if no struct-declaration-list given, the Type is considered incomplete.
         /// </remarks>
         public static NamedParser<StructOrUnionSpec>
             StructOrUnionSpecifier { get; } = new NamedParser<StructOrUnionSpec>("struct-or-union-specifier");
@@ -234,7 +234,7 @@ namespace Parsing {
 
         /// <summary>
         /// specifier-qualifier-list
-        ///   : [ type-specifier | type-qualifier ]+
+        ///   : [ Type-specifier | Type-qualifier ]+
         /// </summary>
         public static NamedParser<SpecQualList>
             SpecifierQualifierList { get; } = new NamedParser<SpecQualList>("specifier-qualifier-list");
@@ -282,7 +282,7 @@ namespace Parsing {
         ///   | pointer
         /// </summary>
         /// <remarks>
-        /// An abstract declarator is a non-empty list of (pointer, function, or array) type modifiers
+        /// An abstract declarator is a non-empty list of (pointer, function, or array) Type modifiers
         /// </remarks>
         public static NamedParser<AbstractDeclr>
             AbstractDeclarator { get; } = new NamedParser<AbstractDeclr>("abstract-declarator");
@@ -295,7 +295,7 @@ namespace Parsing {
         ///       | '(' [parameter-type_list]? ')'  // function modifier
         ///     ] [
         ///         '[' [constant-expression]? ']'  // array modifier
-        ///       | '(' [parameter-type-list]? ')'  // function modifier
+        ///       | '(' [parameter-Type-list]? ')'  // function modifier
         ///     ]*
         /// </summary>
         public static NamedParser<AbstractDeclr>
@@ -320,11 +320,11 @@ namespace Parsing {
             InitializerList { get; } = new NamedParser<Initr>("initializer-list");
 
         /// <summary>
-        /// type-name
+        /// Type-name
         ///   : specifier-qualifier-list [abstract-declarator]?
         /// </summary>
         public static NamedParser<TypeName>
-            TypeName { get; } = new NamedParser<TypeName>("type-name");
+            TypeName { get; } = new NamedParser<TypeName>("Type-name");
 
         /// <summary>
         /// typedef-name
@@ -340,7 +340,7 @@ namespace Parsing {
         public static void SetDeclarationRules() {
 
             // declaration
-            //   : declaration-specifiers [init-declarator-list]? ';'
+            //   : declaration-specifiers [Init-declarator-list]? ';'
             Declaration.Is(
                 (DeclarationSpecifiers)
                 .Then(InitDeclaratorList.Optional(ImmutableList<InitDeclr>.Empty))
@@ -362,11 +362,11 @@ namespace Parsing {
             );
 
             // declaration-specifiers
-            //   : [ storage-class-specifier | type-specifier | type-qualifier ]+
+            //   : [ storage-class-specifier | Type-specifier | Type-qualifier ]+
             DeclarationSpecifiers.Is(
                 Parser.Seed(DeclnSpecs.Empty)
                 .Then(
-                    (
+                    Either(
                         Given<DeclnSpecs>()
                         .Then(StorageClassSpecifier)
                         .Then(DeclnSpecs.Add)
@@ -382,13 +382,13 @@ namespace Parsing {
                 )
             );
 
-            // init-declarator-list
-            //   : init-declarator [ ',' init-declarator ]*
+            // Init-declarator-list
+            //   : Init-declarator [ ',' Init-declarator ]*
             InitDeclaratorList.Is(
                 InitDeclarator.OneOrMore(Comma)
             );
 
-            // init-declarator
+            // Init-declarator
             //   : declarator [ '=' initializer ]?
             InitDeclarator.Is(
                 (Declarator)
@@ -400,14 +400,14 @@ namespace Parsing {
             // storage-class-specifier
             //   : auto | register | static | extern | typedef
             StorageClassSpecifier.Is(
-                (Auto)
+                Either(Auto)
                 .Or(Register)
                 .Or(Static)
                 .Or(Extern)
                 .Or(Typedef)
             );
 
-            // type-specifier
+            // Type-specifier
             //   : void
             //   | char
             //   | short
@@ -421,8 +421,8 @@ namespace Parsing {
             //   | enum-specifier
             //   | typedef-name
             TypeSpecifier.Is(
-                (
-                    (Void)
+                Either(
+                    Either(Void)
                     .Or(Char)
                     .Or(Short)
                     .Or(Int)
@@ -442,7 +442,7 @@ namespace Parsing {
             //   : const
             //   | volatile
             TypeQualifier.Is(
-                (Const).Or(Volatile)
+                Either(Const).Or(Volatile)
             );
 
             // declarator
@@ -454,7 +454,7 @@ namespace Parsing {
             );
 
             // pointer
-            //   : [ '*' [type-qualifier-list]? ]+
+            //   : [ '*' [Type-qualifier-list]? ]+
             Pointer.Is(
                 (
                     Mult.
@@ -464,7 +464,7 @@ namespace Parsing {
                 .Then(pointerModifiers => pointerModifiers.Reverse())
             );
 
-            // parameter-type-list
+            // parameter-Type-list
             //   : parameter-list [ ',' '...' ]?
             ParameterTypeList.Is(
                 ParameterList
@@ -481,8 +481,8 @@ namespace Parsing {
                 ParameterDeclaration.OneOrMore(Comma)
             );
 
-            // type-qualifier-list
-            //   : [type-qualifier]+
+            // Type-qualifier-list
+            //   : [Type-qualifier]+
             TypeQualifierList.Is(
                 TypeQualifier.OneOrMore()
             );
@@ -492,14 +492,17 @@ namespace Parsing {
             //         identifier | '(' declarator ')'
             //     ] [
             //         '[' [constant-expression]? ']'
-            //       | '(' [parameter-type-list]? ')'
+            //       | '(' [parameter-Type-list]? ')'
             //     ]*
             DirectDeclarator.Is(
                 (
-                    (Identifier).Then(Declr.Create)
-                    .Or((LeftParen).Then(Declarator).Then(RightParen))
+                    Either(
+                        (Identifier).Then(Declr.Create)
+                    ).Or(
+                        (LeftParen).Then(Declarator).Then(RightParen)
+                    )
                 ).Then(
-                    (
+                    Either(
                         Given<Declr>()
                         .Then(LeftBracket)
                         .Then(
@@ -526,7 +529,7 @@ namespace Parsing {
             EnumSpecifier.Is(
                 (Enum)
                 .Then(
-                    (
+                    Either(
                         Identifier.Optional()
                         .Then(LeftCurlyBrace)
                         .Then(EnumeratorList)
@@ -568,7 +571,7 @@ namespace Parsing {
             StructOrUnionSpecifier.Is(
                 (StructOrUnion)
                 .Then(
-                    (
+                    Either(
                         Given<StructOrUnion>()
                         .Then(Identifier.Optional())
                         .Then(LeftCurlyBrace)
@@ -586,7 +589,7 @@ namespace Parsing {
             // struct-or-union
             //   : struct | union
             StructOrUnion.Is(
-                (Struct).Or(Union)
+                Either(Struct).Or(Union)
             );
 
             // struct-declaration-list
@@ -605,11 +608,11 @@ namespace Parsing {
             );
 
             // specifier-qualifier-list
-            //   : [ type-specifier | type-qualifier ]+
+            //   : [ Type-specifier | Type-qualifier ]+
             SpecifierQualifierList.Is(
                 Parser.Seed(SpecQualList.Empty)
                 .Then(
-                    (
+                    Either(
                         Given<SpecQualList>()
                         .Then(TypeSpecifier)
                         .Then(SpecQualList.Add)
@@ -632,7 +635,7 @@ namespace Parsing {
             //   : [declarator]? ':' constant-expression
             //   | declarator
             StructDeclarator.Is(
-                (
+                Either(
                     (Declarator.Optional())
                     .Then(Colon)
                     .Then(ConstantExpression)
@@ -648,7 +651,7 @@ namespace Parsing {
             ParameterDeclaration.Is(
                 (DeclarationSpecifiers)
                 .Then(
-                    (
+                    Either(
                         (Declarator).Then(ParamDeclr.Create)
                     ).Or(
                         (AbstractDeclarator).Then(ParamDeclr.Create)
@@ -660,7 +663,7 @@ namespace Parsing {
             //   : [pointer]? direct-abstract-declarator
             //   | pointer
             AbstractDeclarator.Is(
-                (
+                Either(
                     (Pointer.Optional(ImmutableList<PointerModifier>.Empty))
                     .Then(DirectAbstractDeclarator)
                     .Then(AbstractDeclr.Add)
@@ -677,11 +680,11 @@ namespace Parsing {
             //       | '(' [parameter-type_list]? ')'  // function modifier
             //     ] [
             //         '[' [constant-expression]? ']'  // array modifier
-            //       | '(' [parameter-type-list]? ')'  // function modifier
+            //       | '(' [parameter-Type-list]? ')'  // function modifier
             //     ]*
             DirectAbstractDeclarator.Is(
                 (
-                    (
+                    Either(
                         (LeftParen)
                         .Then(AbstractDeclarator)
                         .Then(RightParen)
@@ -701,7 +704,7 @@ namespace Parsing {
                         .Then(AbstractDeclr.Create)
                     )
                 ).Then(
-                    (
+                    Either(
                         Given<AbstractDeclr>()
                         .Then(
                             LeftBracket
@@ -731,7 +734,7 @@ namespace Parsing {
             //   | '{' initializer-list '}'
             //   | '{' initializer-list ',' '}'
             Initializer.Is(
-                (
+                Either<Initr>(
                     (AssignmentExpression)
                     .Then(InitExpr.Create)
                 ).Or(
@@ -753,7 +756,7 @@ namespace Parsing {
                 .Then(InitList.Create)
             );
 
-            // type-name
+            // Type-name
             //   : specifier-qualifier-list [abstract-declarator]?
             TypeName.Is(
                 (SpecifierQualifierList)

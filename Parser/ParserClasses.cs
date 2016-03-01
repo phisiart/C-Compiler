@@ -269,22 +269,39 @@ namespace Parsing {
         }
     }
 
-    public class ParserOrParser<R> : IParser<R> {
-        public ParserOrParser(IParser<R> firstParser, IParser<R> secondParser) {
-            this.FirstParser = firstParser;
-            this.SecondParser = secondParser;
+    public class OrParser<R> : IParser<R> {
+        public OrParser(ImmutableList<IParser<R>> parsers) {
+            this.Parsers = parsers;
         }
-        public IParser<R> FirstParser { get; }
-        public IParser<R> SecondParser { get; }
+        public ImmutableList<IParser<R>> Parsers { get; }
         public RuleCombining Combining => RuleCombining.OR;
         public IParserResult<R> Parse(ParserInput input) {
-            var result1 = this.FirstParser.Parse(input);
-            if (result1.IsSuccessful) {
-                return result1;
+            foreach (var parser in this.Parsers) {
+                var result = parser.Parse(input);
+                if (result.IsSuccessful) {
+                    return result;
+                }
             }
-            return this.SecondParser.Parse(input);
+            return new ParserFailed<R>();
         }
     }
+
+    //public class ParserOrParser<R> : IParser<R> {
+    //    public ParserOrParser(IParser<R> firstParser, IParser<R> secondParser) {
+    //        this.FirstParser = firstParser;
+    //        this.SecondParser = secondParser;
+    //    }
+    //    public IParser<R> FirstParser { get; }
+    //    public IParser<R> SecondParser { get; }
+    //    public RuleCombining Combining => RuleCombining.OR;
+    //    public IParserResult<R> Parse(ParserInput input) {
+    //        var result1 = this.FirstParser.Parse(input);
+    //        if (result1.IsSuccessful) {
+    //            return result1;
+    //        }
+    //        return this.SecondParser.Parse(input);
+    //    }
+    //}
 
     public class ZeroOrMoreParser<R> : IParser<ImmutableList<R>> {
         public ZeroOrMoreParser(IParser<R> parser) {
@@ -411,23 +428,41 @@ namespace Parsing {
         }
     }
 
-    public class ConsumerOrConsumer : IConsumer {
-        public ConsumerOrConsumer(IConsumer firstConsumer, IConsumer secondConsumer) {
-            this.FirstConsumer = firstConsumer;
-            this.SecondConsumer = secondConsumer;
+    public class OrConsumer : IConsumer {
+        public OrConsumer(ImmutableList<IConsumer> consumers) {
+            this.Consumers = consumers;
         }
 
-        public IConsumer FirstConsumer { get; }
-        public IConsumer SecondConsumer { get; }
+        public ImmutableList<IConsumer> Consumers { get; }
 
         public IParserResult Consume(ParserInput input) {
-            var result1 = this.FirstConsumer.Consume(input);
-            if (!result1.IsSuccessful) {
-                return new ParserFailed();
+            foreach (var consumer in this.Consumers) {
+                var result = consumer.Consume(input);
+                if (result.IsSuccessful) {
+                    return result;
+                }
             }
-            return this.SecondConsumer.Consume(result1.ToInput());
+            return new ParserFailed();
         }
     }
+
+    //public class ConsumerOrConsumer : IConsumer {
+    //    public ConsumerOrConsumer(IConsumer firstConsumer, IConsumer secondConsumer) {
+    //        this.FirstConsumer = firstConsumer;
+    //        this.SecondConsumer = secondConsumer;
+    //    }
+
+    //    public IConsumer FirstConsumer { get; }
+    //    public IConsumer SecondConsumer { get; }
+
+    //    public IParserResult Consume(ParserInput input) {
+    //        var result1 = this.FirstConsumer.Consume(input);
+    //        if (!result1.IsSuccessful) {
+    //            return new ParserFailed();
+    //        }
+    //        return this.SecondConsumer.Consume(result1.ToInput());
+    //    }
+    //}
 
     public class EnvironmentTransformer : IConsumer {
         public EnvironmentTransformer(Func<ParserEnvironment, ParserEnvironment> transformer) {
@@ -498,28 +533,46 @@ namespace Parsing {
         }
     }
 
-    public class TransformerOrTransformer<S, R> : ITransformer<S, R> {
-        public TransformerOrTransformer(ITransformer<S, R> firstTransformer, ITransformer<S, R> secondTransformer) {
-            this.FirstTransformer = firstTransformer;
-            this.SecondTransformer = secondTransformer;
+    public class OrTransformer<S, R> : ITransformer<S, R> {
+        public OrTransformer(ImmutableList<ITransformer<S, R>> transformers) {
+            this.Transformers = transformers;
         }
 
-        public ITransformer<S, R> FirstTransformer { get; }
-        public ITransformer<S, R> SecondTransformer { get; }
+        public ImmutableList<ITransformer<S, R>> Transformers { get; }
 
         public IParserResult<R> Transform(S seed, ParserInput input) {
-            var result1 = this.FirstTransformer.Transform(seed, input);
-            if (result1.IsSuccessful) {
-                return result1;
+            foreach (var transformer in this.Transformers) {
+                var result = transformer.Transform(seed, input);
+                if (result.IsSuccessful) {
+                    return result;
+                }
             }
-            return this.SecondTransformer.Transform(seed, input);
-
-        }
-
-        public override String ToString() {
-            return this.FirstTransformer + " | " + this.SecondTransformer;
+            return new ParserFailed<R>();
         }
     }
+
+    //public class TransformerOrTransformer<S, R> : ITransformer<S, R> {
+    //    public TransformerOrTransformer(ITransformer<S, R> firstTransformer, ITransformer<S, R> secondTransformer) {
+    //        this.FirstTransformer = firstTransformer;
+    //        this.SecondTransformer = secondTransformer;
+    //    }
+
+    //    public ITransformer<S, R> FirstTransformer { get; }
+    //    public ITransformer<S, R> SecondTransformer { get; }
+
+    //    public IParserResult<R> Transform(S seed, ParserInput input) {
+    //        var result1 = this.FirstTransformer.Transform(seed, input);
+    //        if (result1.IsSuccessful) {
+    //            return result1;
+    //        }
+    //        return this.SecondTransformer.Transform(seed, input);
+
+    //    }
+
+    //    public override String ToString() {
+    //        return this.FirstTransformer + " | " + this.SecondTransformer;
+    //    }
+    //}
 
     public class ResultTransformer<R> : ITransformer<R, R> {
         public ResultTransformer(Func<IParserResult<R>, IParserResult<R>> transformFunc) {

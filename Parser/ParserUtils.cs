@@ -57,7 +57,7 @@ namespace Parsing {
     }
 
     /// <summary>
-    /// The input type for every parsing function.
+    /// The input Type for every parsing function.
     /// </summary>
     public sealed class ParserInput {
         public ParserInput(ParserEnvironment environment, IEnumerable<Token> source) {

@@ -343,7 +343,7 @@ namespace AST {
 
     /// <summary>
     /// The multiplication (*) operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, only four cases are possible:
     /// 1) long * long
@@ -369,7 +369,7 @@ namespace AST {
 
     /// <summary>
     /// The division (/) operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, only four cases are possible:
     /// 1) long / long
@@ -502,10 +502,10 @@ namespace AST {
 
     /// <summary>
     /// The addition operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer additions are converted into
-    /// combinations of type-casts and series of operations. So in AST,
+    /// combinations of Type-casts and series of operations. So in AST,
     /// only four cases are possible:
     /// 1) long + long
     /// 2) ulong + ulong
@@ -524,10 +524,10 @@ namespace AST {
 
     /// <summary>
     /// The subtraction operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer subtractions are converted into
-    ///   combinations of type-casts and series of operations. So in AST,
+    ///   combinations of Type-casts and series of operations. So in AST,
     ///   only four cases are possible:
     /// 1) long - long
     /// 2) ulong - ulong
@@ -588,7 +588,7 @@ namespace AST {
             // 
 
             // 1. Do comparison between %st(0) and %st(1).
-            //    Pop one value from FPU stack.
+            //    Pop one Value from FPU stack.
             // 
             // float stack:
             // +-----+
@@ -597,7 +597,7 @@ namespace AST {
             // 
             state.FUCOMIP();
 
-            // 2. Pop another value from FPU stack.
+            // 2. Pop another Value from FPU stack.
             // 
             // float stack:
             // +-----+ empty
@@ -621,7 +621,7 @@ namespace AST {
             // 
 
             // 1. Do comparison between %st(0) and %st(1).
-            //    Pop one value from FPU stack.
+            //    Pop one Value from FPU stack.
             // 
             // float stack:
             // +-----+
@@ -630,7 +630,7 @@ namespace AST {
             // 
             state.FUCOMIP();
 
-            // 2. Pop another value from FPU stack.
+            // 2. Pop another Value from FPU stack.
             // 
             // float stack:
             // +-----+ empty
@@ -646,7 +646,7 @@ namespace AST {
 
     /// <summary>
     /// The "greater than or equal to" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:
@@ -669,7 +669,7 @@ namespace AST {
 
     /// <summary>
     /// The "greater than" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:
@@ -692,7 +692,7 @@ namespace AST {
 
     /// <summary>
     /// The "less than or equal to" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:
@@ -715,7 +715,7 @@ namespace AST {
 
     /// <summary>
     /// The "less than" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:
@@ -738,7 +738,7 @@ namespace AST {
 
     /// <summary>
     /// The "equal to" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:
@@ -762,7 +762,7 @@ namespace AST {
 
     /// <summary>
     /// The "not equal to" operator can either take
-    /// 1) integral- or 2) floating-type operands.
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, pointer comparisons are converted into
     ///   integer comparisons. So in AST, only four cases are possible:

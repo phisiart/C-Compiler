@@ -1,4 +1,5 @@
 ﻿using SyntaxTree;
+using static Parsing.ParserCombinator;
 
 namespace Parsing {
     public partial class CParsers {
@@ -58,8 +59,11 @@ namespace Parsing {
             // external-declaration
             //   : function-definition | declaration
             ExternalDeclaration.Is(
-                (FunctionDefinition)
-                .Or<IExternDecln>(Declaration)
+                Either<IExternDecln>(
+                    FunctionDefinition
+                ).Or(
+                    Declaration
+                )
             );
 
             // function-definition

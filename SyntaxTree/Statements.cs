@@ -8,6 +8,8 @@ namespace SyntaxTree {
 
     public abstract class Stmt : ISyntaxTreeNode {
         public abstract Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env);
+
+        //public abstract ISemantReturn<AST.Stmt> SemantStmt(AST.Env env);
     }
 
     /// <summary>
@@ -25,6 +27,10 @@ namespace SyntaxTree {
         public override Tuple<AST.Env, AST.Stmt> GetStmt(AST.Env env) {
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.GotoStmt(this.Label));
         }
+
+        //public override ISemantReturn<AST.Stmt> SemantStmt(AST.Env env) {
+        //    return SemantReturn.Create(env, new AST.GotoStmt(this.Label));
+        //}
     }
 
     /// <summary>
@@ -127,11 +133,11 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// while (cond) {
-    ///     body
+    /// while (Cond) {
+    ///     Body
     /// }
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// </summary>
     public sealed class WhileStmt : Stmt {
         public WhileStmt(Expr cond, Stmt body) {
@@ -150,7 +156,7 @@ namespace SyntaxTree {
             env = cond.Env;
 
             if (!cond.Type.IsScalar) {
-                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
             }
 
             Tuple<AST.Env, AST.Stmt> r_body = this.Body.GetStmt(env);
@@ -164,10 +170,10 @@ namespace SyntaxTree {
 
     /// <summary>
     /// do {
-    ///     body
-    /// } while (cond);
+    ///     Body
+    /// } while (Cond);
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// </summary>
     public sealed class DoWhileStmt : Stmt {
         public DoWhileStmt(Stmt body, Expr cond) {
@@ -190,7 +196,7 @@ namespace SyntaxTree {
             env = cond.Env;
 
             if (!cond.Type.IsScalar) {
-                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
             }
 
             return new Tuple<AST.Env, AST.Stmt>(env, new AST.DoWhileStmt(body, cond));
@@ -198,11 +204,11 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// for (init; cond; loop) {
-    ///     body
+    /// for (Init; Cond; Loop) {
+    ///     Body
     /// }
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// </summary>
     public sealed class ForStmt : Stmt {
         public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
@@ -232,7 +238,7 @@ namespace SyntaxTree {
             }
 
             if (cond.IsSome && !cond.Value.Type.IsScalar) {
-                throw new InvalidOperationException("Error: conditional expression in while loop must be scalar.");
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
             }
 
             Option<AST.Expr> loop = this.Loop.Map(_ => _.GetExpr(env));
@@ -276,7 +282,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// if (cond)
+    /// if (Cond)
     ///     stmt
     /// </summary>
     public sealed class IfStmt : Stmt {
@@ -295,7 +301,7 @@ namespace SyntaxTree {
             AST.Expr cond = this.Cond.GetExpr(env);
 
             if (!cond.Type.IsScalar) {
-                throw new InvalidOperationException("Error: expected scalar type");
+                throw new InvalidOperationException("Error: expected scalar Type");
             }
 
             Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
@@ -307,7 +313,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// if (cond)
+    /// if (Cond)
     ///     true-stmt
     /// else
     ///     false-stmt
@@ -330,7 +336,7 @@ namespace SyntaxTree {
             AST.Expr cond = this.Cond.GetExpr(env);
 
             if (!cond.Type.IsScalar) {
-                throw new InvalidOperationException("Error: expected scalar type");
+                throw new InvalidOperationException("Error: expected scalar Type");
             }
 
             Tuple<AST.Env, AST.Stmt> r_true_stmt = this.TrueStmt.GetStmt(env);
@@ -392,7 +398,7 @@ namespace SyntaxTree {
             if (!expr.IsConstExpr) {
                 throw new InvalidOperationException("case Expr not const");
             }
-            Int32 value = ((AST.ConstLong)expr).value;
+            Int32 value = ((AST.ConstLong)expr).Value;
 
             Tuple<AST.Env, AST.Stmt> r_stmt = this.Stmt.GetStmt(env);
             env = r_stmt.Item1;

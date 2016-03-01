@@ -92,7 +92,7 @@ namespace Parsing {
             //   | iteration-statement
             //   | jump-statement
             Statement.Is(
-                (LabeledStatement)
+                Either(LabeledStatement)
                 .Or(CompoundStatement)
                 .Or(ExpressionStatement)
                 .Or(SelectionStatement)
@@ -107,8 +107,9 @@ namespace Parsing {
             //   | 'return' [expression]? ';'
             JumpStatement.Is(
                 (
-                    ((Goto).Then(Identifier).Then(GotoStmt.Create))
-                    .Or(Continue)
+                    Either(
+                        (Goto).Then(Identifier).Then(GotoStmt.Create)
+                    ).Or(Continue)
                     .Or(Break)
                     .Or((Return).Then(Expression.Optional()).Then(ReturnStmt.Create))
                 )
@@ -152,7 +153,7 @@ namespace Parsing {
             //   | 'do' statement 'while' '(' expression ')' ';'
             //   | 'for' '(' [expression]? ';' [expression]? ';' [expression]? ')' statement
             IterationStatement.Is(
-                (
+                Either(
                     (While)
                     .Then(LeftParen)
                     .Then(Expression)
@@ -187,14 +188,14 @@ namespace Parsing {
             //   | 'if' '(' expression ')' statement
             //   | 'switch' '(' expression ')' statement
             SelectionStatement.Is(
-                (
+                Either(
                     (If)
                     .Then(LeftParen)
                     .Then(Expression)
                     .Then(RightParen)
                     .Then(Statement)
                     .Then(
-                        (
+                        Either(
                             Given<Expr, Stmt>()
                             .Then(Else)
                             .Then(Statement)
@@ -219,7 +220,7 @@ namespace Parsing {
             //   | 'case' constant-expression ':' statement
             //   | 'default' ':' statement
             LabeledStatement.Is(
-                (
+                Either(
                     (Identifier)
                     .Then(Colon)
                     .Then(Statement)

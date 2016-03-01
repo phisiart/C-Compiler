@@ -21,29 +21,29 @@ namespace AST {
      
      * [int] has the natural size suggested by the architecture of the execution environment.
 
-     * For each of the signed integer types, there is a corresponding (but different) unsigned integer type (designated with the keyword unsigned) that uses the same amount of storage (including sign information) and has the same alignment requirements. The range of nonnegative values of a signed integer type is a subrange of the corresponding unsigned integer type, and the representation of the same value in each type is the same. A computation involving unsigned operands can never overflow, because a result that cannot be represented by the resulting unsigned integer type is reduced modulo the number that is one greater than the largest value that can be represented by the resulting unsigned integer type.
+     * For each of the signed integer types, there is a corresponding (but different) unsigned integer Type (designated with the keyword unsigned) that uses the same amount of storage (including sign information) and has the same alignment requirements. The range of nonnegative values of a signed integer Type is a subrange of the corresponding unsigned integer Type, and the representation of the same Value in each Type is the same. A computation involving unsigned operands can never overflow, because a result that cannot be represented by the resulting unsigned integer Type is reduced modulo the number that is one greater than the largest Value that can be represented by the resulting unsigned integer Type.
 
      * There are three floating types: float < double < long double.
 
-     * The type char, the signed and unsigned integer types, and the floating types are collectively called the basic types.
+     * The Type char, the signed and unsigned integer types, and the floating types are collectively called the basic types.
 
      * There are three character types: char < signed char < unsigned char.
 
-     * An enumeration comprises a set of named integer constant values. Each distinct enumeration constitutes a different enumerated type.
+     * An enumeration comprises a set of named integer constant values. Each distinct enumeration constitutes a different enumerated Type.
 
-     * The void type comprises an empty set of values; it is an incomplete type that cannot be completed.
+     * The void Type comprises an empty set of values; it is an incomplete Type that cannot be completed.
 
      * Any number of derived types can be constructed from the basic, enumerated, and incomplete types, as follows:
 
-     * An array type describes a contiguously allocated set of objects with a particular member object type, called the element type. Array types are characterized by their element type and by the number of members of the array. An array type is said to be derived from its element type, and if its element type is T , the array type is sometimes called "array of T". The construction of an array type from an element type is called "array type derivation".
+     * An array Type describes a contiguously allocated set of objects with a particular member object Type, called the element Type. Array types are characterized by their element Type and by the number of members of the array. An array Type is said to be derived from its element Type, and if its element Type is T , the array Type is sometimes called "array of T". The construction of an array Type from an element Type is called "array Type derivation".
 
-     * A structure type describes a sequentially allocated set of member objects, each of which has an optionally specified name and possibly distinct type.
+     * A structure Type describes a sequentially allocated set of member objects, each of which has an optionally specified name and possibly distinct Type.
 
-     * A union type describes an overlapping set of member objects, each of which has an optionally specified name and possibly distinct type.
+     * A union Type describes an overlapping set of member objects, each of which has an optionally specified name and possibly distinct Type.
 
-     * A function type describes a function with specified return type. A function type is characterized by its return type and the number and types of its parameters. A function type is said to be derived from its return type, and if its return type is T, the function type is sometimes called "function returning T". The construction of a function type from a return type is called "function type derivation".
+     * A function Type describes a function with specified return Type. A function Type is characterized by its return Type and the number and types of its parameters. A function Type is said to be derived from its return Type, and if its return Type is T, the function Type is sometimes called "function returning T". The construction of a function Type from a return Type is called "function Type derivation".
 
-     * A pointer type may be derived from a function type, an object type, or an incomplete type, called the referenced type. A pointer type describes an object whose value provides a reference to an entity of the referenced type. A pointer type derived from the referenced type T is sometimes called "pointer to T". The construction of a pointer type from a referenced type is called "pointer type derivation".
+     * A pointer Type may be derived from a function Type, an object Type, or an incomplete Type, called the referenced Type. A pointer Type describes an object whose Value provides a reference to an entity of the referenced Type. A pointer Type derived from the referenced Type T is sometimes called "pointer to T". The construction of a pointer Type from a referenced Type is called "pointer Type derivation".
 
      * These methods of constructing derived types can be applied recursively.
 
@@ -82,11 +82,11 @@ namespace AST {
                           |
                           +--- [signed/unsigned] char
 
-     * A pointer to void shall have the same representation and alignment requirements as a pointer to a character type. Other pointer types need not have the same representation or alignment requirements.
+     * A pointer to void shall have the same representation and alignment requirements as a pointer to a character Type. Other pointer types need not have the same representation or alignment requirements.
 
-     * An array type of unknown size is an incomplete type. It is completed, for an identifier of that type, by specifying the size in a later declaration (with internal or external linkage). A structure or union type of unknown content is an incomplete type. It is completed, for all declarations of that type, by declaring the same structure or union tag with its defining content later in the same scope.
+     * An array Type of unknown size is an incomplete Type. It is completed, for an identifier of that Type, by specifying the size in a later declaration (with internal or external linkage). A structure or union Type of unknown content is an incomplete Type. It is completed, for all declarations of that Type, by declaring the same structure or union tag with its defining content later in the same scope.
 
-     * Array, function, and pointer types are collectively called derived declarator types. A declarator type derivation from a type T is the construction of a derived declarator type from T by the application of an array, a function, or a pointer type derivation to T.
+     * Array, function, and pointer types are collectively called derived declarator types. A declarator Type derivation from a Type T is the construction of a derived declarator Type from T by the application of an array, a function, or a pointer Type derivation to T.
      
      */
 
@@ -469,7 +469,7 @@ namespace AST {
 
         public String Dump(Boolean dump_attribs) {
             if (!this.IsComplete) {
-                return "incompleted type " + this._layout.TypeName;
+                return "incompleted Type " + this._layout.TypeName;
             }
             String str = $"{this._layout.TypeName} (size = {this.SizeOf})";
             if (dump_attribs) {
@@ -563,7 +563,7 @@ namespace AST {
             // Whether the attributes are supplied.
             public Boolean IsComplete => this._attribs != null;
 
-            // Only a complete type has a valid size.
+            // Only a complete Type has a valid size.
             public Int32 SizeOf {
                 get {
                     if (!this.IsComplete) {
@@ -591,7 +591,7 @@ namespace AST {
 
     // class FunctionType
     // ===============
-    // represents the function type
+    // represents the function Type
     // stores the names, types, and offsets of arguments
     // 
     // calling convention:
@@ -620,7 +620,7 @@ namespace AST {
             return (other is FunctionType)
                 && (other as FunctionType).HasVarArgs == this.HasVarArgs
 
-                // same return type
+                // same return Type
                 && (other as FunctionType).ReturnType.EqualType(this.ReturnType)
 
                 // same number of arguments

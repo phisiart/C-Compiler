@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace AST {
     public class Env {
@@ -22,23 +24,23 @@ namespace AST {
         
         // class Entry
         // ===========
-        // the return value when searching for a symbol in the environment
+        // the return Value when searching for a symbol in the environment
         // attributes:
         //   entry_loc: the location of this object
-        //   entry_type: the type of the object
+        //   entry_type: the Type of the object
         //   entry_offset: this is used to determine the address of the object
         //              STACK: addr = %ebp - offset
         //              GLOBAL: N/A
         // 
         public class Entry {
             public Entry(EntryKind kind, ExprType type, Int32 offset) {
-                this.kind = kind;
-                this.type = type;
-                this.offset = offset;
+                this.Kind = kind;
+                this.Type = type;
+                this.Offset = offset;
             }
-            public readonly EntryKind kind;
-            public readonly ExprType  type;
-            public readonly Int32     offset;
+            public readonly EntryKind Kind;
+            public readonly ExprType  Type;
+            public readonly Int32     Offset;
         }
 
         private class Scope {
@@ -100,7 +102,7 @@ namespace AST {
 
             // PushEntry
             // =========
-            // input: loc, name, type
+            // input: loc, name, Type
             // output: Scope
             // returns a new scope with everything the same as this, excpet for a new entry
             // 
@@ -126,9 +128,9 @@ namespace AST {
 
             // PushEnum
             // ========
-            // input: name, type
+            // input: name, Type
             // output: Environment
-            // return a new environment which adds a enum value
+            // return a new environment which adds a enum Value
             // 
             public Scope PushEnum(String name, ExprType type, Int32 value) {
                 Scope scope = new Scope(this);
@@ -239,16 +241,15 @@ namespace AST {
         // ===========
         // construct an environment with a single empty scope
         public Env() {
-            this.env_scopes = new Stack<Scope>();
-            this.env_scopes.Push(new Scope());
+            this._scopes = ImmutableStack.Create(new Scope());
         }
 
         // Environment
         // ===========
         // construct an environment with the given scopes
         // 
-        private Env(Stack<Scope> scopes) {
-            this.env_scopes = scopes;
+        private Env(ImmutableStack<Scope> scopes) {
+            this._scopes = scopes;
         }
         
         // InScope
@@ -258,9 +259,7 @@ namespace AST {
         // return a new environment which has a new inner scope
         // 
         public Env InScope() {
-            Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
-            scopes.Push(scopes.Peek().InScope());
-            return new Env(scopes);
+            return new Env(this._scopes.Push(this._scopes.Peek().InScope()));
         }
 
         // OutScope
@@ -270,59 +269,50 @@ namespace AST {
         // return a new environment which goes out of the most inner scope of the current environment
         // 
         public Env OutScope() {
-            Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
-            scopes.Pop();
-            return new Env(scopes);
+            return new Env(this._scopes.Pop());
         }
 
         // PushEntry
         // =========
-        // input: loc, name, type
+        // input: loc, name, Type
         // ouput: Environment
         // return a new environment which adds a symbol entry
         // 
         public Env PushEntry(EntryKind loc, String name, ExprType type) {
-            // note the nested copy constructor. this is because the constructor would reverse the elements.
-            Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
-            Scope top = scopes.Pop().PushEntry(loc, name, type);
-            scopes.Push(top);
-            return new Env(scopes);
+            Scope top = this._scopes.Peek();
+            return new Env(this._scopes.Pop().Push(top.PushEntry(loc, name, type)));
         }
 
         // PushEnum
         // ========
-        // input: name, type
+        // input: name, Type
         // output: Environment
-        // return a new environment which adds a enum value
+        // return a new environment which adds a enum Value
         // 
         public Env PushEnum(String name, ExprType type, Int32 value) {
-            Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
-            Scope top = scopes.Pop().PushEnum(name, type, value);
-            scopes.Push(top);
-            return new Env(scopes);
+            Scope top = this._scopes.Peek();
+            return new Env(this._scopes.Pop().Push(top.PushEnum(name, type, value)));
         }
 
         // SetCurrentFunction
         // ==================
-        // input: type
+        // input: Type
         // ouput: Environment
         // return a new environment which sets the current function
         // 
         public Env SetCurrentFunction(FunctionType type) {
-            Stack<Scope> scopes = new Stack<Scope>(new Stack<Scope>(this.env_scopes));
-            Scope top = scopes.Pop().SetCurrentFunction(type);
-            scopes.Push(top);
-            return new Env(scopes);
+            Scope top = this._scopes.Peek();
+            return new Env(this._scopes.Pop().Push(top.SetCurrentFunction(type)));
         }
 
         // GetCurrentFunction
         // ==================
         // input: void
         // output: FunctionType
-        // return the type of the current function
+        // return the Type of the current function
         // 
         public FunctionType GetCurrentFunction() {
-            return this.env_scopes.Peek().func;
+            return this._scopes.Peek().func;
         }
 
         // GetStackOffset
@@ -331,11 +321,11 @@ namespace AST {
         // output: Int32
         // return the current stack size
         // 
-        public Int32 StackSize => -this.env_scopes.Peek().esp_pos;
+        public Int32 StackSize => -this._scopes.Peek().esp_pos;
 
         public Option<Entry> Find(String name) {
             Entry entry = null;
-            foreach (Scope scope in this.env_scopes) {
+            foreach (Scope scope in this._scopes) {
                 if ((entry = scope.Find(name)) != null) {
                     return new Some<Entry>(entry);
                 }
@@ -344,7 +334,7 @@ namespace AST {
         }
 
         public Option<Entry> FindInCurrentScope(String name) {
-            var entry = this.env_scopes.Peek().Find(name);
+            var entry = this._scopes.Peek().Find(name);
             if (entry == null) {
                 return Option<Entry>.None;
             }
@@ -352,20 +342,71 @@ namespace AST {
         }
 
         public Boolean IsGlobal() {
-            return this.env_scopes.Count == 1;
+            return this._scopes.Count() == 1;
         }
 
         public String Dump() {
             String str = "";
             Int32 depth = 0;
-            foreach (Scope scope in this.env_scopes) {
+            foreach (Scope scope in this._scopes) {
                 str += scope.Dump(depth, "  ");
                 depth++;
             }
             return str;
         }
 
-        private readonly Stack<Scope> env_scopes;
+        private readonly ImmutableStack<Scope> _scopes;
+
+    }
+
+    /// <summary>
+    /// 1. A global scope.
+    /// 2. A function scope, with multiple name scopes.
+    /// 3. ObjectId.
+    /// 4. TypeId.
+    /// 
+    /// </summary>
+    public sealed class Env2 {
+        public enum EntryKind {
+            FRAME,
+            STACK,
+            GLOBAL,
+            TYPEDEF,
+            ENUM
+        }
+
+        private abstract class SymbolEntry {
+            public abstract EntryKind Kind { get; }
+        }
+
+        private abstract class ObjectEntry : SymbolEntry {
+            
+        }
+
+        private sealed class StackObjectEntry : ObjectEntry {
+            public override EntryKind Kind => EntryKind.STACK;
+        }
+
+        private sealed class FrameObjectEntry : ObjectEntry {
+            public override EntryKind Kind => EntryKind.FRAME;
+        }
+
+        private sealed class TypeEntry : SymbolEntry {
+            public override EntryKind Kind => EntryKind.TYPEDEF;
+        }
+
+        private sealed class EnumEntry : SymbolEntry {
+            public override EntryKind Kind => EntryKind.ENUM;
+        }
+
+        private sealed class SymbolTable {
+            
+        }
+
+        public Env2() {
+            
+        }
+
 
     }
 }

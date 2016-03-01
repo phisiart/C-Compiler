@@ -41,7 +41,7 @@
 
         public abstract Expr ConstructBinaryOp();
 
-        public override AST.Expr GetExpr(AST.Env env) =>
+        public override sealed AST.Expr GetExpr(AST.Env env) =>
             Assignment.Create(this.Left, ConstructBinaryOp()).GetExpr(env);
     }
 

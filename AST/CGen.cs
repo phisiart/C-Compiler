@@ -487,7 +487,7 @@ namespace CodeGeneration {
         /// <summary>
         /// SALL er, ee
         /// ee = ee << er
-        /// Note that there is only one kind of lshift.
+        /// Note that there is only one Kind of lshift.
         /// </summary>
         public void SALL(String er, String ee) {
             this.os.WriteLine("    sall " + er + ", " + ee);
@@ -899,7 +899,7 @@ namespace CodeGeneration {
         }
 
         public Int32 CaseLabel(Int32 value) => this.label_packs.First(_ => _.value_to_label != null).value_to_label[value];
-        // label_packs.First().value_to_label[value];
+        // label_packs.First().value_to_label[Value];
 
         public void InLoop(Int32 continue_label, Int32 break_label) {
             this.label_packs.Push(new LabelPack(continue_label, break_label, -1, null));

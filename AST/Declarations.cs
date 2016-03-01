@@ -30,11 +30,11 @@ namespace AST {
         // * extern function;
         // * static function;
         // * obj;
-        // * obj = init;
+        // * obj = Init;
         // * static obj;
-        // * static obj = init;
+        // * static obj = Init;
         // * extern obj;
-        // * extern obj = init;
+        // * extern obj = Init;
         public void CGenDecln(Env env, CGenState state) {
 
             if (env.IsGlobal()) {
@@ -84,25 +84,25 @@ namespace AST {
                             case ExprTypeKind.USHORT:
                                 throw new NotImplementedException();
                             case ExprTypeKind.LONG:
-                                state.LONG(((ConstLong)expr).value);
+                                state.LONG(((ConstLong)expr).Value);
                                 break;
 
                             case ExprTypeKind.ULONG:
-                                state.LONG((Int32)((ConstULong)expr).value);
+                                state.LONG((Int32)((ConstULong)expr).Value);
                                 break;
 
                             case ExprTypeKind.POINTER:
-                                state.LONG((Int32)((ConstPtr)expr).value);
+                                state.LONG((Int32)((ConstPtr)expr).Value);
                                 break;
 
                             case ExprTypeKind.FLOAT:
-                                byte[] float_bytes = BitConverter.GetBytes(((ConstFloat)expr).value);
+                                byte[] float_bytes = BitConverter.GetBytes(((ConstFloat)expr).Value);
                                 Int32 intval = BitConverter.ToInt32(float_bytes, 0);
                                 state.LONG(intval);
                                 break;
 
                             case ExprTypeKind.DOUBLE:
-                                byte[] double_bytes = BitConverter.GetBytes(((ConstDouble)expr).value);
+                                byte[] double_bytes = BitConverter.GetBytes(((ConstDouble)expr).Value);
                                 Int32 first_int = BitConverter.ToInt32(double_bytes, 0);
                                 Int32 second_int = BitConverter.ToInt32(double_bytes, 4);
                                 state.LONG(first_int);
@@ -159,7 +159,7 @@ namespace AST {
                 Int32 stack_size = env.StackSize;
 
                 // pos should be equal to stack_size, but whatever...
-                Int32 pos = env.Find(this.name).Value.offset;
+                Int32 pos = env.Find(this.name).Value.Offset;
                 if (this.initr.IsNone) {
                     return;
                 }
@@ -337,17 +337,17 @@ namespace AST {
             public Int32 CurOffset => GetOffset(this.base_type, this.indices);
 
             //public List<Tuple<ExprType, Int32>> GetPath(ExprType base_type, IReadOnlyList<Int32> indices) {
-            //    ExprType type = base_type;
+            //    ExprType Type = base_type;
             //    List<Tuple<ExprType, Int32>> path = new List<Tuple<ExprType, int>>();
             //    foreach (Int32 index in indices) {
-            //        switch (type.kind) {
+            //        switch (Type.Kind) {
             //            case ExprType.Kind.ARRAY:
-            //                type = ((ArrayType)type).ElemType;
+            //                Type = ((ArrayType)Type).ElemType;
             //                break;
             //            case ExprType.Kind.INCOMPLETE_ARRAY:
             //            case ExprType.Kind.STRUCT_OR_UNION:
             //            default:
-            //                throw new InvalidProgramException("Not an aggregate type.");
+            //                throw new InvalidProgramException("Not an aggregate Type.");
             //        }
             //    }
             //}
@@ -364,7 +364,7 @@ namespace AST {
                         return ((StructOrUnionType)from_type).Attribs[to_index].type;
 
                     default:
-                        throw new InvalidProgramException("Not an aggregate type.");
+                        throw new InvalidProgramException("Not an aggregate Type.");
                 }
             }
 
@@ -383,7 +383,7 @@ namespace AST {
                         return ((StructOrUnionType)from_type).Attribs[to_index].offset;
 
                     default:
-                        throw new InvalidProgramException("Not an aggregate type.");
+                        throw new InvalidProgramException("Not an aggregate Type.");
                 }
             }
 
@@ -458,7 +458,7 @@ namespace AST {
                         LocateStruct((StructOrUnionType)type);
                         return;
                     default:
-                        // Even if the expression is of array type, treat it as a scalar (pointer).
+                        // Even if the expression is of array Type, treat it as a scalar (pointer).
                         LocateScalar();
                         return;
                 }
@@ -476,7 +476,7 @@ namespace AST {
 
             /// <summary>
             /// Try to match a given struct.
-            /// Go down to find the first element of the same struct type.
+            /// Go down to find the first element of the same struct Type.
             /// </summary>
             private void LocateStruct(StructOrUnionType type) {
                 while (!this.CurType.EqualType(type)) {

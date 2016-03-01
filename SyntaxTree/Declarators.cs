@@ -6,7 +6,7 @@ namespace SyntaxTree {
     using static SemanticAnalysis;
 
     /// <summary>
-    /// Modify a type into a function, array, or pointer
+    /// Modify a Type into a function, array, or pointer
     /// </summary>
     public abstract class TypeModifier : ISyntaxTreeNode {
         [SemantMethod]
@@ -40,7 +40,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// parameter-type-list
+    /// parameter-Type-list
     ///   : parameter-list [ ',' '...' ]?
     /// 
     /// parameter-list
@@ -100,7 +100,7 @@ namespace SyntaxTree {
                 throw new InvalidOperationException("Number of elements of an array must be constant.");
             }
 
-            return SemantReturn.Create(env, new AST.ArrayType(elemType, ((AST.ConstLong) numElems).value));
+            return SemantReturn.Create(env, new AST.ArrayType(elemType, ((AST.ConstLong) numElems).Value));
         }
 
         public Option<Expr> NumElems { get; }
@@ -180,10 +180,10 @@ namespace SyntaxTree {
     ///       | '(' [parameter-type_list]? ')'  // function modifier
     ///     ] [
     ///         '[' [constant-expression]? ']'  // array modifier
-    ///       | '(' [parameter-type-list]? ')'  // function modifier
+    ///       | '(' [parameter-Type-list]? ')'  // function modifier
     ///     ]*
     /// 
-    /// An abstract declarator is a list of (pointer, function, or array) type modifiers
+    /// An abstract declarator is a list of (pointer, function, or array) Type modifiers
     /// </summary>
     public class AbstractDeclr {
         protected AbstractDeclr(ImmutableList<TypeModifier> typeModifiers) {
@@ -205,8 +205,8 @@ namespace SyntaxTree {
         [SemantMethod]
         public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
             var type = this.TypeModifiers
-                .Reverse()  // The first type modifier is nearest to the symbol name, which indicates the outmost type.
-                .Aggregate( // Wrap up the type based on the type modifiers.
+                .Reverse()  // The first Type modifier is nearest to the symbol name, which indicates the outmost Type.
+                .Aggregate( // Wrap up the Type based on the Type modifiers.
                     baseType, (currentType, typeModifier) => Semant(typeModifier.DecorateType, currentType, ref env)
                 );
 
@@ -244,7 +244,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// init-declarator
+    /// Init-declarator
     ///   : declarator [ '=' initializer ]?
     /// </summary>
     public sealed class InitDeclr : ISyntaxTreeNode {
@@ -265,7 +265,7 @@ namespace SyntaxTree {
         [SemantMethod]
         public ISemantReturn<Tuple<AST.ExprType, Option<AST.Initr>>> GetDecoratedTypeAndInitr(AST.Env env, AST.ExprType baseType) {
 
-            // Get the type based on the declarator. Note that this might be an incomplete array.
+            // Get the Type based on the declarator. Note that this might be an incomplete array.
             var type = Semant(this.Declr.DecorateType, baseType, ref env);
 
             Option<AST.Initr> initrOption;
@@ -278,13 +278,13 @@ namespace SyntaxTree {
 
                 var initr = Semant(this.Initr.Value.GetInitr, ref env);
 
-                // Check that the initializer conforms to the type.
+                // Check that the initializer conforms to the Type.
                 initr = initr.ConformType(type);
 
                 // If the object is an incomplete array, we must determine the length based on the initializer.
                 if (type.Kind == AST.ExprTypeKind.INCOMPLETE_ARRAY) {
                     // Now we need to determine the length.
-                    // Find the last element in the init list.
+                    // Find the last element in the Init list.
                     var lastOffset = -1;
                     initr.Iterate(type, (offset, _) => { lastOffset = offset; });
 
@@ -302,9 +302,9 @@ namespace SyntaxTree {
                 initrOption = Option.Some(initr);
             }
             
-            // Now everything is created. Check that the type is complete.
+            // Now everything is created. Check that the Type is complete.
             if (!type.IsComplete) {
-                throw new InvalidOperationException("Cannot create an object with an incomplete type.");
+                throw new InvalidOperationException("Cannot create an object with an incomplete Type.");
             }
 
             return SemantReturn.Create(env, Tuple.Create(type, initrOption));

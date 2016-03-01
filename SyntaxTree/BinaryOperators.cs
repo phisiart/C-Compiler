@@ -45,9 +45,9 @@ namespace SyntaxTree {
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
                     case AST.ExprTypeKind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).Value, ((AST.ConstULong)right).Value), env);
                     case AST.ExprTypeKind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).Value, ((AST.ConstLong)right).Value), env);
                     default:
                         throw new InvalidOperationException("Expected long or unsigned long.");
                 }
@@ -95,15 +95,15 @@ namespace SyntaxTree {
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
                     case AST.ExprTypeKind.DOUBLE:
-                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
+                        return new AST.ConstDouble(OperateDouble(((AST.ConstDouble)left).Value, ((AST.ConstDouble)right).Value), env);
                     case AST.ExprTypeKind.FLOAT:
-                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
+                        return new AST.ConstFloat(OperateFloat(((AST.ConstFloat)left).Value, ((AST.ConstFloat)right).Value), env);
                     case AST.ExprTypeKind.ULONG:
-                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
+                        return new AST.ConstULong(OperateULong(((AST.ConstULong)left).Value, ((AST.ConstULong)right).Value), env);
                     case AST.ExprTypeKind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).Value, ((AST.ConstLong)right).Value), env);
                     default:
-                        throw new InvalidOperationException("Expected arithmetic type.");
+                        throw new InvalidOperationException("Expected arithmetic Type.");
                 }
             }
 
@@ -118,7 +118,7 @@ namespace SyntaxTree {
                 case AST.ExprTypeKind.LONG:
                     return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 default:
-                    throw new InvalidOperationException("Expected arithmetic type.");
+                    throw new InvalidOperationException("Expected arithmetic Type.");
             }
 
         }
@@ -157,15 +157,15 @@ namespace SyntaxTree {
             if (left.IsConstExpr && right.IsConstExpr) {
                 switch (typeKind) {
                     case AST.ExprTypeKind.DOUBLE:
-                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)left).value, ((AST.ConstDouble)right).value), env);
+                        return new AST.ConstLong(OperateDouble(((AST.ConstDouble)left).Value, ((AST.ConstDouble)right).Value), env);
                     case AST.ExprTypeKind.FLOAT:
-                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)left).value, ((AST.ConstFloat)right).value), env);
+                        return new AST.ConstLong(OperateFloat(((AST.ConstFloat)left).Value, ((AST.ConstFloat)right).Value), env);
                     case AST.ExprTypeKind.ULONG:
-                        return new AST.ConstLong(OperateULong(((AST.ConstULong)left).value, ((AST.ConstULong)right).value), env);
+                        return new AST.ConstLong(OperateULong(((AST.ConstULong)left).Value, ((AST.ConstULong)right).Value), env);
                     case AST.ExprTypeKind.LONG:
-                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).value, ((AST.ConstLong)right).value), env);
+                        return new AST.ConstLong(OperateLong(((AST.ConstLong)left).Value, ((AST.ConstLong)right).Value), env);
                     default:
-                        throw new InvalidOperationException("Expected arithmetic type.");
+                        throw new InvalidOperationException("Expected arithmetic Type.");
                 }
             }
 
@@ -180,7 +180,7 @@ namespace SyntaxTree {
                 case AST.ExprTypeKind.LONG:
                     return ConstructExpr(left, right, new AST.LongType(isConst, isVolatile));
                 default:
-                    throw new InvalidOperationException("Expected arithmetic type.");
+                    throw new InvalidOperationException("Expected arithmetic Type.");
             }
 
         }
@@ -239,7 +239,7 @@ namespace SyntaxTree {
     /// Addition
     /// 
     /// There are two kinds of addition:
-    /// 1. both operands are of arithmetic type
+    /// 1. both operands are of arithmetic Type
     /// 2. one operand is a pointer, and the other is an integral
     /// 
     /// </summary>
@@ -267,9 +267,9 @@ namespace SyntaxTree {
             var env = order ? ptr.Env : offset.Env;
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
-                var baseValue = (Int32)((AST.ConstPtr)ptr).value;
+                var baseValue = (Int32)((AST.ConstPtr)ptr).Value;
                 Int32 scaleValue = ((AST.PointerType)(ptr.Type)).RefType.SizeOf;
-                Int32 offsetValue = ((AST.ConstLong)offset).value;
+                Int32 offsetValue = ((AST.ConstLong)offset).Value;
                 return new AST.ConstPtr((UInt32)(baseValue + scaleValue * offsetValue), ptr.Type, env);
             }
 
@@ -295,11 +295,11 @@ namespace SyntaxTree {
             var right = SemantExpr(this.Right, ref env);
 
             if (left.Type is AST.ArrayType) {
-                left = AST.TypeCast.MakeCast(left, new AST.PointerType((left.Type as AST.ArrayType).ElemType, left.Type.IsConst, left.Type.IsVolatile));
+                left = AST.TypeCast.MakeCast(left, new AST.PointerType(((AST.ArrayType)left.Type).ElemType, left.Type.IsConst, left.Type.IsVolatile));
             }
 
             if (right.Type is AST.ArrayType) {
-                right = AST.TypeCast.MakeCast(right, new AST.PointerType((right.Type as AST.ArrayType).ElemType, right.Type.IsConst, right.Type.IsVolatile));
+                right = AST.TypeCast.MakeCast(right, new AST.PointerType(((AST.ArrayType)right.Type).ElemType, right.Type.IsConst, right.Type.IsVolatile));
             }
 
             // 2. ptr + int
@@ -356,9 +356,9 @@ namespace SyntaxTree {
             }
 
             if (ptr.IsConstExpr && offset.IsConstExpr) {
-                Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).value;
+                Int32 baseAddressValue = (Int32)((AST.ConstPtr)ptr).Value;
                 Int32 scaleFactorValue = ((AST.PointerType)(ptr.Type)).RefType.SizeOf;
-                Int32 offsetValue = ((AST.ConstLong)offset).value;
+                Int32 offsetValue = ((AST.ConstLong)offset).Value;
                 return new AST.ConstPtr((UInt32)(baseAddressValue - scaleFactorValue * offsetValue), ptr.Type, offset.Env);
             }
 
@@ -403,7 +403,7 @@ namespace SyntaxTree {
                     Int32 scale = leftType.RefType.SizeOf;
 
                     if (left.IsConstExpr && right.IsConstExpr) {
-                        return new AST.ConstLong((Int32)(((AST.ConstPtr)left).value - ((AST.ConstPtr)right).value) / scale, env);
+                        return new AST.ConstLong((Int32)(((AST.ConstPtr)left).Value - ((AST.ConstPtr)right).Value) / scale, env);
                     }
 
                     return new AST.Divide(

@@ -58,14 +58,14 @@ namespace AST {
             stmt.body.Accept(this);
 
         public override void Visit(ForStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(SwitchStmt stmt) {
             // Must ignore this.
         }
 
         public override void Visit(CaseStmt stmt) {
-            // Record the value.
+            // Record the Value.
             this._labels.Add(stmt.value);
             stmt.stmt.Accept(this);
         }
@@ -121,7 +121,7 @@ namespace AST {
             stmt.body.Accept(this);
 
         public override void Visit(ForStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(SwitchStmt stmt) {
             stmt.stmt.Accept(this);

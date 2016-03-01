@@ -22,7 +22,7 @@ public static class Option {
 public sealed class None<T> : Option<T> {
     public override T Value {
         get {
-            throw new NotSupportedException("No value in None.");
+            throw new NotSupportedException("No Value in None.");
         }
     }
     public override Boolean IsSome => false;
@@ -32,7 +32,7 @@ public sealed class None<T> : Option<T> {
 public sealed class Some<T> : Option<T> {
     public Some(T value) {
         if (value == null) {
-            throw new ArgumentNullException(nameof(value), "The value in Some cannot be null.");
+            throw new ArgumentNullException(nameof(value), "The Value in Some cannot be null.");
         }
         this.Value = value;
     }

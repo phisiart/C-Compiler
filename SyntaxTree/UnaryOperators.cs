@@ -51,7 +51,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// sizeof(type)
+    /// sizeof(Type)
     /// </summary>
     [Checked]
     public sealed class SizeofType : Expr {
@@ -65,7 +65,7 @@ namespace SyntaxTree {
         public override AST.Expr GetExpr(AST.Env env) {
             //Tuple<AST.Env, AST.ExprType> type_env = this.TypeName.GetTypeEnv(env);
             //env = type_env.Item1;
-            //AST.ExprType type = type_env.Item2;
+            //AST.ExprType Type = type_env.Item2;
 
             var type = Semant(this.TypeName.GetExprType, ref env);
 
@@ -132,7 +132,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// Reference: &Expr
+    /// Reference: &expr
     /// </summary>
     [Checked]
     public sealed class Reference : UnaryExprOperator {
@@ -150,7 +150,7 @@ namespace SyntaxTree {
     /// <summary>
     /// Dereference: *Expr
     /// 
-    /// Note that Expr might have an **incomplete** type.
+    /// Note that Expr might have an **incomplete** Type.
     /// We need to search the environment
     /// </summary>
     [Checked]
@@ -168,7 +168,7 @@ namespace SyntaxTree {
 
             AST.ExprType type = ((AST.PointerType)expr.Type).RefType;
             if (type.Kind == AST.ExprTypeKind.STRUCT_OR_UNION && !((AST.StructOrUnionType)type).IsComplete) {
-                throw new InvalidOperationException("Cannot dereference incomplete type.");
+                throw new InvalidOperationException("Cannot dereference incomplete Type.");
             }
 
             return new AST.Dereference(expr, type);
@@ -176,7 +176,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// Merely a check on arithmetic type.
+    /// Merely a check on arithmetic Type.
     /// </summary>
     [Checked]
     public sealed class Positive : UnaryExprOperator {
@@ -188,7 +188,7 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
 
             if (!expr.Type.IsArith) {
-                throw new InvalidOperationException("Expected arithmetic type.");
+                throw new InvalidOperationException("Expected arithmetic Type.");
             }
 
             return expr;
@@ -196,7 +196,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// Negative: requires arithmetic type.
+    /// Negative: requires arithmetic Type.
     /// </summary>
     [Checked]
     public sealed class Negative : UnaryExprOperator {
@@ -208,7 +208,7 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
 
             if (!expr.Type.IsArith) {
-                throw new InvalidOperationException("Expected arithmetic type.");
+                throw new InvalidOperationException("Expected arithmetic Type.");
             }
 
             if (expr.Type.IsIntegral) {
@@ -218,16 +218,16 @@ namespace SyntaxTree {
             if (expr.IsConstExpr) {
                 switch (expr.Type.Kind) {
                     case AST.ExprTypeKind.LONG:
-                        return new AST.ConstLong(-((AST.ConstLong)expr).value, env);
+                        return new AST.ConstLong(-((AST.ConstLong)expr).Value, env);
 
                     case AST.ExprTypeKind.ULONG:
-                        return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).value, env);
+                        return new AST.ConstLong(-(Int32)((AST.ConstULong)expr).Value, env);
 
                     case AST.ExprTypeKind.FLOAT:
-                        return new AST.ConstFloat(-((AST.ConstFloat)expr).value, env);
+                        return new AST.ConstFloat(-((AST.ConstFloat)expr).Value, env);
 
                     case AST.ExprTypeKind.DOUBLE:
-                        return new AST.ConstDouble(-((AST.ConstDouble)expr).value, env);
+                        return new AST.ConstDouble(-((AST.ConstDouble)expr).Value, env);
 
                     default:
                         throw new InvalidOperationException();
@@ -251,7 +251,7 @@ namespace SyntaxTree {
             AST.Expr expr = this.Expr.GetExpr(env);
 
             if (!expr.Type.IsIntegral) {
-                throw new InvalidOperationException("Expected integral type.");
+                throw new InvalidOperationException("Expected integral Type.");
             }
 
             expr = AST.TypeCast.IntegralPromotion(expr).Item1;
@@ -259,9 +259,9 @@ namespace SyntaxTree {
             if (expr.IsConstExpr) {
                 switch (expr.Type.Kind) {
                     case AST.ExprTypeKind.LONG:
-                        return new AST.ConstLong(~((AST.ConstLong)expr).value, env);
+                        return new AST.ConstLong(~((AST.ConstLong)expr).Value, env);
                     case AST.ExprTypeKind.ULONG:
-                        return new AST.ConstULong(~((AST.ConstULong)expr).value, env);
+                        return new AST.ConstULong(~((AST.ConstULong)expr).Value, env);
                     default:
                         throw new InvalidOperationException();
                 }
@@ -285,7 +285,7 @@ namespace SyntaxTree {
             var expr = this.Expr.GetExpr(env);
 
             if (!expr.Type.IsArith) {
-                throw new InvalidOperationException("Expected arithmetic type.");
+                throw new InvalidOperationException("Expected arithmetic Type.");
             }
 
             if (expr.Type.IsIntegral) {
@@ -296,16 +296,16 @@ namespace SyntaxTree {
                 Boolean isZero;
                 switch (expr.Type.Kind) {
                     case AST.ExprTypeKind.LONG:
-                        isZero = ((AST.ConstLong)expr).value == 0;
+                        isZero = ((AST.ConstLong)expr).Value == 0;
                         break;
                     case AST.ExprTypeKind.ULONG:
-                        isZero = ((AST.ConstULong)expr).value == 0;
+                        isZero = ((AST.ConstULong)expr).Value == 0;
                         break;
                     case AST.ExprTypeKind.FLOAT:
-                        isZero = ((AST.ConstFloat)expr).value == 0;
+                        isZero = ((AST.ConstFloat)expr).Value == 0;
                         break;
                     case AST.ExprTypeKind.DOUBLE:
-                        isZero = ((AST.ConstDouble)expr).value == 0;
+                        isZero = ((AST.ConstDouble)expr).Value == 0;
                         break;
                     default:
                         throw new InvalidOperationException();
@@ -318,7 +318,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// User-specified explicit type cast
+    /// User-specified explicit Type cast
     /// </summary>
     [Checked]
     public sealed class TypeCast : Expr {

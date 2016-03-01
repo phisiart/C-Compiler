@@ -6,16 +6,16 @@ using System.Linq;
 namespace SyntaxTree {
 
     // 3.2.1.5
-    /* First, if either operand has type long double, the other operand is converted to long double.
-     * Otherwise, if either operand has type double, the other operand is converted to double.
-     * Otherwise, if either operand has type float, the other operand is converted to float.
+    /* First, if either operand has Type long double, the other operand is converted to long double.
+     * Otherwise, if either operand has Type double, the other operand is converted to double.
+     * Otherwise, if either operand has Type float, the other operand is converted to float.
      * Otherwise, the integral promotions are performed on both operands.
      * Then the following rules are applied:
-     * If either operand has type unsigned long Int32, the other operand is converted to unsigned long Int32.
-     * Otherwise, if one operand has type long Int32 and the other has type unsigned Int32, if a long Int32 can represent all values of an unsigned Int32, the operand of type unsigned Int32 is converted to long Int32;
-     * if a long Int32 cannot represent all the values of an unsigned Int32, both operands are converted to unsigned long Int32. Otherwise, if either operand has type long Int32, the other operand is converted to long Int32.
-     * Otherwise, if either operand has type unsigned Int32, the other operand is converted to unsigned Int32.
-     * Otherwise, both operands have type Int32.*/
+     * If either operand has Type unsigned long Int32, the other operand is converted to unsigned long Int32.
+     * Otherwise, if one operand has Type long Int32 and the other has Type unsigned Int32, if a long Int32 can represent all values of an unsigned Int32, the operand of Type unsigned Int32 is converted to long Int32;
+     * if a long Int32 cannot represent all the values of an unsigned Int32, both operands are converted to unsigned long Int32. Otherwise, if either operand has Type long Int32, the other operand is converted to long Int32.
+     * Otherwise, if either operand has Type unsigned Int32, the other operand is converted to unsigned Int32.
+     * Otherwise, both operands have Type Int32.*/
 
     // My simplification:
     // I let long = int, long double = double
@@ -31,6 +31,7 @@ namespace SyntaxTree {
         public Variable(String name) {
             this.Name = name;
         }
+
         public static Expr Create(String name) =>
             new Variable(name);
 
@@ -45,15 +46,15 @@ namespace SyntaxTree {
 
             AST.Env.Entry entry = entry_opt.Value;
 
-            switch (entry.kind) {
+            switch (entry.Kind) {
                 case AST.Env.EntryKind.TYPEDEF:
                     throw new InvalidOperationException($"Expected a variable '{this.Name}', not a typedef.");
                 case AST.Env.EntryKind.ENUM:
-                    return new AST.ConstLong(entry.offset, env);
+                    return new AST.ConstLong(entry.Offset, env);
                 case AST.Env.EntryKind.FRAME:
                 case AST.Env.EntryKind.GLOBAL:
                 case AST.Env.EntryKind.STACK:
-                    return new AST.Variable(entry.type, this.Name, env);
+                    return new AST.Variable(entry.Type, this.Name, env);
                 default:
                     throw new InvalidOperationException($"Cannot find variable '{this.Name}'");
             }
@@ -84,9 +85,9 @@ namespace SyntaxTree {
     /// <summary>
     /// Conditional Expression
     /// 
-    /// cond ? true_expr : false_expr
+    /// Cond ? true_expr : false_expr
     /// 
-    /// cond must be of scalar type
+    /// Cond must be of scalar Type
     /// 
     /// 1. if both true_expr and false_expr have arithmetic types
     ///    perform usual arithmetic conversion
@@ -135,7 +136,7 @@ namespace SyntaxTree {
             }
 
             switch (true_expr.Type.Kind) {
-                // 2. if both true_expr and false_expr have struct or union type
+                // 2. if both true_expr and false_expr have struct or union Type
                 //    make sure they are compatible
                 case AST.ExprTypeKind.STRUCT_OR_UNION:
                     if (!true_expr.Type.EqualType(false_expr.Type)) {
@@ -143,12 +144,12 @@ namespace SyntaxTree {
                     }
                     return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
 
-                // 3. if both true_expr and false_expr have void type
+                // 3. if both true_expr and false_expr have void Type
                 //    return void
                 case AST.ExprTypeKind.VOID:
                     return new AST.ConditionalExpr(cond, true_expr, false_expr, true_expr.Type);
 
-                // 4. if both true_expr and false_expr have pointer type
+                // 4. if both true_expr and false_expr have pointer Type
                 case AST.ExprTypeKind.POINTER:
 
                     // if either points to void, convert to void *
@@ -189,7 +190,7 @@ namespace SyntaxTree {
             // A special case:
             // If we cannot find the function prototype in the environment, make one up.
             // This function returns int.
-            // Update the environment to add this function type.
+            // Update the environment to add this function Type.
             if ((this.Func is Variable) && env.Find((this.Func as Variable).Name).IsNone) {
                 // TODO: get this env used.
                 env = env.PushEntry(AST.Env.EntryKind.TYPEDEF, (this.Func as Variable).Name, AST.FunctionType.Create(new AST.LongType(true), args.ConvertAll(_ => Tuple.Create("", _.Type)), false
@@ -200,7 +201,7 @@ namespace SyntaxTree {
             // Step 2: get function expression.
             AST.Expr func = this.Func.GetExpr(env);
 
-            // Step 3: get the function type.
+            // Step 3: get the function Type.
             AST.FunctionType func_type;
             switch (func.Type.Kind) {
                 case AST.ExprTypeKind.FUNCTION:

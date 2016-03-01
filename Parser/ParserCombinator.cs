@@ -90,11 +90,17 @@ namespace Parsing {
         public static IParser<R> Optional<R>(this IParser<R> parser, R defaultValue) =>
             new OptionalParserWithDefault<R>(parser, defaultValue);
 
+        public static OrConsumer Either(IConsumer consumer) =>
+            new OrConsumer(ImmutableList.Create(consumer));
+
+        public static OrConsumer Or(ImmutableList<IConsumer> firstConsumer, IConsumer secondConsumer) =>
+            new OrConsumer(firstConsumer.Add(secondConsumer));
+
         /// <summary>
         /// Consumer or Consumer
         /// </summary>
-        public static IConsumer Or(this IConsumer firstConsumer, IConsumer secondConsumer) =>
-            new ConsumerOrConsumer(firstConsumer, secondConsumer);
+        //public static IConsumer Or(this IConsumer firstConsumer, IConsumer secondConsumer) =>
+        //    new ConsumerOrConsumer(firstConsumer, secondConsumer);
 
         /// <summary>
         /// ( => R ) check Predicate[IParserResult[R]] is ( => R)
@@ -116,11 +122,23 @@ namespace Parsing {
         public static ITransformer<R, R> Optional<R>(this ITransformer<R, R> transformer) =>
             new OptionalTransformer<R>(transformer);
 
-        public static ITransformer<S, R> Or<S, R>(this ITransformer<S, R> firstTransformer, ITransformer<S, R> secondTransformer) =>
-            new TransformerOrTransformer<S, R>(firstTransformer, secondTransformer);
+        public static OrTransformer<S, R> Either<S, R>(ITransformer<S, R> transformer) =>
+            new OrTransformer<S, R>(ImmutableList.Create(transformer));
 
-        public static IParser<R> Or<R>(this IParser<R> firstParser, IParser<R> secondParser) =>
-            new ParserOrParser<R>(firstParser, secondParser);
+        public static OrTransformer<S, R> Or<S, R>(this OrTransformer<S, R> firstTransformer, ITransformer<S, R> secondTransformer) =>
+            new OrTransformer<S, R>(firstTransformer.Transformers.Add(secondTransformer));
+
+        //public static ITransformer<S, R> Or<S, R>(this ITransformer<S, R> firstTransformer, ITransformer<S, R> secondTransformer) =>
+        //    new TransformerOrTransformer<S, R>(firstTransformer, secondTransformer);
+
+        //public static IParser<R> Or<R>(this IParser<R> firstParser, IParser<R> secondParser) =>
+        //    new ParserOrParser<R>(firstParser, secondParser);
+
+        public static OrParser<R> Either<R>(IParser<R> parser) =>
+            new OrParser<R>(ImmutableList.Create(parser));
+
+        public static OrParser<R> Or<R>(this OrParser<R> firstParser, IParser<R> secondParser) =>
+            new OrParser<R>(firstParser.Parsers.Add(secondParser));
 
         public static IParser<Boolean> Optional(this IConsumer consumer) =>
             new OptionalConsumer(consumer);

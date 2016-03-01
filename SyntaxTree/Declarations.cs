@@ -8,7 +8,7 @@ namespace SyntaxTree {
 
     /// <summary>
     /// declaration
-    ///   : declaration-specifiers [init-declarator-list]? ';'
+    ///   : declaration-specifiers [Init-declarator-list]? ';'
     /// </summary>
     public sealed class Decln : IExternDecln {
         private Decln(DeclnSpecs declnSpecs, ImmutableList<InitDeclr> initDeclrs) {
@@ -116,7 +116,7 @@ namespace SyntaxTree {
                     structDeclr => structDeclr.Name
                 );
 
-            return SemantReturn.Create(env, memberNames.Zip<Option<String>, ExprType, Tuple<Option<String>, ExprType>>(memberTypes, Tuple.Create).ToImmutableList());
+            return SemantReturn.Create(env, memberNames.Zip(memberTypes, Tuple.Create).ToImmutableList());
         }
 
     }
@@ -153,7 +153,7 @@ namespace SyntaxTree {
     }
 
     /// <summary>
-    /// type-name
+    /// Type-name
     ///   : specifier-qualifier-list [abstract-declarator]?
     /// </summary>
     public class TypeName : ISyntaxTreeNode {

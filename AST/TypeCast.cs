@@ -178,43 +178,43 @@ namespace AST {
                     switch (to) {
                         case ExprTypeKind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((SByte)((ConstLong)expr).value, env);
+                                return new ConstChar((SByte)((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT8, expr, type);
 
                         case ExprTypeKind.UCHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((Byte)((ConstLong)expr).value, env);
+                                return new ConstUChar((Byte)((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT8, expr, type);
 
                         case ExprTypeKind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int16)((ConstLong)expr).value, env);
+                                return new ConstShort((Int16)((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, expr, type);
 
                         case ExprTypeKind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt16)((ConstLong)expr).value, env);
+                                return new ConstUShort((UInt16)((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, expr, type);
 
                         case ExprTypeKind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstLong)expr).value, env);
+                                return new ConstULong((UInt32)((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.NOP, expr, type);
 
                         case ExprTypeKind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat(((ConstLong)expr).value, env);
+                                return new ConstFloat(((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.INT32_TO_FLOAT, expr, type);
 
                         case ExprTypeKind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble(((ConstLong)expr).value, env);
+                                return new ConstDouble(((ConstLong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.INT32_TO_DOUBLE, expr, type);
 
@@ -308,43 +308,43 @@ namespace AST {
                     switch (to) {
                         case ExprTypeKind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((SByte)((ConstULong)expr).value, env);
+                                return new ConstLong((SByte)((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT8, expr, type);
 
                         case ExprTypeKind.UCHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((Byte)((ConstULong)expr).value, env);
+                                return new ConstULong((Byte)((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT8, expr, type);
 
                         case ExprTypeKind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int16)((ConstULong)expr).value, env);
+                                return new ConstLong((Int16)((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, expr, type);
 
                         case ExprTypeKind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt16)((ConstULong)expr).value, env);
+                                return new ConstULong((UInt16)((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, expr, type);
 
                         case ExprTypeKind.LONG:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstULong)expr).value, env);
+                                return new ConstLong((Int32)((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.NOP, expr, type);
 
                         case ExprTypeKind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat(((ConstULong)expr).value, env);
+                                return new ConstFloat(((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.INT32_TO_FLOAT, expr, type);
 
                         case ExprTypeKind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble(((ConstULong)expr).value, env);
+                                return new ConstDouble(((ConstULong)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.INT32_TO_DOUBLE, expr, type);
 
@@ -381,37 +381,37 @@ namespace AST {
                     switch (to) {
                         case ExprTypeKind.CHAR:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((SByte)((ConstFloat)expr).value, env);
+                                return new ConstLong((SByte)((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT8, new TypeCast(TypeCastType.FLOAT_TO_INT32, expr, new LongType(type.IsConst, type.IsVolatile)), type);
 
                         case ExprTypeKind.SHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int16)((ConstFloat)expr).value, env);
+                                return new ConstLong((Int16)((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, new TypeCast(TypeCastType.FLOAT_TO_INT32, expr, new LongType(type.IsConst, type.IsVolatile)), type);
 
                         case ExprTypeKind.USHORT:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt16)((ConstFloat)expr).value, env);
+                                return new ConstULong((UInt16)((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, new TypeCast(TypeCastType.FLOAT_TO_INT32, expr, new LongType(type.IsConst, type.IsVolatile)), type);
 
                         case ExprTypeKind.LONG:
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstFloat)expr).value, env);
+                                return new ConstLong((Int32)((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.FLOAT_TO_INT32, expr, type);
 
                         case ExprTypeKind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstFloat)expr).value, env);
+                                return new ConstULong((UInt32)((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.FLOAT_TO_INT32, expr, type);
 
                         case ExprTypeKind.DOUBLE:
                             if (expr.IsConstExpr) {
-                                return new ConstDouble(((ConstFloat)expr).value, env);
+                                return new ConstDouble(((ConstFloat)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.FLOAT_TO_DOUBLE, expr, type);
 
@@ -424,40 +424,40 @@ namespace AST {
                         case ExprTypeKind.CHAR:
                             // double -> float -> char
                             if (expr.IsConstExpr) {
-                                return new ConstLong((SByte)((ConstDouble)expr).value, env);
+                                return new ConstLong((SByte)((ConstDouble)expr).Value, env);
                             }
                             return FloatToArith(FloatToArith(expr, new FloatType(type.IsConst, type.IsVolatile)), new CharType(type.IsConst, type.IsVolatile));
 
                         case ExprTypeKind.SHORT:
                             // double -> float -> short
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int16)((ConstDouble)expr).value, env);
+                                return new ConstLong((Int16)((ConstDouble)expr).Value, env);
                             }
                             return FloatToArith(FloatToArith(expr, new FloatType(type.IsConst, type.IsVolatile)), new ShortType(type.IsConst, type.IsVolatile));
 
                         case ExprTypeKind.LONG:
                             // double -> float -> short
                             if (expr.IsConstExpr) {
-                                return new ConstLong((Int32)((ConstDouble)expr).value, env);
+                                return new ConstLong((Int32)((ConstDouble)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.DOUBLE_TO_INT32, expr, type);
 
                         case ExprTypeKind.ULONG:
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt32)((ConstDouble)expr).value, env);
+                                return new ConstULong((UInt32)((ConstDouble)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.DOUBLE_TO_INT32, expr, type);
 
                         case ExprTypeKind.USHORT:
                             // double -> long -> ushort
                             if (expr.IsConstExpr) {
-                                return new ConstULong((UInt16)((ConstDouble)expr).value, env);
+                                return new ConstULong((UInt16)((ConstDouble)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.PRESERVE_INT16, new TypeCast(TypeCastType.DOUBLE_TO_INT32, expr, new LongType(type.IsConst, type.IsVolatile)), type);
 
                         case ExprTypeKind.FLOAT:
                             if (expr.IsConstExpr) {
-                                return new ConstFloat((Single)((ConstDouble)expr).value, env);
+                                return new ConstFloat((Single)((ConstDouble)expr).Value, env);
                             }
                             return new TypeCast(TypeCastType.DOUBLE_TO_FLOAT, expr, type);
 
@@ -487,7 +487,7 @@ namespace AST {
             // if we are casting to another pointer, do a nop
             if (to == ExprTypeKind.POINTER) {
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstPtr)expr).value, type, env);
+                    return new ConstPtr(((ConstPtr)expr).Value, type, env);
                 }
                 return new TypeCast(TypeCastType.NOP, expr, type, env);
             }
@@ -496,14 +496,14 @@ namespace AST {
             if (type.IsIntegral) {
                 // pointer -> ulong -> whatever integral
                 if (expr.IsConstExpr) {
-                    expr = new ConstULong(((ConstPtr)expr).value, env);
+                    expr = new ConstULong(((ConstPtr)expr).Value, env);
                 } else {
                     expr = new TypeCast(TypeCastType.NOP, expr, new ULongType(type.IsConst, type.IsVolatile), env);
                 }
                 return MakeCast(expr, type, env);
             }
 
-            throw new InvalidOperationException("Casting from a pointer to an unsupported type.");
+            throw new InvalidOperationException("Casting from a pointer to an unsupported Type.");
         }
 
         /// <summary>
@@ -522,7 +522,7 @@ namespace AST {
 
             if (from == ExprTypeKind.POINTER) {
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstPtr)expr).value, type, env);
+                    return new ConstPtr(((ConstPtr)expr).Value, type, env);
                 }
                 return new TypeCast(TypeCastType.NOP, expr, type, env);
             }
@@ -548,33 +548,33 @@ namespace AST {
 
                 // ulong -> pointer
                 if (expr.IsConstExpr) {
-                    return new ConstPtr(((ConstULong)expr).value, type, env);
+                    return new ConstPtr(((ConstULong)expr).Value, type, env);
                 }
                 return new TypeCast(TypeCastType.NOP, expr, type, env);
             }
             if (expr.Type is FunctionType) {
-                if (!expr.Type.EqualType((type as PointerType).RefType)) {
+                if (!expr.Type.EqualType(((PointerType)type).RefType)) {
                     throw new InvalidOperationException("Casting from an incompatible function.");
                 }
 
-                // TODO: only allow compatible type?
+                // TODO: only allow compatible Type?
                 return new TypeCast(TypeCastType.NOP, expr, type, env);
 
             }
             if (expr.Type is ArrayType) {
 
-                // TODO: allow any pointer type to cast to?
+                // TODO: allow any pointer Type to cast to?
                 return new TypeCast(TypeCastType.NOP, expr, type, env);
             }
 
-            throw new InvalidOperationException("Error: casting from an unsupported type to pointer.");
+            throw new InvalidOperationException("Error: casting from an unsupported Type to pointer.");
         }
 
         // MakeCast
         // ========
-        // input: Expr, type
+        // input: Expr, Type
         // output: TypeCast
-        // converts Expr to type
+        // converts Expr to Type
         // 
         public static Expr MakeCast(Expr expr, ExprType type, Env env) {
 
@@ -618,7 +618,7 @@ namespace AST {
                 case ExprTypeKind.INCOMPLETE_ARRAY:
                 case ExprTypeKind.STRUCT_OR_UNION:
                 default:
-                    throw new InvalidOperationException("Error: expression type not supported for casting from.");
+                    throw new InvalidOperationException("Error: expression Type not supported for casting from.");
             }
 
         }
@@ -626,14 +626,18 @@ namespace AST {
         public static Expr MakeCast(Expr expr, ExprType type) =>
             MakeCast(expr, type, expr.Env);
 
-        // UsualArithmeticConversion
-        // =========================
-        // input: e1, e2
-        // output: tuple<e1', e2', enumexprtype>
-        // performs the usual arithmetic conversion on e1 & e2
-        // 
-        // possible return type: double, float, ulong, long
-        // 
+        /// <summary>
+        /// <para>Perform the usual arithmetic conversion on two expressions.</para>
+        /// <para>If either expression is <see cref="DoubleType"/>, then both are converted to <see cref="DoubleType"/>.</para>
+        /// <para>Else, if either expression is <see cref="FloatType"/>, then both are converted to <see cref="FloatType"/>.</para>
+        /// <para>Else, if either expression is <see cref="ULongType"/>, then both are converted to <see cref="ULongType"/>.</para>
+        /// <para>Else, both are converted to <see cref="LongType"/>.</para>
+        /// </summary>
+        /// <param name="e1">The first expression to be casted. Must have <see cref="ArithmeticType"/>.</param>
+        /// <param name="e2">The second expression to be casted. Must have <see cref="ArithmeticType"/>.</param>
+        /// <returns>
+        /// The two casted expressions, and an <see cref="ExprTypeKind"/>.
+        /// </returns>
         public static Tuple<Expr, Expr, ExprTypeKind> UsualArithmeticConversion(Expr e1, Expr e2) {
             ExprType t1 = e1.Type;
             ExprType t2 = e2.Type;
@@ -642,6 +646,7 @@ namespace AST {
             Boolean v1 = t1.IsVolatile;
             Boolean c2 = t2.IsConst;
             Boolean v2 = t2.IsVolatile;
+
             // 1. if either Expr is double: both are converted to double
             if (t1.Kind == ExprTypeKind.DOUBLE || t2.Kind == ExprTypeKind.DOUBLE) {
                 return new Tuple<Expr, Expr, ExprTypeKind>(MakeCast(e1, new DoubleType(c1, v1)), MakeCast(e2, new DoubleType(c2, v2)), ExprTypeKind.DOUBLE);
@@ -662,14 +667,19 @@ namespace AST {
 
         }
 
-        // UsualScalarConversion
-        // =====================
-        // input: e1, e2
-        // output: tuple<e1', e2', enumexprtype>
-        // first, convert pointers to ulongs, then do usual arithmetic conversion
-        // 
-        // possible return type: double, float, ulong, long
-        // 
+        /// <summary>
+        /// First, convert pointers to <see cref="ULongType"/>'s, then do <see cref="UsualArithmeticConversion"/>.
+        /// </summary>
+        /// <param name="e1">
+        /// The first expression to be casted.
+        /// </param>
+        /// <param name="e2">
+        /// The second expression to be casted.
+        /// </param>
+        /// <returns>
+        /// The two converted expressions and an <see cref="ExprTypeKind"/>.
+        /// Possible return types: <see cref="DoubleType"/>, <see cref="FloatType"/>, <see cref="ULongType"/>, <see cref="LongType"/>.
+        /// </returns>
         public static Tuple<Expr, Expr, ExprTypeKind> UsualScalarConversion(Expr e1, Expr e2) {
             if (e1.Type.Kind == ExprTypeKind.POINTER) {
                 e1 = FromPointer(e1, new ULongType(e1.Type.IsConst, e1.Type.IsVolatile), e2.Env);
@@ -680,6 +690,16 @@ namespace AST {
             return UsualArithmeticConversion(e1, e2);
         }
 
+        /// <summary>
+        /// All integrals are converted to <see cref="LongType"/> or <see cref="ULongType"/>.
+        /// </summary>
+        /// <param name="expr">
+        /// The integral expression to be casted.
+        /// </param>
+        /// <returns>
+        /// The casted expression and an <see cref="ExprTypeKind"/>.
+        /// Possible return types: <see cref="LongType"/>, <see cref="ULongType"/>.
+        /// </returns>
         public static Tuple<Expr, ExprTypeKind> IntegralPromotion(Expr expr) {
             if (!expr.Type.IsIntegral) {
                 throw new InvalidProgramException();
@@ -696,14 +716,6 @@ namespace AST {
                 case ExprTypeKind.ULONG:
                     return Tuple.Create(MakeCast(expr, new ULongType(expr.Type.IsConst, expr.Type.IsVolatile)), ExprTypeKind.ULONG);
 
-                case ExprTypeKind.VOID:
-                case ExprTypeKind.FLOAT:
-                case ExprTypeKind.DOUBLE:
-                case ExprTypeKind.POINTER:
-                case ExprTypeKind.FUNCTION:
-                case ExprTypeKind.ARRAY:
-                case ExprTypeKind.INCOMPLETE_ARRAY:
-                case ExprTypeKind.STRUCT_OR_UNION:
                 default:
                     throw new InvalidProgramException();
             }

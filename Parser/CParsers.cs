@@ -4,6 +4,7 @@ using System.Linq;
 using LexicalAnalysis;
 using SyntaxTree;
 using static Parsing.ParserCombinator;
+using System.Collections.Immutable;
 
 namespace Parsing {
     public partial class CParsers {
@@ -24,7 +25,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstInt(token.Value, TokenInt.IntSuffix.NONE), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new IntLiteral(token.Value, TokenInt.IntSuffix.NONE), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -35,7 +36,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstInt(token.Val, token.Suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new IntLiteral(token.Val, token.Suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -46,7 +47,7 @@ namespace Parsing {
                 if (token == null) {
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new ConstFloat(token.Value, token.Suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new FloatLiteral(token.Value, token.Suffix), input.Environment, input.Source.Skip(1));
             }
         }
 
@@ -76,13 +77,13 @@ namespace Parsing {
 
         // TODO: create a dedicated class for this.
         public static IParser<Expr> BinaryOperator(IParser<Expr> operandParser, params BinaryOperatorBuilder[] builders) {
-            var transformers = builders.Select(builder =>
+            ImmutableList<ITransformer<Expr, Expr>> transformers = builders.Select(builder =>
                 Given<Expr>()
                 .Then(builder.OperatorConsumer)
                 .Then(operandParser)
                 .Then(builder.NodeCreator)
-            );
-            return operandParser.Then(transformers.Aggregate(ParserCombinator.Or).ZeroOrMore());
+            ).ToImmutableList();
+            return operandParser.Then((new OrTransformer<Expr, Expr>(transformers)).ZeroOrMore());
         }
 
         public static IParser<Expr> AssignmentOperator(
@@ -95,8 +96,8 @@ namespace Parsing {
                 .Then(builder.OperatorConsumer)
                 .Then(rhsParser)
                 .Then(builder.NodeCreator)
-            );
-            return lhsParser.Then(transformers.Aggregate(ParserCombinator.Or).OneOrMore());
+            ).ToImmutableList();
+            return lhsParser.Then((new OrTransformer<Expr, Expr>(transformers)).OneOrMore());
         }
     }
 }

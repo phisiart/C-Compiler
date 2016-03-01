@@ -24,7 +24,7 @@ namespace AST {
         }
 
         /// <summary>
-        /// Whether the value is known at compile time.
+        /// Whether the Value is known at compile time.
         /// </summary>
         public virtual Boolean IsConstExpr => false;
 
@@ -45,61 +45,61 @@ namespace AST {
         /// The default implementation of CGenPush uses CGenValue.
         /// </summary>
         // TODO: struct and union
-        [Obsolete]
-        public virtual void CGenPush(Env env, CGenState state) {
-            Reg ret = CGenValue(env, state);
+        //[Obsolete]
+        //public virtual void CGenPush(Env env, CGenState state) {
+        //    Reg ret = CGenValue(env, state);
 
-            switch (this.Type.Kind) {
-                case ExprTypeKind.CHAR:
-                case ExprTypeKind.UCHAR:
-                case ExprTypeKind.SHORT:
-                case ExprTypeKind.USHORT:
-                case ExprTypeKind.LONG:
-                case ExprTypeKind.ULONG:
-                    // Integral
-                    if (ret != Reg.EAX) {
-                        throw new InvalidProgramException("Integral values should be returned to %eax");
-                    }
-                    state.CGenPushLong(Reg.EAX);
-                    break;
+        //    switch (this.Type.Kind) {
+        //        case ExprTypeKind.CHAR:
+        //        case ExprTypeKind.UCHAR:
+        //        case ExprTypeKind.SHORT:
+        //        case ExprTypeKind.USHORT:
+        //        case ExprTypeKind.LONG:
+        //        case ExprTypeKind.ULONG:
+        //            // Integral
+        //            if (ret != Reg.EAX) {
+        //                throw new InvalidProgramException("Integral values should be returned to %eax");
+        //            }
+        //            state.CGenPushLong(Reg.EAX);
+        //            break;
 
-                case ExprTypeKind.FLOAT:
-                    // Float
-                    if (ret != Reg.ST0) {
-                        throw new InvalidProgramException("Floats should be returned to %st(0)");
-                    }
-                    state.CGenExpandStackBy4Bytes();
-                    state.FSTS(0, Reg.ESP);
-                    break;
+        //        case ExprTypeKind.FLOAT:
+        //            // Float
+        //            if (ret != Reg.ST0) {
+        //                throw new InvalidProgramException("Floats should be returned to %st(0)");
+        //            }
+        //            state.CGenExpandStackBy4Bytes();
+        //            state.FSTS(0, Reg.ESP);
+        //            break;
 
-                case ExprTypeKind.DOUBLE:
-                    // Double
-                    if (ret != Reg.ST0) {
-                        throw new InvalidProgramException("Doubles should be returned to %st(0)");
-                    }
-                    state.CGenExpandStackBy8Bytes();
-                    state.FSTL(0, Reg.ESP);
-                    break;
+        //        case ExprTypeKind.DOUBLE:
+        //            // Double
+        //            if (ret != Reg.ST0) {
+        //                throw new InvalidProgramException("Doubles should be returned to %st(0)");
+        //            }
+        //            state.CGenExpandStackBy8Bytes();
+        //            state.FSTL(0, Reg.ESP);
+        //            break;
 
-                case ExprTypeKind.ARRAY:
-                case ExprTypeKind.FUNCTION:
-                case ExprTypeKind.POINTER:
-                    // Pointer
-                    if (ret != Reg.EAX) {
-                        throw new InvalidProgramException("Pointer values should be returned to %eax");
-                    }
-                    state.CGenPushLong(Reg.EAX);
-                    break;
+        //        case ExprTypeKind.ARRAY:
+        //        case ExprTypeKind.FUNCTION:
+        //        case ExprTypeKind.POINTER:
+        //            // Pointer
+        //            if (ret != Reg.EAX) {
+        //                throw new InvalidProgramException("Pointer values should be returned to %eax");
+        //            }
+        //            state.CGenPushLong(Reg.EAX);
+        //            break;
 
-                case ExprTypeKind.INCOMPLETE_ARRAY:
-                case ExprTypeKind.VOID:
-                    throw new InvalidProgramException(this.Type.Kind + " can't be pushed onto the stack");
+        //        case ExprTypeKind.INCOMPLETE_ARRAY:
+        //        case ExprTypeKind.VOID:
+        //            throw new InvalidProgramException(this.Type.Kind + " can't be pushed onto the stack");
 
-                case ExprTypeKind.STRUCT_OR_UNION:
-                    throw new NotImplementedException();
-            }
+        //        case ExprTypeKind.STRUCT_OR_UNION:
+        //            throw new NotImplementedException();
+        //    }
 
-        }
+        //}
 
         public ExprType Type { get; }
     }
@@ -118,9 +118,9 @@ namespace AST {
 
         public override void CGenAddress(Env env, CGenState state) {
             Env.Entry entry = env.Find(this.name).Value;
-            Int32 offset = entry.offset;
+            Int32 offset = entry.Offset;
 
-            switch (entry.kind) {
+            switch (entry.Kind) {
                 case Env.EntryKind.FRAME:
                 case Env.EntryKind.STACK:
                     state.LEA(offset, Reg.EBP, Reg.EAX);
@@ -133,22 +133,22 @@ namespace AST {
                 case Env.EntryKind.ENUM:
                 case Env.EntryKind.TYPEDEF:
                 default:
-                    throw new InvalidProgramException("cannot get the address of " + entry.kind);
+                    throw new InvalidProgramException("cannot get the address of " + entry.Kind);
             }
         }
 
         public override Reg CGenValue(Env env, CGenState state) {
             Env.Entry entry = env.Find(this.name).Value;
 
-            Int32 offset = entry.offset;
-            //if (entry.kind == Env.EntryKind.STACK) {
+            Int32 offset = entry.Offset;
+            //if (entry.Kind == Env.EntryKind.STACK) {
             //    offset = -offset;
             //}
 
-            switch (entry.kind) {
+            switch (entry.Kind) {
                 case Env.EntryKind.ENUM:
                     // 1. If the variable is an enum constant,
-                    //    return the value in %eax.
+                    //    return the Value in %eax.
                     state.MOVL(offset, Reg.EAX);
                     return Reg.EAX;
 
@@ -180,9 +180,9 @@ namespace AST {
                             return Reg.EAX;
 
                             //state.LEA(offset, Reg.EBP, Reg.ESI); // source address
-                            //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                            //state.CGenExpandStackBy(Utils.RoundUp(Type.SizeOf, 4));
                             //state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-                            //state.MOVL(type.SizeOf, Reg.ECX); // nbytes
+                            //state.MOVL(Type.SizeOf, Reg.ECX); // nbytes
                             //state.CGenMemCpy();
                             //return Reg.STACK;
 
@@ -268,9 +268,9 @@ namespace AST {
                             return Reg.EAX;
 
                             //state.LEA(name, Reg.ESI); // source address
-                            //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                            //state.CGenExpandStackBy(Utils.RoundUp(Type.SizeOf, 4));
                             //state.LEA(0, Reg.ESP, Reg.EDI); // destination address
-                            //state.MOVL(type.SizeOf, Reg.ECX); // nbytes
+                            //state.MOVL(Type.SizeOf, Reg.ECX); // nbytes
                             //state.CGenMemCpy();
                             //return Reg.STACK;
 
@@ -284,12 +284,12 @@ namespace AST {
                             return Reg.EAX;
 
                         default:
-                            throw new InvalidProgramException("cannot get the value of a " + this.Type.Kind);
+                            throw new InvalidProgramException("cannot get the Value of a " + this.Type.Kind);
                     }
 
                 case Env.EntryKind.TYPEDEF:
                 default:
-                    throw new InvalidProgramException("cannot get the value of a " + entry.kind);
+                    throw new InvalidProgramException("cannot get the Value of a " + entry.Kind);
             }
         }
     }
@@ -442,7 +442,7 @@ namespace AST {
         public override Env Env => this.false_expr.Env;
 
         // 
-        //          test cond
+        //          test Cond
         //          jz false ---+
         //          true_expr   |
         // +------- jmp finish  |
@@ -455,7 +455,7 @@ namespace AST {
             Reg ret = this.cond.CGenValue(env, state);
             state.CGenForceStackSizeTo(stack_size);
 
-            // test cond
+            // test Cond
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -516,7 +516,7 @@ namespace AST {
             // GCC's IA-32 calling convention
             // Caller is responsible to push all arguments to the stack in reverse order.
             // Each argument is at least aligned to 4 bytes - even a char would take 4 bytes.
-            // The return value is stored in %eax, or %st(0), if it is a scalar.
+            // The return Value is stored in %eax, or %st(0), if it is a scalar.
             // 
             // The stack would look like this after pushing all the arguments:
             // +--------+
@@ -562,7 +562,7 @@ namespace AST {
             if (this.Type is StructOrUnionType) {
                 // If the function returns a struct
 
-                // Allocate space for return value.
+                // Allocate space for return Value.
                 state.COMMENT("Allocate space for returning stack.");
                 state.CGenExpandStackWithAlignment(this.Type.SizeOf, this.Type.Alignment);
 
@@ -691,7 +691,7 @@ namespace AST {
         //     int a[10];
         // } evil;
         // evil.a <--- is this an lvalue?
-        // Yes, it is. It cannot be assigned, but that's because of the wrong type.
+        // Yes, it is. It cannot be assigned, but that's because of the wrong Type.
         public override Boolean IsLValue => this.expr.IsLValue;
 
         public override Reg CGenValue(Env env, CGenState state) {
@@ -865,11 +865,11 @@ namespace AST {
                     //state.MOVL(Reg.EAX, Reg.ESI);
 
                     //// %edi = dst address
-                    //state.CGenExpandStackBy(Utils.RoundUp(type.SizeOf, 4));
+                    //state.CGenExpandStackBy(Utils.RoundUp(Type.SizeOf, 4));
                     //state.LEA(0, Reg.ESP, Reg.EDI);
 
                     //// %ecx = nbytes
-                    //state.MOVL(type.SizeOf, Reg.ECX);
+                    //state.MOVL(Type.SizeOf, Reg.ECX);
 
                     //state.CGenMemCpy();
 

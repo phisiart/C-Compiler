@@ -90,7 +90,7 @@ namespace AST {
             // 
             Int32 stack_size = state.CGenPushLong(Reg.EAX);
 
-            // 3. Get current value of Expr.
+            // 3. Get current Value of Expr.
             // 
             // 1) If Expr is an integral or pointer:
             // 
@@ -141,7 +141,7 @@ namespace AST {
                     // 
                     state.CGenPopLong(stack_size, Reg.ECX);
 
-                    // 5. Cache current value of Expr in %ebx.
+                    // 5. Cache current Value of Expr in %ebx.
                     // 
                     // regs:
                     // %eax = Expr
@@ -155,8 +155,8 @@ namespace AST {
                     // 
                     state.MOVL(Reg.EAX, Reg.EBX);
 
-                    // 6. Calculate the new value in %ebx or %eax and save.
-                    //    Set %eax to be the return value.
+                    // 6. Calculate the new Value in %ebx or %eax and save.
+                    //    Set %eax to be the return Value.
                     // 
                     // regs:
                     // %eax = Expr or (Expr +- 1)
@@ -226,8 +226,8 @@ namespace AST {
                     // 
                     state.FLD1();
 
-                    // 6. Calculate the new value and save back.
-                    //    Set %st(0) to be the new or original value.
+                    // 6. Calculate the new Value and save back.
+                    //    Set %st(0) to be the new or original Value.
                     // 
                     // regs:
                     // %ecx = &Expr
@@ -283,8 +283,8 @@ namespace AST {
         // | ..... | <- %esp
         // +-------+
         // 
-        // Calculate the new value in %ebx, and save.
-        // Leave %eax to be the original value.
+        // Calculate the new Value in %ebx, and save.
+        // Leave %eax to be the original Value.
         // 
         // regs:
         // %eax = Expr
@@ -395,8 +395,8 @@ namespace AST {
         // | ..... | <- %esp
         // +-------+
         // 
-        // Calculate the new value in %ebx, and save.
-        // Leave %eax to be the original value.
+        // Calculate the new Value in %ebx, and save.
+        // Leave %eax to be the original Value.
         // 
         // regs:
         // %eax = Expr
@@ -507,8 +507,8 @@ namespace AST {
         // | ..... | <- %esp
         // +-------+
         // 
-        // Calculate the new value in %eax, and save.
-        // Leave %eax to be the original value.
+        // Calculate the new Value in %eax, and save.
+        // Leave %eax to be the original Value.
         // 
         // regs:
         // %eax = Expr + 1
@@ -619,8 +619,8 @@ namespace AST {
         // | ..... | <- %esp
         // +-------+
         // 
-        // Calculate the new value in %eax, and save.
-        // Leave %eax to be the original value.
+        // Calculate the new Value in %eax, and save.
+        // Leave %eax to be the original Value.
         // 
         // regs:
         // %eax = Expr - 1
@@ -725,7 +725,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// -Expr: only takes arithmetic type.
+    /// -Expr: only takes arithmetic Type.
     /// 
     /// After semantic analysis, only the following 4 types are possible:
     /// 1) long
@@ -755,7 +755,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// ~Expr: only takes integral type.
+    /// ~Expr: only takes integral Type.
     /// 
     /// After semantic analysis, only the following 2 types are possible:
     /// 1) long
@@ -776,7 +776,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// !Expr: only takes scalar type.
+    /// !Expr: only takes scalar Type.
     /// 
     /// After semantic analysis, only the following 4 types are possible:
     /// 1) long

@@ -41,7 +41,7 @@ namespace AST {
             state.TEXT();
             Env.Entry entry = env.Find(this.name).Value;
             state.COMMENT(ToString());
-            switch (entry.kind) {
+            switch (entry.Kind) {
             case Env.EntryKind.GLOBAL:
                 switch (this.scs) {
                 case StorageClass.AUTO:
