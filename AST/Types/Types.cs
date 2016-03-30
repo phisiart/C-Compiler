@@ -139,6 +139,8 @@ namespace AST {
 
         public abstract Boolean EqualType(ExprType other);
 
+        public override sealed String ToString() => Decl();
+
         public String DumpQualifiers() {
             String str = "";
             if (this.IsConst) {
@@ -173,11 +175,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new VoidType(isConst, isVolatile);
-
-
-
-        public override String ToString() =>
-            DumpQualifiers() + "void";
 
         public override Boolean EqualType(ExprType other) => other.Kind == ExprTypeKind.VOID;
 
@@ -214,8 +211,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new CharType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "char";
     }
 
     public partial class UCharType : IntegralType {
@@ -230,8 +225,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new UCharType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "unsigned char";
     }
 
     public partial class ShortType : IntegralType {
@@ -246,8 +239,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new ShortType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "short";
     }
 
     public partial class UShortType : IntegralType {
@@ -262,8 +253,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new UShortType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "unsigned short";
     }
 
     public partial class LongType : IntegralType {
@@ -278,10 +267,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
             return new LongType(isConst, isVolatile);
-        }
-
-        public override String ToString() {
-            return DumpQualifiers() + "long";
         }
     }
 
@@ -298,10 +283,6 @@ namespace AST {
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
             return new ULongType(isConst, isVolatile);
         }
-
-        public override String ToString() {
-            return DumpQualifiers() + "unsigned long";
-        }
     }
 
     public partial class FloatType : ArithmeticType {
@@ -316,8 +297,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new FloatType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "float";
     }
 
     public partial class DoubleType : ArithmeticType {
@@ -332,8 +311,6 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new DoubleType(isConst, isVolatile);
-
-        public override String ToString() => DumpQualifiers() + "double";
     }
 
     public partial class PointerType : ScalarType {
@@ -357,8 +334,6 @@ namespace AST {
 
         public override Boolean EqualType(ExprType other) =>
             other.Kind == ExprTypeKind.POINTER && ((PointerType)other).RefType.EqualType(this.RefType);
-
-        public override String ToString() => $"{DumpQualifiers()}ptr<{this.RefType}>";
     }
 
     /// <summary>
@@ -390,8 +365,6 @@ namespace AST {
 
         public ExprType Complete(Int32 numElems) => new ArrayType(this.ElemType, numElems);
 
-        public override String ToString() => $"{this.ElemType}[]";
-
         public readonly ExprType ElemType;
     }
 
@@ -418,8 +391,6 @@ namespace AST {
 
         public override Boolean EqualType(ExprType other) =>
             other.Kind == ExprTypeKind.ARRAY && ((ArrayType)other).ElemType.EqualType(this.ElemType);
-
-        public override String ToString() => $"Arr[{this.NumElems}, {this.ElemType}]";
     }
 
     public partial class StructOrUnionType : ExprType {
@@ -484,8 +455,6 @@ namespace AST {
             }
             return str;
         }
-
-        public override String ToString() => Dump(false);
 
         public override Boolean EqualType(ExprType other) =>
             other.Kind == ExprTypeKind.STRUCT_OR_UNION && ReferenceEquals(((StructOrUnionType)other)._layout, this._layout);
@@ -669,20 +638,6 @@ namespace AST {
             return str;
         }
 
-        public override String ToString() {
-            String str = "";
-            for (Int32 i = 0; i < this.Args.Count; ++i) {
-                if (i != 0) {
-                    str += ", ";
-                }
-                str += this.Args[i].type.ToString();
-            }
-            if (this.Args.Count > 0) {
-                str = $"({str})";
-            }
-            return str + " -> " + this.ReturnType;
-        }
-
         public readonly Boolean HasVarArgs;
         public readonly ExprType ReturnType;
         public readonly List<Utils.StoreEntry> Args;
@@ -692,6 +647,7 @@ namespace AST {
     // ====================
     // defines an empty function: no arguments, returns void
     // 
+    // TODO: remove this
     public class EmptyFunctionType : FunctionType {
         public EmptyFunctionType() : base(new VoidType(), new List<Utils.StoreEntry>(), false) {
         }
