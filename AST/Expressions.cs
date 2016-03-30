@@ -37,74 +37,14 @@ namespace AST {
 
         public abstract Reg CGenValue(Env env, CGenState state);
 
-        public virtual void CGenAddress(Env env, CGenState state) {
+        public virtual void CGenAddress(CGenState state) {
             throw new NotImplementedException();
         }
-
-        /// <summary>
-        /// The default implementation of CGenPush uses CGenValue.
-        /// </summary>
-        // TODO: struct and union
-        //[Obsolete]
-        //public virtual void CGenPush(Env env, CGenState state) {
-        //    Reg ret = CGenValue(env, state);
-
-        //    switch (this.Type.Kind) {
-        //        case ExprTypeKind.CHAR:
-        //        case ExprTypeKind.UCHAR:
-        //        case ExprTypeKind.SHORT:
-        //        case ExprTypeKind.USHORT:
-        //        case ExprTypeKind.LONG:
-        //        case ExprTypeKind.ULONG:
-        //            // Integral
-        //            if (ret != Reg.EAX) {
-        //                throw new InvalidProgramException("Integral values should be returned to %eax");
-        //            }
-        //            state.CGenPushLong(Reg.EAX);
-        //            break;
-
-        //        case ExprTypeKind.FLOAT:
-        //            // Float
-        //            if (ret != Reg.ST0) {
-        //                throw new InvalidProgramException("Floats should be returned to %st(0)");
-        //            }
-        //            state.CGenExpandStackBy4Bytes();
-        //            state.FSTS(0, Reg.ESP);
-        //            break;
-
-        //        case ExprTypeKind.DOUBLE:
-        //            // Double
-        //            if (ret != Reg.ST0) {
-        //                throw new InvalidProgramException("Doubles should be returned to %st(0)");
-        //            }
-        //            state.CGenExpandStackBy8Bytes();
-        //            state.FSTL(0, Reg.ESP);
-        //            break;
-
-        //        case ExprTypeKind.ARRAY:
-        //        case ExprTypeKind.FUNCTION:
-        //        case ExprTypeKind.POINTER:
-        //            // Pointer
-        //            if (ret != Reg.EAX) {
-        //                throw new InvalidProgramException("Pointer values should be returned to %eax");
-        //            }
-        //            state.CGenPushLong(Reg.EAX);
-        //            break;
-
-        //        case ExprTypeKind.INCOMPLETE_ARRAY:
-        //        case ExprTypeKind.VOID:
-        //            throw new InvalidProgramException(this.Type.Kind + " can't be pushed onto the stack");
-
-        //        case ExprTypeKind.STRUCT_OR_UNION:
-        //            throw new NotImplementedException();
-        //    }
-
-        //}
 
         public ExprType Type { get; }
     }
 
-    public class Variable : Expr {
+    public sealed class Variable : Expr {
         public Variable(ExprType type, String name, Env env)
             : base(type) {
             this.name = name;
@@ -116,8 +56,8 @@ namespace AST {
 
         public override Boolean IsLValue => !(Type is FunctionType);
 
-        public override void CGenAddress(Env env, CGenState state) {
-            Env.Entry entry = env.Find(this.name).Value;
+        public override void CGenAddress(CGenState state) {
+            Env.Entry entry = this.Env.Find(this.name).Value;
             Int32 offset = entry.Offset;
 
             switch (entry.Kind) {
@@ -336,7 +276,7 @@ namespace AST {
         public override Reg CGenValue(Env env, CGenState state) {
 
             // 1. %eax = &Left
-            this.Left.CGenAddress(env, state);
+            this.Left.CGenAddress(state);
 
             // 2. push %eax
             Int32 pos = state.CGenPushLong(Reg.EAX);
@@ -507,7 +447,7 @@ namespace AST {
 
         public override Boolean IsLValue => false;
 
-        public override void CGenAddress(Env env, CGenState state) {
+        public override void CGenAddress(CGenState state) {
             throw new Exception("Error: cannot get the address of a function call.");
         }
 
@@ -651,7 +591,7 @@ namespace AST {
 
             // Get function address
             if (this.Func.Type is FunctionType) {
-                this.Func.CGenAddress(env, state);
+                this.Func.CGenAddress(state);
             } else if (this.Func.Type is PointerType) {
                 this.Func.CGenValue(env, state);
             } else {
@@ -756,13 +696,13 @@ namespace AST {
             }
         }
 
-        public override void CGenAddress(Env env, CGenState state) {
+        public override void CGenAddress(CGenState state) {
             if (this.expr.Type.Kind != ExprTypeKind.STRUCT_OR_UNION) {
                 throw new InvalidProgramException();
             }
 
             // %eax = address of struct or union
-            this.expr.CGenAddress(env, state);
+            this.expr.CGenAddress(state);
 
             // offset inside the pack
             Int32 offset = ((StructOrUnionType) this.expr.Type)
@@ -775,7 +715,7 @@ namespace AST {
     }
 
     /// <summary>
-    /// &Expr: get the address of Expr.
+    /// &amp;Expr: get the address of Expr.
     /// </summary>
     public class Reference : Expr {
         public Reference(Expr expr)
@@ -793,7 +733,7 @@ namespace AST {
         public override Boolean IsLValue => false;
 
         public override Reg CGenValue(Env env, CGenState state) {
-            this.expr.CGenAddress(env, state);
+            this.expr.CGenAddress(state);
             return Reg.EAX;
         }
     }
@@ -882,8 +822,8 @@ namespace AST {
             }
         }
 
-        public override void CGenAddress(Env env, CGenState state) {
-            Reg ret = this.expr.CGenValue(env, state);
+        public override void CGenAddress(CGenState state) {
+            Reg ret = this.expr.CGenValue(this.Env, state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }

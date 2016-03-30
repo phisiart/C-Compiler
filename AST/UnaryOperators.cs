@@ -74,7 +74,7 @@ namespace AST {
             // | ..... | <- %esp
             // +-------+
             // 
-            this.expr.CGenAddress(env, state);
+            this.expr.CGenAddress(state);
 
             // 2. Push address.
             // 
