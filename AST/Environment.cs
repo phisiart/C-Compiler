@@ -367,46 +367,278 @@ namespace AST {
     /// 
     /// </summary>
     public sealed class Env2 {
+
+        // global scope
+        //   global object
+        //   static object
+        //   typedef
+        //   enum value
+        // local scope
+        //   static object
+        //   typedef
+        //   frame object
+        //   enum value
+        //   parameter object
+
         public enum EntryKind {
             FRAME,
-            STACK,
+            // STACK,
             GLOBAL,
             TYPEDEF,
-            ENUM
+            ENUM,
+            NAMED,
+            PARAM
         }
 
-        private abstract class SymbolEntry {
+        public abstract class SymbolEntry {
             public abstract EntryKind Kind { get; }
         }
 
-        private abstract class ObjectEntry : SymbolEntry {
-            
+        public abstract class ObjectEntry : SymbolEntry {
+            public ExprType Type { get; }
         }
 
-        private sealed class StackObjectEntry : ObjectEntry {
-            public override EntryKind Kind => EntryKind.STACK;
+        // public sealed class StackObjectEntry : ObjectEntry {
+        //     public override EntryKind Kind => EntryKind.STACK;
+        // }
+
+        public sealed class ParameterObjectEntry : ObjectEntry {
+            public override EntryKind Kind => EntryKind.PARAM;
         }
 
-        private sealed class FrameObjectEntry : ObjectEntry {
+        public sealed class FrameObjectEntry : ObjectEntry {
             public override EntryKind Kind => EntryKind.FRAME;
         }
 
-        private sealed class TypeEntry : SymbolEntry {
-            public override EntryKind Kind => EntryKind.TYPEDEF;
+        public sealed class NamedObjectEntry : ObjectEntry {
+            public override EntryKind Kind => EntryKind.NAMED;
         }
 
-        private sealed class EnumEntry : SymbolEntry {
+        public sealed class TypeEntry : SymbolEntry {
+            public override EntryKind Kind => EntryKind.TYPEDEF;
+            public ExprType Type { get; }
+        }
+
+        public sealed class EnumEntry : SymbolEntry {
             public override EntryKind Kind => EntryKind.ENUM;
         }
 
-        private sealed class SymbolTable {
-            
+        private abstract class SymbolTable {
+            protected SymbolTable(ImmutableList<TypeEntry> typeDefs, ImmutableList<EnumEntry> enums) {
+                this.TypeDefs = typeDefs;
+                this.Enums = enums;
+            }
+
+            protected SymbolTable()
+                : this(ImmutableList<TypeEntry>.Empty, ImmutableList<EnumEntry>.Empty) { }
+
+            public ImmutableList<TypeEntry> TypeDefs { get; }
+
+            public ImmutableList<EnumEntry> Enums { get; }
         }
 
-        public Env2() {
-            
+        private sealed class GlobalSymbolTable : SymbolTable {
+            public GlobalSymbolTable(ImmutableList<TypeEntry> typeDefs, ImmutableList<EnumEntry> enums, ImmutableList<NamedObjectEntry> globalObjects)
+                : base(typeDefs, enums) {
+                this.GlobalObjects = globalObjects;
+            }
+
+            public GlobalSymbolTable()
+                : this(ImmutableList<TypeEntry>.Empty, ImmutableList<EnumEntry>.Empty, ImmutableList<NamedObjectEntry>.Empty) { }
+
+            public GlobalSymbolTable Add(TypeEntry typeEntry) =>
+                new GlobalSymbolTable(this.TypeDefs.Add(typeEntry), this.Enums, this.GlobalObjects);
+
+            public GlobalSymbolTable Add(EnumEntry enumEntry) =>
+                new GlobalSymbolTable(this.TypeDefs, this.Enums.Add(enumEntry), this.GlobalObjects);
+
+            public GlobalSymbolTable Add(NamedObjectEntry globalObjectEntry) =>
+                new GlobalSymbolTable(this.TypeDefs, this.Enums, this.GlobalObjects.Add(globalObjectEntry));
+
+            public ImmutableList<NamedObjectEntry> GlobalObjects { get; }
         }
 
+        private sealed class LocalSymbolTable : SymbolTable {
+            public LocalSymbolTable(ImmutableList<TypeEntry> typeDefs, ImmutableList<EnumEntry> enums, ImmutableList<FrameObjectEntry> frameObjects)
+                : base(typeDefs, enums) {
+                this.FrameObjects = frameObjects;
+            }
 
+            public LocalSymbolTable() {
+                this.FrameObjects = ImmutableList<FrameObjectEntry>.Empty;
+            }
+
+            public LocalSymbolTable Add(TypeEntry typeEntry) =>
+                new LocalSymbolTable(this.TypeDefs.Add(typeEntry), this.Enums, this.FrameObjects);
+
+            public LocalSymbolTable Add(EnumEntry enumEntry) =>
+                new LocalSymbolTable(this.TypeDefs, this.Enums.Add(enumEntry), this.FrameObjects);
+
+            public LocalSymbolTable Add(FrameObjectEntry frameObjectEntry) =>
+                new LocalSymbolTable(this.TypeDefs, this.Enums, this.FrameObjects.Add(frameObjectEntry));
+
+            public ImmutableList<FrameObjectEntry> FrameObjects { get; }
+        }
+
+        /// <summary>
+        /// Function info, local symbol tables.
+        /// </summary>
+        private sealed class FunctionScope {
+            public FunctionScope(FunctionType functionType, ImmutableList<ParameterObjectEntry> functionParams, ImmutableStack<LocalSymbolTable> localScopes) {
+                this.FunctionType = functionType;
+                this.FunctionParams = FunctionParams;
+                this.LocalScopes = localScopes;
+            }
+
+            public FunctionScope(FunctionType functionType, ImmutableList<ParameterObjectEntry> functionParams)
+                : this(functionType, functionParams, ImmutableStack<LocalSymbolTable>.Empty) { }
+
+            public FunctionScope Add(TypeEntry typeEntry) {
+                var localSymbleTable = this.LocalScopes.Peek().Add(typeEntry);
+                return new FunctionScope(
+                    this.FunctionType,
+                    this.FunctionParams,
+                    this.LocalScopes.Pop().Push(localSymbleTable)
+                );
+            }
+
+            public FunctionScope Add(EnumEntry enumEntry) {
+                var localSymbleTable = this.LocalScopes.Peek().Add(enumEntry);
+                return new FunctionScope(
+                    this.FunctionType,
+                    this.FunctionParams,
+                    this.LocalScopes.Pop().Push(localSymbleTable)
+                );
+            }
+
+            public FunctionScope Add(FrameObjectEntry frameObjectEntry) {
+                var localSymbleTable = this.LocalScopes.Peek().Add(frameObjectEntry);
+                return new FunctionScope(
+                    this.FunctionType,
+                    this.FunctionParams,
+                    this.LocalScopes.Pop().Push(localSymbleTable)
+                );
+            }
+
+            public FunctionType FunctionType { get; }
+
+            public ImmutableList<ParameterObjectEntry> FunctionParams { get; }
+
+            public ImmutableStack<LocalSymbolTable> LocalScopes { get; }
+        }
+
+        private Env2(GlobalSymbolTable globalSymbolTable, Option<FunctionScope> functionScope) {
+            this._globalSymbolTable = globalSymbolTable;
+            this._functionScope = functionScope;
+        }
+
+        public Env2() : this(new GlobalSymbolTable(), Option<FunctionScope>.None) { }
+
+        private GlobalSymbolTable _globalSymbolTable { get; }
+
+        private Option<FunctionScope> _functionScope { get; }
+
+        public Env2 InFunction(FunctionType functionType, ImmutableList<ParameterObjectEntry> functionParams) {
+            if (this._functionScope.IsSome) {
+                throw new InvalidProgramException("Is already in a function. Cannot go in function.");
+            }
+            return new Env2(
+                this._globalSymbolTable,
+                Option.Some(new FunctionScope(functionType, functionParams))
+            );
+        }
+
+        public Env2 OutFunction() {
+            if (this._functionScope.IsNone) {
+                throw new InvalidProgramException("Is already global. Cannot go out of function.");
+            }
+            return new Env2(
+                this._globalSymbolTable,
+                Option<FunctionScope>.None
+            );
+        }
+
+        /// <summary>
+        /// Add a new local symbol table.
+        /// </summary>
+        /// <returns>
+        /// The new environment.
+        /// </returns>
+        public Env2 InScope() {
+            if (this._functionScope.IsNone) {
+                throw new InvalidProgramException("Isn't in a function. Cannot push scope.");
+            }
+
+            return new Env2(
+                this._globalSymbolTable,
+                Option.Some(new FunctionScope(
+                    this._functionScope.Value.FunctionType,
+                    this._functionScope.Value.FunctionParams,
+                    this._functionScope.Value.LocalScopes.Push(new LocalSymbolTable())
+                ))
+            );
+        }
+
+        /// <summary>
+        /// Pop a local symbol table.
+        /// </summary>
+        /// <returns>
+        /// The new environment.
+        /// </returns>
+        public Env2 OutScope() {
+            if (this._functionScope.IsNone) {
+                throw new InvalidProgramException("Isn't in a function. Cannot pop scope.");
+            }
+            if (this._functionScope.Value.LocalScopes.IsEmpty) {
+                throw new InvalidProgramException("No Local scope to pop.");
+            }
+            return new Env2(
+                this._globalSymbolTable,
+                Option.Some(new FunctionScope(
+                    this._functionScope.Value.FunctionType,
+                    this._functionScope.Value.FunctionParams,
+                    this._functionScope.Value.LocalScopes.Pop()
+                ))
+            );
+        }
+
+        public Env2 Add(EnumEntry entry) {
+            if (this._functionScope.IsNone) {
+                // global
+                return new Env2(
+                    this._globalSymbolTable.Add(entry),
+                    this._functionScope
+                );
+            } else {
+                // local
+                return new Env2(
+                    this._globalSymbolTable,
+                    Option.Some(this._functionScope.Value.Add(entry))
+                );
+            }
+        }
+
+        public Env2 Add(TypeEntry entry) {
+            if (this._functionScope.IsNone) {
+                // global
+                return new Env2(
+                    this._globalSymbolTable.Add(entry),
+                    this._functionScope
+                );
+            } else {
+                // local
+                return new Env2(
+                    this._globalSymbolTable,
+                    Option.Some(this._functionScope.Value.Add(entry))
+                );
+            }
+        }
+
+        public Env2 Add(NamedObjectEntry entry) {
+            if (this._functionScope.IsSome) {
+                
+            }
+            throw new Exception();
+        }
     }
 }

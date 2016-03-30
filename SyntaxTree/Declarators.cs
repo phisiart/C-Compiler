@@ -296,7 +296,7 @@ namespace SyntaxTree {
 
                     var numElems = 1 + lastOffset / ((AST.IncompleteArrayType)type).ElemType.SizeOf;
 
-                    type = new AST.ArrayType(elemType, numElems, type.IsConst, type.IsVolatile);
+                    type = new AST.ArrayType(elemType, numElems);
                 }
 
                 initrOption = Option.Some(initr);

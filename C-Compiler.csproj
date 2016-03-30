@@ -56,7 +56,6 @@
     <Compile Include="AST\Statements.cs" />
     <Compile Include="AST\StmtVisitor.cs" />
     <Compile Include="AST\TypeCast.cs" />
-    <Compile Include="AST\Types.cs" />
     <Compile Include="AST\UnaryOperators.cs" />
     <Compile Include="AST\Utils.cs" />
     <Compile Include="CompilerTests\CompilerTests.cs" />
@@ -104,6 +103,9 @@
     <Compile Include="SyntaxTree\SemantUtils.cs" />
     <Compile Include="SyntaxTree\Statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
+    <Compile Include="CompilerTests\TypePrinterTests.cs" />
+    <Compile Include="AST\Types\Types.cs" />
+    <Compile Include="AST\Types\TypePrinter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -144,6 +146,9 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="AST\Types\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

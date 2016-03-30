@@ -30,5 +30,6 @@ namespace CompilerTests {
                 semantResult.Value.CodeGenerate(new CGenState());
             }
         }
+
     }
 }

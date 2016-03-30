@@ -107,7 +107,7 @@ namespace AST {
         STRUCT_OR_UNION
     }
 
-    public abstract class ExprType {
+    public abstract partial class ExprType {
         protected ExprType(Boolean isConst, Boolean isVolatile) {
             this.IsConst = isConst;
             this.IsVolatile = isVolatile;
@@ -151,7 +151,7 @@ namespace AST {
         }
 
         public abstract ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile);
-        
+
         public abstract Int32 SizeOf { get; }
         public abstract Int32 Alignment { get; }
 
@@ -160,9 +160,7 @@ namespace AST {
 
     }
 
-    
-
-    public class VoidType : ExprType {
+    public partial class VoidType : ExprType {
         public VoidType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
         }
@@ -175,10 +173,12 @@ namespace AST {
 
         public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
             new VoidType(isConst, isVolatile);
-        
+
+
+
         public override String ToString() =>
             DumpQualifiers() + "void";
-        
+
         public override Boolean EqualType(ExprType other) => other.Kind == ExprTypeKind.VOID;
 
     }
@@ -202,7 +202,7 @@ namespace AST {
         public override Boolean IsIntegral => true;
     }
 
-    public class CharType : IntegralType {
+    public partial class CharType : IntegralType {
         public CharType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -218,7 +218,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "char";
     }
 
-    public class UCharType : IntegralType {
+    public partial class UCharType : IntegralType {
         public UCharType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -234,7 +234,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "unsigned char";
     }
 
-    public class ShortType : IntegralType {
+    public partial class ShortType : IntegralType {
         public ShortType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -250,7 +250,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "short";
     }
 
-    public class UShortType : IntegralType {
+    public partial class UShortType : IntegralType {
         public UShortType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -266,7 +266,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "unsigned short";
     }
 
-    public class LongType : IntegralType {
+    public partial class LongType : IntegralType {
         public LongType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -285,7 +285,7 @@ namespace AST {
         }
     }
 
-    public class ULongType : IntegralType {
+    public partial class ULongType : IntegralType {
         public ULongType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -304,7 +304,7 @@ namespace AST {
         }
     }
 
-    public class FloatType : ArithmeticType {
+    public partial class FloatType : ArithmeticType {
         public FloatType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -320,7 +320,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "float";
     }
 
-    public class DoubleType : ArithmeticType {
+    public partial class DoubleType : ArithmeticType {
         public DoubleType(Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) { }
 
@@ -336,7 +336,7 @@ namespace AST {
         public override String ToString() => DumpQualifiers() + "double";
     }
 
-    public class PointerType : ScalarType {
+    public partial class PointerType : ScalarType {
         public PointerType(ExprType refType, Boolean isConst = false, Boolean isVolatile = false)
             : base(isConst, isVolatile) {
             this.RefType = refType;
@@ -347,6 +347,8 @@ namespace AST {
         public override Int32 SizeOf => SIZEOF_POINTER;
 
         public override Int32 Alignment => ALIGN_POINTER;
+
+        public override Int32 Precedence => 1;
 
         public readonly ExprType RefType;
 
@@ -362,9 +364,9 @@ namespace AST {
     /// <summary>
     /// Incomplete array: an array with unknown length.
     /// </summary>
-    public class IncompleteArrayType : ExprType {
-        public IncompleteArrayType(ExprType elemType, Boolean isConst = false, Boolean isVolatile = false)
-            : base(isConst, isVolatile) {
+    public partial class IncompleteArrayType : ExprType {
+        public IncompleteArrayType(ExprType elemType)
+            : base(elemType.IsConst, elemType.IsVolatile) {
             this.ElemType = elemType;
         }
 
@@ -378,23 +380,24 @@ namespace AST {
 
         public override Int32 Alignment => this.ElemType.Alignment;
 
-        public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new IncompleteArrayType(this.ElemType, isConst, isVolatile);
+        public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
+            throw new InvalidOperationException("An array has the same cv qualifiers of its elems.");
+        }
 
         public override Boolean EqualType(ExprType other) => false;
 
         public override Boolean IsComplete => false;
 
-        public ExprType Complete(Int32 numElems) => new ArrayType(this.ElemType, numElems, this.IsConst, this.IsVolatile);
+        public ExprType Complete(Int32 numElems) => new ArrayType(this.ElemType, numElems);
 
         public override String ToString() => $"{this.ElemType}[]";
 
         public readonly ExprType ElemType;
     }
 
-    public class ArrayType : ExprType {
-        public ArrayType(ExprType elemType, Int32 numElems, Boolean isConst = false, Boolean isVolatile = false)
-            : base(isConst, isVolatile) {
+    public partial class ArrayType : ExprType {
+        public ArrayType(ExprType elemType, Int32 numElems)
+            : base(elemType.IsConst, elemType.IsVolatile) {
             this.ElemType = elemType;
             this.NumElems = numElems;
         }
@@ -409,16 +412,17 @@ namespace AST {
 
         public readonly Int32 NumElems;
 
-        public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) =>
-            new ArrayType(this.ElemType, this.NumElems, isConst, isVolatile);
+        public override ExprType GetQualifiedType(Boolean isConst, Boolean isVolatile) {
+            throw new InvalidOperationException("An array has the same cv qualifiers of its elems.");
+        }
 
         public override Boolean EqualType(ExprType other) =>
             other.Kind == ExprTypeKind.ARRAY && ((ArrayType)other).ElemType.EqualType(this.ElemType);
 
         public override String ToString() => $"Arr[{this.NumElems}, {this.ElemType}]";
     }
-    
-    public class StructOrUnionType : ExprType {
+
+    public partial class StructOrUnionType : ExprType {
         private StructOrUnionType(StructOrUnionLayout layout, Boolean isConst, Boolean isVolatile)
             : base(isConst, isVolatile) {
             this._layout = layout;
@@ -598,7 +602,7 @@ namespace AST {
     // https://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/LowLevelABI/130-IA-32_Function_Calling_Conventions/IA32.html
     // 
     // TODO: name is optional
-    public class FunctionType : ExprType {
+    public partial class FunctionType : ExprType {
         protected FunctionType(ExprType ret_t, List<Utils.StoreEntry> args, Boolean is_varargs)
             : base(true, false) {
             this.Args = args;
@@ -679,8 +683,8 @@ namespace AST {
             return str + " -> " + this.ReturnType;
         }
 
-        public readonly Boolean                HasVarArgs;
-        public readonly ExprType               ReturnType;
+        public readonly Boolean HasVarArgs;
+        public readonly ExprType ReturnType;
         public readonly List<Utils.StoreEntry> Args;
     }
 
