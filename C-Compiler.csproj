@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AST\BinaryOperators.cs" />
-    <Compile Include="AST\CGen.cs" />
     <Compile Include="AST\ConstExpressions.cs" />
     <Compile Include="AST\Declarations.cs" />
     <Compile Include="AST\Environment.cs" />
@@ -106,6 +105,8 @@
     <Compile Include="CompilerTests\TypePrinterTests.cs" />
     <Compile Include="AST\Types\Types.cs" />
     <Compile Include="AST\Types\TypePrinter.cs" />
+    <Compile Include="CGen\CGen.cs" />
+    <Compile Include="CGen\BinaryOperators.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="AST\Types\" />
+    <Folder Include="CGen\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
