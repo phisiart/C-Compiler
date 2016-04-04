@@ -4,9 +4,35 @@ using CodeGeneration;
 
 namespace AST {
 
-    public abstract class BinaryOp : Expr {
-        protected BinaryOp(Expr left, Expr right, ExprType type)
-            : base(type) {
+    // BinaryOp [type = abstract]
+    //   |
+    //   +-- BinaryOpSupportingIntegralOperands [typeof(left) == typeof(right)]
+    //   |     | ([abstract Operate{Long, ULong},
+    //   |     |  CGenIntegral)
+    //   |     |
+    //   |     +-- BinaryOpSupportingOnlyIntegralOperands [type = typeof(left)]
+    //   |     |   ([sealed] CGenValue = CGenIntegral)
+    //   |     |   (Modulo, Xor, BitwiseOr, BitwiseAnd, LShift, RShift)
+    //   |     |
+    //   |     +-- BinaryOpSupportingArithmeticOperands
+    //   |           | (CGenValue { try float, then base.CGenValue })
+    //   |           |
+    //   |           +-- BinaryArithmeticOp [type = typeof(left)]
+    //   |           |   ([abstract] Operate{Long, ULong, Float, Double})
+    //   |           |   (Add, Sub, Mult, Div)
+    //   |           |
+    //   |           +-- BinaryComparisonOp [type = int]
+    //   |               ([sealed]   CGenValue,
+    //   |                [sealed]   Operate{Long, ULong, Float, Double},
+    //   |                [abstract] Set{Long, ULong, Float, Double})
+    //   |               (GEqual, Greater, LEqual, Less, Equal, NotEqual)
+    //   |           
+    //   +-- BinaryLogicalOp [type = int]
+    //       ([abstract] CGenValue)
+    //       (LogicalAnd, LogicalOr)
+
+    public abstract partial class BinaryOp : Expr {
+        protected BinaryOp(Expr left, Expr right) {
             this.Left = left;
             this.Right = right;
         }
@@ -15,9 +41,20 @@ namespace AST {
 
         public Expr Right { get; }
 
-        public override Env Env => this.Right.Env;
+        public override abstract ExprType Type { get; }
 
-        public override Boolean IsLValue => false;
+        public override sealed Env Env => this.Right.Env;
+
+        public override sealed Boolean IsLValue => false;
+    }
+
+    public abstract partial class BinaryOpSupportingIntegralOperands : BinaryOp {
+        protected BinaryOpSupportingIntegralOperands(Expr left, Expr right)
+            : base(left, right) {
+            if (!left.Type.EqualType(right.Type)) {
+                throw new InvalidOperationException("Operand types mismatch.");
+            }
+        }
     }
 
     /// <summary>
@@ -31,9 +68,26 @@ namespace AST {
     /// %eax = Left, %ebx = Right
     /// %eax = %eax op %ebx
     /// </summary>
-    public abstract partial class BinaryIntegralOp : BinaryOp {
-        protected BinaryIntegralOp(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public abstract partial class BinaryOpSupportingOnlyIntegralOperands : BinaryOpSupportingIntegralOperands {
+        protected BinaryOpSupportingOnlyIntegralOperands(Expr left, Expr right)
+            : base(left, right) {
+            if (!(left.Type is LongType || left.Type is ULongType)) {
+                throw new InvalidOperationException("Only support long or ulong.");
+            }
+            this.Type = left.Type.GetQualifiedType(true, false);
+        }
+
+        public override sealed ExprType Type { get; }
+    }
+
+    public abstract partial class BinaryOpSupportingArithmeticOperands : BinaryOpSupportingIntegralOperands {
+        protected BinaryOpSupportingArithmeticOperands(Expr left, Expr right)
+            : base(left, right) {
+            if (!(left.Type is LongType || left.Type is ULongType
+                  || left.Type is FloatType || left.Type is DoubleType)) {
+                throw new InvalidOperationException("Only support long, ulong, float, double.");
+            }
+        }
     }
 
     /// <summary>
@@ -50,44 +104,49 @@ namespace AST {
     /// %st(0) = Left, %st(1) = Right
     /// %st(0) = %st(0) op %st(1), invalidate %st(1)
     /// </summary>
-    public abstract partial class BinaryArithmeticOp : BinaryIntegralOp {
-        protected BinaryArithmeticOp(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
-    }
-
-    /// <summary>
-    /// The multiplication (*) operator can either take
-    /// 1) integral- or 2) floating-Type operands.
-    /// 
-    /// After semantic analysis, only four cases are possible:
-    /// 1) long * long
-    /// 2) ulong * ulong
-    /// 3) float * float
-    /// 4) double * double
-    /// </summary>
-    public sealed partial class Multiply : BinaryArithmeticOp {
-        public Multiply(Expr left, Expr right, ExprType type)
-            : base(left, right, type) {
-            Debug.Assert((type.Kind == ExprTypeKind.LONG && left.Type.Kind == ExprTypeKind.LONG && right.Type.Kind == ExprTypeKind.LONG)
-                        || (type.Kind == ExprTypeKind.ULONG && left.Type.Kind == ExprTypeKind.ULONG && right.Type.Kind == ExprTypeKind.ULONG)
-                        || (type.Kind == ExprTypeKind.FLOAT && left.Type.Kind == ExprTypeKind.FLOAT && right.Type.Kind == ExprTypeKind.FLOAT)
-                        || (type.Kind == ExprTypeKind.DOUBLE && left.Type.Kind == ExprTypeKind.DOUBLE && right.Type.Kind == ExprTypeKind.DOUBLE));
+    public abstract partial class BinaryArithmeticOp : BinaryOpSupportingArithmeticOperands {
+        protected BinaryArithmeticOp(Expr left, Expr right)
+            : base(left, right) {
+            this.Type = left.Type.GetQualifiedType(true, false);
         }
+
+        public override sealed ExprType Type { get; }
     }
 
     /// <summary>
-    /// The division (/) operator can either take
-    /// 1) integral- or 2) floating-Type operands.
+    /// Binary arithmetic comparison operation.
     /// 
     /// After semantic analysis, only four cases are possible:
-    /// 1) long / long
-    /// 2) ulong / ulong
-    /// 3) float / float
-    /// 4) double / double
+    /// 1) long op long
+    /// 2) ulong op ulong
+    /// 3) float op float
+    /// 4) double op double
+    /// 
+    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class Divide : BinaryArithmeticOp {
-        public Divide(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public abstract partial class BinaryComparisonOp : BinaryOpSupportingArithmeticOperands {
+        protected BinaryComparisonOp(Expr left, Expr right)
+            : base(left, right) { }
+
+        private static ExprType _type = new AST.LongType(true);
+        public override sealed ExprType Type => _type;
+    }
+
+    public abstract partial class BinaryLogicalOp : BinaryOp {
+        protected BinaryLogicalOp(Expr left, Expr right)
+            : base(left, right) {
+            if (!(left.Type is LongType || left.Type is ULongType
+                  || left.Type is FloatType || left.Type is DoubleType)) {
+                throw new InvalidOperationException("Invalid operand type.");
+            }
+            if (!(right.Type is LongType || right.Type is ULongType
+                  || right.Type is FloatType || right.Type is DoubleType)) {
+                throw new InvalidOperationException("Invalid operand type.");
+            }
+        }
+
+        private static ExprType _type = new AST.LongType(true);
+        public override sealed ExprType Type => _type;
     }
 
     /// <summary>
@@ -97,10 +156,9 @@ namespace AST {
     /// 1) long % long
     /// 2) ulong % ulong
     /// </summary>
-    public sealed partial class Modulo : BinaryIntegralOp {
-        public Modulo(Expr left, Expr right, ExprType type)
-            : base(left, right, type) {
-        }
+    public sealed partial class Modulo : BinaryOpSupportingOnlyIntegralOperands {
+        public Modulo(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -112,9 +170,9 @@ namespace AST {
     /// 
     /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
-    public sealed partial class Xor : BinaryIntegralOp {
-        public Xor(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class Xor : BinaryOpSupportingOnlyIntegralOperands {
+        public Xor(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -126,9 +184,9 @@ namespace AST {
     /// 
     /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
-    public sealed partial class BitwiseOr : BinaryIntegralOp {
-        public BitwiseOr(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class BitwiseOr : BinaryOpSupportingOnlyIntegralOperands {
+        public BitwiseOr(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -140,9 +198,9 @@ namespace AST {
     /// 
     /// https://msdn.microsoft.com/en-us/library/17zwb64t.aspx
     /// </summary>
-    public sealed partial class BitwiseAnd : BinaryIntegralOp {
-        public BitwiseAnd(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class BitwiseAnd : BinaryOpSupportingOnlyIntegralOperands {
+        public BitwiseAnd(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -153,9 +211,9 @@ namespace AST {
     /// 1) long %lt;%lt; long
     /// 2) ulong %lt;%lt; ulong
     /// </summary>
-    public sealed partial class LShift : BinaryIntegralOp {
-        public LShift(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class LShift : BinaryOpSupportingOnlyIntegralOperands {
+        public LShift(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -165,9 +223,9 @@ namespace AST {
     /// 1) long >> long (arithmetic shift, append sign bit)
     /// 2) ulong >> ulong (logical shift, append 0)
     /// </summary>
-    public sealed partial class RShift : BinaryIntegralOp {
-        public RShift(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class RShift : BinaryOpSupportingOnlyIntegralOperands {
+        public RShift(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -183,8 +241,8 @@ namespace AST {
     /// 4) double + double
     /// </summary>
     public sealed partial class Add : BinaryArithmeticOp {
-        public Add(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+        public Add(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -200,24 +258,38 @@ namespace AST {
     /// 4) double - double
     /// </summary>
     public sealed partial class Sub : BinaryArithmeticOp {
-        public Sub(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+        public Sub(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
-    /// Binary arithmetic comparison operation.
+    /// The multiplication (*) operator can either take
+    /// 1) integral- or 2) floating-Type operands.
     /// 
     /// After semantic analysis, only four cases are possible:
-    /// 1) long op long
-    /// 2) ulong op ulong
-    /// 3) float op float
-    /// 4) double op double
-    /// 
-    /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
+    /// 1) long * long
+    /// 2) ulong * ulong
+    /// 3) float * float
+    /// 4) double * double
     /// </summary>
-    public abstract partial class BinaryArithmeticComp : BinaryArithmeticOp {
-        protected BinaryArithmeticComp(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class Multiply : BinaryArithmeticOp {
+        public Multiply(Expr left, Expr right)
+            : base(left, right) { }
+    }
+
+    /// <summary>
+    /// The division (/) operator can either take
+    /// 1) integral- or 2) floating-Type operands.
+    /// 
+    /// After semantic analysis, only four cases are possible:
+    /// 1) long / long
+    /// 2) ulong / ulong
+    /// 3) float / float
+    /// 4) double / double
+    /// </summary>
+    public sealed partial class Divide : BinaryArithmeticOp {
+        public Divide(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -233,9 +305,9 @@ namespace AST {
     /// 
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class GEqual : BinaryArithmeticComp {
-        public GEqual(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class GEqual : BinaryComparisonOp {
+        public GEqual(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -251,9 +323,9 @@ namespace AST {
     /// 
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class Greater : BinaryArithmeticComp {
-        public Greater(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class Greater : BinaryComparisonOp {
+        public Greater(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -269,9 +341,9 @@ namespace AST {
     /// 
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class LEqual : BinaryArithmeticComp {
-        public LEqual(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class LEqual : BinaryComparisonOp {
+        public LEqual(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -287,9 +359,9 @@ namespace AST {
     /// 
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class Less : BinaryArithmeticComp {
-        public Less(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class Less : BinaryComparisonOp {
+        public Less(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -306,9 +378,9 @@ namespace AST {
     /// It's surprising that the C equal operator doesn't support structs and unions.
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class Equal : BinaryArithmeticComp {
-        public Equal(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class Equal : BinaryComparisonOp {
+        public Equal(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -325,9 +397,9 @@ namespace AST {
     /// It's surprising that the C equal operator doesn't support structs and unions.
     /// http://x86.renejeschke.de/html/file_module_x86_id_288.html
     /// </summary>
-    public sealed partial class NotEqual : BinaryArithmeticComp {
-        public NotEqual(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
+    public sealed partial class NotEqual : BinaryComparisonOp {
+        public NotEqual(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -373,11 +445,9 @@ namespace AST {
     ///             |
     /// 
     /// </summary>
-    public sealed partial class LogicalAnd : BinaryOp {
-        public LogicalAnd(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
-
-        public override Env Env => this.Right.Env;
+    public sealed partial class LogicalAnd : BinaryLogicalOp {
+        public LogicalAnd(Expr left, Expr right)
+            : base(left, right) { }
     }
 
     /// <summary>
@@ -391,42 +461,9 @@ namespace AST {
     ///     return 1
     /// else:
     ///     return Right != 0
-    /// 
-    /// Generate the assembly in this fashion,
-    /// then every route would only have one jump.
-    /// 
-    ///        +---------+   1
-    ///        | cmp lhs |-------+
-    ///        +---------+       |
-    ///             |            |
-    ///             | 0          |
-    ///             |            |
-    ///        +----+----+   1   |
-    ///        | cmp rhs |-------+
-    ///        +---------+       |
-    ///             |            |
-    ///             | 0          |
-    ///             |            |
-    ///        +----+----+       |
-    ///        | eax = 0 |       |
-    ///        +---------+       |
-    ///             |            |
-    ///   +---------+            |
-    ///   |                      |
-    ///   |         +------------+ label_set
-    ///   |         |
-    ///   |    +---------+
-    ///   |    | eax = 1 |
-    ///   |    +---------+
-    ///   |         |
-    ///   +---------+ label_finish
-    ///             |
-    /// 
     /// </summary>
-    public sealed partial class LogicalOr : BinaryOp {
-        public LogicalOr(Expr left, Expr right, ExprType type)
-            : base(left, right, type) { }
-        
-        public override Env Env => this.Right.Env;
+    public sealed partial class LogicalOr : BinaryLogicalOp {
+        public LogicalOr(Expr left, Expr right)
+            : base(left, right) { }        
     }
 }

@@ -234,7 +234,7 @@ namespace SyntaxTree {
                 }
             }
 
-            return new AST.Negative(expr, expr.Type);
+            return new AST.Negative(expr);
         }
     }
 
@@ -267,7 +267,7 @@ namespace SyntaxTree {
                 }
             }
 
-            return new AST.BitwiseNot(expr, expr.Type);
+            return new AST.BitwiseNot(expr);
         }
     }
 
@@ -313,7 +313,7 @@ namespace SyntaxTree {
                 return new AST.ConstLong(Convert.ToInt32(isZero), env);
             }
 
-            return new AST.LogicalNot(expr, new AST.LongType(expr.Type.IsConst, expr.Type.IsVolatile));
+            return new AST.LogicalNot(expr);
         }
     }
 

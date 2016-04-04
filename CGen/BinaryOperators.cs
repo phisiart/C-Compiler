@@ -3,7 +3,13 @@ using System.Diagnostics;
 using CodeGeneration;
 
 namespace AST {
-    public abstract partial class BinaryIntegralOp {
+    public abstract partial class BinaryOp {
+        public override sealed void CGenAddress(CGenState state) {
+            throw new InvalidOperationException("Cannot get the address of a binary operator.");
+        }
+    }
+
+    public abstract partial class BinaryOpSupportingIntegralOperands {
         /// <summary>
         /// Before calling this method, %eax = Left, %ebx = Right
         /// This method should let %eax = %eax op %ebx
@@ -16,7 +22,8 @@ namespace AST {
         /// </summary>
         public abstract void OperateULong(CGenState state);
 
-        public void CGenPrepareWord(Env env, CGenState state) {
+        // %eax = left, %ebx = right, stack unchanged
+        private void CGenPrepareIntegralOperands(Env env, CGenState state) {
             // 1. Load Left to EAX.
             // 
             // regs:
@@ -76,54 +83,63 @@ namespace AST {
             state.CGenPopLong(stack_size, Reg.EAX);
         }
 
-        public Reg CGenLong(Env env, CGenState state) {
-            CGenPrepareWord(env, state);
+        private Reg CGenLong(Env env, CGenState state) {
+            CGenPrepareIntegralOperands(env, state);
             OperateLong(state);
             return Reg.EAX;
         }
 
-        public Reg CGenULong(Env env, CGenState state) {
-            CGenPrepareWord(env, state);
+        private Reg CGenULong(Env env, CGenState state) {
+            CGenPrepareIntegralOperands(env, state);
             OperateULong(state);
             return Reg.EAX;
         }
 
-        public override Reg CGenValue(Env env, CGenState state) {
-            switch (this.Left.Type.Kind) {
-                case ExprTypeKind.LONG:
-                    if (this.Left.Type.Kind != ExprTypeKind.LONG || this.Right.Type.Kind != ExprTypeKind.LONG) {
-                        throw new InvalidOperationException();
-                    }
-                    return CGenLong(env, state);
+        /// <summary>
+        /// 1. %eax = left, %ebx = right, stack unchanged
+        /// 2. Operate{Long, ULong}
+        /// </summary>
+        protected void CGenIntegral(Env env, CGenState state) {
+            // %eax = left, %ebx = right, stack unchanged
+            CGenPrepareIntegralOperands(env, state);
 
-                case ExprTypeKind.ULONG:
-                    if (this.Left.Type.Kind != ExprTypeKind.ULONG || this.Right.Type.Kind != ExprTypeKind.ULONG) {
-                        throw new InvalidOperationException();
-                    }
-                    return CGenULong(env, state);
-
-                default:
-                    throw new InvalidOperationException();
+            if (this.Type is LongType) {
+                // %eax = left op right, stack unchanged
+                OperateLong(state);
+            } else if (this.Type is ULongType) {
+                // %eax = left op right, stack unchanged
+                OperateULong(state);
+            } else {
+                throw new InvalidOperationException();
             }
         }
     }
 
-    public abstract partial class BinaryArithmeticOp {
+    public abstract partial class BinaryOpSupportingOnlyIntegralOperands {
+        public override sealed Reg CGenValue(Env env, CGenState state) {
+            CGenIntegral(env, state);
+            return Reg.EAX;
+        }
+    }
+
+    public abstract partial class BinaryOpSupportingArithmeticOperands {
         /// <summary>
-        /// Before calling this method, %st(0) = Left, %st(1) = Right
-        /// This method should let %st(0) = %st(0) op %st(1)
-        /// After calling this method, %st(1) would not be used.
+        /// Before: %st(0) = left, %st(1) = right, stack unchanged.
+        /// After: 'left op right' stored in the correct register.
         /// </summary>
         public abstract void OperateFloat(CGenState state);
 
         /// <summary>
-        /// Before calling this method, %st(0) = Left, %st(1) = Right
-        /// This method should let %st(0) = %st(0) op %st(1)
-        /// After calling this method, %st(1) would not be used.
+        /// Before: %st(0) = left, %st(1) = right, stack unchanged.
+        /// After: 'left op right' stored in the correct register.
         /// </summary>
         public abstract void OperateDouble(CGenState state);
 
-        public Reg CGenFloat(Env env, CGenState state) {
+        /// <summary>
+        /// 1. %st(0) = left, %st(1) = right, stack unchanged
+        /// 2. OperateDouble
+        /// </summary>
+        public void CGenFloat(Env env, CGenState state) {
             // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
@@ -206,11 +222,13 @@ namespace AST {
             // +-----+
             // 
             OperateFloat(state);
-
-            return Reg.ST0;
         }
 
-        public Reg CGenDouble(Env env, CGenState state) {
+        /// <summary>
+        /// 1. %st(0) = left, %st(1) = right, stack unchanged
+        /// 2. OperateDouble
+        /// </summary>
+        public void CGenDouble(Env env, CGenState state) {
             // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
@@ -293,27 +311,138 @@ namespace AST {
             // +-----+
             // 
             OperateDouble(state);
+        }
 
-            return Reg.ST0;
+        /// <summary>
+        /// 1. %st(0) = left, %st(1) = right, stack unchanged
+        /// 2. Operate{Float, Double}
+        /// </summary>
+        public void CGenArithmetic(Env env, CGenState state) {
+            if (this.Type is FloatType) {
+                CGenFloat(env, state);
+            } else if (this.Type is DoubleType) {
+                CGenDouble(env, state);
+            } else {
+                CGenIntegral(env, state);
+            }
+        }
+    }
+
+    public abstract partial class BinaryArithmeticOp {
+        public override sealed Reg CGenValue(Env env, CGenState state) {
+            CGenArithmetic(env, state);
+            if (this.Type is FloatType || this.Type is DoubleType) {
+                return Reg.ST0;
+            } else if (this.Type is LongType || this.Type is ULongType) {
+                return Reg.EAX;
+            } else {
+                throw new InvalidOperationException("Invalid operand type.");
+            }
+        }
+    }
+
+    public abstract partial class BinaryComparisonOp {
+        public abstract void SetLong(CGenState state);
+
+        public abstract void SetULong(CGenState state);
+
+        public abstract void SetFloat(CGenState state);
+
+        public abstract void SetDouble(CGenState state);
+
+        public override sealed void OperateLong(CGenState state) {
+            state.CMPL(Reg.EBX, Reg.EAX);
+            SetLong(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        /// <summary>
+        /// <para>Before: %eax = left, %ebx = right, stack unchanged.</para>
+        /// <para>After: with SetULong, %eax = left op right, stack unchanged.</para>
+        /// </summary>
+        public override sealed void OperateULong(CGenState state) {
+            state.CMPL(Reg.EBX, Reg.EAX);
+            SetULong(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        /// <summary>
+        /// <para>Before: %st(0) = left, %st(1) = right, stack unchanged.</para>
+        /// <para>After: with SetFloat, %eax = left op right, stack unchanged.</para>
+        /// </summary>
+        public override sealed void OperateFloat(CGenState state) {
+            // In the beginning, %st(0) = Left, %st(1) = Right.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(1)
+            // +-----+
+            // | lfs | <- %st(0)
+            // +-----+
+            // 
+
+            // 1. Do comparison between %st(0) and %st(1).
+            //    Pop one Value from FPU stack.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(0)
+            // +-----+
+            // 
+            state.FUCOMIP();
+
+            // 2. Pop another Value from FPU stack.
+            // 
+            // float stack:
+            // +-----+ empty
+            // 
+            state.FSTP(Reg.ST0);
+
+            // 3. Set bit based on comparison result.
+            SetFloat(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
+        }
+
+        /// <summary>
+        /// Before: %st(0) = left, %st(1) = right, stack unchanged.
+        /// After: with SetDouble, %eax = left op right, stack unchanged.
+        /// </summary>
+        public override sealed void OperateDouble(CGenState state) {
+            // In the beginning, %st(0) = Left, %st(1) = Right.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(1)
+            // +-----+
+            // | lhs | <- %st(0)
+            // +-----+
+            // 
+
+            // 1. Do comparison between %st(0) and %st(1).
+            //    Pop one Value from FPU stack.
+            // 
+            // float stack:
+            // +-----+
+            // | rhs | <- %st(0)
+            // +-----+
+            // 
+            state.FUCOMIP();
+
+            // 2. Pop another Value from FPU stack.
+            // 
+            // float stack:
+            // +-----+ empty
+            // 
+            state.FSTP(Reg.ST0);
+
+            // 3. Set bit based on comparison result.
+            SetDouble(state);
+            state.MOVZBL(Reg.AL, Reg.EAX);
         }
 
         public override sealed Reg CGenValue(Env env, CGenState state) {
-            switch (this.Type.Kind) {
-                case ExprTypeKind.FLOAT:
-                    if (this.Left.Type.Kind != ExprTypeKind.FLOAT || this.Right.Type.Kind != ExprTypeKind.FLOAT) {
-                        throw new InvalidOperationException();
-                    }
-                    return CGenFloat(env, state);
-
-                case ExprTypeKind.DOUBLE:
-                    if (this.Left.Type.Kind != ExprTypeKind.DOUBLE || this.Right.Type.Kind != ExprTypeKind.DOUBLE) {
-                        throw new InvalidOperationException();
-                    }
-                    return CGenDouble(env, state);
-
-                default:
-                    return base.CGenValue(env, state);
-            }
+            CGenArithmetic(env, state);
+            return Reg.EAX;
         }
     }
 
@@ -455,93 +584,7 @@ namespace AST {
         }
     }
 
-    public abstract partial class BinaryArithmeticComp {
-        public abstract void SetLong(CGenState state);
 
-        public abstract void SetULong(CGenState state);
-
-        public abstract void SetFloat(CGenState state);
-
-        public abstract void SetDouble(CGenState state);
-
-        public override sealed void OperateLong(CGenState state) {
-            state.CMPL(Reg.EBX, Reg.EAX);
-            SetLong(state);
-            state.MOVZBL(Reg.AL, Reg.EAX);
-        }
-
-        public override sealed void OperateULong(CGenState state) {
-            state.CMPL(Reg.EBX, Reg.EAX);
-            SetULong(state);
-            state.MOVZBL(Reg.AL, Reg.EAX);
-        }
-
-        public override sealed void OperateFloat(CGenState state) {
-            // In the beginning, %st(0) = Left, %st(1) = Right.
-            // 
-            // float stack:
-            // +-----+
-            // | Right | <- %st(1)
-            // +-----+
-            // | Left | <- %st(0)
-            // +-----+
-            // 
-
-            // 1. Do comparison between %st(0) and %st(1).
-            //    Pop one Value from FPU stack.
-            // 
-            // float stack:
-            // +-----+
-            // | Right | <- %st(0)
-            // +-----+
-            // 
-            state.FUCOMIP();
-
-            // 2. Pop another Value from FPU stack.
-            // 
-            // float stack:
-            // +-----+ empty
-            // 
-            state.FSTP(Reg.ST0);
-
-            // 3. Set bit based on comparison result.
-            SetFloat(state);
-            state.MOVZBL(Reg.AL, Reg.EAX);
-        }
-
-        public override sealed void OperateDouble(CGenState state) {
-            // In the beginning, %st(0) = Left, %st(1) = Right.
-            // 
-            // float stack:
-            // +-----+
-            // | Right | <- %st(1)
-            // +-----+
-            // | Left | <- %st(0)
-            // +-----+
-            // 
-
-            // 1. Do comparison between %st(0) and %st(1).
-            //    Pop one Value from FPU stack.
-            // 
-            // float stack:
-            // +-----+
-            // | Right | <- %st(0)
-            // +-----+
-            // 
-            state.FUCOMIP();
-
-            // 2. Pop another Value from FPU stack.
-            // 
-            // float stack:
-            // +-----+ empty
-            // 
-            state.FSTP(Reg.ST0);
-
-            // 3. Set bit based on comparison result.
-            SetDouble(state);
-            state.MOVZBL(Reg.AL, Reg.EAX);
-        }
-    }
 
     public sealed partial class GEqual {
         public override void SetLong(CGenState state) {
@@ -708,6 +751,49 @@ namespace AST {
         }
     }
 
+    /// <summary>
+    /// Left || Right: can only take scalars (to compare with 0).
+    /// 
+    /// After semantic analysis, each operand can only be
+    /// long, ulong, float, double.
+    /// Pointers are casted to ulongs.
+    /// 
+    /// if Left != 0:
+    ///     return 1
+    /// else:
+    ///     return Right != 0
+    /// 
+    /// Generate the assembly in this fashion,
+    /// then every route would only have one jump.
+    /// 
+    ///        +---------+   1
+    ///        | cmp lhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 0          |
+    ///             |            |
+    ///        +----+----+   1   |
+    ///        | cmp rhs |-------+
+    ///        +---------+       |
+    ///             |            |
+    ///             | 0          |
+    ///             |            |
+    ///        +----+----+       |
+    ///        | eax = 0 |       |
+    ///        +---------+       |
+    ///             |            |
+    ///   +---------+            |
+    ///   |                      |
+    ///   |         +------------+ label_set
+    ///   |         |
+    ///   |    +---------+
+    ///   |    | eax = 1 |
+    ///   |    +---------+
+    ///   |         |
+    ///   +---------+ label_finish
+    ///             |
+    /// 
+    /// </summary>
     public sealed partial class LogicalOr {
         public override Reg CGenValue(Env env, CGenState state) {
             Int32 label_set = state.label_idx;

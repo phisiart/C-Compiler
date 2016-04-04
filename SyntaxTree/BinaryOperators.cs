@@ -200,7 +200,7 @@ namespace SyntaxTree {
         public override Double OperateDouble(Double left, Double right) => left * right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Multiply(left, right, type);
+            new AST.Multiply(left, right);
     }
 
     /// <summary>
@@ -217,7 +217,7 @@ namespace SyntaxTree {
         public override Double OperateDouble(Double left, Double right) => left / right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Divide(left, right, type);
+            new AST.Divide(left, right);
     }
 
     /// <summary>
@@ -232,7 +232,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => left % right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Modulo(left, right, type);
+            new AST.Modulo(left, right);
     }
 
     /// <summary>
@@ -254,7 +254,7 @@ namespace SyntaxTree {
         public override Double OperateDouble(Double left, Double right) => left + right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Add(left, right, type);
+            new AST.Add(left, right);
 
         public AST.Expr GetPointerAddition(AST.Expr ptr, AST.Expr offset, Boolean order = true) {
             if (ptr.Type.Kind != AST.ExprTypeKind.POINTER) {
@@ -276,14 +276,13 @@ namespace SyntaxTree {
             var baseAddress = AST.TypeCast.FromPointer(ptr, new AST.LongType(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env);
             var scaleFactor = new AST.Multiply(
                 offset,
-                new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, env),
-                new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
+                new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, env)
             );
             var type = new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile);
             var add =
                 order
-                ? new AST.Add(baseAddress, scaleFactor, type)
-                : new AST.Add(scaleFactor, baseAddress, type);
+                ? new AST.Add(baseAddress, scaleFactor)
+                : new AST.Add(scaleFactor, baseAddress);
 
             return AST.TypeCast.ToPointer(add, ptr.Type, env);
         }
@@ -345,7 +344,7 @@ namespace SyntaxTree {
         public override Double OperateDouble(Double left, Double right) => left - right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Sub(left, right, type);
+            new AST.Sub(left, right);
 
         public static AST.Expr GetPointerSubtraction(AST.Expr ptr, AST.Expr offset) {
             if (ptr.Type.Kind != AST.ExprTypeKind.POINTER) {
@@ -366,10 +365,8 @@ namespace SyntaxTree {
                     AST.TypeCast.FromPointer(ptr, new AST.LongType(ptr.Type.IsConst, ptr.Type.IsVolatile), ptr.Env),
                     new AST.Multiply(
                         offset,
-                        new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, offset.Env),
-                        new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
-                    ),
-                    new AST.LongType(offset.Type.IsConst, offset.Type.IsVolatile)
+                        new AST.ConstLong(((AST.PointerType)(ptr.Type)).RefType.SizeOf, offset.Env)
+                    )
                 ), ptr.Type, offset.Env
             );
         }
@@ -409,11 +406,9 @@ namespace SyntaxTree {
                     return new AST.Divide(
                         new AST.Sub(
                             AST.TypeCast.MakeCast(left, new AST.LongType(isConst, isVolatile)),
-                            AST.TypeCast.MakeCast(right, new AST.LongType(isConst, isVolatile)),
-                            new AST.LongType(isConst, isVolatile)
+                            AST.TypeCast.MakeCast(right, new AST.LongType(isConst, isVolatile))
                         ),
-                        new AST.ConstLong(scale, env),
-                        new AST.LongType(isConst, isVolatile)
+                        new AST.ConstLong(scale, env)
                     );
                 }
 
@@ -443,7 +438,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => (UInt32)((Int32)left << (Int32)right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.LShift(left, right, type);
+            new AST.LShift(left, right);
     }
 
     /// <summary>
@@ -458,7 +453,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => (UInt32)((Int32)left >> (Int32)right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.RShift(left, right, type);
+            new AST.RShift(left, right);
 
     }
 
@@ -476,7 +471,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left < right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Less(left, right, type);
+            new AST.Less(left, right);
     }
 
     /// <summary>
@@ -493,7 +488,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left <= right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.LEqual(left, right, type);
+            new AST.LEqual(left, right);
     }
 
     /// <summary>
@@ -510,7 +505,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left > right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Greater(left, right, type);
+            new AST.Greater(left, right);
     }
 
     /// <summary>
@@ -527,7 +522,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left >= right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.GEqual(left, right, type);
+            new AST.GEqual(left, right);
     }
 
     /// <summary>
@@ -544,7 +539,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left == right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Equal(left, right, type);
+            new AST.Equal(left, right);
     }
 
     /// <summary>
@@ -561,7 +556,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != right);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.NotEqual(left, right, type);
+            new AST.NotEqual(left, right);
     }
 
     /// <summary>
@@ -576,7 +571,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => left & right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.BitwiseAnd(left, right, type);
+            new AST.BitwiseAnd(left, right);
 
     }
 
@@ -592,7 +587,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => left ^ right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.Xor(left, right, type);
+            new AST.Xor(left, right);
     }
 
     /// <summary>
@@ -607,7 +602,7 @@ namespace SyntaxTree {
         public override UInt32 OperateULong(UInt32 left, UInt32 right) => left | right;
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.BitwiseOr(left, right, type);
+            new AST.BitwiseOr(left, right);
     }
 
     /// <summary>
@@ -624,7 +619,7 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != 0 && right != 0);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.LogicalAnd(left, right, type);
+            new AST.LogicalAnd(left, right);
     }
 
     /// <summary>
@@ -642,6 +637,6 @@ namespace SyntaxTree {
         public override Int32 OperateDouble(Double left, Double right) => Convert.ToInt32(left != 0 || right != 0);
 
         public override AST.Expr ConstructExpr(AST.Expr left, AST.Expr right, AST.ExprType type) =>
-            new AST.LogicalOr(left, right, type);
+            new AST.LogicalOr(left, right);
     }
 }

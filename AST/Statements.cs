@@ -51,7 +51,7 @@ namespace AST {
 
                 case Reg.ST0:
                     /// Compare Expr with 0.0
-                    /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
+                    /// < see cref = "BinaryComparisonOp.OperateFloat(CGenState)" />
                     state.FLDZ();
                     state.FUCOMIP();
                     state.FSTP(Reg.ST0);

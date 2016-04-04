@@ -107,6 +107,10 @@
     <Compile Include="AST\Types\TypePrinter.cs" />
     <Compile Include="CGen\CGen.cs" />
     <Compile Include="CGen\BinaryOperators.cs" />
+    <Compile Include="CGen\ConstExpressions.cs" />
+    <Compile Include="CGen\Expressions.cs" />
+    <Compile Include="CGen\TypeCast.cs" />
+    <Compile Include="CGen\UnaryOperators.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

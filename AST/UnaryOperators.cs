@@ -4,262 +4,25 @@ using CodeGeneration;
 
 namespace AST {
 
-    public abstract class IncDecExpr : Expr {
-        protected IncDecExpr(Expr expr)
-            : base(expr.Type) {
-            Debug.Assert(expr.Type.IsScalar);
-            this.expr = expr;
+    // IncDecExpr
+    //   |
+    //   +-- PostIncrement, PostDecrement, PreIncrement, PreDecrement
+
+    public abstract partial class IncDecExpr : Expr {
+        protected IncDecExpr(Expr expr) {
+            if (!(expr.Type is ScalarType)) {
+                throw new InvalidOperationException("Only supports scalars.");
+            }
+            this.Expr = expr;
         }
 
-        public readonly Expr expr;
+        public Expr Expr { get; }
 
-        public override Env Env => this.expr.Env;
+        public override Env Env => this.Expr.Env;
 
         public override Boolean IsLValue => false;
 
-        // Integral
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // After the calculation, the result should be in %eax,
-        // and memory should be updated.
-        //
-        public abstract void CalcAndSaveLong(CGenState state);
-        public abstract void CalcAndSaveWord(CGenState state);
-        public abstract void CalcAndSaveByte(CGenState state);
-        public abstract void CalcAndSavePtr(CGenState state);
-
-        // Float
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +-------+
-        // | Expr  | <- %st(1)
-        // +-------+
-        // |  1.0  | <- %st(0)
-        // +-------+
-        // 
-        // After the calculation, the result should be in %st(0),
-        // and memory should be updated.
-        // 
-        public abstract void CalcAndSaveFloat(CGenState state);
-        public abstract void CalcAndSaveDouble(CGenState state);
-
-        public override Reg CGenValue(Env env, CGenState state) {
-
-            // 1. Get the address of Expr.
-            // 
-            // regs:
-            // %eax = &Expr
-            // 
-            // stack:
-            // +-------+
-            // | ..... | <- %esp
-            // +-------+
-            // 
-            this.expr.CGenAddress(state);
-
-            // 2. Push address.
-            // 
-            // regs:
-            // %eax = &Expr
-            // 
-            // stack:
-            // +-------+
-            // | ..... |
-            // +-------+
-            // | &Expr | <- %esp
-            // +-------+
-            // 
-            Int32 stack_size = state.CGenPushLong(Reg.EAX);
-
-            // 3. Get current Value of Expr.
-            // 
-            // 1) If Expr is an integral or pointer:
-            // 
-            // regs:
-            // %eax = Expr
-            // 
-            // stack:
-            // +-------+
-            // | ..... |
-            // +-------+
-            // | &Expr | <- %esp
-            // +-------+
-            // 
-            // 
-            // 2) If Expr is a float:
-            // 
-            // regs:
-            // %eax = &Expr
-            // 
-            // stack:
-            // +-------+
-            // | ..... |
-            // +-------+
-            // | &Expr | <- %esp
-            // +-------+
-            // 
-            // float stack:
-            // +-------+
-            // | Expr  | <- %st(0)
-            // +-------+
-            // 
-            Reg ret = this.expr.CGenValue(env, state);
-
-            switch (ret) {
-                case Reg.EAX:
-                    // Expr is an integral or pointer.
-
-                    // 4. Pop address to %ecx.
-                    // 
-                    // regs:
-                    // %eax = Expr
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    state.CGenPopLong(stack_size, Reg.ECX);
-
-                    // 5. Cache current Value of Expr in %ebx.
-                    // 
-                    // regs:
-                    // %eax = Expr
-                    // %ebx = Expr
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    state.MOVL(Reg.EAX, Reg.EBX);
-
-                    // 6. Calculate the new Value in %ebx or %eax and save.
-                    //    Set %eax to be the return Value.
-                    // 
-                    // regs:
-                    // %eax = Expr or (Expr +- 1)
-                    // %ebx = (Expr +- 1) or Expr
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    switch (this.expr.Type.Kind) {
-                        case ExprTypeKind.CHAR:
-                        case ExprTypeKind.UCHAR:
-                            CalcAndSaveByte(state);
-                            return Reg.EAX;
-
-                        case ExprTypeKind.SHORT:
-                        case ExprTypeKind.USHORT:
-                            CalcAndSaveWord(state);
-                            return Reg.EAX;
-
-                        case ExprTypeKind.LONG:
-                        case ExprTypeKind.ULONG:
-                            CalcAndSaveByte(state);
-                            return Reg.EAX;
-
-                        case ExprTypeKind.POINTER:
-                            CalcAndSavePtr(state);
-                            return Reg.EAX;
-
-                        default:
-                            throw new InvalidProgramException();
-                    }
-
-                case Reg.ST0:
-                    // Expr is a float.
-
-                    // 4. Pop address to %ecx.
-                    // 
-                    // regs:
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    state.CGenPopLong(stack_size, Reg.ECX);
-
-                    // 5. Load 1.0 to FPU stack.
-                    // 
-                    // regs:
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    // float stack:
-                    // +-------+
-                    // | Expr  | <- %st(1)
-                    // +-------+
-                    // |  1.0  | <- %st(0)
-                    // +-------+
-                    // 
-                    state.FLD1();
-
-                    // 6. Calculate the new Value and save back.
-                    //    Set %st(0) to be the new or original Value.
-                    // 
-                    // regs:
-                    // %ecx = &Expr
-                    // 
-                    // stack:
-                    // +-------+
-                    // | ..... | <- %esp
-                    // +-------+
-                    // 
-                    // float stack:
-                    // +---------------------+
-                    // | Expr or (epxr +- 1) | <- %st(0)
-                    // +---------------------+
-                    // 
-                    switch (this.expr.Type.Kind) {
-                        case ExprTypeKind.FLOAT:
-                            CalcAndSaveFloat(state);
-                            return Reg.ST0;
-
-                        case ExprTypeKind.DOUBLE:
-                            CalcAndSaveDouble(state);
-                            return Reg.ST0;
-
-                        default:
-                            throw new InvalidProgramException();
-                    }
-
-                default:
-                    throw new InvalidProgramException();
-            }
-
-        }
+        public override ExprType Type => this.Expr.Type;
     }
 
     /// <summary>
@@ -267,461 +30,47 @@ namespace AST {
     /// 
     /// If Expr is an array, it is converted to a pointer in semantic analysis.
     /// </summary>
-    public sealed class PostIncrement : IncDecExpr {
+    public sealed partial class PostIncrement : IncDecExpr {
         public PostIncrement(Expr expr)
             : base(expr) { }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // Calculate the new Value in %ebx, and save.
-        // Leave %eax to be the original Value.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr + 1
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        public override void CalcAndSaveLong(CGenState state) {
-            state.ADDL(1, Reg.EBX);
-            state.MOVL(Reg.EBX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveWord(CGenState state) {
-            state.ADDL(1, Reg.EBX);
-            state.MOVW(Reg.BX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveByte(CGenState state) {
-            state.ADDL(1, Reg.EBX);
-            state.MOVB(Reg.BL, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(this.expr.Type.SizeOf, Reg.EBX);
-            state.MOVL(Reg.EBX, 0, Reg.ECX);
-        }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +-------+
-        // | Expr  | <- %st(1)
-        // +-------+
-        // |  1.0  | <- %st(0)
-        // +-------+
-        // 
-        // 1. Compute %st(1) + %st(0) and stores in %st(0).
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(1)
-        // +------------+
-        // | Expr + 1.0 | <- %st(0)
-        // +------------+
-        // 
-        // 2. Pop result from FPU stack and store in memory.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(0)
-        // +------------+
-        // 
-        public override void CalcAndSaveFloat(CGenState state) {
-            state.FADD(1, 0);
-            state.FSTPS(0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveDouble(CGenState state) {
-            state.FADD(1, 0);
-            state.FSTPL(0, Reg.ECX);
-        }
     }
 
     /// <summary>
     /// Expr--: must be a scalar
     /// </summary>
-    public sealed class PostDecrement : IncDecExpr {
+    public sealed partial class PostDecrement : IncDecExpr {
         public PostDecrement(Expr expr)
             : base(expr) { }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // Calculate the new Value in %ebx, and save.
-        // Leave %eax to be the original Value.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr - 1
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        public override void CalcAndSaveLong(CGenState state) {
-            state.SUBL(1, Reg.EBX);
-            state.MOVL(Reg.EBX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveWord(CGenState state) {
-            state.SUBL(1, Reg.EBX);
-            state.MOVW(Reg.BX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveByte(CGenState state) {
-            state.SUBL(1, Reg.EBX);
-            state.MOVB(Reg.BL, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(this.expr.Type.SizeOf, Reg.EBX);
-            state.MOVL(Reg.EBX, 0, Reg.ECX);
-        }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +-------+
-        // | Expr  | <- %st(1)
-        // +-------+
-        // |  1.0  | <- %st(0)
-        // +-------+
-        // 
-        // 1. Compute %st(1) - %st(0) and stores in %st(0).
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(1)
-        // +------------+
-        // | Expr - 1.0 | <- %st(0)
-        // +------------+
-        // 
-        // 2. Pop result from FPU stack and store in memory.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(0)
-        // +------------+
-        // 
-        public override void CalcAndSaveFloat(CGenState state) {
-            state.FSUB(1, 0);
-            state.FSTPS(0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveDouble(CGenState state) {
-            state.FSUB(1, 0);
-            state.FSTPL(0, Reg.ECX);
-        }
     }
 
     /// <summary>
     /// ++Expr: must be a scalar
     /// </summary>
-    public sealed class PreIncrement : IncDecExpr {
+    public sealed partial class PreIncrement : IncDecExpr {
         public PreIncrement(Expr expr)
             : base(expr) { }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // Calculate the new Value in %eax, and save.
-        // Leave %eax to be the original Value.
-        // 
-        // regs:
-        // %eax = Expr + 1
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        public override void CalcAndSaveLong(CGenState state) {
-            state.ADDL(1, Reg.EAX);
-            state.MOVL(Reg.EAX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveWord(CGenState state) {
-            state.ADDL(1, Reg.EAX);
-            state.MOVW(Reg.AX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveByte(CGenState state) {
-            state.ADDL(1, Reg.EAX);
-            state.MOVB(Reg.AL, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSavePtr(CGenState state) {
-            state.ADDL(this.expr.Type.SizeOf, Reg.EAX);
-            state.MOVL(Reg.EAX, 0, Reg.ECX);
-        }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +-------+
-        // | Expr  | <- %st(1)
-        // +-------+
-        // |  1.0  | <- %st(0)
-        // +-------+
-        // 
-        // 1. Compute %st(1) + %st(0) and stores in %st(0).
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(1)
-        // +------------+
-        // | Expr + 1.0 | <- %st(0)
-        // +------------+
-        // 
-        // 2. Store %st(0) in memory.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // | Expr + 1.0 | <- %st(0)
-        // +------------+
-        // 
-        public override void CalcAndSaveFloat(CGenState state) {
-            state.FADD(1, 0);
-            state.FSTS(0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveDouble(CGenState state) {
-            state.FADD(1, 0);
-            state.FSTL(0, Reg.ECX);
-        }
     }
 
     /// <summary>
     /// --Expr: must be a scalar
     /// </summary>
-    public sealed class PreDecrement : IncDecExpr {
+    public sealed partial class PreDecrement : IncDecExpr {
         public PreDecrement(Expr expr)
             : base(expr) { }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %eax = Expr
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // Calculate the new Value in %eax, and save.
-        // Leave %eax to be the original Value.
-        // 
-        // regs:
-        // %eax = Expr - 1
-        // %ebx = Expr
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        public override void CalcAndSaveLong(CGenState state) {
-            state.SUBL(1, Reg.EAX);
-            state.MOVL(Reg.EAX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveWord(CGenState state) {
-            state.SUBL(1, Reg.EAX);
-            state.MOVW(Reg.AX, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveByte(CGenState state) {
-            state.SUBL(1, Reg.EAX);
-            state.MOVB(Reg.AL, 0, Reg.ECX);
-        }
-
-        public override void CalcAndSavePtr(CGenState state) {
-            state.SUBL(this.expr.Type.SizeOf, Reg.EAX);
-            state.MOVL(Reg.EAX, 0, Reg.ECX);
-        }
-
-        // Before the actual calculation, the state is set to this.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +-------+
-        // | Expr  | <- %st(1)
-        // +-------+
-        // |  1.0  | <- %st(0)
-        // +-------+
-        // 
-        // 1. Compute %st(1) - %st(0) and stores in %st(0).
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // |    Expr    | <- %st(1)
-        // +------------+
-        // | Expr - 1.0 | <- %st(0)
-        // +------------+
-        // 
-        // 2. Store %st(0) in memory.
-        // 
-        // regs:
-        // %ecx = &Expr
-        // 
-        // stack:
-        // +-------+
-        // | ..... | <- %esp
-        // +-------+
-        // 
-        // float stack:
-        // +------------+
-        // | Expr - 1.0 | <- %st(0)
-        // +------------+
-        // 
-        public override void CalcAndSaveFloat(CGenState state) {
-            state.FSUB(1, 0);
-            state.FSTS(0, Reg.ECX);
-        }
-
-        public override void CalcAndSaveDouble(CGenState state) {
-            state.FSUB(1, 0);
-            state.FSTL(0, Reg.ECX);
-        }
     }
 
-    public abstract class UnaryArithOp : Expr {
-        protected UnaryArithOp(Expr expr, ExprType type)
-            : base(type) {
-            this.expr = expr;
+    public abstract partial class UnaryArithOp : Expr {
+        protected UnaryArithOp(Expr expr) {
+            this.Expr = expr;
         }
-        public readonly Expr expr;
 
-        public override Env Env => this.expr.Env;
+        public Expr Expr { get; }
+
+        public override Env Env => this.Expr.Env;
 
         public override Boolean IsLValue => false;
+
+        public override abstract ExprType Type { get; }
     }
 
     /// <summary>
@@ -733,25 +82,11 @@ namespace AST {
     /// 3) float
     /// 4) double
     /// </summary>
-    public sealed class Negative : UnaryArithOp {
-        public Negative(Expr expr, ExprType type)
-            : base(expr, type) { }
+    public sealed partial class Negative : UnaryArithOp {
+        public Negative(Expr expr)
+            : base(expr) { }
 
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.expr.CGenValue(env, state);
-            switch (ret) {
-                case Reg.EAX:
-                    state.NEG(Reg.EAX);
-                    return Reg.EAX;
-
-                case Reg.ST0:
-                    state.FCHS();
-                    return Reg.ST0;
-
-                default:
-                    throw new InvalidProgramException();
-            }
-        }
+        public override ExprType Type => this.Expr.Type;
     }
 
     /// <summary>
@@ -761,18 +96,15 @@ namespace AST {
     /// 1) long
     /// 2) ulong
     /// </summary>
-    public sealed class BitwiseNot : UnaryArithOp {
-        public BitwiseNot(Expr expr, ExprType type)
-            : base(expr, type) { }
-
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.expr.CGenValue(env, state);
-            if (ret != Reg.EAX) {
-                throw new InvalidProgramException();
+    public sealed partial class BitwiseNot : UnaryArithOp {
+        public BitwiseNot(Expr expr)
+            : base(expr) {
+            if (!(expr.Type is LongType || expr.Type is ULongType)) {
+                throw new InvalidOperationException("Invalid operand type.");
             }
-            state.NOT(Reg.EAX);
-            return Reg.EAX;
         }
+
+        public override ExprType Type => this.Expr.Type;
     }
 
     /// <summary>
@@ -786,32 +118,16 @@ namespace AST {
     /// 
     /// Pointers are converted to ulongs.
     /// </summary>
-    public sealed class LogicalNot : UnaryArithOp {
-        public LogicalNot(Expr expr, ExprType type)
-            : base(expr, type) { }
-
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.expr.CGenValue(env, state);
-            switch (ret) {
-                case Reg.EAX:
-                    state.TESTL(Reg.EAX, Reg.EAX);
-                    state.SETE(Reg.AL);
-                    state.MOVZBL(Reg.AL, Reg.EAX);
-                    return Reg.EAX;
-
-                case Reg.ST0:
-                    /// Compare Expr with 0.0
-                    /// < see cref = "BinaryArithmeticComp.OperateFloat(CGenState)" />
-                    state.FLDZ();
-                    state.FUCOMIP();
-                    state.FSTP(Reg.ST0);
-                    state.SETE(Reg.AL);
-                    state.MOVZBL(Reg.AL, Reg.EAX);
-                    return Reg.EAX;
-
-                default:
-                    throw new InvalidProgramException();
+    public sealed partial class LogicalNot : UnaryArithOp {
+        public LogicalNot(Expr expr)
+            : base(expr) {
+            if (!(expr.Type is LongType || expr.Type is ULongType
+                  || expr.Type is FloatType || expr.Type is DoubleType)) {
+                throw new InvalidOperationException("Invalid operand type.");
             }
         }
+
+        private static ExprType _type = new LongType(true);
+        public override ExprType Type => _type;
     }
 }
