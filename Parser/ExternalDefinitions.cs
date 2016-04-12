@@ -1,4 +1,4 @@
-﻿using SyntaxTree;
+﻿using AST;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {

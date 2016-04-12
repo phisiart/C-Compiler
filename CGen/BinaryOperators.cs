@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public abstract partial class BinaryOp {
         public override sealed void CGenAddress(CGenState state) {
             throw new InvalidOperationException("Cannot get the address of a binary operator.");
@@ -23,7 +23,7 @@ namespace AST {
         public abstract void OperateULong(CGenState state);
 
         // %eax = left, %ebx = right, stack unchanged
-        private void CGenPrepareIntegralOperands(Env env, CGenState state) {
+        private void CGenPrepareIntegralOperands(CGenState state) {
             // 1. Load Left to EAX.
             // 
             // regs:
@@ -34,7 +34,7 @@ namespace AST {
             // | ... | <- %esp
             // +-----+
             // 
-            if (this.Left.CGenValue(env, state) != Reg.EAX) {
+            if (this.Left.CGenValue(state) != Reg.EAX) {
                 throw new InvalidOperationException();
             }
 
@@ -64,7 +64,7 @@ namespace AST {
             // | Left | <- %esp
             // +-----+
             // 
-            if (this.Right.CGenValue(env, state) != Reg.EAX) {
+            if (this.Right.CGenValue(state) != Reg.EAX) {
                 throw new InvalidOperationException();
             }
 
@@ -83,14 +83,14 @@ namespace AST {
             state.CGenPopLong(stack_size, Reg.EAX);
         }
 
-        private Reg CGenLong(Env env, CGenState state) {
-            CGenPrepareIntegralOperands(env, state);
+        private Reg CGenLong(CGenState state) {
+            CGenPrepareIntegralOperands(state);
             OperateLong(state);
             return Reg.EAX;
         }
 
-        private Reg CGenULong(Env env, CGenState state) {
-            CGenPrepareIntegralOperands(env, state);
+        private Reg CGenULong(CGenState state) {
+            CGenPrepareIntegralOperands(state);
             OperateULong(state);
             return Reg.EAX;
         }
@@ -99,9 +99,9 @@ namespace AST {
         /// 1. %eax = left, %ebx = right, stack unchanged
         /// 2. Operate{Long, ULong}
         /// </summary>
-        protected void CGenIntegral(Env env, CGenState state) {
+        protected void CGenIntegral(CGenState state) {
             // %eax = left, %ebx = right, stack unchanged
-            CGenPrepareIntegralOperands(env, state);
+            CGenPrepareIntegralOperands(state);
 
             if (this.Type is LongType) {
                 // %eax = left op right, stack unchanged
@@ -116,8 +116,8 @@ namespace AST {
     }
 
     public abstract partial class BinaryOpSupportingOnlyIntegralOperands {
-        public override sealed Reg CGenValue(Env env, CGenState state) {
-            CGenIntegral(env, state);
+        public override sealed Reg CGenValue(CGenState state) {
+            CGenIntegral(state);
             return Reg.EAX;
         }
     }
@@ -139,7 +139,7 @@ namespace AST {
         /// 1. %st(0) = left, %st(1) = right, stack unchanged
         /// 2. OperateDouble
         /// </summary>
-        public void CGenFloat(Env env, CGenState state) {
+        public void CGenFloat(CGenState state) {
             // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
@@ -153,7 +153,7 @@ namespace AST {
             // | Left | <- %st(0)
             // +-----+
             // 
-            var ret = this.Left.CGenValue(env, state);
+            var ret = this.Left.CGenValue(state);
             if (ret != Reg.ST0) {
                 throw new InvalidOperationException();
             }
@@ -186,7 +186,7 @@ namespace AST {
             // | Right | <- %st(0)
             // +-----+
             // 
-            ret = this.Right.CGenValue(env, state);
+            ret = this.Right.CGenValue(state);
             if (ret != Reg.ST0) {
                 throw new InvalidOperationException();
             }
@@ -228,7 +228,7 @@ namespace AST {
         /// 1. %st(0) = left, %st(1) = right, stack unchanged
         /// 2. OperateDouble
         /// </summary>
-        public void CGenDouble(Env env, CGenState state) {
+        public void CGenDouble(CGenState state) {
             // 1. Load Left to ST0. Now the float stack should only contain one element.
             //
             // memory stack:
@@ -242,7 +242,7 @@ namespace AST {
             // | Left | <- %st(0)
             // +-----+
             // 
-            var ret = this.Left.CGenValue(env, state);
+            var ret = this.Left.CGenValue(state);
             if (ret != Reg.ST0) {
                 throw new InvalidOperationException();
             }
@@ -275,7 +275,7 @@ namespace AST {
             // | Right | <- %st(0)
             // +-----+
             // 
-            ret = this.Right.CGenValue(env, state);
+            ret = this.Right.CGenValue(state);
             if (ret != Reg.ST0) {
                 throw new InvalidOperationException();
             }
@@ -317,20 +317,20 @@ namespace AST {
         /// 1. %st(0) = left, %st(1) = right, stack unchanged
         /// 2. Operate{Float, Double}
         /// </summary>
-        public void CGenArithmetic(Env env, CGenState state) {
+        public void CGenArithmetic(CGenState state) {
             if (this.Type is FloatType) {
-                CGenFloat(env, state);
+                CGenFloat(state);
             } else if (this.Type is DoubleType) {
-                CGenDouble(env, state);
+                CGenDouble(state);
             } else {
-                CGenIntegral(env, state);
+                CGenIntegral(state);
             }
         }
     }
 
     public abstract partial class BinaryArithmeticOp {
-        public override sealed Reg CGenValue(Env env, CGenState state) {
-            CGenArithmetic(env, state);
+        public override sealed Reg CGenValue(CGenState state) {
+            CGenArithmetic(state);
             if (this.Type is FloatType || this.Type is DoubleType) {
                 return Reg.ST0;
             } else if (this.Type is LongType || this.Type is ULongType) {
@@ -440,8 +440,8 @@ namespace AST {
             state.MOVZBL(Reg.AL, Reg.EAX);
         }
 
-        public override sealed Reg CGenValue(Env env, CGenState state) {
-            CGenArithmetic(env, state);
+        public override sealed Reg CGenValue(CGenState state) {
+            CGenArithmetic(state);
             return Reg.EAX;
         }
     }
@@ -695,13 +695,13 @@ namespace AST {
     }
 
     public sealed partial class LogicalAnd {
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
             Int32 label_reset = state.label_idx;
             state.label_idx++;
             Int32 label_finish = state.label_idx;
             state.label_idx++;
 
-            Reg ret = this.Left.CGenValue(env, state);
+            Reg ret = this.Left.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -719,7 +719,7 @@ namespace AST {
                     throw new InvalidProgramException();
             }
 
-            ret = this.Right.CGenValue(env, state);
+            ret = this.Right.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -795,13 +795,13 @@ namespace AST {
     /// 
     /// </summary>
     public sealed partial class LogicalOr {
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
             Int32 label_set = state.label_idx;
             state.label_idx++;
             Int32 label_finish = state.label_idx;
             state.label_idx++;
 
-            Reg ret = this.Left.CGenValue(env, state);
+            Reg ret = this.Left.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);
@@ -819,7 +819,7 @@ namespace AST {
                     throw new InvalidProgramException();
             }
 
-            ret = this.Right.CGenValue(env, state);
+            ret = this.Right.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);

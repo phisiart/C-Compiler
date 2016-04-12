@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using SyntaxTree;
+using AST;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {
@@ -761,7 +761,7 @@ namespace Parsing {
             TypeName.Is(
                 (SpecifierQualifierList)
                 .Then(AbstractDeclarator.Optional())
-                .Then(SyntaxTree.TypeName.Create)
+                .Then(AST.TypeName.Create)
             );
 
             // typedef-name

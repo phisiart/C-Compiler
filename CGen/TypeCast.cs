@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public sealed partial class TypeCast {
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.Expr.CGenValue(env, state);
+        public override Reg CGenValue(CGenState state) {
+            Reg ret = this.Expr.CGenValue(state);
             switch (this.Kind) {
                 case TypeCastType.DOUBLE_TO_FLOAT:
                 case TypeCastType.FLOAT_TO_DOUBLE:

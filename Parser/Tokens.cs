@@ -1,6 +1,6 @@
 ﻿using System;
 using LexicalAnalysis;
-using SyntaxTree;
+using AST;
 
 namespace Parsing {
 
@@ -80,8 +80,8 @@ namespace Parsing {
         public static IParser<TypeQual> Volatile { get; } = KeywordParser.Create(KeywordVal.VOLATILE, TypeQual.VOLATILE);
 
         public static IConsumer Enum { get; } = KeywordConsumer.Create(KeywordVal.ENUM);
-        public static IParser<StructOrUnion> Struct { get; } = KeywordParser.Create(KeywordVal.STRUCT, SyntaxTree.StructOrUnion.STRUCT);
-        public static IParser<StructOrUnion> Union { get; } = KeywordParser.Create(KeywordVal.UNION, SyntaxTree.StructOrUnion.UNION);
+        public static IParser<StructOrUnion> Struct { get; } = KeywordParser.Create(KeywordVal.STRUCT, AST.StructOrUnion.STRUCT);
+        public static IParser<StructOrUnion> Union { get; } = KeywordParser.Create(KeywordVal.UNION, AST.StructOrUnion.UNION);
 
         public static IConsumer Goto { get; } = KeywordConsumer.Create(KeywordVal.GOTO);
         public static IParser<Stmt> Continue { get; } = KeywordParser.Create(KeywordVal.CONTINUE, new ContStmt());

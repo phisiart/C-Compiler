@@ -7,42 +7,42 @@ namespace CompilerTests {
     public static class TypePrinterTests {
         [Test]
         public static void TestVoid() {
-            var type = new AST.VoidType(isConst: true);
+            var type = new ABT.VoidType(isConst: true);
             Assert.AreEqual("const void a", type.Decl("a"));
             Assert.AreEqual("const void", type.Decl());
         }
 
         [Test]
         public static void TestChar() {
-            var type = new AST.CharType();
+            var type = new ABT.CharType();
             Assert.AreEqual("char a", type.Decl("a"));
             Assert.AreEqual("char", type.Decl());
         }
 
         [Test]
         public static void TestUChar() {
-            var type = new AST.UCharType();
+            var type = new ABT.UCharType();
             Assert.AreEqual("unsigned char a", type.Decl("a"));
             Assert.AreEqual("unsigned char", type.Decl());
         }
 
         [Test]
         public static void TestLong() {
-            var type = new AST.LongType(isConst: true, isVolatile: true);
+            var type = new ABT.LongType(isConst: true, isVolatile: true);
             Assert.AreEqual("const volatile long a", type.Decl("a"));
             Assert.AreEqual("const volatile long", type.Decl());
         }
 
         [Test]
         public static void TestULong() {
-            var type = new AST.ULongType(isConst: true);
+            var type = new ABT.ULongType(isConst: true);
             Assert.AreEqual("const unsigned long a", type.Decl("a"));
             Assert.AreEqual("const unsigned long", type.Decl());
         }
 
         [Test]
         public static void TestShort() {
-            var type = new AST.ShortType(isConst: true);
+            var type = new ABT.ShortType(isConst: true);
             Assert.AreEqual("const short a", type.Decl("a"));
             Assert.AreEqual("const short", type.Decl());
 
@@ -50,29 +50,29 @@ namespace CompilerTests {
 
         [Test]
         public static void TestUShort() {
-            var type = new AST.UShortType(isConst: true);
+            var type = new ABT.UShortType(isConst: true);
             Assert.AreEqual("const unsigned short a", type.Decl("a"));
             Assert.AreEqual("const unsigned short", type.Decl());
         }
 
         [Test]
         public static void TestFloat() {
-            var type = new AST.FloatType(isConst: true);
+            var type = new ABT.FloatType(isConst: true);
             Assert.AreEqual("const float a", type.Decl("a"));
             Assert.AreEqual("const float", type.Decl());
         }
 
         [Test]
         public static void TestDouble() {
-            var type = new AST.DoubleType(isConst: true);
+            var type = new ABT.DoubleType(isConst: true);
             Assert.AreEqual("const double a", type.Decl("a"));
             Assert.AreEqual("const double", type.Decl());
         }
 
         [Test]
         public static void TestPointer() {
-            var type = new AST.PointerType(
-                new AST.LongType(isConst: true),
+            var type = new ABT.PointerType(
+                new ABT.LongType(isConst: true),
                 isConst: true,
                 isVolatile: true
             );
@@ -82,15 +82,15 @@ namespace CompilerTests {
 
         [Test]
         public static void TestIncompleteArrayType() {
-            var type = new AST.IncompleteArrayType(
-                new AST.LongType(isConst: true)
+            var type = new ABT.IncompleteArrayType(
+                new ABT.LongType(isConst: true)
             );
             Assert.AreEqual("const long a[]", type.Decl("a"));
             Assert.AreEqual("const long []", type.Decl());
 
-            type = new AST.IncompleteArrayType(
-                new AST.IncompleteArrayType(
-                    new AST.LongType()
+            type = new ABT.IncompleteArrayType(
+                new ABT.IncompleteArrayType(
+                    new ABT.LongType()
                 )
             );
             Assert.AreEqual("long a[][]", type.Decl("a"));
@@ -99,16 +99,16 @@ namespace CompilerTests {
 
         [Test]
         public static void TestArrayType() {
-            var type = new AST.ArrayType(
-                new AST.LongType(isConst: true),
+            var type = new ABT.ArrayType(
+                new ABT.LongType(isConst: true),
                 3
             );
             Assert.AreEqual("const long a[3]", type.Decl("a"));
             Assert.AreEqual("const long [3]", type.Decl());
 
-            var multiDimArrayType = new AST.ArrayType(
-                new AST.ArrayType(
-                    new AST.LongType(isConst: true),
+            var multiDimArrayType = new ABT.ArrayType(
+                new ABT.ArrayType(
+                    new ABT.LongType(isConst: true),
                     3
                 ),
                 4
@@ -119,54 +119,54 @@ namespace CompilerTests {
 
         [Test]
         public static void TestStructOrUnionType() {
-            var type = AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, true);
+            var type = ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, true);
             Assert.AreEqual("volatile struct my_struct a", type.Decl("a"));
         }
 
         [Test]
         public static void TestFunctionType() {
-            var oneArg = AST.FunctionType.Create(
-                AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+            var oneArg = ABT.FunctionType.Create(
+                ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
                 ImmutableList.Create(
-                    Tuple.Create(Option<String>.None, new AST.LongType() as AST.ExprType)
+                    Tuple.Create(Option<String>.None, new ABT.LongType() as ABT.ExprType)
                 ),
                 false
             );
             Assert.AreEqual("struct my_struct a(long)", oneArg.Decl("a"));
             Assert.AreEqual("struct my_struct (long)", oneArg.Decl());
 
-            var moreArg = AST.FunctionType.Create(
-                AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+            var moreArg = ABT.FunctionType.Create(
+                ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
                 ImmutableList.Create(
-                    Tuple.Create(Option<String>.None, new AST.LongType() as AST.ExprType),
-                    Tuple.Create(Option<String>.None, new AST.FloatType(isConst: true) as AST.ExprType)
+                    Tuple.Create(Option<String>.None, new ABT.LongType() as ABT.ExprType),
+                    Tuple.Create(Option<String>.None, new ABT.FloatType(isConst: true) as ABT.ExprType)
                 ),
                 false
             );
             Assert.AreEqual("struct my_struct a(long, const float)", moreArg.Decl("a"));
             Assert.AreEqual("struct my_struct (long, const float)", moreArg.Decl());
 
-            var emptyArg = AST.FunctionType.Create(
-                AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
-                ImmutableList<Tuple<Option<String>, AST.ExprType>>.Empty,
+            var emptyArg = ABT.FunctionType.Create(
+                ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+                ImmutableList<Tuple<Option<String>, ABT.ExprType>>.Empty,
                 false
             );
             Assert.AreEqual("struct my_struct a(void)", emptyArg.Decl("a"));
             Assert.AreEqual("struct my_struct (void)", emptyArg.Decl());
 
-            var emptyVarArg = AST.FunctionType.Create(
-                AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
-                ImmutableList<Tuple<Option<String>, AST.ExprType>>.Empty,
+            var emptyVarArg = ABT.FunctionType.Create(
+                ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+                ImmutableList<Tuple<Option<String>, ABT.ExprType>>.Empty,
                 true
             );
             Assert.AreEqual("struct my_struct a(...)", emptyVarArg.Decl("a"));
             Assert.AreEqual("struct my_struct (...)", emptyVarArg.Decl());
 
-            var varArg = AST.FunctionType.Create(
-                AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+            var varArg = ABT.FunctionType.Create(
+                ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
                 ImmutableList.Create(
-                    Tuple.Create(Option<String>.None, new AST.LongType() as AST.ExprType),
-                    Tuple.Create(Option<String>.None, new AST.FloatType(isConst: true) as AST.ExprType)
+                    Tuple.Create(Option<String>.None, new ABT.LongType() as ABT.ExprType),
+                    Tuple.Create(Option<String>.None, new ABT.FloatType(isConst: true) as ABT.ExprType)
                 ),
                 true
             );
@@ -176,11 +176,11 @@ namespace CompilerTests {
 
         [Test]
         public static void TestFunctionPointer() {
-            var funcPtr = new AST.PointerType(
-                AST.FunctionType.Create(
-                    AST.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
+            var funcPtr = new ABT.PointerType(
+                ABT.FunctionType.Create(
+                    ABT.StructOrUnionType.CreateIncompleteStruct("my_struct", false, false),
                     ImmutableList.Create(
-                        Tuple.Create(Option<String>.None, new AST.LongType() as AST.ExprType)
+                        Tuple.Create(Option<String>.None, new ABT.LongType() as ABT.ExprType)
                     ),
                     false
                 )
@@ -191,12 +191,12 @@ namespace CompilerTests {
 
         [Test]
         public static void TestPointerFunction() {
-            var ptrFunc = AST.FunctionType.Create(
-                new AST.PointerType(
-                    new AST.LongType()
+            var ptrFunc = ABT.FunctionType.Create(
+                new ABT.PointerType(
+                    new ABT.LongType()
                 ),
                 ImmutableList.Create(
-                    Tuple.Create(Option<String>.None, new AST.LongType() as AST.ExprType)
+                    Tuple.Create(Option<String>.None, new ABT.LongType() as ABT.ExprType)
                 ),
                 false
             );
@@ -206,9 +206,9 @@ namespace CompilerTests {
 
         [Test]
         public static void TestArrayPointer() {
-            var arrPtr = new AST.PointerType(
-                new AST.ArrayType(
-                    new AST.LongType(),
+            var arrPtr = new ABT.PointerType(
+                new ABT.ArrayType(
+                    new ABT.LongType(),
                     3
                 )
             );
@@ -218,9 +218,9 @@ namespace CompilerTests {
 
         [Test]
         public static void TestPointerArray() {
-            var ptrArr = new AST.ArrayType(
-                new AST.PointerType(
-                    new AST.LongType()
+            var ptrArr = new ABT.ArrayType(
+                new ABT.PointerType(
+                    new ABT.LongType()
                 ),
                 3
             );

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace AST {
+namespace ABT {
     public abstract partial class ExprType {
         public virtual Int32 Precedence => 0;
 

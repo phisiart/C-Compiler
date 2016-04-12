@@ -349,7 +349,7 @@ namespace CodeGeneration {
         }
 
         public void CGenExpandStackWithAlignment(Int32 nbytes, Int32 align) {
-            nbytes = AST.Utils.RoundUp(this.StackSize + nbytes, align) - this.StackSize;
+            nbytes = ABT.Utils.RoundUp(this.StackSize + nbytes, align) - this.StackSize;
             CGenExpandStackBy(nbytes);
         }
 

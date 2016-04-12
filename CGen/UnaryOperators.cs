@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public abstract partial class IncDecExpr {
 
         // Integral
@@ -55,7 +55,7 @@ namespace AST {
 
         public abstract void CalcAndSaveDouble(CGenState state);
 
-        public override sealed Reg CGenValue(Env env, CGenState state) {
+        public override sealed Reg CGenValue(CGenState state) {
 
             // 1. Get the address of expr.
             // 
@@ -115,7 +115,7 @@ namespace AST {
             // | expr  | <- %st(0)
             // +-------+
             // 
-            Reg ret = this.Expr.CGenValue(env, state);
+            Reg ret = this.Expr.CGenValue(state);
 
             switch (ret) {
                 case Reg.EAX:
@@ -398,8 +398,8 @@ namespace AST {
     }
 
     public sealed partial class Negative {
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.Expr.CGenValue(env, state);
+        public override Reg CGenValue(CGenState state) {
+            Reg ret = this.Expr.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.NEG(Reg.EAX);
@@ -416,8 +416,8 @@ namespace AST {
     }
 
     public sealed partial class BitwiseNot {
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.Expr.CGenValue(env, state);
+        public override Reg CGenValue(CGenState state) {
+            Reg ret = this.Expr.CGenValue(state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }
@@ -427,8 +427,8 @@ namespace AST {
     }
 
     public sealed partial class LogicalNot {
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.Expr.CGenValue(env, state);
+        public override Reg CGenValue(CGenState state) {
+            Reg ret = this.Expr.CGenValue(state);
             switch (ret) {
                 case Reg.EAX:
                     state.TESTL(Reg.EAX, Reg.EAX);

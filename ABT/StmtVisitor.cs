@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AST {
+namespace ABT {
     public abstract class StmtVisitor {
         public virtual void Visit(Stmt stmt) {}
         public virtual void Visit(GotoStmt stmt) {}
@@ -27,7 +27,7 @@ namespace AST {
 
         public static IReadOnlyList<Int32> GrabLabels(SwitchStmt stmt) {
             CaseLabelsGrabber grabber = new CaseLabelsGrabber();
-            stmt.stmt.Accept(grabber);
+            stmt.Stmt.Accept(grabber);
             return grabber.Labels;
         }
 
@@ -38,7 +38,7 @@ namespace AST {
         public override void Visit(GotoStmt stmt) {}
 
         public override void Visit(LabeledStmt stmt) =>
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
 
         public override void Visit(ContStmt stmt) {}
 
@@ -47,15 +47,15 @@ namespace AST {
         public override void Visit(ExprStmt stmt) {}
 
         public override void Visit(CompoundStmt stmt) =>
-            stmt.stmts.ForEach(_ => _.Item2.Accept(this));
+            stmt.Stmts.ForEach(_ => _.Item2.Accept(this));
 
         public override void Visit(ReturnStmt stmt) {}
 
         public override void Visit(WhileStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(DoWhileStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(ForStmt stmt) =>
             stmt.Body.Accept(this);
@@ -66,19 +66,19 @@ namespace AST {
 
         public override void Visit(CaseStmt stmt) {
             // Record the Value.
-            this._labels.Add(stmt.value);
-            stmt.stmt.Accept(this);
+            this._labels.Add(stmt.Value);
+            stmt.Stmt.Accept(this);
         }
 
         public override void Visit(DefaultStmt stmt) =>
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
 
         public override void Visit(IfStmt stmt) =>
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
 
         public override void Visit(IfElseStmt stmt) {
-            stmt.true_stmt.Accept(this);
-            stmt.false_stmt.Accept(this);
+            stmt.TrueStmt.Accept(this);
+            stmt.FalseStmt.Accept(this);
         }
     }
 
@@ -99,8 +99,8 @@ namespace AST {
         public override void Visit(GotoStmt stmt) { }
 
         public override void Visit(LabeledStmt stmt) {
-            this._labels.Add(stmt.label);
-            stmt.stmt.Accept(this);
+            this._labels.Add(stmt.Label);
+            stmt.Stmt.Accept(this);
         }
 
         public override void Visit(ContStmt stmt) { }
@@ -110,36 +110,36 @@ namespace AST {
         public override void Visit(ExprStmt stmt) { }
 
         public override void Visit(CompoundStmt stmt) =>
-            stmt.stmts.ForEach(_ => _.Item2.Accept(this));
+            stmt.Stmts.ForEach(_ => _.Item2.Accept(this));
 
         public override void Visit(ReturnStmt stmt) { }
 
         public override void Visit(WhileStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(DoWhileStmt stmt) =>
-            stmt.body.Accept(this);
+            stmt.Body.Accept(this);
 
         public override void Visit(ForStmt stmt) =>
             stmt.Body.Accept(this);
 
         public override void Visit(SwitchStmt stmt) {
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
         }
 
         public override void Visit(CaseStmt stmt) {
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
         }
 
         public override void Visit(DefaultStmt stmt) =>
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
 
         public override void Visit(IfStmt stmt) =>
-            stmt.stmt.Accept(this);
+            stmt.Stmt.Accept(this);
 
         public override void Visit(IfElseStmt stmt) {
-            stmt.true_stmt.Accept(this);
-            stmt.false_stmt.Accept(this);
+            stmt.TrueStmt.Accept(this);
+            stmt.FalseStmt.Accept(this);
         }
     }
 }

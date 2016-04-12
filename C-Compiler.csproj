@@ -46,17 +46,17 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AST\BinaryOperators.cs" />
-    <Compile Include="AST\ConstExpressions.cs" />
-    <Compile Include="AST\Declarations.cs" />
-    <Compile Include="AST\Environment.cs" />
-    <Compile Include="AST\Expressions.cs" />
-    <Compile Include="AST\ExternalDefinitions.cs" />
-    <Compile Include="AST\Statements.cs" />
-    <Compile Include="AST\StmtVisitor.cs" />
-    <Compile Include="AST\TypeCast.cs" />
-    <Compile Include="AST\UnaryOperators.cs" />
-    <Compile Include="AST\Utils.cs" />
+    <Compile Include="ABT\BinaryOperators.cs" />
+    <Compile Include="ABT\ConstExpressions.cs" />
+    <Compile Include="ABT\Declarations.cs" />
+    <Compile Include="ABT\Environment.cs" />
+    <Compile Include="ABT\Expressions.cs" />
+    <Compile Include="ABT\ExternalDefinitions.cs" />
+    <Compile Include="ABT\Statements.cs" />
+    <Compile Include="ABT\StmtVisitor.cs" />
+    <Compile Include="ABT\TypeCast.cs" />
+    <Compile Include="ABT\UnaryOperators.cs" />
+    <Compile Include="ABT\Utils.cs" />
     <Compile Include="CompilerTests\CompilerTests.cs" />
     <Compile Include="Driver\Checked.cs" />
     <Compile Include="Driver\Compiler.cs" />
@@ -91,7 +91,7 @@
     <Compile Include="Scanner\String.cs" />
     <Compile Include="Scanner\Tokens.cs" />
     <Compile Include="Scanner\Utils.cs" />
-    <Compile Include="SyntaxTree\AssignmentOperators.cs" />
+    <Compile Include="AST\AssignmentOperators.cs" />
     <Compile Include="SyntaxTree\BinaryOperators.cs" />
     <Compile Include="SyntaxTree\ConstExpressions.cs" />
     <Compile Include="SyntaxTree\Declarations.cs" />
@@ -103,14 +103,15 @@
     <Compile Include="SyntaxTree\Statements.cs" />
     <Compile Include="SyntaxTree\UnaryOperators.cs" />
     <Compile Include="CompilerTests\TypePrinterTests.cs" />
-    <Compile Include="AST\Types\Types.cs" />
-    <Compile Include="AST\Types\TypePrinter.cs" />
+    <Compile Include="ABT\Types\Types.cs" />
+    <Compile Include="ABT\Types\TypePrinter.cs" />
     <Compile Include="CGen\CGen.cs" />
     <Compile Include="CGen\BinaryOperators.cs" />
     <Compile Include="CGen\ConstExpressions.cs" />
     <Compile Include="CGen\Expressions.cs" />
     <Compile Include="CGen\TypeCast.cs" />
     <Compile Include="CGen\UnaryOperators.cs" />
+    <Compile Include="CGen\Statements.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -153,7 +154,7 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="AST\Types\" />
+    <Folder Include="ABT\Types\" />
     <Folder Include="CGen\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

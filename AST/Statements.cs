@@ -1,334 +1,204 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
-using CodeGeneration;
+using static AST.SemanticAnalysis;
 
 namespace AST {
-    public enum StmtKind {
-        GOTO,
-        LABELED,
-        CONT,
-        BREAK,
-        EXPR,
-        COMPOUND,
-        RETURN,
-        WHILE,
-        DO,
-        FOR,
-        SWITCH,
-        CASE,
-        DEFAULT,
-        IF,
-        IF_ELSE
-    }
 
-    public abstract class Stmt {
-        //protected Stmt(Env env) {
-        //    this.Env = env;
-        //}
-
-        public abstract StmtKind Kind { get; }
-
-        public Env Env { get; }
-
-        public abstract void CGenStmt(Env env, CGenState state);
-
-        public abstract void Accept(StmtVisitor visitor);
-
-        public Reg CGenExprStmt(Env env, Expr expr, CGenState state) {
-            Int32 stack_size = state.StackSize;
-            Reg ret = expr.CGenValue(env, state);
-            state.CGenForceStackSizeTo(stack_size);
-            return ret;
-        }
-
-        public void CGenTest(Env env, Reg ret, CGenState state) {
-            // test Cond
-            switch (ret) {
-                case Reg.EAX:
-                    state.TESTL(Reg.EAX, Reg.EAX);
-                    break;
-
-                case Reg.ST0:
-                    /// Compare Expr with 0.0
-                    /// < see cref = "BinaryComparisonOp.OperateFloat(CGenState)" />
-                    state.FLDZ();
-                    state.FUCOMIP();
-                    state.FSTP(Reg.ST0);
-                    break;
-
-                default:
-                    throw new InvalidProgramException();
-            }
-        }
-
+    public abstract class Stmt : ISyntaxTreeNode {
+        public abstract Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env);
     }
 
     /// <summary>
-    /// Goto Statement
+    /// goto label;
     /// </summary>
-    public class GotoStmt : Stmt {
-        public override StmtKind Kind => StmtKind.GOTO;
-
+    public sealed class GotoStmt : Stmt {
         public GotoStmt(String label) {
             this.Label = label;
         }
+        public String Label { get; }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
+        public static Stmt Create(String label) =>
+            new GotoStmt(label);
 
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.GotoLabel(this.Label);
-            state.JMP(label);
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.GotoStmt(this.Label));
         }
 
-        public readonly String Label;
+        //public override ISemantReturn<AST.Stmt> SemantStmt(AST.Env env) {
+        //    return SemantReturn.Create(env, new AST.GotoStmt(this.Label));
+        //}
     }
 
     /// <summary>
-    /// Labeled Statement
+    /// continue;
     /// </summary>
-    public class LabeledStmt : Stmt {
-        public override StmtKind Kind => StmtKind.LABELED;
-        public LabeledStmt(String label, Stmt stmt) {
-            this.label = label;
-            this.stmt = stmt;
+    public sealed class ContStmt : Stmt {
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.ContStmt());
         }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-
-        public override void CGenStmt(Env env, CGenState state) {
-            state.CGenLabel(state.GotoLabel(this.label));
-            state.CGenForceStackSizeTo(state.StackSize);
-            this.stmt.CGenStmt(env, state);
-        }
-
-        public readonly String label;
-        public readonly Stmt stmt;
     }
 
     /// <summary>
-    /// Continue Statement
+    /// break;
     /// </summary>
-    public class ContStmt : Stmt {
-        public override StmtKind Kind => StmtKind.CONT;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.ContinueLabel;
-            state.JMP(label);
+    public sealed class BreakStmt : Stmt {
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.BreakStmt());
         }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-
     }
 
     /// <summary>
-    /// Break Statement
+    /// return [expr];
     /// </summary>
-    public class BreakStmt : Stmt {
-        public override StmtKind Kind => StmtKind.BREAK;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.BreakLabel;
-            state.JMP(label);
-        }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-    }
-
-    /// <summary>
-    /// Expression Statement
-    /// </summary>
-    public class ExprStmt : Stmt {
-        public override StmtKind Kind => StmtKind.EXPR;
-        public ExprStmt(Option<Expr> expr) {
-            this.expr = expr;
-        }
-        public readonly Option<Expr> expr;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            if (this.expr.IsSome) {
-                Int32 stack_size = state.StackSize;
-                this.expr.Value.CGenValue(env, state);
-                state.CGenForceStackSizeTo(stack_size);
-            }
-        }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-    }
-
-    public class CompoundStmt : Stmt {
-        public override StmtKind Kind => StmtKind.COMPOUND;
-        public CompoundStmt(List<Tuple<Env, Decln>> declns, List<Tuple<Env, Stmt>> stmts) {
-            this.declns = declns;
-            this.stmts = stmts;
-        }
-
-        public readonly List<Tuple<Env, Decln>> declns;
-        public readonly List<Tuple<Env, Stmt>> stmts;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            foreach (Tuple<Env, Decln> decln in this.declns) {
-                decln.Item2.CGenDecln(decln.Item1, state);
-            }
-            foreach (Tuple<Env, Stmt> stmt in this.stmts) {
-                stmt.Item2.CGenStmt(stmt.Item1, state);
-            }
-        }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-    }
-
-    public class ReturnStmt : Stmt {
-        public override StmtKind Kind => StmtKind.RETURN;
+    public sealed class ReturnStmt : Stmt {
         public ReturnStmt(Option<Expr> expr) {
-            this.expr = expr;
-        }
-        public readonly Option<Expr> expr;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            ExprType ret_type = env.GetCurrentFunction().ReturnType;
-
-            Int32 stack_size = state.StackSize;
-
-            if (this.expr.IsSome) {
-                // Evaluate the Value.
-                this.expr.Value.CGenValue(env, state);
-
-                // If the function returns a struct, copy it to the address given by 8(%ebp).
-                if (this.expr.Value.Type is StructOrUnionType) {
-                    state.MOVL(Reg.EAX, Reg.ESI);
-                    state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EDI);
-                    state.MOVL(this.expr.Value.Type.SizeOf, Reg.ECX);
-                    state.CGenMemCpy();
-                    state.MOVL(2 * ExprType.SIZEOF_POINTER, Reg.EBP, Reg.EAX);
-                }
-
-                // Restore stack size.
-                state.CGenForceStackSizeTo(stack_size);
-            }
-            // Jump to end of the function.
-            state.JMP(state.ReturnLabel);
+            this.Expr = expr;
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
+        public static Stmt Create(Option<Expr> expr) =>
+            new ReturnStmt(expr);
+
+        public readonly Option<Expr> Expr;
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            var expr = this.Expr.Map(_ => _.GetExpr(env));
+            expr = expr.Map(_ => ABT.TypeCast.MakeCast(_, env.GetCurrentFunction().ReturnType));
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.ReturnStmt(expr));
+        }
     }
 
     /// <summary>
-    /// While Statement
-    /// 
+    /// {
+    ///     declaration*
+    ///     statement*
+    /// }
+    /// </summary>
+    public sealed class CompoundStmt : Stmt {
+        public CompoundStmt(List<Decln> declns, List<Stmt> stmts) {
+            this.Declns = declns;
+            this.Stmts = stmts;
+        }
+        public List<Decln> Declns { get; }
+        public List<Stmt> Stmts { get; }
+
+        public static Stmt Create(ImmutableList<Decln> declns, ImmutableList<Stmt> stmts) =>
+            new CompoundStmt(declns.ToList(), stmts.ToList());
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            env = env.InScope();
+            List<Tuple<ABT.Env, ABT.Decln>> declns = new List<Tuple<ABT.Env, ABT.Decln>>();
+            List<Tuple<ABT.Env, ABT.Stmt>> stmts = new List<Tuple<ABT.Env, ABT.Stmt>>();
+
+            foreach (Decln decln in this.Declns) {
+                //Tuple<AST.Env, List<Tuple<AST.Env, AST.Decln>>> r_decln = decln.GetDeclns_(env);
+                //env = r_decln.Item1;
+                //declns.AddRange(r_decln.Item2);
+
+                var declns_ = Semant(decln.GetDeclns, ref env);
+                declns.AddRange(declns_);
+            }
+
+            foreach (Stmt stmt in this.Stmts) {
+                Tuple<ABT.Env, ABT.Stmt> r_stmt = stmt.GetStmt(env);
+                env = r_stmt.Item1;
+                stmts.Add(r_stmt);
+            }
+
+            env = env.OutScope();
+
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.CompoundStmt(declns, stmts));
+        }
+    }
+
+    /// <summary>
+    /// expr;
+    /// </summary>
+    public sealed class ExprStmt : Stmt {
+        public ExprStmt(Option<Expr> expr) {
+            this.Expr = expr;
+        }
+        public Option<Expr> Expr { get; }
+        public static Stmt Create(Option<Expr> expr) =>
+            new ExprStmt(expr);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            var expr = this.Expr.Map(_ => _.GetExpr(env));
+            env = expr.IsSome ? expr.Value.Env : env;
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.ExprStmt(expr));
+        }
+    }
+
+    /// <summary>
     /// while (Cond) {
     ///     Body
     /// }
     /// 
     /// Cond must be of scalar Type
     /// </summary>
-    // +--> start: continue:
-    // |        test Cond
-    // |        jz finish --+
-    // |        Body        |
-    // +------- jmp start   |
-    //      finish: <-------+
-    // 
-    public class WhileStmt : Stmt {
-        public override StmtKind Kind => StmtKind.WHILE;
+    public sealed class WhileStmt : Stmt {
         public WhileStmt(Expr cond, Stmt body) {
+            this.Cond = cond;
+            this.Body = body;
+        }
+
+        public static Stmt Create(Expr cond, Stmt body) =>
+            new WhileStmt(cond, body);
+
+        public Expr Cond { get; }
+        public Stmt Body { get; }
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            ABT.Expr cond = this.Cond.GetExpr(env);
+            env = cond.Env;
+
             if (!cond.Type.IsScalar) {
-                throw new InvalidProgramException();
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
             }
-            this.cond = cond;
-            this.body = body;
-        }
-        public readonly Expr cond;
-        public readonly Stmt body;
 
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 start_label = state.RequestLabel();
-            Int32 finish_label = state.RequestLabel();
+            Tuple<ABT.Env, ABT.Stmt> r_body = this.Body.GetStmt(env);
+            env = r_body.Item1;
+            ABT.Stmt body = r_body.Item2;
 
-            // start:
-            state.CGenLabel(start_label);
-
-            // test Cond
-            Reg ret = CGenExprStmt(env, this.cond, state);
-            CGenTest(env, ret, state);
-
-            // jz finish
-            state.JZ(finish_label);
-
-            // Body
-            state.InLoop(start_label, finish_label);
-            this.body.CGenStmt(env, state);
-            state.OutLabels();
-
-            // jmp start
-            state.JMP(start_label);
-
-            // finish:
-            state.CGenLabel(finish_label);
-
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.WhileStmt(cond, body));
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
     }
 
     /// <summary>
-    /// Do-while Stmt
-    /// 
     /// do {
     ///     Body
     /// } while (Cond);
     /// 
     /// Cond must be of scalar Type
     /// </summary>
-    // +--> start:
-    // |        Body
-    // |    continue:
-    // |        test Cond
-    // +------- jnz start
-    //      finish:
-    public class DoWhileStmt : Stmt {
-        public override StmtKind Kind => StmtKind.DO;
+    public sealed class DoWhileStmt : Stmt {
         public DoWhileStmt(Stmt body, Expr cond) {
-            this.body = body;
-            this.cond = cond;
-        }
-        public readonly Stmt body;
-        public readonly Expr cond;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 start_label = state.RequestLabel();
-            Int32 finish_label = state.RequestLabel();
-            Int32 continue_label = state.RequestLabel();
-
-            // start:
-            state.CGenLabel(start_label);
-
-            // Body
-            state.InLoop(continue_label, finish_label);
-            this.body.CGenStmt(env, state);
-            state.OutLabels();
-
-            state.CGenLabel(continue_label);
-
-            // test Cond
-            Reg ret = CGenExprStmt(env, this.cond, state);
-            CGenTest(env, ret, state);
-
-            state.JNZ(start_label);
-
-            state.CGenLabel(finish_label);
+            this.Body = body;
+            this.Cond = cond;
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
+        public Stmt Body { get; }
+        public Expr Cond { get; }
+
+        public static Stmt Create(Stmt body, Expr cond) =>
+            new DoWhileStmt(body, cond);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            Tuple<ABT.Env, ABT.Stmt> r_body = this.Body.GetStmt(env);
+            env = r_body.Item1;
+            ABT.Stmt body = r_body.Item2;
+
+            ABT.Expr cond = this.Cond.GetExpr(env);
+            env = cond.Env;
+
+            if (!cond.Type.IsScalar) {
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
+            }
+
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.DoWhileStmt(body, cond));
+        }
     }
 
     /// <summary>
@@ -336,22 +206,9 @@ namespace AST {
     ///     Body
     /// }
     /// 
-    /// Cond must be scalar
+    /// Cond must be of scalar Type
     /// </summary>
-    // 
-    //          Init
-    // +--> start:
-    // |        test Cond
-    // |        jz finish --+
-    // |        Body        |
-    // |    continue:       |
-    // |        Loop        |
-    // +------- jmp start   |
-    //      finish: <-------+
-    // 
     public sealed class ForStmt : Stmt {
-        public override StmtKind Kind => StmtKind.FOR;
-
         public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
             this.Init = init;
             this.Cond = cond;
@@ -359,285 +216,212 @@ namespace AST {
             this.Body = body;
         }
 
-        public readonly Option<Expr> Init;
-        public readonly Option<Expr> Cond;
-        public readonly Option<Expr> Loop;
-        public readonly Stmt Body;
+        public Option<Expr> Init { get; }
+        public Option<Expr> Cond { get; }
+        public Option<Expr> Loop { get; }
+        public Stmt Body { get; }
 
-        public override void CGenStmt(Env env, CGenState state) {
-            // Init
-            this.Init.Map(_ => CGenExprStmt(env, _, state));
+        public static Stmt Create(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) =>
+            new ForStmt(init, cond, loop, body);
 
-            Int32 start_label = state.RequestLabel();
-            Int32 finish_label = state.RequestLabel();
-            Int32 continue_label = state.RequestLabel();
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            Option<ABT.Expr> init = this.Init.Map(_ => _.GetExpr(env));
+            if (init.IsSome) {
+                env = init.Value.Env;
+            }
 
-            // start:
-            state.CGenLabel(start_label);
+            Option<ABT.Expr> cond = this.Cond.Map(_ => _.GetExpr(env));
+            if (cond.IsSome) {
+                env = cond.Value.Env;
+            }
 
-            // test cont
-            this.Cond.Map(_ => {
-                Reg ret = CGenExprStmt(env, _, state);
-                CGenTest(env, ret, state);
-                return ret;
-            });
-            
-            // jz finish
-            state.JZ(finish_label);
+            if (cond.IsSome && !cond.Value.Type.IsScalar) {
+                throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
+            }
 
-            // Body
-            state.InLoop(continue_label, finish_label);
-            this.Body.CGenStmt(env, state);
-            state.OutLabels();
+            Option<ABT.Expr> loop = this.Loop.Map(_ => _.GetExpr(env));
+            if (loop.IsSome) {
+                env = loop.Value.Env;
+            }
 
-            // continue:
-            state.CGenLabel(continue_label);
+            Tuple<ABT.Env, ABT.Stmt> r_body = this.Body.GetStmt(env);
+            env = r_body.Item1;
+            ABT.Stmt body = r_body.Item2;
 
-            // Loop
-            this.Loop.Map(_ => CGenExprStmt(env, _, state));
-
-            // jmp start
-            state.JMP(start_label);
-
-            // finish:
-            state.CGenLabel(finish_label);
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.ForStmt(init, cond, loop, body));
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
     }
 
     /// <summary>
-    /// Switch Statement
+    /// switch (expr)
+    ///     stmt
     /// </summary>
-    //
-    //     cmp Cond, value1
-    //     je case1
-    //     cmp Cond, value2
-    //     je case2
-    //     ...
-    //     cmp Cond, value_n
-    //     je case_n
-    //     jmp default # if no default, then default = finish
-    //     
-    // case1:
-    //     stmt
-    // case2:
-    //     stmt
-    // ...
-    // case_n:
-    //     stmt
-    // finish:
-    public class SwitchStmt : Stmt {
-        public override StmtKind Kind => StmtKind.SWITCH;
+    public sealed class SwitchStmt : Stmt {
         public SwitchStmt(Expr expr, Stmt stmt) {
-            this.expr = expr;
-            this.stmt = stmt;
+            this.Expr = expr;
+            this.Stmt = stmt;
         }
-        public readonly Expr expr;
-        public readonly Stmt stmt;
+        public Expr Expr { get; }
+        public Stmt Stmt { get; }
 
-        public override void CGenStmt(Env env, CGenState state) {
+        public static Stmt Create(Expr expr, Stmt stmt) =>
+            new SwitchStmt(expr, stmt);
 
-            // Inside a switch statement, the initializations are ignored,
-            // but the stack size should be changed.
-            List<Tuple<Env, Decln>> declns;
-            List<Tuple<Env, Stmt>> stmts;
-            switch (this.stmt.Kind) {
-                case StmtKind.COMPOUND:
-                    declns = ((CompoundStmt) this.stmt).declns;
-                    stmts = ((CompoundStmt) this.stmt).stmts;
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            ABT.Expr expr = this.Expr.GetExpr(env);
 
-            // Track all case values.
-            IReadOnlyList<Int32> values = CaseLabelsGrabber.GrabLabels(this);
+            Tuple<ABT.Env, ABT.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            ABT.Stmt stmt = r_stmt.Item2;
 
-            // Make sure there are no duplicates.
-            if (values.Distinct().Count() != values.Count) {
-                throw new InvalidOperationException("case labels not unique.");
-            }
-            // Request labels for these values.
-            Dictionary<Int32, Int32> value_to_label = values.ToDictionary(value => value, value => state.RequestLabel());
-
-            Int32 label_finish = state.RequestLabel();
-
-            Int32 num_default_stmts = stmts.Count(_ => _.Item2.Kind == StmtKind.DEFAULT);
-            if (num_default_stmts > 1) {
-                throw new InvalidOperationException("duplicate defaults.");
-            }
-            Int32 label_default =
-                num_default_stmts == 1 ?
-                state.RequestLabel() :
-                label_finish;
-
-            Int32 saved_stack_size = state.StackSize;
-            Int32 stack_size =
-                declns.Any() ?
-                declns.Last().Item1.StackSize :
-                saved_stack_size;
-
-            // 1. Evaluate Expr.
-            CGenExprStmt(env, this.expr, state);
-
-            // 2. Expand stack.
-            state.CGenForceStackSizeTo(stack_size);
-
-            // 3. Make the Jump list.
-            foreach (KeyValuePair<Int32, Int32> value_label_pair in value_to_label) {
-                state.CMPL(value_label_pair.Key, Reg.EAX);
-                state.JZ(value_label_pair.Value);
-            }
-            state.JMP(label_default);
-
-            // 4. List all the statements.
-            state.InSwitch(label_finish, label_default, value_to_label);
-            foreach (Tuple<Env, Stmt> env_stmt_pair in stmts) {
-                env_stmt_pair.Item2.CGenStmt(env_stmt_pair.Item1, state);
-            }
-            state.OutLabels();
-
-            // 5. finish:
-            state.CGenLabel(label_finish);
-            
-            // 6. Restore stack size.
-            state.CGenForceStackSizeTo(saved_stack_size);
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.SwitchStmt(expr, stmt));
         }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
     }
 
     /// <summary>
-    /// Case Statement
+    /// if (Cond)
+    ///     stmt
     /// </summary>
-    public class CaseStmt : Stmt {
-        public override StmtKind Kind => StmtKind.CASE;
-        public CaseStmt(Int32 value, Stmt stmt) {
-            this.value = value;
-            this.stmt = stmt;
-        }
-        public readonly Int32 value;
-        public readonly Stmt stmt;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.CaseLabel(this.value);
-            state.CGenLabel(label);
-            this.stmt.CGenStmt(env, state);
-        }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-    }
-
-    public class DefaultStmt : Stmt {
-        public override StmtKind Kind => StmtKind.DEFAULT;
-        public DefaultStmt(Stmt stmt) {
-            this.stmt = stmt;
-        }
-        public readonly Stmt stmt;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Int32 label = state.DefaultLabel;
-            state.CGenLabel(label);
-            this.stmt.CGenStmt(env, state);
-        }
-
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
-    }
-
-    /// <summary>
-    /// If Statement: if (Cond) stmt;
-    /// If Cond is non-zero, stmt is executed.
-    /// 
-    /// Cond must be arithmetic or pointer Type.
-    /// </summary>
-    //          test Cond
-    // +------- jz finish
-    // |        Body
-    // +--> finish:
-    public class IfStmt : Stmt {
-        public override StmtKind Kind => StmtKind.IF;
+    public sealed class IfStmt : Stmt {
         public IfStmt(Expr cond, Stmt stmt) {
-            this.cond = cond;
-            this.stmt = stmt;
-        }
-        public readonly Expr cond;
-        public readonly Stmt stmt;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Reg ret = CGenExprStmt(env, this.cond, state);
-
-            Int32 finish_label = state.RequestLabel();
-
-            CGenTest(env, ret, state);
-
-            state.JZ(finish_label);
-
-            this.stmt.CGenStmt(env, state);
-
-            state.CGenLabel(finish_label);
+            this.Cond = cond;
+            this.Stmt = stmt;
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
+        public Expr Cond { get; }
+        public Stmt Stmt { get; }
+
+        public static Stmt Create(Expr cond, Stmt stmt) =>
+            new IfStmt(cond, stmt);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            ABT.Expr cond = this.Cond.GetExpr(env);
+
+            if (!cond.Type.IsScalar) {
+                throw new InvalidOperationException("Error: expected scalar Type");
+            }
+
+            Tuple<ABT.Env, ABT.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            ABT.Stmt stmt = r_stmt.Item2;
+
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.IfStmt(cond, stmt));
+        }
     }
 
     /// <summary>
-    /// If-else Statement
-    /// if (Cond) {
-    ///     true_stmt
-    /// } else {
-    ///     false_stmt
-    /// }
+    /// if (Cond)
+    ///     true-stmt
+    /// else
+    ///     false-stmt
     /// </summary>
-    ///
-    //          test Cond
-    // +------- jz false
-    // |        true_stmt
-    // |        jmp finish --+
-    // +--> false:           |
-    //          false_stmt   |
-    //      finish: <--------+
-    // 
-    public class IfElseStmt : Stmt {
-        public override StmtKind Kind => StmtKind.IF_ELSE;
-        public IfElseStmt(Expr cond, Stmt true_stmt, Stmt false_stmt) {
-            this.cond = cond;
-            this.true_stmt = true_stmt;
-            this.false_stmt = false_stmt;
-        }
-        public readonly Expr cond;
-        public readonly Stmt true_stmt;
-        public readonly Stmt false_stmt;
-
-        public override void CGenStmt(Env env, CGenState state) {
-            Reg ret = CGenExprStmt(env, this.cond, state);
-
-            CGenTest(env, ret, state);
-
-            Int32 false_label = state.RequestLabel();
-            Int32 finish_label = state.RequestLabel();
-
-            state.JZ(false_label);
-
-            this.true_stmt.CGenStmt(env, state);
-
-            state.JMP(finish_label);
-
-            state.CGenLabel(false_label);
-
-            this.false_stmt.CGenStmt(env, state);
-
-            state.CGenLabel(finish_label);
-
+    public sealed class IfElseStmt : Stmt {
+        public IfElseStmt(Expr cond, Stmt trueStmt, Stmt falseStmt) {
+            this.Cond = cond;
+            this.TrueStmt = trueStmt;
+            this.FalseStmt = falseStmt;
         }
 
-        public override void Accept(StmtVisitor visitor) =>
-            visitor.Visit(this);
+        public Expr Cond { get; }
+        public Stmt TrueStmt { get; }
+        public Stmt FalseStmt { get; }
+
+        public static Stmt Create(Expr cond, Stmt trueStmt, Stmt falseStmt) =>
+            new IfElseStmt(cond, trueStmt, falseStmt);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            ABT.Expr cond = this.Cond.GetExpr(env);
+
+            if (!cond.Type.IsScalar) {
+                throw new InvalidOperationException("Error: expected scalar Type");
+            }
+
+            Tuple<ABT.Env, ABT.Stmt> r_true_stmt = this.TrueStmt.GetStmt(env);
+            env = r_true_stmt.Item1;
+            ABT.Stmt true_stmt = r_true_stmt.Item2;
+
+            Tuple<ABT.Env, ABT.Stmt> r_false_stmt = this.FalseStmt.GetStmt(env);
+            env = r_false_stmt.Item1;
+            ABT.Stmt false_stmt = r_false_stmt.Item2;
+
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.IfElseStmt(cond, true_stmt, false_stmt));
+        }
     }
 
+    /// <summary>
+    /// label:
+    ///     stmt
+    /// </summary>
+	public sealed class LabeledStmt : Stmt {
+        private LabeledStmt(String label, Stmt stmt) {
+            this.Label = label;
+            this.Stmt = stmt;
+        }
+
+        public String Label { get; }
+        public Stmt Stmt { get; }
+
+        public static Stmt Create(String label, Stmt stmt) =>
+            new LabeledStmt(label, stmt);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            Tuple<ABT.Env, ABT.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.LabeledStmt(this.Label, r_stmt.Item2));
+        }
+    }
+
+    /// <summary>
+    /// case expr:
+    ///     stmt
+    /// </summary>
+	public sealed class CaseStmt : Stmt {
+        private CaseStmt(Expr expr, Stmt stmt) {
+            this.Expr = expr;
+            this.Stmt = stmt;
+        }
+
+        public Expr Expr { get; }
+        public Stmt Stmt { get; }
+
+        public static Stmt Create(Expr expr, Stmt stmt) =>
+            new CaseStmt(expr, stmt);
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            ABT.Expr expr = this.Expr.GetExpr(env);
+            env = expr.Env;
+
+            expr = ABT.TypeCast.MakeCast(expr, new ABT.LongType());
+            if (!expr.IsConstExpr) {
+                throw new InvalidOperationException("case Expr not const");
+            }
+            Int32 value = ((ABT.ConstLong)expr).Value;
+
+            Tuple<ABT.Env, ABT.Stmt> r_stmt = this.Stmt.GetStmt(env);
+            env = r_stmt.Item1;
+
+            return new Tuple<ABT.Env, ABT.Stmt>(env, new ABT.CaseStmt(value, r_stmt.Item2));
+        }
+    }
+
+    /// <summary>
+    /// default:
+    ///     stmt
+    /// </summary>
+    public sealed class DefaultStmt : Stmt {
+        private DefaultStmt(Stmt stmt) {
+            this.Stmt = stmt;
+        }
+
+        public static DefaultStmt Create(Stmt stmt) =>
+            new DefaultStmt(stmt);
+
+        public Stmt Stmt { get; }
+
+        public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
+            var stmt = SemantStmt(this.Stmt.GetStmt, ref env);
+            return Tuple.Create(env, new ABT.DefaultStmt(stmt) as ABT.Stmt);
+        }
+    }
 }

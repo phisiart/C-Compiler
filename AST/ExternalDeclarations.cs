@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using AST;
-using static SyntaxTree.SemanticAnalysis;
+using ABT;
+using static AST.SemanticAnalysis;
 
-namespace SyntaxTree {
+namespace AST {
     public interface ISyntaxTreeNode { }
 
     /// <summary>
@@ -19,11 +19,11 @@ namespace SyntaxTree {
             new TranslnUnit(externDeclns);
 
         [SemantMethod]
-        public ISemantReturn<AST.TranslnUnit> GetTranslnUnit() {
+        public ISemantReturn<ABT.TranslnUnit> GetTranslnUnit() {
             var env = new Env();
             var externDeclns = this.Declns.Aggregate(ImmutableList<Tuple<Env, ExternDecln>>.Empty, (acc, externDecln) => acc.AddRange(Semant(externDecln.GetExternDecln, ref env))
             );
-            return SemantReturn.Create(env, new AST.TranslnUnit(externDeclns.ToList()));
+            return SemantReturn.Create(env, new ABT.TranslnUnit(externDeclns.ToList()));
         }
 
         public ImmutableList<IExternDecln> Declns { get; }
@@ -80,7 +80,7 @@ namespace SyntaxTree {
             var stmt = SemantStmt(this.Stmt.GetStmt, ref env);
             env = env.OutScope();
 
-            return SemantReturn.Create(env, ImmutableList.Create(Tuple.Create(env, new AST.FuncDef(name, storageClass, funcType, stmt) as ExternDecln)));
+            return SemantReturn.Create(env, ImmutableList.Create(Tuple.Create(env, new ABT.FuncDef(name, storageClass, funcType, stmt) as ExternDecln)));
         }
     }
 

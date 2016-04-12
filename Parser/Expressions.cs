@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using SyntaxTree;
+using AST;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {
@@ -101,7 +101,7 @@ namespace Parsing {
 
             // An identifier for a variable must not be defined as a typedef name.
             Variable.Is(
-                Identifier.Check(result => !result.Environment.IsTypedefName(result.Result)).Then(SyntaxTree.Variable.Create)
+                Identifier.Check(result => !result.Environment.IsTypedefName(result.Result)).Then(AST.Variable.Create)
             );
 
             // constant
@@ -135,7 +135,7 @@ namespace Parsing {
                     .Then(Expression)
                     .Then(Colon)
                     .Then(ConditionalExpression)
-                    .Then(SyntaxTree.ConditionalExpression.Create)
+                    .Then(AST.ConditionalExpression.Create)
                     .Optional()
                 )
             );
@@ -153,16 +153,16 @@ namespace Parsing {
                         UnaryExpression,
                         AssignmentExpression,
                         BinaryOperatorBuilder.Create(Assign, Assignment.Create),
-                        BinaryOperatorBuilder.Create(MultAssign, SyntaxTree.MultAssign.Create),
-                        BinaryOperatorBuilder.Create(DivAssign, SyntaxTree.DivAssign.Create),
-                        BinaryOperatorBuilder.Create(ModAssign, SyntaxTree.ModAssign.Create),
-                        BinaryOperatorBuilder.Create(AddAssign, SyntaxTree.AddAssign.Create),
-                        BinaryOperatorBuilder.Create(SubAssign, SyntaxTree.SubAssign.Create),
+                        BinaryOperatorBuilder.Create(MultAssign, AST.MultAssign.Create),
+                        BinaryOperatorBuilder.Create(DivAssign, AST.DivAssign.Create),
+                        BinaryOperatorBuilder.Create(ModAssign, AST.ModAssign.Create),
+                        BinaryOperatorBuilder.Create(AddAssign, AST.AddAssign.Create),
+                        BinaryOperatorBuilder.Create(SubAssign, AST.SubAssign.Create),
                         BinaryOperatorBuilder.Create(LeftShiftAssign, LShiftAssign.Create),
                         BinaryOperatorBuilder.Create(RightShiftAssign, RShiftAssign.Create),
-                        BinaryOperatorBuilder.Create(BitwiseAndAssign, SyntaxTree.BitwiseAndAssign.Create),
-                        BinaryOperatorBuilder.Create(XorAssign, SyntaxTree.XorAssign.Create),
-                        BinaryOperatorBuilder.Create(BitwiseOrAssign, SyntaxTree.BitwiseOrAssign.Create)
+                        BinaryOperatorBuilder.Create(BitwiseAndAssign, AST.BitwiseAndAssign.Create),
+                        BinaryOperatorBuilder.Create(XorAssign, AST.XorAssign.Create),
+                        BinaryOperatorBuilder.Create(BitwiseOrAssign, AST.BitwiseOrAssign.Create)
                     )
                 ).Or(
                     ConditionalExpression
@@ -186,7 +186,7 @@ namespace Parsing {
                         .Then(LeftBracket)
                         .Then(Expression)
                         .Then(RightBracket)
-                        .Then((array, index) => Dereference.Create(SyntaxTree.Add.Create(array, index)))
+                        .Then((array, index) => Dereference.Create(AST.Add.Create(array, index)))
                     ).Or(
                         Given<Expr>()
                         .Then(LeftParen)
@@ -252,9 +252,9 @@ namespace Parsing {
                 ).Or(
                     (Sub).Then(CastExpression).Then(Negative.Create)
                 ).Or(
-                    (BitwiseNot).Then(CastExpression).Then(SyntaxTree.BitwiseNot.Create)
+                    (BitwiseNot).Then(CastExpression).Then(AST.BitwiseNot.Create)
                 ).Or(
-                    (LogicalNot).Then(CastExpression).Then(SyntaxTree.LogicalNot.Create)
+                    (LogicalNot).Then(CastExpression).Then(AST.LogicalNot.Create)
                 ).Or(
                     (SizeOf).Then(UnaryExpression).Then(SizeofExpr.Create)
                 ).Or(
@@ -290,8 +290,8 @@ namespace Parsing {
             AdditiveExpression.Is(
                 BinaryOperator(
                     MultiplicativeExpression,
-                    BinaryOperatorBuilder.Create(Add, SyntaxTree.Add.Create),
-                    BinaryOperatorBuilder.Create(Sub, SyntaxTree.Sub.Create)
+                    BinaryOperatorBuilder.Create(Add, AST.Add.Create),
+                    BinaryOperatorBuilder.Create(Sub, AST.Sub.Create)
                 )
             );
 
@@ -310,8 +310,8 @@ namespace Parsing {
             RelationalExpression.Is(
                 BinaryOperator(
                     ShiftExpression,
-                    BinaryOperatorBuilder.Create(Less, SyntaxTree.Less.Create),
-                    BinaryOperatorBuilder.Create(Greater, SyntaxTree.Greater.Create),
+                    BinaryOperatorBuilder.Create(Less, AST.Less.Create),
+                    BinaryOperatorBuilder.Create(Greater, AST.Greater.Create),
                     BinaryOperatorBuilder.Create(LessEqual, LEqual.Create),
                     BinaryOperatorBuilder.Create(GreaterEqual, GEqual.Create)
                 )
@@ -322,8 +322,8 @@ namespace Parsing {
             EqualityExpression.Is(
                 BinaryOperator(
                     RelationalExpression,
-                    BinaryOperatorBuilder.Create(Equal, SyntaxTree.Equal.Create),
-                    BinaryOperatorBuilder.Create(NotEqual, SyntaxTree.NotEqual.Create)
+                    BinaryOperatorBuilder.Create(Equal, AST.Equal.Create),
+                    BinaryOperatorBuilder.Create(NotEqual, AST.NotEqual.Create)
                 )
             );
 
@@ -332,7 +332,7 @@ namespace Parsing {
             AndExpression.Is(
                 BinaryOperator(
                     EqualityExpression,
-                    BinaryOperatorBuilder.Create(BitwiseAnd, SyntaxTree.BitwiseAnd.Create)
+                    BinaryOperatorBuilder.Create(BitwiseAnd, AST.BitwiseAnd.Create)
                 )
             );
 
@@ -341,7 +341,7 @@ namespace Parsing {
             ExclusiveOrExpression.Is(
                 BinaryOperator(
                     AndExpression,
-                    BinaryOperatorBuilder.Create(Xor, SyntaxTree.Xor.Create)
+                    BinaryOperatorBuilder.Create(Xor, AST.Xor.Create)
                 )
             );
 
@@ -350,7 +350,7 @@ namespace Parsing {
             InclusiveOrExpression.Is(
                 BinaryOperator(
                     ExclusiveOrExpression,
-                    BinaryOperatorBuilder.Create(BitwiseOr, SyntaxTree.BitwiseOr.Create)
+                    BinaryOperatorBuilder.Create(BitwiseOr, AST.BitwiseOr.Create)
                 )
             );
 
@@ -359,7 +359,7 @@ namespace Parsing {
             LogicalAndExpression.Is(
                 BinaryOperator(
                     InclusiveOrExpression,
-                    BinaryOperatorBuilder.Create(LogicalAnd, SyntaxTree.LogicalAnd.Create)
+                    BinaryOperatorBuilder.Create(LogicalAnd, AST.LogicalAnd.Create)
                 )
             );
 
@@ -368,7 +368,7 @@ namespace Parsing {
             LogicalOrExpression.Is(
                 BinaryOperator(
                     LogicalAndExpression,
-                    BinaryOperatorBuilder.Create(LogicalOr, SyntaxTree.LogicalOr.Create)
+                    BinaryOperatorBuilder.Create(LogicalOr, AST.LogicalOr.Create)
                 )
             );
         }

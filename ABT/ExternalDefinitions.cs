@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public class TranslnUnit {
         public TranslnUnit(List<Tuple<Env, ExternDecln>> _declns) {
             this.declns = _declns;

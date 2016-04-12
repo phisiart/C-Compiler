@@ -46,9 +46,9 @@ namespace Driver {
 
         public readonly String Source;
         public readonly ImmutableList<Token> Tokens;
-        public readonly SyntaxTree.TranslnUnit SyntaxTree;
-        public readonly AST.TranslnUnit AbstractSyntaxTree;
-        public readonly AST.Env Environment;
+        public readonly AST.TranslnUnit SyntaxTree;
+        public readonly ABT.TranslnUnit AbstractSyntaxTree;
+        public readonly ABT.Env Environment;
         public readonly String Assembly;
     }
 }

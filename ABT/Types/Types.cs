@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace AST {
+namespace ABT {
     /* From 3.1.2.5 Types (modified):
      
      * Types are partitioned into
@@ -410,8 +410,8 @@ namespace AST {
         public static StructOrUnionType CreateIncompleteUnion(String name, Boolean is_const, Boolean is_volatile) =>
             new StructOrUnionType(new StructOrUnionLayout($"union {name}"), is_const, is_volatile);
 
-        public static StructOrUnionType CreateIncompleteType(SyntaxTree.StructOrUnion structOrUnion, String name) =>
-            structOrUnion == SyntaxTree.StructOrUnion.STRUCT
+        public static StructOrUnionType CreateIncompleteType(AST.StructOrUnion structOrUnion, String name) =>
+            structOrUnion == AST.StructOrUnion.STRUCT
                 ? CreateIncompleteStruct(name, false, false)
                 : CreateIncompleteUnion(name, false, false);
 
@@ -432,10 +432,10 @@ namespace AST {
         public void DefineUnion(IReadOnlyList<Tuple<String, ExprType>> attribs) => this._layout.DefineUnion(attribs);
 
         public void Define(
-            SyntaxTree.StructOrUnion structOrUnion,
+            AST.StructOrUnion structOrUnion,
             ImmutableList<Tuple<Option<String>, ExprType>> members) {
             var _members = members.ConvertAll(_ => Tuple.Create(_.Item1.Value, _.Item2));
-            if (structOrUnion == SyntaxTree.StructOrUnion.STRUCT) {
+            if (structOrUnion == AST.StructOrUnion.STRUCT) {
                 DefineStruct(_members);
             } else {
                 DefineUnion(_members);

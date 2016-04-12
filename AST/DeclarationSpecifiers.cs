@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using AST;
+using ABT;
 
-namespace SyntaxTree {
+namespace AST {
     using static SemanticAnalysis;
 
     /// <summary>
@@ -456,7 +456,7 @@ namespace SyntaxTree {
                 if (enumr.Init.IsSome) {
                     // If the user provides an initialization Value, use it.
                     var init = SemantExpr(enumr.Init.Value, ref env);
-                    init = AST.TypeCast.MakeCast(init, new LongType());
+                    init = ABT.TypeCast.MakeCast(init, new LongType());
                     if (!init.IsConstExpr) {
                         throw new InvalidOperationException("Enumerator initialization must have a constant Value.");
                     }
@@ -510,9 +510,9 @@ namespace SyntaxTree {
                 return new Tuple<Env, String, Int32>(env, this.Name, idx);
             }
 
-            AST.Expr init = this.Init.Value.GetExpr(env);
+            ABT.Expr init = this.Init.Value.GetExpr(env);
 
-            init = AST.TypeCast.MakeCast(init, new LongType());
+            init = ABT.TypeCast.MakeCast(init, new LongType());
             if (!init.IsConstExpr) {
                 throw new InvalidOperationException("Error: expected constant integer");
             }

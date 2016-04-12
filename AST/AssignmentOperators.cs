@@ -1,4 +1,4 @@
-﻿namespace SyntaxTree {
+﻿namespace AST {
     using static SemanticAnalysis;
 
     /// <summary>
@@ -14,16 +14,17 @@
         }
 
         public Expr Left { get; }
+
         public Expr Right { get; }
 
         public static Expr Create(Expr left, Expr right) =>
             new Assignment(left, right);
 
-        public override AST.Expr GetExpr(AST.Env env) {
+        public override ABT.Expr GetExpr(ABT.Env env) {
             var left = SemantExpr(this.Left, ref env);
             var right = SemantExpr(this.Right, ref env);
-            right = AST.TypeCast.MakeCast(right, left.Type);
-            return new AST.Assign(left, right);
+            right = ABT.TypeCast.MakeCast(right, left.Type);
+            return new ABT.Assign(left, right);
         }
     }
 
@@ -37,11 +38,12 @@
         }
 
         public Expr Left { get; }
+
         public Expr Right { get; }
 
         public abstract Expr ConstructBinaryOp();
 
-        public override sealed AST.Expr GetExpr(AST.Env env) =>
+        public override sealed ABT.Expr GetExpr(ABT.Env env) =>
             Assignment.Create(this.Left, ConstructBinaryOp()).GetExpr(env);
     }
 

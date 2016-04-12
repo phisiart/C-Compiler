@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public enum TypeCastType {
         NOP,
         INT8_TO_INT16,

@@ -2,7 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace SyntaxTree {
+namespace AST {
     using static SemanticAnalysis;
 
     /// <summary>
@@ -10,7 +10,7 @@ namespace SyntaxTree {
     /// </summary>
     public abstract class TypeModifier : ISyntaxTreeNode {
         [SemantMethod]
-        public abstract ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType);
+        public abstract ISemantReturn<ABT.ExprType> DecorateType(ABT.Env env, ABT.ExprType baseType);
     }
 
     public sealed class FunctionModifier : TypeModifier {
@@ -24,9 +24,9 @@ namespace SyntaxTree {
         public Option<ParamTypeList> ParamTypeList { get; }
         
         [SemantMethod]
-        public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType returnType) {
+        public override ISemantReturn<ABT.ExprType> DecorateType(ABT.Env env, ABT.ExprType returnType) {
             if (this.ParamTypeList.IsNone) {
-                return SemantReturn.Create(env, AST.FunctionType.Create(returnType));
+                return SemantReturn.Create(env, ABT.FunctionType.Create(returnType));
             }
 
             var paramTypeList = this.ParamTypeList.Value;
@@ -34,7 +34,7 @@ namespace SyntaxTree {
             var namesAndTypes = Semant(paramTypeList.GetNamesAndTypes, ref env);
             var hasVarArgs = paramTypeList.HasVarArgs;
 
-            return SemantReturn.Create(env, AST.FunctionType.Create(returnType, namesAndTypes, hasVarArgs));
+            return SemantReturn.Create(env, ABT.FunctionType.Create(returnType, namesAndTypes, hasVarArgs));
         }
 
     }
@@ -62,7 +62,7 @@ namespace SyntaxTree {
         public Boolean HasVarArgs { get; }
 
         [SemantMethod]
-        public ISemantReturn<ImmutableList<Tuple<Option<String>, AST.ExprType>>> GetNamesAndTypes(AST.Env env) {
+        public ISemantReturn<ImmutableList<Tuple<Option<String>, ABT.ExprType>>> GetNamesAndTypes(ABT.Env env) {
             var namesAndTypes = this.ParamDeclns.ConvertAll(
                 paramDecln =>
                     Tuple.Create(
@@ -83,9 +83,9 @@ namespace SyntaxTree {
             new ArrayModifier(numElements);
 
         [SemantMethod]
-        public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType elemType) {
+        public override ISemantReturn<ABT.ExprType> DecorateType(ABT.Env env, ABT.ExprType elemType) {
             if (this.NumElems.IsNone) {
-                return SemantReturn.Create(env, new AST.IncompleteArrayType(elemType));
+                return SemantReturn.Create(env, new ABT.IncompleteArrayType(elemType));
             }
 
             // Get number of elements.
@@ -94,13 +94,13 @@ namespace SyntaxTree {
 
             // Try to cast number of elements to a integer.
             // TODO: allow float???
-            numElems = AST.TypeCast.MakeCast(numElems, new AST.LongType(true, false));
+            numElems = ABT.TypeCast.MakeCast(numElems, new ABT.LongType(true, false));
 
             if (!numElems.IsConstExpr) {
                 throw new InvalidOperationException("Number of elements of an array must be constant.");
             }
 
-            return SemantReturn.Create(env, new AST.ArrayType(elemType, ((AST.ConstLong) numElems).Value));
+            return SemantReturn.Create(env, new ABT.ArrayType(elemType, ((ABT.ConstLong) numElems).Value));
         }
 
         public Option<Expr> NumElems { get; }
@@ -115,10 +115,10 @@ namespace SyntaxTree {
             new PointerModifier(typeQuals);
 
         [SemantMethod]
-        public override ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType targetType) {
+        public override ISemantReturn<ABT.ExprType> DecorateType(ABT.Env env, ABT.ExprType targetType) {
             var isConst = this.TypeQuals.Contains(TypeQual.CONST);
             var isVolatile = this.TypeQuals.Contains(TypeQual.VOLATILE);
-            return SemantReturn.Create(env, new AST.PointerType(targetType, isConst, isVolatile));
+            return SemantReturn.Create(env, new ABT.PointerType(targetType, isConst, isVolatile));
         }
 
         public ImmutableList<TypeQual> TypeQuals { get; }
@@ -203,7 +203,7 @@ namespace SyntaxTree {
             Create(abstractDeclr.TypeModifiers.AddRange(pointerModifiers));
 
         [SemantMethod]
-        public ISemantReturn<AST.ExprType> DecorateType(AST.Env env, AST.ExprType baseType) {
+        public ISemantReturn<ABT.ExprType> DecorateType(ABT.Env env, ABT.ExprType baseType) {
             var type = this.TypeModifiers
                 .Reverse()  // The first Type modifier is nearest to the symbol name, which indicates the outmost Type.
                 .Aggregate( // Wrap up the Type based on the Type modifiers.
@@ -263,15 +263,15 @@ namespace SyntaxTree {
         public String GetName() => this.Declr.Name;
 
         [SemantMethod]
-        public ISemantReturn<Tuple<AST.ExprType, Option<AST.Initr>>> GetDecoratedTypeAndInitr(AST.Env env, AST.ExprType baseType) {
+        public ISemantReturn<Tuple<ABT.ExprType, Option<ABT.Initr>>> GetDecoratedTypeAndInitr(ABT.Env env, ABT.ExprType baseType) {
 
             // Get the Type based on the declarator. Note that this might be an incomplete array.
             var type = Semant(this.Declr.DecorateType, baseType, ref env);
 
-            Option<AST.Initr> initrOption;
+            Option<ABT.Initr> initrOption;
 
             if (this.Initr.IsNone) {
-                initrOption = Option<AST.Initr>.None;
+                initrOption = Option<ABT.Initr>.None;
 
             } else {
                 // If an initializer is present:
@@ -282,7 +282,7 @@ namespace SyntaxTree {
                 initr = initr.ConformType(type);
 
                 // If the object is an incomplete array, we must determine the length based on the initializer.
-                if (type.Kind == AST.ExprTypeKind.INCOMPLETE_ARRAY) {
+                if (type.Kind == ABT.ExprTypeKind.INCOMPLETE_ARRAY) {
                     // Now we need to determine the length.
                     // Find the last element in the Init list.
                     var lastOffset = -1;
@@ -292,11 +292,11 @@ namespace SyntaxTree {
                         throw new InvalidOperationException("Cannot determine the length of the array based on an empty initializer list.");
                     }
 
-                    var elemType = ((AST.IncompleteArrayType)type).ElemType;
+                    var elemType = ((ABT.IncompleteArrayType)type).ElemType;
 
-                    var numElems = 1 + lastOffset / ((AST.IncompleteArrayType)type).ElemType.SizeOf;
+                    var numElems = 1 + lastOffset / ((ABT.IncompleteArrayType)type).ElemType.SizeOf;
 
-                    type = new AST.ArrayType(elemType, numElems);
+                    type = new ABT.ArrayType(elemType, numElems);
                 }
 
                 initrOption = Option.Some(initr);
@@ -323,7 +323,7 @@ namespace SyntaxTree {
     /// </summary>
     public abstract class Initr : ISyntaxTreeNode {
         [SemantMethod]
-        public abstract ISemantReturn<AST.Initr> GetInitr(AST.Env env);
+        public abstract ISemantReturn<ABT.Initr> GetInitr(ABT.Env env);
     }
 
     public sealed class InitExpr : Initr {
@@ -337,9 +337,9 @@ namespace SyntaxTree {
         public Expr Expr { get; }
 
         [SemantMethod]
-        public override ISemantReturn<AST.Initr> GetInitr(AST.Env env) {
+        public override ISemantReturn<ABT.Initr> GetInitr(ABT.Env env) {
             var expr = SemantExpr(this.Expr, ref env);
-            return SemantReturn.Create(env, new AST.InitExpr(expr));
+            return SemantReturn.Create(env, new ABT.InitExpr(expr));
         }
     }
 
@@ -354,11 +354,11 @@ namespace SyntaxTree {
         public ImmutableList<Initr> Initrs { get; }
 
         [SemantMethod]
-        public override ISemantReturn<AST.Initr> GetInitr(AST.Env env) {
+        public override ISemantReturn<ABT.Initr> GetInitr(ABT.Env env) {
             var initrs = this.Initrs.ConvertAll(
                 initr => Semant(initr.GetInitr, ref env)
             );
-            return SemantReturn.Create(env, new AST.InitList(initrs.ToList()));
+            return SemantReturn.Create(env, new ABT.InitList(initrs.ToList()));
         }
     }
 }

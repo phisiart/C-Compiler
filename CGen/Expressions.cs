@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using CodeGeneration;
 
-namespace AST {
+namespace ABT {
     public abstract partial class Expr {
-        public abstract Reg CGenValue(Env env, CGenState state);
+        public abstract Reg CGenValue(CGenState state);
 
         public abstract void CGenAddress(CGenState state);
     }
@@ -33,8 +32,8 @@ namespace AST {
             }
         }
 
-        public override Reg CGenValue(Env env, CGenState state) {
-            Env.Entry entry = env.Find(this.Name).Value;
+        public override Reg CGenValue(CGenState state) {
+            Env.Entry entry = this.Env.Find(this.Name).Value;
 
             Int32 offset = entry.Offset;
             //if (entry.Kind == Env.EntryKind.STACK) {
@@ -191,10 +190,10 @@ namespace AST {
     }
 
     public sealed partial class AssignList {
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
             Reg reg = Reg.EAX;
             foreach (Expr expr in this.Exprs) {
-                reg = expr.CGenValue(env, state);
+                reg = expr.CGenValue(state);
             }
             return reg;
         }
@@ -205,14 +204,14 @@ namespace AST {
     }
 
     public sealed partial class Assign {
-        public override Reg CGenValue(Env env, CGenState state) {
-            // 1. %eax = &Left
+        public override Reg CGenValue(CGenState state) {
+            // 1. %eax = &left
             this.Left.CGenAddress(state);
 
             // 2. push %eax
             Int32 pos = state.CGenPushLong(Reg.EAX);
 
-            Reg ret = this.Right.CGenValue(env, state);
+            Reg ret = this.Right.CGenValue(state);
             switch (this.Left.Type.Kind) {
                 case ExprTypeKind.CHAR:
                 case ExprTypeKind.UCHAR:
@@ -310,9 +309,9 @@ namespace AST {
         // |        false_expr
         // +--> finish:
         // 
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
             Int32 stack_size = state.StackSize;
-            Reg ret = this.Cond.CGenValue(env, state);
+            Reg ret = this.Cond.CGenValue(state);
             state.CGenForceStackSizeTo(stack_size);
 
             // test Cond
@@ -338,13 +337,13 @@ namespace AST {
 
             state.JZ(false_label);
 
-            this.TrueExpr.CGenValue(env, state);
+            this.TrueExpr.CGenValue(state);
 
             state.JMP(finish_label);
 
             state.CGenLabel(false_label);
 
-            ret = this.FalseExpr.CGenValue(env, state);
+            ret = this.FalseExpr.CGenValue(state);
 
             state.CGenLabel(finish_label);
 
@@ -361,7 +360,7 @@ namespace AST {
             throw new InvalidOperationException("Error: cannot get the address of a function call.");
         }
 
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
 
             // GCC's IA-32 calling convention
             // Caller is responsible to push all arguments to the stack in reverse order.
@@ -447,7 +446,7 @@ namespace AST {
 
                 state.COMMENT($"Argument {i} is at {pos}");
 
-                Reg ret = arg.CGenValue(env, state);
+                Reg ret = arg.CGenValue(state);
                 switch (arg.Type.Kind) {
                     case ExprTypeKind.ARRAY:
                     case ExprTypeKind.CHAR:
@@ -503,7 +502,7 @@ namespace AST {
             if (this.Func.Type is FunctionType) {
                 this.Func.CGenAddress(state);
             } else if (this.Func.Type is PointerType) {
-                this.Func.CGenValue(env, state);
+                this.Func.CGenValue(state);
             } else {
                 throw new InvalidProgramException();
             }
@@ -521,10 +520,10 @@ namespace AST {
     }
 
     public sealed partial class Attribute {
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
 
             // %eax is the address of the struct/union
-            if (this.Expr.CGenValue(env, state) != Reg.EAX) {
+            if (this.Expr.CGenValue(state) != Reg.EAX) {
                 throw new InvalidProgramException();
             }
 
@@ -602,7 +601,7 @@ namespace AST {
     }
 
     public sealed partial class Reference {
-        public override Reg CGenValue(Env env, CGenState state) {
+        public override Reg CGenValue(CGenState state) {
             this.Expr.CGenAddress(state);
             return Reg.EAX;
         }
@@ -613,8 +612,8 @@ namespace AST {
     }
 
     public sealed partial class Dereference {
-        public override Reg CGenValue(Env env, CGenState state) {
-            Reg ret = this.Expr.CGenValue(env, state);
+        public override Reg CGenValue(CGenState state) {
+            Reg ret = this.Expr.CGenValue(state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }
@@ -681,7 +680,7 @@ namespace AST {
         }
 
         public override void CGenAddress(CGenState state) {
-            Reg ret = this.Expr.CGenValue(this.Env, state);
+            Reg ret = this.Expr.CGenValue(state);
             if (ret != Reg.EAX) {
                 throw new InvalidProgramException();
             }

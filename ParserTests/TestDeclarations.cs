@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 using Parsing;
-using SyntaxTree;
+using AST;
 using static CompilerTests.ParserTestUtils;
 
 namespace CompilerTests {

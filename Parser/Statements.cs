@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using SyntaxTree;
+using AST;
 using static Parsing.ParserCombinator;
 
 namespace Parsing {

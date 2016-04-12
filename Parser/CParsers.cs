@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LexicalAnalysis;
-using SyntaxTree;
+using AST;
 using static Parsing.ParserCombinator;
 using System.Collections.Immutable;
 
