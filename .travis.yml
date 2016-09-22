@@ -1,0 +1,8 @@
+language: csharp
+mono:
+  - beta
+solution: C-Compiler.sln
+install:
+  - nuget restore C-Compiler.sln
+script:
+  - xbuild C-Compiler.sln
