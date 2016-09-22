@@ -1,6 +1,8 @@
 C Compiler in C#
 ===
 
+[![Build Status](https://travis-ci.org/phisiart/C-Compiler.svg?branch=master)](https://travis-ci.org/phisiart/C-Compiler)
+
 This intends to be a full ANSI C compiler. It generates x86 (32-bit) assembly code in linux. The goal is to produce `.s` files that `gcc`'s assembler and linker could directly use.
 
 ## Building this compiler
