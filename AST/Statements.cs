@@ -230,7 +230,7 @@ namespace AST {
                 env = init.Value.Env;
             }
 
-            Option<ABT.Expr> cond = this.Cond.Map(_ => _.GetExpr(env));
+            IOption<ABT.Expr> cond = this.Cond.Map(_ => _.GetExpr(env));
             if (cond.IsSome) {
                 env = cond.Value.Env;
             }
