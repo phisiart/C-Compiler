@@ -92,16 +92,16 @@
     <Compile Include="Scanner\Tokens.cs" />
     <Compile Include="Scanner\Utils.cs" />
     <Compile Include="AST\AssignmentOperators.cs" />
-    <Compile Include="SyntaxTree\BinaryOperators.cs" />
-    <Compile Include="SyntaxTree\ConstExpressions.cs" />
-    <Compile Include="SyntaxTree\Declarations.cs" />
-    <Compile Include="SyntaxTree\DeclarationSpecifiers.cs" />
-    <Compile Include="SyntaxTree\Declarators.cs" />
-    <Compile Include="SyntaxTree\Expressions.cs" />
-    <Compile Include="SyntaxTree\ExternalDeclarations.cs" />
-    <Compile Include="SyntaxTree\SemantUtils.cs" />
-    <Compile Include="SyntaxTree\Statements.cs" />
-    <Compile Include="SyntaxTree\UnaryOperators.cs" />
+    <Compile Include="AST\BinaryOperators.cs" />
+    <Compile Include="AST\ConstExpressions.cs" />
+    <Compile Include="AST\Declarations.cs" />
+    <Compile Include="AST\DeclarationSpecifiers.cs" />
+    <Compile Include="AST\Declarators.cs" />
+    <Compile Include="AST\Expressions.cs" />
+    <Compile Include="AST\ExternalDeclarations.cs" />
+    <Compile Include="AST\SemantUtils.cs" />
+    <Compile Include="AST\Statements.cs" />
+    <Compile Include="AST\UnaryOperators.cs" />
     <Compile Include="CompilerTests\TypePrinterTests.cs" />
     <Compile Include="ABT\Types\Types.cs" />
     <Compile Include="ABT\Types\TypePrinter.cs" />
@@ -112,6 +112,53 @@
     <Compile Include="CGen\TypeCast.cs" />
     <Compile Include="CGen\UnaryOperators.cs" />
     <Compile Include="CGen\Statements.cs" />
+    <Compile Include="Semant\Expressions.cs" />
+    <Compile Include="Semant\UnaryOperators.cs" />
+    <Compile Include="Semant\ConstExpressions.cs" />
+    <Compile Include="ABT2\TypeSystem\ExprType.cs" />
+    <Compile Include="ABT2\Expressions\IRValueExpr.cs" />
+    <Compile Include="ABT2\Environment\Env.cs" />
+    <Compile Include="ABT2\TypeSystem\CompleteStructOrUnionType.cs" />
+    <Compile Include="Utils\Utils.cs" />
+    <Compile Include="ABT2\TypeSystem\FunctionType.cs" />
+    <Compile Include="ABT2\TypeSystem\ArrayType.cs" />
+    <Compile Include="ABT2\Expressions\ConstExprs.cs" />
+    <Compile Include="ABT2\Initialization\Initializer.cs" />
+    <Compile Include="ABT2Tests\InitializerTests.cs" />
+    <Compile Include="ABT2\Initialization\InitializationUtils.cs" />
+    <Compile Include="ABT2\TypeSystem\TypeSystemUtils\TypeSystemUtils.cs" />
+    <Compile Include="ABT2\TypeSystem\TypeSystemUtils\QualTypeCreator.cs" />
+    <Compile Include="ABT2\TypeSystem\TypeSystemUtils\TypePrinter.cs" />
+    <Compile Include="ABT2Tests\TypeSystemTests\TypePrinterTests.cs" />
+    <Compile Include="ABT2\TypeSystem\IExprTypeVisitor.cs" />
+    <Compile Include="ABT2\TypeSystem\ScalarTypes\IScalarType.cs" />
+    <Compile Include="ABT2\TypeSystem\ScalarTypes\PointerType\TPointer.cs" />
+    <Compile Include="ABT2\TypeSystem\ScalarTypes\ArithmeticTypes\IArithmeticType.cs" />
+    <Compile Include="ABT2\TypeSystem\ScalarTypes\ArithmeticTypes\FloatingPointTypes.cs" />
+    <Compile Include="ABT2\TypeSystem\ScalarTypes\ArithmeticTypes\IntegralTypes.cs" />
+    <Compile Include="ABT2\TypeSystem\TypeSystemUtils\TypeEqualityComparer.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\TypeCast.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\TypeCastCreator.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToSignedChar.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\Add.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\BinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\SIntBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\UIntBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\Sub.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\TypeCastException.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToIntegralCreator.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToUnsignedChar.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToSignedShort.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToUnsignedShort.cs" />
+    <Compile Include="ABT2\TypeSystem\Exceptions.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToSignedInt.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToUnsignedInt.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToSignedLong.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToUnsignedLong.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToFloatingPointCreator.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToFloat.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToDouble.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\ToPointer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -128,6 +175,8 @@
     <None Include="Scanner\FSAGraphs\string.dot" />
     <None Include="TestPrograms\clean_all.py" />
     <None Include="TestPrograms\test_all.py" />
+    <None Include="ABT2\TypeSystem\TypeSystem.md" />
+    <None Include="ABT2\Expressions\Design.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Scanner\FSAGraphs\char.svg" />
@@ -156,6 +205,22 @@
   <ItemGroup>
     <Folder Include="ABT\Types\" />
     <Folder Include="CGen\" />
+    <Folder Include="Semant\" />
+    <Folder Include="ABT\TypeSystem\" />
+    <Folder Include="ABT2\" />
+    <Folder Include="ABT2\TypeSystem\" />
+    <Folder Include="ABT2\Expressions\" />
+    <Folder Include="ABT2\Environment\" />
+    <Folder Include="Utils\" />
+    <Folder Include="ABT2\Initialization\" />
+    <Folder Include="ABT2Tests\" />
+    <Folder Include="ABT2\TypeSystem\TypeSystemUtils\" />
+    <Folder Include="ABT2Tests\TypeSystemTests\" />
+    <Folder Include="ABT2\TypeSystem\ScalarTypes\" />
+    <Folder Include="ABT2\TypeSystem\ScalarTypes\ArithmeticTypes\" />
+    <Folder Include="ABT2\TypeSystem\ScalarTypes\PointerType\" />
+    <Folder Include="ABT2\Expressions\TypeCasts\" />
+    <Folder Include="ABT2\Expressions\BinaryOperators\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

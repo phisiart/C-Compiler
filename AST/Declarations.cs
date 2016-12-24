@@ -11,15 +11,18 @@ namespace AST {
     ///   : declaration-specifiers [Init-declarator-list]? ';'
     /// </summary>
     public sealed class Decln : IExternDecln {
-        private Decln(DeclnSpecs declnSpecs, ImmutableList<InitDeclr> initDeclrs) {
+        private Decln(DeclnSpecs declnSpecs,
+                      ImmutableList<InitDeclr> initDeclrs) {
             this.DeclnSpecs = declnSpecs;
             this.InitDeclrs = initDeclrs;
         }
 
-        public static Decln Create(DeclnSpecs declnSpecs, ImmutableList<InitDeclr> initDeclrs) =>
+        public static Decln Create(DeclnSpecs declnSpecs,
+                                   ImmutableList<InitDeclr> initDeclrs) =>
             new Decln(declnSpecs, initDeclrs);
 
         public DeclnSpecs DeclnSpecs { get; }
+
         public ImmutableList<InitDeclr> InitDeclrs { get; }
 
         [SemantMethod]
@@ -85,15 +88,18 @@ namespace AST {
     ///   | [declarator]? ':' constant-expression
     /// </summary>
     public class StructDecln : ISyntaxTreeNode {
-        protected StructDecln(SpecQualList specQualList, ImmutableList<StructDeclr> structDeclrs) {
+        protected StructDecln(SpecQualList specQualList,
+                              ImmutableList<StructDeclr> structDeclrs) {
             this.SpecQualList = specQualList;
             this.StructDeclrs = structDeclrs;
         }
 
-        public static StructDecln Create(SpecQualList specQualList, ImmutableList<StructDeclr> structDeclrs) =>
+        public static StructDecln Create(SpecQualList specQualList,
+                                         ImmutableList<StructDeclr> structDeclrs) =>
             new StructDecln(specQualList, structDeclrs);
 
         public SpecQualList SpecQualList { get; }
+
         public ImmutableList<StructDeclr> StructDeclrs { get; }
 
         [SemantMethod]
@@ -174,6 +180,5 @@ namespace AST {
             var type = Semant(this.AbstractDeclr.DecorateType, baseType, ref env);
             return SemantReturn.Create(env, type);
         }
-
     }
 }

@@ -81,11 +81,11 @@ namespace ABT {
     /// Expression Statement
     /// </summary>
     public sealed partial class ExprStmt : Stmt {
-        public ExprStmt(Option<Expr> exprOpt) {
+        public ExprStmt(IOption<Expr> exprOpt) {
             this.ExprOpt = exprOpt;
         }
 
-        public Option<Expr> ExprOpt { get; }
+        public IOption<Expr> ExprOpt { get; }
 
         public override void Accept(StmtVisitor visitor) {
             visitor.Visit(this);
@@ -108,11 +108,11 @@ namespace ABT {
     }
 
     public sealed partial class ReturnStmt : Stmt {
-        public ReturnStmt(Option<Expr> exprOpt) {
+        public ReturnStmt(IOption<Expr> exprOpt) {
             this.ExprOpt = exprOpt;
         }
 
-        public Option<Expr> ExprOpt { get; }
+        public IOption<Expr> ExprOpt { get; }
 
         public override void Accept(StmtVisitor visitor) {
             visitor.Visit(this);
@@ -202,18 +202,18 @@ namespace ABT {
     //      finish: <-------+
     // 
     public sealed partial class ForStmt : Stmt {
-        public ForStmt(Option<Expr> init, Option<Expr> cond, Option<Expr> loop, Stmt body) {
+        public ForStmt(IOption<Expr> init, IOption<Expr> cond, IOption<Expr> loop, Stmt body) {
             this.Init = init;
             this.Cond = cond;
             this.Loop = loop;
             this.Body = body;
         }
 
-        public Option<Expr> Init { get; }
+        public IOption<Expr> Init { get; }
 
-        public Option<Expr> Cond { get; }
+        public IOption<Expr> Cond { get; }
 
-        public Option<Expr> Loop { get; }
+        public IOption<Expr> Loop { get; }
 
         public Stmt Body { get; }
 

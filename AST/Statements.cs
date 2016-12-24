@@ -225,7 +225,7 @@ namespace AST {
             new ForStmt(init, cond, loop, body);
 
         public override Tuple<ABT.Env, ABT.Stmt> GetStmt(ABT.Env env) {
-            Option<ABT.Expr> init = this.Init.Map(_ => _.GetExpr(env));
+            IOption<ABT.Expr> init = this.Init.Map(_ => _.GetExpr(env));
             if (init.IsSome) {
                 env = init.Value.Env;
             }
@@ -239,7 +239,7 @@ namespace AST {
                 throw new InvalidOperationException("Error: conditional expression in while Loop must be scalar.");
             }
 
-            Option<ABT.Expr> loop = this.Loop.Map(_ => _.GetExpr(env));
+            IOption<ABT.Expr> loop = this.Loop.Map(_ => _.GetExpr(env));
             if (loop.IsSome) {
                 env = loop.Value.Env;
             }

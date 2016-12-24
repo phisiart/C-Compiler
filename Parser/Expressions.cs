@@ -81,7 +81,7 @@ namespace Parsing {
                     if (exprs.Count == 1) {
                         return exprs[0];
                     }
-                    return AssignmentList.Create(exprs);
+                    return AssignList.Create(exprs);
                 })
             );
 
@@ -135,7 +135,7 @@ namespace Parsing {
                     .Then(Expression)
                     .Then(Colon)
                     .Then(ConditionalExpression)
-                    .Then(AST.ConditionalExpression.Create)
+                    .Then(AST.ConditionalExpr.Create)
                     .Optional()
                 )
             );
