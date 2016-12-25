@@ -72,15 +72,21 @@ namespace ABT2.TypeSystem {
 
         public Int64 TypeID { get; }
 
-        public Int64 SizeOf {
-            get {
-                throw new InvalidOperationException("Must first get layout");
+        public Int64 SizeOf(Env env) {
+            var layout = env.GetStructOrUnionLayoutOpt(this);
+            if (layout.IsSome) {
+                return layout.Value.SizeOf;
+            } else {
+                throw new InvalidProgramException("Incomplete struct/union doesn't have sizeof.");
             }
         }
 
-        public Int64 Alignment {
-            get {
-                throw new InvalidOperationException("Must first get layout");
+        public Int64 Alignment(Env env) {
+            var layout = env.GetStructOrUnionLayoutOpt(this);
+            if (layout.IsSome) {
+                return layout.Value.Alignment;
+            } else {
+                throw new InvalidProgramException("Incomplete struct/union doesn't have alignment.");
             }
         }
     }
@@ -101,7 +107,10 @@ namespace ABT2.TypeSystem {
 
         public ImmutableList<MemberEntry> Members { get; }
 
-        public static StructOrUnionLayout CreateStructLayout(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public static StructOrUnionLayout CreateStructLayout(
+            IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members,
+            Env env) {
+
             var memberBuilder = ImmutableList.CreateBuilder<MemberEntry>();
 
             Int64 offset = 0;
@@ -110,8 +119,8 @@ namespace ABT2.TypeSystem {
                 var nameOpt = member.Item1;
                 var qualType = member.Item2;
 
-                offset = Utils.RoundUp(offset, qualType.Alignment);
-                alignment = Math.Max(alignment, qualType.Alignment);
+                offset = Utils.RoundUp(offset, qualType.Alignment(env));
+                alignment = Math.Max(alignment, qualType.Alignment(env));
 
                 if (nameOpt.IsSome) {
                     String name = nameOpt.Value;
@@ -119,7 +128,7 @@ namespace ABT2.TypeSystem {
                     memberBuilder.Add(entry);
                 }
 
-                offset += qualType.SizeOf;
+                offset += qualType.SizeOf(env);
             }
 
             Int64 sizeOf = Utils.RoundUp(offset, alignment);
@@ -127,7 +136,10 @@ namespace ABT2.TypeSystem {
             return new StructOrUnionLayout(StructOrUnionKind.Struct, sizeOf, alignment, memberBuilder.ToImmutable());
         }
 
-        public static StructOrUnionLayout CreateUnionLayout(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public static StructOrUnionLayout CreateUnionLayout(
+            IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members,
+            Env env) {
+
             var memberBuilder = ImmutableList.CreateBuilder<MemberEntry>();
 
             Int64 sizeOf = 0;
@@ -136,8 +148,8 @@ namespace ABT2.TypeSystem {
                 var nameOpt = member.Item1;
                 var qualType = member.Item2;
 
-                sizeOf = Math.Max(sizeOf, qualType.SizeOf);
-                alignment = Math.Max(alignment, qualType.Alignment);
+                sizeOf = Math.Max(sizeOf, qualType.SizeOf(env));
+                alignment = Math.Max(alignment, qualType.Alignment(env));
 
                 if (nameOpt.IsSome) {
                     String name = nameOpt.Value;

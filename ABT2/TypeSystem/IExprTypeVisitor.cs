@@ -41,21 +41,21 @@ namespace ABT2.TypeSystem {
     /// A type visitor with a result.
     /// </summary>
     public interface IExprTypeVisitor<out R> {
-        R VisitSignedChar(TSChar type);
+        R VisitSChar(TSChar type);
 
-        R VisitUnsignedChar(TUChar type);
+        R VisitUChar(TUChar type);
 
-        R VisitSignedShort(TSShort type);
+        R VisitSShort(TSShort type);
 
-        R VisitUnsignedShort(TUShort type);
+        R VisitUShort(TUShort type);
 
-        R VisitSignedInt(TSInt type);
+        R VisitSInt(TSInt type);
 
-        R VisitUnsignedInt(TUInt type);
+        R VisitUInt(TUInt type);
 
-        R VisitSignedLong(TSLong type);
+        R VisitSLong(TSLong type);
 
-        R VisitUnsignedLong(TULong type);
+        R VisitULong(TULong type);
 
         R VisitFloat(TFloat type);
 

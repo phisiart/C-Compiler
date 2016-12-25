@@ -1,13 +1,13 @@
 ﻿using System;
 
 namespace ABT2.TypeSystem {
+    using Environment;
     using IQualExprType = IQualExprType<IExprType>;
 
     public sealed class ArrayType : IExprType {
         public ArrayType(IQualExprType elemQualType, Int64 numElems) {
             this.ElemQualType = elemQualType;
             this.NumElems = numElems;
-            this.SizeOf = elemQualType.SizeOf * numElems;
         }
 
         public void Visit(IExprTypeVisitor visitor) {
@@ -22,9 +22,9 @@ namespace ABT2.TypeSystem {
 
         public Int64 NumElems { get; }
 
-        public Int64 SizeOf { get; }
+        public Int64 SizeOf(Env env) => this.ElemQualType.SizeOf(env) * this.NumElems;
 
-        public Int64 Alignment => this.ElemQualType.Alignment;
+        public Int64 Alignment(Env env) => this.ElemQualType.Alignment(env);
     }
 
     public sealed class IncompleteArrayType : IExprType {
@@ -42,13 +42,11 @@ namespace ABT2.TypeSystem {
 
         public IQualExprType ElemQualType { get; }
 
-        public Int64 SizeOf {
-            get {
-                throw new Exception("Can't get size of incomplete array");
-            }
+        public Int64 SizeOf(Env env) {
+            throw new Exception("Can't get size of incomplete array");
         }
 
-        public Int64 Alignment => this.ElemQualType.Alignment;
+        public Int64 Alignment(Env env) => this.ElemQualType.Alignment(env);
     }
 }
 

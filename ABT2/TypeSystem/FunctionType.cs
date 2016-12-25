@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Collections.Generic;
 
 namespace ABT2.TypeSystem {
+    using Environment;
     using IQualExprType = IQualExprType<IExprType>;
 
     public sealed class ArgEntry {
@@ -32,9 +33,9 @@ namespace ABT2.TypeSystem {
             return visitor.VisitFunction(this);
         }
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfLong;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfLong;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfLong;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfLong;
 
         public IQualExprType ReturnQualType { get; }
 
@@ -46,20 +47,21 @@ namespace ABT2.TypeSystem {
 
         public static FunctionType Create(IQualExprType returnQualType,
                                           IEnumerable<IQualExprType> argQualTypes,
-                                          Boolean hasVarArgs) {
+                                          Boolean hasVarArgs,
+                                          Env env) {
             
             var argsBuilder = ImmutableList.CreateBuilder<ArgEntry>();
 
             Int64 offset = 0;
             Int64 alignment = PlatformSpecificConstants.AlignmentOfInt;
             foreach (var argQualType in argQualTypes) {
-                offset = Utils.RoundUp(offset, argQualType.Alignment);
-                alignment = Math.Max(alignment, argQualType.Alignment);
+                offset = Utils.RoundUp(offset, argQualType.Alignment(env));
+                alignment = Math.Max(alignment, argQualType.Alignment(env));
 
                 ArgEntry argEntry = new ArgEntry(argQualType, offset);
                 argsBuilder.Add(argEntry);
 
-                offset += argQualType.SizeOf;
+                offset += argQualType.SizeOf(env);
             }
 
             Int64 argsSize = Utils.RoundUp(offset, alignment);

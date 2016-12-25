@@ -127,14 +127,28 @@ namespace ABT2.Environment {
             return this.AddSymbol(entry);
         }
 
-        public Env AddStructOrUnionLayout(StructOrUnionType type, IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public Env AddLocalVar(String name, IQualExprType qualType) {
+            var entry = new ObjectEntry(name, qualType);
+            return this.AddSymbol(entry);
+        }
+
+        public IOption<Entry> LookUpSymbol(String name) {
+            var result = this.FunctionScope.FlatMap(_ => _.LookUpSymbol(name));
+            if (result.IsSome) {
+                return result;
+            }
+            return this.Globals.LookUpSymbol(name);
+        }
+
+        public Env AddStructOrUnionLayout(StructOrUnionType type,
+                                          IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
             switch (type.Kind) {
                 case StructOrUnionKind.Struct:
-                    var structLayout = StructOrUnionLayout.CreateStructLayout(members);
+                    var structLayout = StructOrUnionLayout.CreateStructLayout(members, this);
                     return this.AddStructOrUnionLayout(type, structLayout);
                 
                 case StructOrUnionKind.Union:
-                    var unionLayout = StructOrUnionLayout.CreateUnionLayout(members);
+                    var unionLayout = StructOrUnionLayout.CreateUnionLayout(members, this);
                     return this.AddStructOrUnionLayout(type, unionLayout);
 
                 default:
@@ -229,11 +243,25 @@ namespace ABT2.Environment {
         public String Name { get; }
 
         public IQualExprType Type { get; }
+
+        public abstract R Visit<R>(IEntryVisitor<R> visitor);
+    }
+
+    public interface IEntryVisitor<out R> {
+        R VisitTypeEntry(TypeEntry entry);
+
+        R VisitObjectEntry(ObjectEntry entry);
+
+        R VisitEnumEntry(EnumEntry entry);
     }
 
     public sealed class TypeEntry : Entry {
         public TypeEntry(String name, IQualExprType type)
             : base(name, type) { }
+
+        public override R Visit<R>(IEntryVisitor<R> visitor) {
+            return visitor.VisitTypeEntry(this);
+        }
     }
 
     public enum Linkage {
@@ -252,6 +280,10 @@ namespace ABT2.Environment {
             : this(name, type, Linkage.None) { }
 
         public Linkage Linkage { get; }
+
+        public override R Visit<R>(IEntryVisitor<R> visitor) {
+            return visitor.VisitObjectEntry(this);
+        }
     }
 
     public sealed class EnumEntry : Entry {
@@ -261,6 +293,10 @@ namespace ABT2.Environment {
         }
 
         public Int64 Value { get; }
+
+        public override R Visit<R>(IEntryVisitor<R> visitor) {
+            return visitor.VisitEnumEntry(this);
+        }
     }
 
     public class SymbolTable {

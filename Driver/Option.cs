@@ -3,6 +3,8 @@
 public interface IOption<out T> {
     IOption<O> Map<O>(Converter<T, O> converter);
 
+    IOption<O> FlatMap<O>(Converter<T, IOption<O>> converter);
+
     void ForEach(Action<T> action);
 
     T Value { get; }
@@ -16,6 +18,13 @@ public abstract class Option<T> : IOption<T> {
     public IOption<O> Map<O>(Converter<T, O> converter) {
         if (this.IsSome) {
             return new Some<O>(converter(this.Value));
+        }
+        return new None<O>();
+    }
+
+    public IOption<O> FlatMap<O>(Converter<T, IOption<O>> converter) {
+        if (this.IsSome) {
+            return converter(this.Value);
         }
         return new None<O>();
     }

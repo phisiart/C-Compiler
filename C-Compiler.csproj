@@ -46,6 +46,11 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ABT2\Expressions\Assign.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\SLongBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\ULongBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\Var.cs" />
+    <Compile Include="ABT2\TypeSystem\IQualExprType.cs" />
     <Compile Include="ABT\BinaryOperators.cs" />
     <Compile Include="ABT\ConstExpressions.cs" />
     <Compile Include="ABT\Declarations.cs" />
@@ -118,7 +123,7 @@
     <Compile Include="ABT2\TypeSystem\ExprType.cs" />
     <Compile Include="ABT2\Expressions\IRValueExpr.cs" />
     <Compile Include="ABT2\Environment\Env.cs" />
-    <Compile Include="ABT2\TypeSystem\CompleteStructOrUnionType.cs" />
+    <Compile Include="ABT2\TypeSystem\StructOrUnionType.cs" />
     <Compile Include="Utils\Utils.cs" />
     <Compile Include="ABT2\TypeSystem\FunctionType.cs" />
     <Compile Include="ABT2\TypeSystem\ArrayType.cs" />
@@ -203,24 +208,7 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ABT\Types\" />
-    <Folder Include="CGen\" />
-    <Folder Include="Semant\" />
     <Folder Include="ABT\TypeSystem\" />
-    <Folder Include="ABT2\" />
-    <Folder Include="ABT2\TypeSystem\" />
-    <Folder Include="ABT2\Expressions\" />
-    <Folder Include="ABT2\Environment\" />
-    <Folder Include="Utils\" />
-    <Folder Include="ABT2\Initialization\" />
-    <Folder Include="ABT2Tests\" />
-    <Folder Include="ABT2\TypeSystem\TypeSystemUtils\" />
-    <Folder Include="ABT2Tests\TypeSystemTests\" />
-    <Folder Include="ABT2\TypeSystem\ScalarTypes\" />
-    <Folder Include="ABT2\TypeSystem\ScalarTypes\ArithmeticTypes\" />
-    <Folder Include="ABT2\TypeSystem\ScalarTypes\PointerType\" />
-    <Folder Include="ABT2\Expressions\TypeCasts\" />
-    <Folder Include="ABT2\Expressions\BinaryOperators\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

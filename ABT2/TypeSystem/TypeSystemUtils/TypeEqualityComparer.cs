@@ -18,35 +18,35 @@ namespace ABT2.TypeSystem {
                 return this.OtherType == type;
             }
 
-            public Boolean VisitSignedChar(TSChar type) {
+            public Boolean VisitSChar(TSChar type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitUnsignedChar(TUChar type) {
+            public Boolean VisitUChar(TUChar type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitSignedShort(TSShort type) {
+            public Boolean VisitSShort(TSShort type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitUnsignedShort(TUShort type) {
+            public Boolean VisitUShort(TUShort type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitSignedInt(TSInt type) {
+            public Boolean VisitSInt(TSInt type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitUnsignedInt(TUInt type) {
+            public Boolean VisitUInt(TUInt type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitSignedLong(TSLong type) {
+            public Boolean VisitSLong(TSLong type) {
                 return VisitArithmeticType(type);
             }
 
-            public Boolean VisitUnsignedLong(TULong type) {
+            public Boolean VisitULong(TULong type) {
                 return VisitArithmeticType(type);
             }
 

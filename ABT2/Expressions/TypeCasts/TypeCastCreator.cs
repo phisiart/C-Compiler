@@ -17,49 +17,49 @@ namespace ABT2.Expressions.TypeCasts {
             this.Expr = expr;
         }
 
-        public IRValueExpr VisitSignedChar(TSChar type) {
+        public IRValueExpr VisitSChar(TSChar type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToSignedCharCreator.Get);
         }
 
-        public IRValueExpr VisitUnsignedChar(TUChar type) {
+        public IRValueExpr VisitUChar(TUChar type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToUnsignedCharCreator.Get);
         }
 
-        public IRValueExpr VisitSignedShort(TSShort type) {
+        public IRValueExpr VisitSShort(TSShort type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToSignedShortCreator.Get);
         }
 
-        public IRValueExpr VisitUnsignedShort(TUShort type) {
+        public IRValueExpr VisitUShort(TUShort type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToUnsignedShortCreator.Get);
         }
 
-        public IRValueExpr VisitSignedInt(TSInt type) {
+        public IRValueExpr VisitSInt(TSInt type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToSignedIntCreator.Get);
         }
 
-        public IRValueExpr VisitUnsignedInt(TUInt type) {
+        public IRValueExpr VisitUInt(TUInt type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToUnsignedIntCreator.Get);
         }
 
-        public IRValueExpr VisitSignedLong(TSLong type) {
+        public IRValueExpr VisitSLong(TSLong type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToSignedLongCreator.Get);
         }
 
-        public IRValueExpr VisitUnsignedLong(TULong type) {
+        public IRValueExpr VisitULong(TULong type) {
             Contract.Ensures(type != null);
 
             return this.Expr.Visit(ToUnsignedLongCreator.Get);

@@ -13,40 +13,39 @@ namespace ABT2.TypeSystem {
         /// </summary>
         public class QualTypeCreator : IExprTypeVisitor<IQualExprType> {
             public QualTypeCreator(Boolean isConst, Boolean isVolatile) {
-                this.IsConst = isConst;
-                this.IsVolatile = isVolatile;
+                this.TypeQuals = new TypeQuals(isConst, isVolatile);
             }
 
-            public IQualExprType VisitSignedChar(TSChar type) {
-                return new QualExprType<TSChar>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitSChar(TSChar type) {
+                return new QualSChar(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitUnsignedChar(TUChar type) {
-                return new QualExprType<TUChar>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitUChar(TUChar type) {
+                return new QualUChar(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitSignedShort(TSShort type) {
-                return new QualExprType<TSShort>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitSShort(TSShort type) {
+                return new QualSShort(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitUnsignedShort(TUShort type) {
-                return new QualExprType<TUShort>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitUShort(TUShort type) {
+                return new QualUShort(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitSignedInt(TSInt type) {
-                return new QualExprType<TSInt>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitSInt(TSInt type) {
+                return new QualSInt(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitUnsignedInt(TUInt type) {
-                return new QualExprType<TUInt>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitUInt(TUInt type) {
+                return new QualUInt(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitSignedLong(TSLong type) {
-                return new QualExprType<TSLong>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitSLong(TSLong type) {
+                return new QualSLong(this.TypeQuals, type);
             }
 
-            public IQualExprType VisitUnsignedLong(TULong type) {
-                return new QualExprType<TULong>(this.IsConst, this.IsVolatile, type);
+            public IQualExprType VisitULong(TULong type) {
+                return new QualULong(this.TypeQuals, type);
             }
 
             public IQualExprType VisitFloat(TFloat type) {
@@ -77,9 +76,7 @@ namespace ABT2.TypeSystem {
                 return new QualExprType<IncompleteArrayType>(this.IsConst, this.IsVolatile, type);
             }
 
-            public Boolean IsConst { get; }
-
-            public Boolean IsVolatile { get; }
+            public TypeQuals TypeQuals { get; }
         }
     }
 }

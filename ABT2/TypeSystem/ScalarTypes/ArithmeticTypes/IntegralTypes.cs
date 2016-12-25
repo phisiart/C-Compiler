@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ABT2.Environment;
+using System;
 
 namespace ABT2.TypeSystem {
     public interface IIntegralType : IArithmeticType { }
@@ -15,11 +16,14 @@ namespace ABT2.TypeSystem {
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfChar;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfChar;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfChar;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfChar;
     }
 
+    /// <summary>
+    /// The signed char type.
+    /// </summary>
     public sealed class TSChar : TChar, ISignedIntegralType {
         private TSChar() { }
 
@@ -28,7 +32,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitSignedChar(this);
+            return visitor.VisitSChar(this);
         }
 
         public override String ToString() {
@@ -38,6 +42,17 @@ namespace ABT2.TypeSystem {
         public static TSChar Get { get; } = new TSChar();
     }
 
+    /// <summary>
+    /// A cv-qualified signed char type.
+    /// </summary>
+    public sealed class QualSChar : QualExprType<TSChar> {
+        public QualSChar(TypeQuals typeQuals, TSChar type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
+    /// The unsigned char type.
+    /// </summary>
     public sealed class TUChar : TChar, IUnsignedIntegralType {
         private TUChar() { }
 
@@ -46,7 +61,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitUnsignedChar(this);
+            return visitor.VisitUChar(this);
         }
 
         public override String ToString() {
@@ -57,6 +72,14 @@ namespace ABT2.TypeSystem {
     }
 
     /// <summary>
+    /// A cv-qualified unsigned char type.
+    /// </summary>
+    public sealed class QualUChar : QualExprType<TUChar> {
+        public QualUChar(TypeQuals typeQuals, TUChar type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
     /// The abstract base class of signed and unsigned shorts.
     /// </summary>
     public abstract class TShort : IIntegralType {
@@ -64,11 +87,14 @@ namespace ABT2.TypeSystem {
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfShort;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfShort;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfShort;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfShort;
     }
 
+    /// <summary>
+    /// The signed short type.
+    /// </summary>
     public sealed class TSShort : TShort, ISignedIntegralType {
         private TSShort() { }
 
@@ -77,7 +103,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitSignedShort(this);
+            return visitor.VisitSShort(this);
         }
 
         public override String ToString() {
@@ -85,6 +111,14 @@ namespace ABT2.TypeSystem {
         }
 
         public static TSShort Get { get; } = new TSShort();
+    }
+
+    /// <summary>
+    /// A cv-qualified signed short type.
+    /// </summary>
+    public sealed class QualSShort : QualExprType<TSShort> {
+        public QualSShort(TypeQuals typeQuals, TSShort type)
+            : base(typeQuals, type) { }
     }
 
     public sealed class TUShort : TShort, IUnsignedIntegralType {
@@ -95,7 +129,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitUnsignedShort(this);
+            return visitor.VisitUShort(this);
         }
 
         public override String ToString() {
@@ -106,6 +140,14 @@ namespace ABT2.TypeSystem {
     }
 
     /// <summary>
+    /// A cv-qualified unsigned short type.
+    /// </summary>
+    public sealed class QualUShort : QualExprType<TUShort> {
+        public QualUShort(TypeQuals typeQuals, TUShort type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
     /// The abstract base class of signed and unsigned ints.
     /// </summary>
     public abstract class TInt : IIntegralType {
@@ -113,11 +155,14 @@ namespace ABT2.TypeSystem {
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfInt;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfInt;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfInt;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfInt;
     }
 
+    /// <summary>
+    /// The signed int type.
+    /// </summary>
     public sealed class TSInt : TInt, ISignedIntegralType {
         private TSInt() { }
 
@@ -126,7 +171,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitSignedInt(this);
+            return visitor.VisitSInt(this);
         }
 
         public override String ToString() {
@@ -136,6 +181,17 @@ namespace ABT2.TypeSystem {
         public static TSInt Get { get; } = new TSInt();
     }
 
+    /// <summary>
+    /// A cv-qualified signed int type.
+    /// </summary>
+    public sealed class QualSInt : QualExprType<TSInt> {
+        public QualSInt(TypeQuals typeQuals, TSInt type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
+    /// The unsigned int type.
+    /// </summary>
     public sealed class TUInt : TInt, IUnsignedIntegralType {
         private TUInt() { }
 
@@ -144,7 +200,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitUnsignedInt(this);
+            return visitor.VisitUInt(this);
         }
 
         public override String ToString() {
@@ -155,6 +211,14 @@ namespace ABT2.TypeSystem {
     }
 
     /// <summary>
+    /// A cv-qualified unsigned int type.
+    /// </summary>
+    public sealed class QualUInt : QualExprType<TUInt> {
+        public QualUInt(TypeQuals typeQuals, TUInt type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
     /// The abstract base class of signed and unsigned longs.
     /// </summary>
     public abstract class TLong : IIntegralType {
@@ -162,11 +226,14 @@ namespace ABT2.TypeSystem {
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfLong;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfLong;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfLong;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfLong;
     }
 
+    /// <summary>
+    /// The signed long type.
+    /// </summary>
     public sealed class TSLong : TLong, ISignedIntegralType {
         private TSLong() { }
 
@@ -175,7 +242,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitSignedLong(this);
+            return visitor.VisitSLong(this);
         }
 
         public override String ToString() {
@@ -185,6 +252,17 @@ namespace ABT2.TypeSystem {
         public static TSLong Get { get; } = new TSLong();
     }
 
+    /// <summary>
+    /// A cv-qualified signed long type.
+    /// </summary>
+    public sealed class QualSLong : QualExprType<TSLong> {
+        public QualSLong(TypeQuals typeQuals, TSLong type)
+            : base(typeQuals, type) { }
+    }
+
+    /// <summary>
+    /// The unsigned long type.
+    /// </summary>
     public sealed class TULong : TLong, IUnsignedIntegralType {
         private TULong() { }
 
@@ -193,7 +271,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
-            return visitor.VisitUnsignedLong(this);
+            return visitor.VisitULong(this);
         }
 
         public override String ToString() {
@@ -201,5 +279,13 @@ namespace ABT2.TypeSystem {
         }
 
         public static TULong Get { get; } = new TULong();
+    }
+
+    /// <summary>
+    /// A cv-qualified unsigned long type.
+    /// </summary>
+    public sealed class QualULong : QualExprType<TULong> {
+        public QualULong(TypeQuals typeQuals, TULong type)
+            : base(typeQuals, type) { }
     }
 }

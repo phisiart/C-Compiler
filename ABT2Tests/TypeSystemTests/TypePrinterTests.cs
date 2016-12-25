@@ -77,7 +77,8 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
                         Const(TSChar.Get),
                         EmptyQual(TSChar.Get)
                     ),
-                    hasVarArgs: true
+                    hasVarArgs: true,
+                    env: Env.Empty
                 )
             );
             var str = type.ToString();
@@ -87,7 +88,8 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
                 FunctionType.Create(
                     EmptyQual(TSChar.Get),
                     ImmutableList<IQualExprType>.Empty,
-                    hasVarArgs: true
+                    hasVarArgs: true,
+                    env: Env.Empty
                 )
             );
             str = type.ToString();
@@ -97,7 +99,8 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
                 FunctionType.Create(
                     EmptyQual(TSChar.Get),
                     ImmutableList<IQualExprType>.Empty,
-                    hasVarArgs: false
+                    hasVarArgs: false,
+                    env: Env.Empty
                 )
             );
             str = type.ToString();

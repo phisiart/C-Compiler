@@ -1,4 +1,5 @@
 ﻿using System;
+using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
     using IQualExprType = IQualExprType<IExprType>;
@@ -18,8 +19,8 @@ namespace ABT2.TypeSystem {
 
         public IQualExprType ElemQualType { get; }
 
-        public Int64 SizeOf => PlatformSpecificConstants.SizeOfLong;
+        public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfLong;
 
-        public Int64 Alignment => PlatformSpecificConstants.AlignmentOfLong;
+        public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfLong;
     }
 }
