@@ -30,7 +30,9 @@ namespace ABT2.TypeSystem {
     /// </summary>
     public sealed class QualFloat : QualExprType<TFloat> {
         public QualFloat(TypeQuals typeQuals)
-            : base(typeQuals, TFloat.Get) { }
+            : base(typeQuals) { }
+
+        public override TFloat Type => TFloat.Get;
     }
 
     /// <summary>
@@ -59,6 +61,8 @@ namespace ABT2.TypeSystem {
     /// </summary>
     public sealed class QualDouble : QualExprType<TDouble> {
         public QualDouble(TypeQuals typeQuals)
-            : base(typeQuals, TDouble.Get) { }
+            : base(typeQuals) { }
+
+        public override TDouble Type => TDouble.Get;
     }
 }

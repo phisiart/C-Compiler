@@ -1,10 +1,12 @@
 ﻿using System;
 using ABT2.TypeSystem;
 using ABT2.Environment;
+using ABT2.Expressions.TypeCasts;
 
 namespace ABT2.Expressions {
-    public abstract class Assign<T> : IRValueExpr<T> where T : IExprType {
-        public Assign(ILValueExpr<T> dest, IRValueExpr<T> src) {
+    
+    public abstract class Assign<T> : RValueExpr<T> where T : IExprType {
+        protected Assign(ILValueExpr<T> dest, IRValueExpr<T> src) {
             this.Dest = dest;
             this.Src = src;
         }
@@ -13,17 +15,13 @@ namespace ABT2.Expressions {
 
         public IRValueExpr<T> Src { get; }
 
-        public Env Env => Src.Env;
+        public override sealed Env Env => Src.Env;
 
-        public T Type => Src.Type;
-
-        public abstract void Visit(IRValueExprByTypeVisitor visitor);
-
-        public abstract R Visit<R>(IRValueExprByTypeVisitor<R> visitor);
+        public override sealed T Type => Src.Type;
     }
 
     public static class Assign {
-        public static IRValueExpr<IExprType> Create(ILValueExpr<IExprType> dst, IRValueExpr<IExprType> src) {
+        public static IRValueExpr Create(ILValueExpr dest, IRValueExpr src) {
             // TODO: implement this
             throw new NotImplementedException();
         }
@@ -172,8 +170,8 @@ namespace ABT2.Expressions {
         }
     }
 
-    public sealed class StructOrUnionAssign : Assign<StructOrUnionType> {
-        public StructOrUnionAssign(ILValueExpr<StructOrUnionType> dest, IRValueExpr<StructOrUnionType> src)
+    public sealed class StructOrUnionAssign : Assign<TStructOrUnion> {
+        public StructOrUnionAssign(ILValueExpr<TStructOrUnion> dest, IRValueExpr<TStructOrUnion> src)
             : base(dest, src) { }
 
         public override void Visit(IRValueExprByTypeVisitor visitor) {

@@ -56,6 +56,7 @@ namespace ABT2.Expressions.TypeCasts {
         }
 
         public IRValueExpr<TPointer> VisitConstULong(ConstULong expr) {
+            // TODO: implement this
             throw new NotImplementedException();
         }
 
@@ -72,12 +73,13 @@ namespace ABT2.Expressions.TypeCasts {
             throw new TypeCastException("Cannot cast float to pointer");
         }
 
-        public IRValueExpr<TPointer> VisitFunction(IRValueExpr<FunctionType> expr) {
+        public IRValueExpr<TPointer> VisitFunction(IRValueExpr<TFunction> expr) {
             // TODO: implement this
             throw new NotImplementedException();
         }
 
         public IRValueExpr<TPointer> VisitPointer(IRValueExpr<TPointer> expr) {
+            // TODO: implement this
             throw new NotImplementedException();
         }
 
@@ -101,7 +103,7 @@ namespace ABT2.Expressions.TypeCasts {
                        .CastTo(this.ToType);
         }
 
-        public IRValueExpr<TPointer> VisitStructOrUnion(IRValueExpr<StructOrUnionType> expr) {
+        public IRValueExpr<TPointer> VisitStructOrUnion(IRValueExpr<TStructOrUnion> expr) {
             throw new TypeCastException("Cannot cast struct or union to pointer");
         }
 
@@ -116,6 +118,7 @@ namespace ABT2.Expressions.TypeCasts {
         }
 
         public IRValueExpr<TPointer> VisitULong(IRValueExpr<TULong> expr) {
+            // TODO: implement this
             throw new NotImplementedException();
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using ABT2.Environment;
 
 namespace ABT2.TypeSystem {

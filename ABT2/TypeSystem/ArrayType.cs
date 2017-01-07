@@ -1,9 +1,10 @@
 ﻿using System;
+using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
-    using Environment;
-    using IQualExprType = IQualExprType<IExprType>;
-
+    /// <summary>
+    /// An array type.
+    /// </summary>
     public sealed class ArrayType : IExprType {
         public ArrayType(IQualExprType elemQualType, Int64 numElems) {
             this.ElemQualType = elemQualType;
@@ -25,6 +26,20 @@ namespace ABT2.TypeSystem {
         public Int64 SizeOf(Env env) => this.ElemQualType.SizeOf(env) * this.NumElems;
 
         public Int64 Alignment(Env env) => this.ElemQualType.Alignment(env);
+    }
+
+    /// <summary>
+    /// A cv-qualified array type.
+    /// According to C89 standard - 3.5.3 Type qualifiers:
+    ///  the qualifiers are applied to the element type.
+    /// </summary>
+    public sealed class QualArray : QualExprType<ArrayType> {
+        public QualArray(ArrayType type)
+            : base(type.ElemQualType.TypeQuals) {
+            this.Type = type;
+        }
+
+        public override ArrayType Type { get; }
     }
 
     public sealed class IncompleteArrayType : IExprType {

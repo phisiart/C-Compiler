@@ -2,8 +2,6 @@
 using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
-    using IQualExprType = IQualExprType<IExprType>;
-
     public sealed class TPointer : IScalarType {
         public TPointer(IQualExprType elemQualType) {
             this.ElemQualType = elemQualType;
@@ -22,5 +20,14 @@ namespace ABT2.TypeSystem {
         public Int64 SizeOf(Env env) => PlatformSpecificConstants.SizeOfLong;
 
         public Int64 Alignment(Env env) => PlatformSpecificConstants.AlignmentOfLong;
+    }
+
+    public sealed class QualPointer : QualExprType<TPointer> {
+        public QualPointer(TypeQuals typeQuals, TPointer type)
+            : base(typeQuals) {
+            this.Type = type;
+        }
+
+        public override TPointer Type { get; }
     }
 }

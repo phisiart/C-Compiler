@@ -34,16 +34,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <HintPath>packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.1.38.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Collections.Immutable.1.1.38-beta-23409\lib\dotnet\System.Collections.Immutable.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="nunit.framework">
+      <HintPath>packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ABT2\Expressions\Assign.cs" />
@@ -123,9 +122,9 @@
     <Compile Include="ABT2\TypeSystem\ExprType.cs" />
     <Compile Include="ABT2\Expressions\IRValueExpr.cs" />
     <Compile Include="ABT2\Environment\Env.cs" />
-    <Compile Include="ABT2\TypeSystem\StructOrUnionType.cs" />
+    <Compile Include="ABT2\TypeSystem\TStructOrUnion.cs" />
     <Compile Include="Utils\Utils.cs" />
-    <Compile Include="ABT2\TypeSystem\FunctionType.cs" />
+    <Compile Include="ABT2\TypeSystem\TFunction.cs" />
     <Compile Include="ABT2\TypeSystem\ArrayType.cs" />
     <Compile Include="ABT2\Expressions\ConstExprs.cs" />
     <Compile Include="ABT2\Initialization\Initializer.cs" />
@@ -164,6 +163,13 @@
     <Compile Include="ABT2\Expressions\TypeCasts\ToFloat.cs" />
     <Compile Include="ABT2\Expressions\TypeCasts\ToDouble.cs" />
     <Compile Include="ABT2\Expressions\TypeCasts\ToPointer.cs" />
+    <Compile Include="ABT2\FuncDef.cs" />
+    <Compile Include="ABT2\Statements\Stmt.cs" />
+    <Compile Include="ABT2\TypeSystem\IQualExprTypeVisitor.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\UsualArithmeticConversion.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\Mult.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\FloatBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\DoubleBinaryOperator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -209,6 +215,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ABT\TypeSystem\" />
+    <Folder Include="ABT2\Statements\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

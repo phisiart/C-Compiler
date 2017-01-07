@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
-    using IQualExprType = IQualExprType<IExprType>;
-
     public sealed class MemberEntry {
         public MemberEntry(Int64 offset, String name, IQualExprType type) {
             this.Offset = offset;
@@ -27,8 +25,8 @@ namespace ABT2.TypeSystem {
 
     // Design for incomplete struct/union:
     // Each struct or union has a unique ID.
-    public sealed class StructOrUnionType : IExprType {
-        public StructOrUnionType(Int64 typeID, StructOrUnionKind kind) {
+    public sealed class TStructOrUnion : IExprType {
+        public TStructOrUnion(Int64 typeID, StructOrUnionKind kind) {
             this.TypeID = typeID;
             this.Kind = kind;
         }
@@ -60,11 +58,11 @@ namespace ABT2.TypeSystem {
             return layoutOpt.IsSome;
         }
 
-        public static Env<StructOrUnionType> CreateIncompleteStructType(Env env) {
+        public static Env<TStructOrUnion> CreateIncompleteStructType(Env env) {
             return env.NewIncompleteStructType();
         }
 
-        public static Env<StructOrUnionType> CreateIncompleteUnionType(Env env) {
+        public static Env<TStructOrUnion> CreateIncompleteUnionType(Env env) {
             return env.NewIncompleteUnionType();
         }
 
@@ -89,6 +87,18 @@ namespace ABT2.TypeSystem {
                 throw new InvalidProgramException("Incomplete struct/union doesn't have alignment.");
             }
         }
+    }
+
+    /// <summary>
+    /// A cv-qualified struct or union type.
+    /// </summary>
+    public sealed class QualStructOrUnion : QualExprType<TStructOrUnion> {
+        public QualStructOrUnion(TypeQuals typeQuals, TStructOrUnion type)
+            : base(typeQuals) {
+            this.Type = type;
+        }
+
+        public override TStructOrUnion Type { get; }
     }
 
     public sealed class StructOrUnionLayout {
@@ -162,78 +172,4 @@ namespace ABT2.TypeSystem {
             return new StructOrUnionLayout(StructOrUnionKind.Union, sizeOf, alignment, memberBuilder.ToImmutable());
         }
     }
-
-    //public sealed class CompleteStructOrUnionType : IExprType {
-    //    public CompleteStructOrUnionType(StructOrUnionKind kind, Int64 sizeOf, Int64 alignment, ImmutableList<MemberEntry> members) {
-    //        this.Kind = kind;
-    //        this.SizeOf = sizeOf;
-    //        this.Alignment = alignment;
-    //        this.Members = members;
-    //    }
-
-    //    public void Visit(IExprTypeVisitor visitor) {
-    //        visitor.VisitStructOrUnion(this);
-    //    }
-
-    //    public R Visit<R>(IExprTypeVisitor<R> visitor) {
-    //        return visitor.VisitStructOrUnion(this);
-    //    }
-
-    //    public StructOrUnionKind Kind { get; }
-
-    //    public Int64 SizeOf { get; }
-
-    //    public Int64 Alignment { get; }
-
-    //    public ImmutableList<MemberEntry> Members { get; }
-
-    //    public static CompleteStructOrUnionType CreateStructType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
-    //        var memberBuilder = ImmutableList.CreateBuilder<MemberEntry>();
-
-    //        Int64 offset = 0;
-    //        Int64 alignment = 0;
-    //        foreach (var member in members) {
-    //            var nameOpt = member.Item1;
-    //            var qualType = member.Item2;
-
-    //            offset = Utils.RoundUp(offset, qualType.Alignment);
-    //            alignment = Math.Max(alignment, qualType.Alignment);
-
-    //            if (nameOpt.IsSome) {
-    //                String name = nameOpt.Value;
-    //                var entry = new MemberEntry(offset, name, qualType);
-    //                memberBuilder.Add(entry);
-    //            }
-
-    //            offset += qualType.SizeOf;
-    //        }
-
-    //        Int64 sizeOf = Utils.RoundUp(offset, alignment);
-
-    //        return new CompleteStructOrUnionType(StructOrUnionKind.Struct, sizeOf, alignment, memberBuilder.ToImmutable());
-    //    }
-
-    //    public static CompleteStructOrUnionType CreateUnionType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
-    //        var memberBuilder = ImmutableList.CreateBuilder<MemberEntry>();
-
-    //        Int64 sizeOf = 0;
-    //        Int64 alignment = 0;
-    //        foreach (var member in members) {
-    //            var nameOpt = member.Item1;
-    //            var qualType = member.Item2;
-
-    //            sizeOf = Math.Max(sizeOf, qualType.SizeOf);
-    //            alignment = Math.Max(alignment, qualType.Alignment);
-
-    //            if (nameOpt.IsSome) {
-    //                String name = nameOpt.Value;
-    //                Int64 offset = 0;
-    //                var entry = new MemberEntry(offset, name, qualType);
-    //                memberBuilder.Add(entry);
-    //            }
-    //        }
-
-    //        return new CompleteStructOrUnionType(StructOrUnionKind.Union, sizeOf, alignment, memberBuilder.ToImmutable());
-    //    }
-    //}
 }

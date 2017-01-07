@@ -22,7 +22,7 @@ namespace ABT2.Expressions.TypeCasts {
         /// <summary>
         /// Cast from function type to floating point type T.
         /// </summary>
-        public IRValueExpr<T> VisitFunction(IRValueExpr<FunctionType> expr) {
+        public IRValueExpr<T> VisitFunction(IRValueExpr<TFunction> expr) {
             // TODO: implement this
             throw new TypeCastException("Not Implemented");
         }
@@ -39,7 +39,7 @@ namespace ABT2.Expressions.TypeCasts {
         /// Cast from struct or union to integral.
         /// This is impossible.
         /// </summary>
-        public IRValueExpr<T> VisitStructOrUnion(IRValueExpr<StructOrUnionType> expr) {
+        public IRValueExpr<T> VisitStructOrUnion(IRValueExpr<TStructOrUnion> expr) {
             throw new TypeCastException("Cannot cast struct or union to integral");
         }
 

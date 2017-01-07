@@ -9,10 +9,12 @@ namespace CompilerTests {
     public class TestExternalDefinitions {
         [Test]
         public void TestParser() {
-            System.Console.WriteLine(Directory.GetCurrentDirectory());
+            var currDir = TestContext.CurrentContext.TestDirectory;
+
+            System.Console.WriteLine(currDir);
 
             var files = Directory
-                .GetFiles("../../TestPrograms")
+                .GetFiles(currDir + "/../../TestPrograms")
                 .Where(_ => _.EndsWith(".c"));
 
             var sources = files.Select(File.ReadAllText).ToArray();

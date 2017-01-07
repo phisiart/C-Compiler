@@ -6,21 +6,21 @@ namespace ABT2.TypeSystem {
     /// A type visitor without a result.
     /// </summary>
     public interface IExprTypeVisitor {
-        void VisitSignedChar(TSChar type);
+        void VisitSChar(TSChar type);
 
-        void VisitUnsignedChar(TUChar type);
+        void VisitUChar(TUChar type);
 
-        void VisitSignedShort(TSShort type);
+        void VisitSShort(TSShort type);
 
-        void VisitUnsignedShort(TUShort type);
+        void VisitUShort(TUShort type);
 
-        void VisitSignedInt(TSInt type);
+        void VisitSInt(TSInt type);
 
-        void VisitUnsignedInt(TUInt type);
+        void VisitUInt(TUInt type);
 
-        void VisitSignedLong(TSLong type);
+        void VisitSLong(TSLong type);
 
-        void VisitUnsignedLong(TULong type);
+        void VisitULong(TULong type);
 
         void VisitFloat(TFloat type);
 
@@ -28,9 +28,9 @@ namespace ABT2.TypeSystem {
 
         void VisitPointer(TPointer type);
 
-        void VisitStructOrUnion(StructOrUnionType type);
+        void VisitStructOrUnion(TStructOrUnion type);
 
-        void VisitFunction(FunctionType type);
+        void VisitFunction(TFunction type);
 
         void VisitArray(ArrayType type);
 
@@ -63,9 +63,9 @@ namespace ABT2.TypeSystem {
 
         R VisitPointer(TPointer type);
 
-        R VisitStructOrUnion(StructOrUnionType type);
+        R VisitStructOrUnion(TStructOrUnion type);
 
-        R VisitFunction(FunctionType type);
+        R VisitFunction(TFunction type);
 
         R VisitArray(ArrayType type);
 

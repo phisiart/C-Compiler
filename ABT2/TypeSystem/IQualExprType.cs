@@ -3,28 +3,6 @@ using System.Text;
 using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
-    /// <summary>
-    /// A qualified type.
-    /// </summary>
-    /// <remarks>
-    /// In C, each type can have `const` or `volatile` qualifiers.
-    /// This interface is intended for covariance.
-    /// To create a qualified type, it is recommended to use <see cref="TypeSystemUtils."/>
-    /// </remarks>
-    public interface IQualExprType<out T> where T : IExprType {
-        Boolean IsConst { get; }
-
-        Boolean IsVolatile { get; }
-
-        Int64 SizeOf(Env env);
-
-        Int64 Alignment(Env env);
-
-        T Type { get; }
-
-        TypeQuals TypeQuals { get; }
-    }
-
     public sealed class TypeQuals {
         public TypeQuals(Boolean isConst, Boolean isVolatile) {
             this.IsConst = isConst;
@@ -32,7 +10,7 @@ namespace ABT2.TypeSystem {
         }
 
         public override String ToString() {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             if (this.IsConst) {
                 builder.Append("const");
@@ -59,13 +37,41 @@ namespace ABT2.TypeSystem {
         public Boolean IsVolatile { get; }
     }
 
-    public class QualExprType<T> : IQualExprType<T> where T : IExprType {
-        public QualExprType(Boolean isConst, Boolean isVolatile, T type)
-            : this(new TypeQuals(isConst, isVolatile), type) { }
+    public interface IQualExprType {
+        Boolean IsConst { get; }
 
-        public QualExprType(TypeQuals typeQuals, T type) {
+        Boolean IsVolatile { get; }
+
+        Int64 SizeOf(Env env);
+
+        Int64 Alignment(Env env);
+
+        IExprType Type { get; }
+
+        TypeQuals TypeQuals { get; }
+    }
+
+    /// <summary>
+    /// A qualified type.
+    /// </summary>
+    /// <remarks>
+    /// In C, each type can have <c>const</c> or <c>volatile</c> qualifiers.
+    /// 
+    /// This interface is intended for covariance.
+    /// 
+    /// To create a qualified type, you should use
+    /// <see cref="TypeSystemUtils.QualTypeCreator"/>.
+    /// </remarks>
+    public interface IQualExprType<out T> : IQualExprType where T : IExprType {
+        new T Type { get; }
+    }
+
+    public abstract class QualExprType<T> : IQualExprType<T> where T : IExprType {
+        protected QualExprType(Boolean isConst, Boolean isVolatile)
+            : this(new TypeQuals(isConst, isVolatile)) { }
+
+        protected QualExprType(TypeQuals typeQuals) {
             this.TypeQuals = typeQuals;
-            this.Type = type;
         }
 
         public override String ToString() {
@@ -82,8 +88,18 @@ namespace ABT2.TypeSystem {
 
         public Int64 Alignment(Env env) => this.Type.Alignment(env);
 
-        public T Type { get; }
+        public abstract T Type { get; }
 
         public TypeQuals TypeQuals { get; }
+
+        IExprType IQualExprType.Type => this.Type;
+    }
+
+    public static class QualExprType {
+        public static IQualExprType<T> Create<T>(TypeQuals typeQuals, T type) where T : IExprType {
+            var creator = new TypeSystemUtils.QualTypeCreator(typeQuals);
+            var qualType = type.Visit(creator);
+            return (IQualExprType<T>)qualType;
+        }
     }
 }

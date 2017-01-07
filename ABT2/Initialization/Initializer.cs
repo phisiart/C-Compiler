@@ -99,35 +99,35 @@ namespace ABT2.Initialization {
 
         // Every arithmetic type goes to the same routine.
 
-        public void VisitSignedChar(TSChar type) {
+        public void VisitSChar(TSChar type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitUnsignedChar(TUChar type) {
+        public void VisitUChar(TUChar type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitSignedShort(TSShort type) {
+        public void VisitSShort(TSShort type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitUnsignedShort(TUShort type) {
+        public void VisitUShort(TUShort type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitSignedInt(TSInt type) {
+        public void VisitSInt(TSInt type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitUnsignedInt(TUInt type) {
+        public void VisitUInt(TUInt type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitSignedLong(TSLong type) {
+        public void VisitSLong(TSLong type) {
             VisitArithmeticType(type);
         }
 
-        public void VisitUnsignedLong(TULong type) {
+        public void VisitULong(TULong type) {
             VisitArithmeticType(type);
         }
 
@@ -144,7 +144,7 @@ namespace ABT2.Initialization {
 
         }
 
-        public void VisitStruct(StructOrUnionType type) {
+        public void VisitStruct(TStructOrUnion type) {
             // TODO: implement this.
             //{
             //    Initializer initializer = this.Initializers.Peek().Current;
@@ -188,12 +188,12 @@ namespace ABT2.Initialization {
             //}
         }
 
-        public void VisitStructOrUnion(StructOrUnionType type) {
+        public void VisitStructOrUnion(TStructOrUnion type) {
             // TODO: implement this
 
         }
 
-        public void VisitFunction(FunctionType type) {
+        public void VisitFunction(TFunction type) {
             // TODO: implement this
         }
 

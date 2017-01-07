@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using ABT2.Environment;
 
 namespace ABT2.TypeSystem {
-    using Environment;
-    using IQualExprType = IQualExprType<IExprType>;
-
     public sealed class ArgEntry {
         public ArgEntry(IQualExprType qualType, Int64 offset) {
             this.QualType = qualType;
@@ -17,8 +15,12 @@ namespace ABT2.TypeSystem {
         public Int64 Offset;
     }
 
-    public sealed class FunctionType : IExprType {
-        public FunctionType(IQualExprType returnQualType, ImmutableList<ArgEntry> args, Boolean hasVarArgs, Int64 argsSize) {
+    /// <summary>
+    /// A function type.
+    /// There are no cv-qualified function types.
+    /// </summary>
+    public sealed class TFunction : IExprType {
+        public TFunction(IQualExprType returnQualType, ImmutableList<ArgEntry> args, Boolean hasVarArgs, Int64 argsSize) {
             this.ReturnQualType = returnQualType;
             this.Args = args;
             this.HasVarArgs = hasVarArgs;
@@ -45,10 +47,10 @@ namespace ABT2.TypeSystem {
 
         public Int64 ArgsSize { get; }
 
-        public static FunctionType Create(IQualExprType returnQualType,
-                                          IEnumerable<IQualExprType> argQualTypes,
-                                          Boolean hasVarArgs,
-                                          Env env) {
+        public static TFunction Create(IQualExprType returnQualType,
+                                       IEnumerable<IQualExprType> argQualTypes,
+                                       Boolean hasVarArgs,
+                                       Env env) {
             
             var argsBuilder = ImmutableList.CreateBuilder<ArgEntry>();
 
@@ -58,7 +60,7 @@ namespace ABT2.TypeSystem {
                 offset = Utils.RoundUp(offset, argQualType.Alignment(env));
                 alignment = Math.Max(alignment, argQualType.Alignment(env));
 
-                ArgEntry argEntry = new ArgEntry(argQualType, offset);
+                var argEntry = new ArgEntry(argQualType, offset);
                 argsBuilder.Add(argEntry);
 
                 offset += argQualType.SizeOf(env);
@@ -66,7 +68,16 @@ namespace ABT2.TypeSystem {
 
             Int64 argsSize = Utils.RoundUp(offset, alignment);
 
-            return new FunctionType(returnQualType, argsBuilder.ToImmutable(), hasVarArgs, argsSize);
+            return new TFunction(returnQualType, argsBuilder.ToImmutable(), hasVarArgs, argsSize);
         }
+    }
+
+    public sealed class QualFunction : QualExprType<TFunction> {
+        public QualFunction(TFunction type)
+            : base(type.ReturnQualType.TypeQuals) {
+            this.Type = type;
+        }
+
+        public override TFunction Type { get; }
     }
 }

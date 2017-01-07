@@ -71,7 +71,7 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
         [Test]
         public static void TestFunction() {
             var type = EmptyQual(
-                FunctionType.Create(
+                TFunction.Create(
                     Const(TSChar.Get),
                     ImmutableList.Create(
                         Const(TSChar.Get),
@@ -85,7 +85,7 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
             Assert.AreEqual(str, "const char (const char, char, ...)");
 
             type = EmptyQual(
-                FunctionType.Create(
+                TFunction.Create(
                     EmptyQual(TSChar.Get),
                     ImmutableList<IQualExprType>.Empty,
                     hasVarArgs: true,
@@ -96,7 +96,7 @@ namespace CompilerTests.ABT2Tests.TypeSystemTests {
             Assert.AreEqual(str, "char (...)");
 
             type = EmptyQual(
-                FunctionType.Create(
+                TFunction.Create(
                     EmptyQual(TSChar.Get),
                     ImmutableList<IQualExprType>.Empty,
                     hasVarArgs: false,

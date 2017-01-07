@@ -1,8 +1,6 @@
 ﻿using System;
 
 namespace ABT2.TypeSystem {
-    using IQualExprType = IQualExprType<IExprType>;
-
     public static partial class TypeSystemUtils {
 
         public static Boolean TypesAreEqual(IExprType type1, IExprType type2) {

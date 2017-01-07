@@ -4,7 +4,6 @@ using ABT2.TypeSystem;
 using ABT2.Environment;
 
 namespace ABT2.Expressions.TypeCasts {
-    using IRValueExpr = IRValueExpr<IExprType>;
 
     public sealed class TypeCastCreator : IExprTypeVisitor<IRValueExpr> {
 
@@ -84,7 +83,7 @@ namespace ABT2.Expressions.TypeCasts {
             throw new NotImplementedException();
         }
 
-        public IRValueExpr VisitStructOrUnion(StructOrUnionType type) {
+        public IRValueExpr VisitStructOrUnion(TStructOrUnion type) {
             Contract.Ensures(type != null);
 
             if (TypeSystemUtils.TypesAreEqual(this.Expr.Type, type)) {
@@ -94,7 +93,7 @@ namespace ABT2.Expressions.TypeCasts {
             }
         }
 
-        public IRValueExpr VisitFunction(FunctionType type) {
+        public IRValueExpr VisitFunction(TFunction type) {
             Contract.Ensures(type != null);
 
             // TODO: implement this

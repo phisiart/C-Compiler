@@ -1,82 +1,86 @@
 ﻿using System;
-namespace ABT2.TypeSystem {
-    using IQualExprType = IQualExprType<IExprType>;
 
+namespace ABT2.TypeSystem {
     public static partial class TypeSystemUtils {
 
         /// <summary>
-        /// The purpose of this class is as follows:
-        /// Suppose you have a IExprType, and the actual object type is SignedCharType.
-        /// You want to create a IQualExprType<IExprType>.
-        /// Notice that IQualExprType is covariant, so IQualExprType<IExprType> could be IQualExprType<SignecCharType>.
-        /// However, QualExprType is a class, which cannot be covariant. So you must explicitly create a QualExprType<SignedCharType>.
+        /// We will explain the purpose of this class with an example.
+        /// 
+        /// Suppose you have a <see cref="IExprType"/>, and the actual object
+        /// has type <see cref="TSChar"/> (but you don't know this).
+        /// 
+        /// You want to create a <see cref="IQualExprType"/>, and ensure that
+        /// the actual object created is <see cref="IQualExprType{TSChar}"/>.
+        /// 
+        /// Then you must create a <see cref="QualSChar"/>.
         /// </summary>
-        public class QualTypeCreator : IExprTypeVisitor<IQualExprType> {
-            public QualTypeCreator(Boolean isConst, Boolean isVolatile) {
-                this.TypeQuals = new TypeQuals(isConst, isVolatile);
-            }
+        public sealed class QualTypeCreator : IExprTypeVisitor<IQualExprType> {
+            public QualTypeCreator(Boolean isConst, Boolean isVolatile)
+                : this(new TypeQuals(isConst, isVolatile)) { }
 
-            public IQualExprType VisitSChar(TSChar type) {
-                return new QualSChar(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitUChar(TUChar type) {
-                return new QualUChar(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitSShort(TSShort type) {
-                return new QualSShort(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitUShort(TUShort type) {
-                return new QualUShort(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitSInt(TSInt type) {
-                return new QualSInt(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitUInt(TUInt type) {
-                return new QualUInt(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitSLong(TSLong type) {
-                return new QualSLong(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitULong(TULong type) {
-                return new QualULong(this.TypeQuals, type);
-            }
-
-            public IQualExprType VisitFloat(TFloat type) {
-                return new QualExprType<TFloat>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitDouble(TDouble type) {
-                return new QualExprType<TDouble>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitPointer(TPointer type) {
-                return new QualExprType<TPointer>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitStructOrUnion(StructOrUnionType type) {
-                return new QualExprType<StructOrUnionType>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitFunction(FunctionType type) {
-                return new QualExprType<FunctionType>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitArray(ArrayType type) {
-                return new QualExprType<ArrayType>(this.IsConst, this.IsVolatile, type);
-            }
-
-            public IQualExprType VisitIncompleteArray(IncompleteArrayType type) {
-                return new QualExprType<IncompleteArrayType>(this.IsConst, this.IsVolatile, type);
+            public QualTypeCreator(TypeQuals typeQuals) {
+                this.TypeQuals = typeQuals;
             }
 
             public TypeQuals TypeQuals { get; }
+
+            public IQualExprType VisitSChar(TSChar type) =>
+                new QualSChar(this.TypeQuals);
+
+            public IQualExprType VisitUChar(TUChar type) =>
+                new QualUChar(this.TypeQuals);
+
+            public IQualExprType VisitSShort(TSShort type) =>
+                new QualSShort(this.TypeQuals);
+
+            public IQualExprType VisitUShort(TUShort type) =>
+                new QualUShort(this.TypeQuals);
+
+            public IQualExprType VisitSInt(TSInt type) =>
+                new QualSInt(this.TypeQuals);
+
+            public IQualExprType VisitUInt(TUInt type) =>
+                new QualUInt(this.TypeQuals);
+
+            public IQualExprType VisitSLong(TSLong type) =>
+                new QualSLong(this.TypeQuals);
+
+            public IQualExprType VisitULong(TULong type) =>
+                new QualULong(this.TypeQuals);
+
+            public IQualExprType VisitFloat(TFloat type) =>
+                new QualFloat(this.TypeQuals);
+
+            public IQualExprType VisitDouble(TDouble type) =>
+                new QualDouble(this.TypeQuals);
+
+            public IQualExprType VisitPointer(TPointer type) =>
+                new QualPointer(this.TypeQuals, type);
+
+            public IQualExprType VisitStructOrUnion(TStructOrUnion type) =>
+                new QualStructOrUnion(this.TypeQuals, type);
+
+            public IQualExprType VisitFunction(TFunction type) {
+                throw new InvalidProgramException("There is no cv-qualified function type.");
+            }
+
+            public IQualExprType VisitArray(ArrayType type) {
+                var typeQuals = new TypeQuals(
+                    this.TypeQuals.IsConst || type.ElemQualType.IsConst,
+                    this.TypeQuals.IsVolatile || type.ElemQualType.IsVolatile
+                );
+
+                return new QualArray(
+                    new ArrayType(
+                        QualExprType.Create(typeQuals, type.ElemQualType.Type),
+                        type.NumElems
+                    )
+                );
+            }
+
+            public IQualExprType VisitIncompleteArray(IncompleteArrayType type) {
+                throw new InvalidProgramException("There is no cv-qualified imcomplete array type.");
+            }
         }
     }
 }

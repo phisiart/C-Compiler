@@ -3,22 +3,17 @@ using ABT2.TypeSystem;
 using ABT2.Environment;
 
 namespace ABT2.Expressions {
-    using static ABT2.TypeSystem.TypeSystemUtils;
+    
+    public interface IConstExpr : IRValueExpr { }
 
-    public interface IConstExpr<out T> : IRValueExpr<T> where T : IExprType { }
+    public interface IConstExpr<out T> : IConstExpr, IRValueExpr<T> where T : IExprType { }
 
-    public abstract class ConstExpr<T> : IConstExpr<T> where T : IExprType {
-        public ConstExpr(Env env) {
+    public abstract class ConstExpr<T> : RValueExpr<T>, IConstExpr<T> where T : IExprType {
+        protected ConstExpr(Env env) {
             this.Env = env;
         }
 
-        public abstract T Type { get; }
-
-        public Env Env { get; }
-
-        public abstract void Visit(IRValueExprByTypeVisitor visitor);
-
-        public abstract R Visit<R>(IRValueExprByTypeVisitor<R> visitor);
+        public override sealed Env Env { get; }
     }
 
     public sealed class ConstSChar : ConstExpr<TSChar> {
@@ -198,6 +193,27 @@ namespace ABT2.Expressions {
 
         public override R Visit<R>(IRValueExprByTypeVisitor<R> visitor) {
             return visitor.VisitConstDouble(this);
+        }
+    }
+
+    public sealed class ConstPointer : ConstExpr<TPointer> {
+        public ConstPointer(UInt64 value, TPointer type, Env env): base(env) {
+            this.Value = value;
+            this.Type = type;
+        }
+
+        public UInt64 Value { get; }
+
+        public override TPointer Type { get; }
+
+        public override void Visit(IRValueExprByTypeVisitor visitor) {
+            // TODO: should I add VisitConstPointer?
+            visitor.VisitPointer(this);
+        }
+
+        public override R Visit<R>(IRValueExprByTypeVisitor<R> visitor) {
+            // TODO: should I add VisitConstPointer?
+            return visitor.VisitPointer(this);
         }
     }
 }

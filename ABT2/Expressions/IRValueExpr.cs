@@ -1,21 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using ABT2.TypeSystem;
+﻿using ABT2.TypeSystem;
 using ABT2.Environment;
 
 namespace ABT2.Expressions {
-    public interface IRValueExpr<out T> where T : IExprType {
 
-        // Type qualifiers for rvalues are unnecessary
-        T Type { get; }
+    // IRValue
+    //    |
+    //    +-----------+
+    //    |           |
+    //IRValue<T> ILValue
+    //    |           |
+    //    +-----------+
+    //    |           |
+    //RValue<T> ILValue<T>
+    //    |           |
+    //    +-----------+
+    //    |           |
+    //  .....     LValue<T>
+    //                |
+    //              .....
+
+    public interface IRValueExpr {
+        IExprType Type { get; }
 
         Env Env { get; }
 
         void Visit(IRValueExprByTypeVisitor visitor);
 
         R Visit<R>(IRValueExprByTypeVisitor<R> visitor);
+    }
+
+    public interface IRValueExpr<out T> : IRValueExpr where T : IExprType {
+        new T Type { get; }
+    }
+
+    public abstract class RValueExpr<T> : IRValueExpr<T> where T : IExprType {
+        public abstract Env Env { get; }
+
+        public abstract T Type { get; }
+
+        IExprType IRValueExpr.Type => this.Type;
+
+        public abstract void Visit(IRValueExprByTypeVisitor visitor);
+
+        public abstract R Visit<R>(IRValueExprByTypeVisitor<R> visitor);
     }
 
     public interface IRValueExprByTypeVisitor {
@@ -51,9 +78,9 @@ namespace ABT2.Expressions {
 
         void VisitPointer(IRValueExpr<TPointer> expr);
 
-        void VisitStructOrUnion(IRValueExpr<StructOrUnionType> expr);
+        void VisitStructOrUnion(IRValueExpr<TStructOrUnion> expr);
 
-        void VisitFunction(IRValueExpr<FunctionType> expr);
+        void VisitFunction(IRValueExpr<TFunction> expr);
 
         void VisitArray(IRValueExpr<ArrayType> expr);
     }
@@ -91,14 +118,28 @@ namespace ABT2.Expressions {
 
         R VisitPointer(IRValueExpr<TPointer> expr);
 
-        R VisitStructOrUnion(IRValueExpr<StructOrUnionType> expr);
+        R VisitStructOrUnion(IRValueExpr<TStructOrUnion> expr);
 
-        R VisitFunction(IRValueExpr<FunctionType> expr);
+        R VisitFunction(IRValueExpr<TFunction> expr);
 
         R VisitArray(IRValueExpr<ArrayType> expr);
     }
 
-    public interface ILValueExpr<out T> : IRValueExpr<T> where T : IExprType {
-        IQualExprType<T> QualType { get; }
+    public interface ILValueExpr : IRValueExpr {
+        IQualExprType<IExprType> QualType { get; }
+    }
+
+    public interface ILValueExpr<out T> : IRValueExpr<T>, ILValueExpr
+        where T : IExprType {
+
+        new IQualExprType<T> QualType { get; }
+    }
+
+    public abstract class LValueExpr<T> : RValueExpr<T>, ILValueExpr<T>
+        where T : class, IExprType {
+
+        public abstract IQualExprType<T> QualType { get; }
+
+        IQualExprType<IExprType> ILValueExpr.QualType => this.QualType;
     }
 }

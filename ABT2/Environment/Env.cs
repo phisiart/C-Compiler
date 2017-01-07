@@ -68,11 +68,11 @@ namespace ABT2.Environment {
         /// <summary>
         /// Generate a new incomplete struct / union type, with a new type ID.
         /// </summary>
-        private Env<StructOrUnionType> NewIncompleteStructOrUnionType(StructOrUnionKind kind) {
+        private Env<TStructOrUnion> NewIncompleteStructOrUnionType(StructOrUnionKind kind) {
             var envTypeID = this.NewTypeID();
-            var type = new StructOrUnionType(envTypeID.Value, kind);
+            var type = new TStructOrUnion(envTypeID.Value, kind);
 
-            return new Env<StructOrUnionType>(envTypeID, type);
+            return new Env<TStructOrUnion>(envTypeID, type);
         }
 
         /// <summary>
@@ -83,14 +83,14 @@ namespace ABT2.Environment {
         /// <summary>
         /// Generate a new incomplete struct type, with a new type ID.
         /// </summary>
-        public Env<StructOrUnionType> NewIncompleteStructType() {
+        public Env<TStructOrUnion> NewIncompleteStructType() {
             return this.NewIncompleteStructOrUnionType(StructOrUnionKind.Struct);
         }
 
         /// <summary>
         /// Generate a new incomplete union type, with a new type ID.
         /// </summary>
-        public Env<StructOrUnionType> NewIncompleteUnionType() {
+        public Env<TStructOrUnion> NewIncompleteUnionType() {
             return this.NewIncompleteStructOrUnionType(StructOrUnionKind.Union);
         }
 
@@ -140,7 +140,7 @@ namespace ABT2.Environment {
             return this.Globals.LookUpSymbol(name);
         }
 
-        public Env AddStructOrUnionLayout(StructOrUnionType type,
+        public Env AddStructOrUnionLayout(TStructOrUnion type,
                                           IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
             switch (type.Kind) {
                 case StructOrUnionKind.Struct:
@@ -156,22 +156,22 @@ namespace ABT2.Environment {
             }
         }
 
-        public Env<StructOrUnionType> NewStructOrUnionType(StructOrUnionKind kind, IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public Env<TStructOrUnion> NewStructOrUnionType(StructOrUnionKind kind, IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
             var envType = this.NewIncompleteStructOrUnionType(kind);
             var type = envType.Value;
             var env = envType.AddStructOrUnionLayout(type, members);
-            return new Env<StructOrUnionType>(env, type);
+            return new Env<TStructOrUnion>(env, type);
         }
 
-        public Env<StructOrUnionType> NewStructType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public Env<TStructOrUnion> NewStructType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
             return this.NewStructOrUnionType(StructOrUnionKind.Struct, members);
         }
 
-        public Env<StructOrUnionType> NewUnionType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
+        public Env<TStructOrUnion> NewUnionType(IEnumerable<ICovariantTuple<IOption<String>, IQualExprType>> members) {
             return this.NewStructOrUnionType(StructOrUnionKind.Union, members);
         }
 
-        public Env AddStructOrUnionLayout(StructOrUnionType type, StructOrUnionLayout layout) {
+        public Env AddStructOrUnionLayout(TStructOrUnion type, StructOrUnionLayout layout) {
             if (this.StructOrUnionLayouts.ContainsKey(type.TypeID)) {
                 throw new InvalidProgramException("Redefinition of struct/union");
             }
@@ -211,7 +211,7 @@ namespace ABT2.Environment {
             return new Env(this, Option<FunctionScope>.None);
         }
 
-        public IOption<StructOrUnionLayout> GetStructOrUnionLayoutOpt(StructOrUnionType type) {
+        public IOption<StructOrUnionLayout> GetStructOrUnionLayoutOpt(TStructOrUnion type) {
             StructOrUnionLayout layout;
             if (this.StructOrUnionLayouts.TryGetValue(type.TypeID, out layout)) {
                 return Option.Some(layout);
@@ -235,14 +235,14 @@ namespace ABT2.Environment {
     /// Base of TypeEntry, ObjectEntry, EnumEntry.
     /// </summary>
     public abstract class Entry {
-        protected Entry(String name, IQualExprType type) {
+        protected Entry(String name, IQualExprType qualType) {
             this.Name = name;
-            this.Type = type;
+            this.QualType = qualType;
         }
 
         public String Name { get; }
 
-        public IQualExprType Type { get; }
+        public IQualExprType QualType { get; }
 
         public abstract R Visit<R>(IEntryVisitor<R> visitor);
     }

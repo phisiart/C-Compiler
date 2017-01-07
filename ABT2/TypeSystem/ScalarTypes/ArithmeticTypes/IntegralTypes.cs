@@ -28,7 +28,7 @@ namespace ABT2.TypeSystem {
         private TSChar() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitSignedChar(this);
+            visitor.VisitSChar(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -46,8 +46,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified signed char type.
     /// </summary>
     public sealed class QualSChar : QualExprType<TSChar> {
-        public QualSChar(TypeQuals typeQuals, TSChar type)
-            : base(typeQuals, type) { }
+        public QualSChar(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TSChar Type => TSChar.Get;
     }
 
     /// <summary>
@@ -57,7 +59,7 @@ namespace ABT2.TypeSystem {
         private TUChar() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitUnsignedChar(this);
+            visitor.VisitUChar(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -75,8 +77,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified unsigned char type.
     /// </summary>
     public sealed class QualUChar : QualExprType<TUChar> {
-        public QualUChar(TypeQuals typeQuals, TUChar type)
-            : base(typeQuals, type) { }
+        public QualUChar(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TUChar Type => TUChar.Get;
     }
 
     /// <summary>
@@ -99,7 +103,7 @@ namespace ABT2.TypeSystem {
         private TSShort() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitSignedShort(this);
+            visitor.VisitSShort(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -117,15 +121,17 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified signed short type.
     /// </summary>
     public sealed class QualSShort : QualExprType<TSShort> {
-        public QualSShort(TypeQuals typeQuals, TSShort type)
-            : base(typeQuals, type) { }
+        public QualSShort(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TSShort Type => TSShort.Get;
     }
 
     public sealed class TUShort : TShort, IUnsignedIntegralType {
         private TUShort() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitUnsignedShort(this);
+            visitor.VisitUShort(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -143,8 +149,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified unsigned short type.
     /// </summary>
     public sealed class QualUShort : QualExprType<TUShort> {
-        public QualUShort(TypeQuals typeQuals, TUShort type)
-            : base(typeQuals, type) { }
+        public QualUShort(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TUShort Type => TUShort.Get;
     }
 
     /// <summary>
@@ -167,7 +175,7 @@ namespace ABT2.TypeSystem {
         private TSInt() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitSignedInt(this);
+            visitor.VisitSInt(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -185,8 +193,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified signed int type.
     /// </summary>
     public sealed class QualSInt : QualExprType<TSInt> {
-        public QualSInt(TypeQuals typeQuals, TSInt type)
-            : base(typeQuals, type) { }
+        public QualSInt(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TSInt Type => TSInt.Get;
     }
 
     /// <summary>
@@ -196,7 +206,7 @@ namespace ABT2.TypeSystem {
         private TUInt() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitUnsignedInt(this);
+            visitor.VisitUInt(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -214,8 +224,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified unsigned int type.
     /// </summary>
     public sealed class QualUInt : QualExprType<TUInt> {
-        public QualUInt(TypeQuals typeQuals, TUInt type)
-            : base(typeQuals, type) { }
+        public QualUInt(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TUInt Type => TUInt.Get;
     }
 
     /// <summary>
@@ -238,7 +250,7 @@ namespace ABT2.TypeSystem {
         private TSLong() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitSignedLong(this);
+            visitor.VisitSLong(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -256,8 +268,10 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified signed long type.
     /// </summary>
     public sealed class QualSLong : QualExprType<TSLong> {
-        public QualSLong(TypeQuals typeQuals, TSLong type)
-            : base(typeQuals, type) { }
+        public QualSLong(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TSLong Type => TSLong.Get;
     }
 
     /// <summary>
@@ -267,7 +281,7 @@ namespace ABT2.TypeSystem {
         private TULong() { }
 
         public override void Visit(IExprTypeVisitor visitor) {
-            visitor.VisitUnsignedLong(this);
+            visitor.VisitULong(this);
         }
 
         public override R Visit<R>(IExprTypeVisitor<R> visitor) {
@@ -285,7 +299,9 @@ namespace ABT2.TypeSystem {
     /// A cv-qualified unsigned long type.
     /// </summary>
     public sealed class QualULong : QualExprType<TULong> {
-        public QualULong(TypeQuals typeQuals, TULong type)
-            : base(typeQuals, type) { }
+        public QualULong(TypeQuals typeQuals)
+            : base(typeQuals) { }
+
+        public override TULong Type => TULong.Get;
     }
 }

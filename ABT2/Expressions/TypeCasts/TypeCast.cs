@@ -3,8 +3,6 @@ using ABT2.Environment;
 using System;
 
 namespace ABT2.Expressions.TypeCasts {
-    
-    using IRValueExpr = IRValueExpr<IExprType>;
 
     public enum TypeCastKind {
         
@@ -14,6 +12,8 @@ namespace ABT2.Expressions.TypeCasts {
         public abstract ToType Type { get; }
 
         public abstract Env Env { get; }
+
+        IExprType Expressions.IRValueExpr.Type => this.Type;
 
         public abstract void Visit(IRValueExprByTypeVisitor visitor);
 

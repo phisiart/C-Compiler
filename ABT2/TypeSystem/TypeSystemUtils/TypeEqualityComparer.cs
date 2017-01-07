@@ -67,21 +67,21 @@ namespace ABT2.TypeSystem {
                 return TypesAreEqual(type.ElemQualType, otherType.ElemQualType);
             }
 
-            public Boolean VisitStructOrUnion(StructOrUnionType type) {
-                if (!(this.OtherType is StructOrUnionType)) {
+            public Boolean VisitStructOrUnion(TStructOrUnion type) {
+                if (!(this.OtherType is TStructOrUnion)) {
                     return false;
                 }
 
-                var otherType = (StructOrUnionType)this.OtherType;
+                var otherType = (TStructOrUnion)this.OtherType;
                 return otherType.TypeID == type.TypeID;
             }
 
-            public Boolean VisitFunction(FunctionType type) {
-                if (!(this.OtherType is FunctionType)) {
+            public Boolean VisitFunction(TFunction type) {
+                if (!(this.OtherType is TFunction)) {
                     return false;
                 }
 
-                var otherType = (FunctionType)this.OtherType;
+                var otherType = (TFunction)this.OtherType;
 
                 if (!TypesAreEqual(otherType.ReturnQualType, type.ReturnQualType)) {
                     return false;
