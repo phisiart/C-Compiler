@@ -6,7 +6,7 @@ namespace ABT2.Expressions.TypeCasts {
 
     public abstract class ArithmeticToDoubleCastExpr<FromType>
         : TypeCastExpr<TDouble, FromType>
-        where FromType : IArithmeticType {
+        where FromType : class, IArithmeticType {
 
         protected ArithmeticToDoubleCastExpr(IRValueExpr<FromType> fromExpr) {
             this.FromExpr = fromExpr;

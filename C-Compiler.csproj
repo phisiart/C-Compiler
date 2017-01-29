@@ -170,6 +170,9 @@
     <Compile Include="ABT2\Expressions\BinaryOperators\Mult.cs" />
     <Compile Include="ABT2\Expressions\BinaryOperators\FloatBinaryOperator.cs" />
     <Compile Include="ABT2\Expressions\BinaryOperators\DoubleBinaryOperator.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\Xor.cs" />
+    <Compile Include="ABT2\Expressions\TypeCasts\IntegralPromotion.cs" />
+    <Compile Include="ABT2\Expressions\BinaryOperators\LogicalAnd.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

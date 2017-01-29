@@ -2,7 +2,8 @@
 
 namespace ABT2.Expressions {
     public abstract class SIntBinaryOperator : BinaryOperator<TSInt> {
-        protected SIntBinaryOperator(IRValueExpr<TSInt> left, IRValueExpr<TSInt> right)
+        protected SIntBinaryOperator(IRValueExpr<TSInt> left,
+                                     IRValueExpr<TSInt> right)
             : base(left, right) { }
 
         public override TSInt Type => TSInt.Get;

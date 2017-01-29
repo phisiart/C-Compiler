@@ -1,11 +1,11 @@
-﻿using System;
-using ABT2.TypeSystem;
+﻿using ABT2.TypeSystem;
+using ABT2.Expressions.TypeCasts;
 
 namespace ABT2.Expressions {
-    public interface IMult : IBinaryOperator<IArithmeticType> { }
+    public interface IMult : IBinaryOperator { }
 
-    public interface IMult<out T> : IBinaryOperator<T>, IAdd
-        where T : IArithmeticType { }
+    public interface IMult<out T> : IBinaryOperator<T>, IMult
+        where T : class, IArithmeticType { }
 
     public sealed class SIntMult : SIntBinaryOperator, IMult<TSInt> {
         public SIntMult(IRValueExpr<TSInt> left, IRValueExpr<TSInt> right)
@@ -40,8 +40,43 @@ namespace ABT2.Expressions {
     public static class Mult {
         public static IMult Create(IRValueExpr<IArithmeticType> left,
                                    IRValueExpr<IArithmeticType> right) {
-            // TODO: implement this
-            throw new NotImplementedException();
+
+            return UsualArithmeticConversion.Perform(left, right)
+                                            .Visit(MultCreator.Get);
+        }
+
+        private class MultCreator : IUACReturnVisitor<IMult> {
+            public static MultCreator Get { get; } = new MultCreator();
+
+            public IMult VisitDouble(IRValueExpr<TDouble> left,
+                                     IRValueExpr<TDouble> right) {
+                return new DoubleMult(left, right);
+            }
+
+            public IMult VisitFloat(IRValueExpr<TFloat> left,
+                                    IRValueExpr<TFloat> right) {
+                return new FloatMult(left, right);
+            }
+
+            public IMult VisitSInt(IRValueExpr<TSInt> left,
+                                   IRValueExpr<TSInt> right) {
+                return new SIntMult(left, right);
+            }
+
+            public IMult VisitSLong(IRValueExpr<TSLong> left,
+                                    IRValueExpr<TSLong> right) {
+                return new SLongMult(left, right);
+            }
+
+            public IMult VisitUInt(IRValueExpr<TUInt> left,
+                                   IRValueExpr<TUInt> right) {
+                return new UIntMult(left, right);
+            }
+
+            public IMult VisitULong(IRValueExpr<TULong> left,
+                                    IRValueExpr<TULong> right) {
+                return new ULongMult(left, right);
+            }
         }
     }
 }

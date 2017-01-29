@@ -8,7 +8,10 @@ namespace ABT2.Expressions.TypeCasts {
         
     }
 
-    public abstract class TypeCastExpr<ToType, FromType> : IRValueExpr<ToType> where ToType : IExprType where FromType : IExprType {
+    public abstract class TypeCastExpr<ToType, FromType> : IRValueExpr<ToType>
+        where ToType : class, IExprType
+        where FromType : class, IExprType {
+
         public abstract ToType Type { get; }
 
         public abstract Env Env { get; }
@@ -30,13 +33,17 @@ namespace ABT2.Expressions.TypeCasts {
         /// If the expression is a constant, will calculate cast result and return a new constant.
         /// So the return type can only be IExpr.
         /// </summary>
-        public static IRValueExpr<T> Create<T>(T type, IRValueExpr expr) where T : IExprType {
+        public static IRValueExpr<T> Create<T>(T type, IRValueExpr expr)
+            where T : class, IExprType {
+
             TypeCastCreator creator = new TypeCastCreator(expr);
             IRValueExpr ret = type.Visit(creator);
             return (IRValueExpr<T>)ret;
         }
 
-        public static IRValueExpr<T> CastTo<T>(this IRValueExpr expr, T type) where T : IExprType {
+        public static IRValueExpr<T> CastTo<T>(this IRValueExpr expr, T type)
+            where T : class, IExprType {
+
             return Create<T>(type, expr);
         }
     }

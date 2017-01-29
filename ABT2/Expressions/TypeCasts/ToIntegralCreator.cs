@@ -3,7 +3,7 @@ using System.Diagnostics.Contracts;
 using ABT2.TypeSystem;
 
 namespace ABT2.Expressions.TypeCasts {
-    public abstract class ToIntegralCreator<T> : IRValueExprByTypeVisitor<IRValueExpr<T>> where T : IIntegralType {
+    public abstract class ToIntegralCreator<T> : IRValueExprByTypeVisitor<IRValueExpr<T>> where T : class, IIntegralType {
         protected ToIntegralCreator() { }
 
         public abstract T ToType { get; }

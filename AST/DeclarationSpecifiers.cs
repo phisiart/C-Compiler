@@ -176,7 +176,7 @@ namespace AST {
         }
 
         /// <summary>
-        /// Get qualified Type, based on Type specifiers & Type qualifiers.
+        /// Get qualified Type, based on Type specifiers and Type qualifiers.
         /// </summary>
         [SemantMethod]
         public ISemantReturn<ExprType> GetExprType(Env env) {

@@ -6,7 +6,7 @@ namespace ABT2.Expressions.TypeCasts {
 
     public abstract class ArithmeticToFloatCastExpr<FromType>
         : TypeCastExpr<TFloat, FromType>
-        where FromType : IArithmeticType {
+        where FromType : class, IArithmeticType {
 
         protected ArithmeticToFloatCastExpr(IRValueExpr<FromType> fromExpr) {
             this.FromExpr = fromExpr;

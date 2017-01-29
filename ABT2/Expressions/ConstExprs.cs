@@ -6,9 +6,12 @@ namespace ABT2.Expressions {
     
     public interface IConstExpr : IRValueExpr { }
 
-    public interface IConstExpr<out T> : IConstExpr, IRValueExpr<T> where T : IExprType { }
+    public interface IConstExpr<out T> : IConstExpr, IRValueExpr<T>
+        where T : class, IExprType { }
 
-    public abstract class ConstExpr<T> : RValueExpr<T>, IConstExpr<T> where T : IExprType {
+    public abstract class ConstExpr<T> : RValueExpr<T>, IConstExpr<T>
+        where T : class, IExprType {
+
         protected ConstExpr(Env env) {
             this.Env = env;
         }

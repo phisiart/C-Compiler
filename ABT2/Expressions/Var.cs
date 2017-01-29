@@ -7,7 +7,7 @@ namespace ABT2.Expressions {
     public interface IVar : ILValueExpr { }
 
     public interface IVar<out T> : ILValueExpr<T>, IVar
-        where T : IExprType { }
+        where T : class, IExprType { }
 
     public abstract class Var<T> : LValueExpr<T>, IVar<T>
         where T : class, IExprType {

@@ -5,8 +5,8 @@ using ABT2.TypeSystem;
 using ABT2.Expressions;
 
 namespace ABT2.Initialization {
-    using IRValueExpr = IRValueExpr<IExprType>;
-    using IQualExprType = IQualExprType<IExprType>;
+    //using IRValueExpr = IRValueExpr<IExprType>;
+    //using IQualExprType = IQualExprType<IExprType>;
     using static TypeSystemUtils;
 
     public abstract class Initializer { }
@@ -33,8 +33,9 @@ namespace ABT2.Initialization {
             this.Expr = expr;
         }
 
-        Int64 Offset { get; }
-        IRValueExpr Expr { get; }
+        public Int64 Offset { get; }
+
+        public IRValueExpr Expr { get; }
     }
 
     public class InitializerVisitor : IExprTypeVisitor {

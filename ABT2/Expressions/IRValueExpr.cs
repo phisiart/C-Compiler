@@ -29,11 +29,15 @@ namespace ABT2.Expressions {
         R Visit<R>(IRValueExprByTypeVisitor<R> visitor);
     }
 
-    public interface IRValueExpr<out T> : IRValueExpr where T : IExprType {
+    public interface IRValueExpr<out T> : IRValueExpr
+        where T : class, IExprType {
+
         new T Type { get; }
     }
 
-    public abstract class RValueExpr<T> : IRValueExpr<T> where T : IExprType {
+    public abstract class RValueExpr<T> : IRValueExpr<T>
+        where T : class, IExprType {
+
         public abstract Env Env { get; }
 
         public abstract T Type { get; }
@@ -130,7 +134,7 @@ namespace ABT2.Expressions {
     }
 
     public interface ILValueExpr<out T> : IRValueExpr<T>, ILValueExpr
-        where T : IExprType {
+        where T : class, IExprType {
 
         new IQualExprType<T> QualType { get; }
     }

@@ -1,7 +1,5 @@
-﻿using System;
+﻿namespace ABT2.TypeSystem {
 
-namespace ABT2.TypeSystem {
-    
     /// <summary>
     /// A type visitor without a result.
     /// </summary>

@@ -5,7 +5,7 @@ using ABT2.TypeSystem;
 namespace ABT2.Expressions.TypeCasts {
     public abstract class ToFloatingPointCreator<T>
         : IRValueExprByTypeVisitor<IRValueExpr<T>>
-        where T : IFloatingPointType {
+        where T : class, IFloatingPointType {
 
         protected ToFloatingPointCreator() { }
 

@@ -118,7 +118,7 @@
     }
 
     /// <summary>
-    /// BitwiseAndAssign: a &= b
+    /// BitwiseAndAssign: <c>a &amp;= b</c>
     /// </summary>
     public sealed class BitwiseAndAssign : AssignOp {
         private BitwiseAndAssign(Expr left, Expr right)

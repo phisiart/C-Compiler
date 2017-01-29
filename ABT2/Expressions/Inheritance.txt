@@ -1,0 +1,39 @@
+IRValue
+  |   |
+  |   IRValue<T>
+  |     |
+  IBin  |
+  |  |  |
+  | IBin<T>
+  |     |
+  IAdd  |
+     |  |
+     IAdd<T>
+
+  IRValue
+     |
+  +--+--+
+  |     |
+  |     IRValue<T>
+  |       |          |
+  |       |          |
+  ILValue |          |
+          ILValue<T>     RValue<T>
+               |
+               LValue<T>
+
+ IRValue
+    |
+    +-----------+
+    |           |
+IRValue<T>   ILValue
+    |           |
+    +-----------+
+    |           |
+RValue<T>   ILValue<T>
+    |           |
+    +-----------+
+    |           |
+  .....     LValue<T>
+                |
+              .....

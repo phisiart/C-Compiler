@@ -6,7 +6,7 @@ namespace ABT2.Expressions.TypeCasts {
 
     public abstract class IntegralToSIntCastExpr<FromType>
         : TypeCastExpr<TSInt, FromType>
-        where FromType : IIntegralType {
+        where FromType : class, IIntegralType {
 
         protected IntegralToSIntCastExpr(IRValueExpr<FromType> fromExpr) {
             this.FromExpr = fromExpr;

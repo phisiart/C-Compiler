@@ -1,11 +1,10 @@
 ﻿using System;
 using ABT2.TypeSystem;
 using ABT2.Environment;
-using ABT2.Expressions.TypeCasts;
 
 namespace ABT2.Expressions {
-    
-    public abstract class Assign<T> : RValueExpr<T> where T : IExprType {
+
+    public abstract class Assign<T> : RValueExpr<T> where T : class, IExprType {
         protected Assign(ILValueExpr<T> dest, IRValueExpr<T> src) {
             this.Dest = dest;
             this.Src = src;

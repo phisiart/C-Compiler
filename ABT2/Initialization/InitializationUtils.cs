@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Collections.Generic;
 using ABT2.TypeSystem;
 
 namespace ABT2.Initialization {
     using IQualExprType = IQualExprType<IExprType>;
 
-    public static partial class InitializationUtils {
+    public static class InitializationUtils {
+        
         public sealed class TypeAndInittialzer {
             public TypeAndInittialzer(IQualExprType qualType, ImmutableList<InitializerExprEntry> entries) {
                 this.QualType = qualType;
@@ -22,6 +24,20 @@ namespace ABT2.Initialization {
             qualType.Type.Visit(visitor);
             var entries = visitor.Entries;
             return new TypeAndInittialzer(qualType, entries.ToImmutable());
+        }
+
+        public static void Match(
+            Int64 offset,
+            ImmutableList<InitializerExprEntry>.Builder builder,
+            IEnumerator<Initializer> initializers,
+            IEnumerator<IQualExprType> types
+        ) {
+            if (!types.MoveNext()) {
+                // No types!
+                return;
+            }
+
+
         }
     }
 }

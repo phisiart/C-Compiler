@@ -8,6 +8,8 @@ namespace ABT2.TypeSystem {
 
     public interface IUnsignedIntegralType : IIntegralType { }
 
+    public interface IIntegralPromotionReturnType : IIntegralType { }
+
     /// <summary>
     /// The abstract base class of signed and unsigned chars.
     /// </summary>
@@ -158,7 +160,7 @@ namespace ABT2.TypeSystem {
     /// <summary>
     /// The abstract base class of signed and unsigned ints.
     /// </summary>
-    public abstract class TInt : IIntegralType {
+    public abstract class TInt : IIntegralType, IIntegralPromotionReturnType {
         public abstract void Visit(IExprTypeVisitor visitor);
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
@@ -233,7 +235,7 @@ namespace ABT2.TypeSystem {
     /// <summary>
     /// The abstract base class of signed and unsigned longs.
     /// </summary>
-    public abstract class TLong : IIntegralType {
+    public abstract class TLong : IIntegralType, IIntegralPromotionReturnType {
         public abstract void Visit(IExprTypeVisitor visitor);
 
         public abstract R Visit<R>(IExprTypeVisitor<R> visitor);
