@@ -217,3 +217,9 @@ pip-log.txt
 .mr.developer.cfg
 
 *.userprefs
+
+# Python test scripts
+TestPrograms/*.gcc
+TestPrograms/*.gcc.out
+TestPrograms/*.out
+TestPrograms/*.s
