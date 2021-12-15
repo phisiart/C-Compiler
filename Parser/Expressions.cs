@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using AST;
 using static Parsing.ParserCombinator;
+using Attribute = AST.Attribute;
 
 namespace Parsing {
     public partial class CParsers {
