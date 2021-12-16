@@ -218,7 +218,7 @@ pip-log.txt
 
 *.userprefs
 
-# Python test scripts
+# Python testing
 TestPrograms/*.gcc
 TestPrograms/*.gcc.out
 TestPrograms/*.out

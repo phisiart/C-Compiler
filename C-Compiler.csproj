@@ -6,46 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Scanner\FSAGraphs\char.dot" />
-    <None Include="Scanner\FSAGraphs\constchar.dot" />
-    <None Include="Scanner\FSAGraphs\draw_fsas.py" />
-    <None Include="Scanner\FSAGraphs\float.dot" />
-    <None Include="Scanner\FSAGraphs\identifier.dot" />
-    <None Include="Scanner\FSAGraphs\int.dot" />
-    <None Include="Scanner\FSAGraphs\newline.dot" />
-    <None Include="Scanner\FSAGraphs\operator.dot" />
-    <None Include="Scanner\FSAGraphs\README.md" />
-    <None Include="Scanner\FSAGraphs\space.dot" />
-    <None Include="Scanner\FSAGraphs\string.dot" />
-    <None Include="TestPrograms\clean_all.py" />
-    <None Include="TestPrograms\test_all.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Scanner\FSAGraphs\char.svg" />
-    <Content Include="Scanner\FSAGraphs\constchar.svg" />
-    <Content Include="Scanner\FSAGraphs\float.svg" />
-    <Content Include="Scanner\FSAGraphs\identifier.svg" />
-    <Content Include="Scanner\FSAGraphs\int.svg" />
-    <Content Include="Scanner\FSAGraphs\operator.svg" />
-    <Content Include="Scanner\FSAGraphs\space.svg" />
-    <Content Include="Scanner\FSAGraphs\string.svg" />
-    <Content Include="TestPrograms\ExternFunction.c" />
-    <Content Include="TestPrograms\FloatCalculation.c" />
-    <Content Include="TestPrograms\FunctionPointer.c" />
-    <Content Include="TestPrograms\Goto.c" />
-    <Content Include="TestPrograms\IfElseStmt.c" />
-    <Content Include="TestPrograms\LinkedList.c" />
-    <Content Include="TestPrograms\StaticFunction.c" />
-    <Content Include="TestPrograms\StaticObject.c" />
-    <Content Include="TestPrograms\StructReturn.c" />
-    <Content Include="TestPrograms\SwitchStmt.c" />
-    <Content Include="TestPrograms\WeiredSwitch.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.13.2" />
-    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Scanner\FSAGraphs\*.dot" />
+    <None Include="TestPrograms\*.py" />
+    <Content Include="Scanner\FSAGraphs\*.svg" />
+    <Content Include="TestPrograms\*.c" />
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+	<PackageReference Include="NUnit" Version="3.13.2" />
+	<PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
   </ItemGroup>
 </Project>
