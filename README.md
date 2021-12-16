@@ -6,67 +6,14 @@ C Compiler in C#
 This intends to be a full ANSI C compiler. It generates x86 (32-bit) assembly code in linux. The goal is to produce `.s` files that `gcc`'s assembler and linker could directly use.
 
 ## Building this compiler
-This C compiler is written in **C# 6.0**. In order to build it, you need to have a relatively new version of C# compiler.
-
-#### Windows
-To build it in Windows, you need to use **Microsoft Visual Studio 2015**. Even Visual Studio 2013 is too old. You can download VS2015 Community Edition [here](https://www.visualstudio.com/).
-
-After downloading the source, open `C-Compiler.sln` in Visual Studio.
-
-I'm using 2 NuGet packages in this project: `NUnit 2.6`, and `System.Collections.Immutable`. Visual Studio should be able to restore these packages automatically.
-
-#### OS X
-To build it in OS X, you need to use Xamarin Studio, which includes a Mono compiler. It turns out older versions of Xamarin Studio don;t support C# 6.0 features very well (I got compiler errors). So, I choose to use the **Alpha** channel of Xamarin which gives me a newer Mono. You can simply install the latest Xamarin Studio Alpha [here](https://releases.xamarin.com/category/alpha/).
-
-After downloading the source, open `C-Compiler.sln` in Xamarin Studio.
-
-I'm using 2 NuGet packages in this project: `NUnit 2.6`, and `System.Collections.Immutable`. Xamarin Studio should be able to restore these packages automatically.
-
-#### Linux
-To build it in Linux, you need to have Mono. I'm using Mono 4.3.0 on my Linux.
-
-It seems that `apt-get` would give you a very old Mono. Please check the instructions [here](http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives) to install Mono from the **Alpha** channel. Please make sure that you have **NuGet** installed.
-
-I'm using 2 NuGet packages in this project: `NUnit 2.6`, and `System.Collections.Immutable`. You need to type the following command to restore these packages.
-
-```
-$ nuget restore
-```
-
-Note that this command might fail, and you might be seeing:
-
-```
-WARNING: The initialization function tries to access Value on this instance
-WARNING: Error getting response stream (Write: The authentication or decryption has failed.): SendFailure
-Unable to find version '2.6.4' of package 'NUnit'.
-Unable to find version '1.1.38-beta-23409' of package 'System.Collections.Immutable'.
-```
-
-This is due to an authentication error. I've found the solution [here](http://stackoverflow.com/questions/15181888/nuget-on-linux-error-getting-response-stream) which requires you to type the following commands to let your computer trust certain certificates.
-
-```
-$ sudo mozroots --import --machine --sync
-$ sudo certmgr -ssl -m https://go.microsoft.com
-$ sudo certmgr -ssl -m https://nugetgallery.blob.core.windows.net
-$ sudo certmgr -ssl -m https://nuget.org
-```
-
-Then you can restore the packages.
-
-To build the project, type
-
-```
-$ xbuild
-```
-
-And you will get a `C-Compiler.exe` file. To run it, type the following command:
-
-```
-$ mono C-Compiler.exe [arguments]
-```
+1) Download and install [.NET 6.0](https://dotnet.microsoft.com/en-us/) or above.
+2) Run `dotnet build [-c %CONFIGURATION%]`, where %CONFIGURATION% is the build configuration - `Debug` or `Release` (`Debug` by default).
 
 ## How to use it
-Simply pass in a file name as the only argument. The compiler will output assembly code to the terminal.
+Executable files are located in `.\bin\%CONFIGURATION%\net6.0` directory.
+Simply pass in a file name as the only argument: `dotnet C-Compiler.dll %source.c%` or `C-Compiler %source.c%`
+
+The compiler will output assembly code to the terminal.
 
 ### Example
 
