@@ -1,8 +1,7 @@
 language: csharp
-mono:
-  - beta
-solution: C-Compiler.sln
+mono: none
+dotnet: 6.0.100
 install:
-  - nuget restore C-Compiler.sln
+  - dotnet restore
 script:
-  - xbuild C-Compiler.sln
+  - dotnet build
