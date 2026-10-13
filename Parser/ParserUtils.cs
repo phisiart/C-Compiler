@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using LexicalAnalysis;
 using AST;
 
@@ -57,15 +58,111 @@ namespace Parsing {
     }
 
     /// <summary>
+    /// An immutable cursor into the token list.
+    /// All cursors created from the same list share a record of the furthest
+    /// point any parser has reached, which is used to report syntax errors.
+    /// </summary>
+    public sealed class TokenStream {
+        public TokenStream(IEnumerable<Token> tokens)
+            : this(WithEndMarker(tokens), 0, new FailureTracker()) { }
+
+        private TokenStream(ImmutableArray<Token> tokens, Int32 position, FailureTracker tracker) {
+            this.Tokens = tokens;
+            this.Position = position;
+            this.Tracker = tracker;
+        }
+
+        private static ImmutableArray<Token> WithEndMarker(IEnumerable<Token> tokens) {
+            var array = tokens.ToImmutableArray();
+            if (array.IsEmpty || array[array.Length - 1].Kind != TokenKind.NONE) {
+                array = array.Add(new EmptyToken());
+            }
+            return array;
+        }
+
+        private ImmutableArray<Token> Tokens { get; }
+        private FailureTracker Tracker { get; }
+
+        /// <summary>
+        /// The index of the current token.
+        /// </summary>
+        public Int32 Position { get; }
+
+        public Token Current => this.Tokens[this.Position];
+
+        public Boolean IsAtEnd => this.Current.Kind == TokenKind.NONE;
+
+        public TokenStream Advance() {
+            if (this.IsAtEnd) {
+                throw new InvalidOperationException("Cannot advance past the end of the token stream.");
+            }
+            return new TokenStream(this.Tokens, this.Position + 1, this.Tracker);
+        }
+
+        /// <summary>
+        /// Records that <paramref name="expected"/> was tried and did not match the current token.
+        /// </summary>
+        public void Expected(String expected) =>
+            this.Tracker.Record(this.Position, expected);
+
+        /// <summary>
+        /// Builds an error describing the furthest point the parse reached.
+        /// </summary>
+        public CompilationError SyntaxError() {
+            Int32 position = Math.Max(this.Tracker.FurthestPosition, this.Position);
+            Token token = this.Tokens[position];
+            var expected = position == this.Tracker.FurthestPosition
+                ? this.Tracker.FurthestExpected
+                : ImmutableSortedSet<String>.Empty;
+
+            String message;
+            if (expected.Count == 0 || expected.Count > MaxExpectedInMessage) {
+                message = $"unexpected {token.Describe()}";
+            } else {
+                String alternatives = expected.Count == 1
+                    ? expected.Single()
+                    : String.Join(", ", expected.Take(expected.Count - 1)) + " or " + expected.Last();
+                message = token.Kind == TokenKind.NONE
+                    ? $"expected {alternatives} at end of file"
+                    : $"expected {alternatives} before {token.Describe()}";
+            }
+            return new CompilationError(message, token.Location);
+        }
+
+        /// <summary>
+        /// Listing more alternatives than this is more noise than help.
+        /// </summary>
+        private const Int32 MaxExpectedInMessage = 3;
+
+        private sealed class FailureTracker {
+            public Int32 FurthestPosition { get; private set; } = -1;
+
+            public ImmutableSortedSet<String> FurthestExpected { get; private set; } =
+                ImmutableSortedSet<String>.Empty;
+
+            public void Record(Int32 position, String expected) {
+                if (position > this.FurthestPosition) {
+                    this.FurthestPosition = position;
+                    this.FurthestExpected = ImmutableSortedSet.Create(StringComparer.Ordinal, expected);
+                } else if (position == this.FurthestPosition) {
+                    this.FurthestExpected = this.FurthestExpected.Add(expected);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// The input Type for every parsing function.
     /// </summary>
     public sealed class ParserInput {
-        public ParserInput(ParserEnvironment environment, IEnumerable<Token> source) {
+        public ParserInput(ParserEnvironment environment, TokenStream source) {
             this.Environment = environment;
             this.Source = source;
         }
+        public ParserInput(ParserEnvironment environment, IEnumerable<Token> tokens)
+            : this(environment, new TokenStream(tokens)) { }
         public ParserEnvironment Environment { get; }
-        public IEnumerable<Token> Source { get; }
+        public TokenStream Source { get; }
         public IParserResult<R> Parse<R>(IParser<R> parser) =>
             parser.Parse(this);
     }
@@ -80,7 +177,7 @@ namespace Parsing {
 
         ParserEnvironment Environment { get; }
 
-        IEnumerable<Token> Source { get; }
+        TokenStream Source { get; }
     }
 
     /// <summary>
@@ -99,7 +196,7 @@ namespace Parsing {
             }
         }
 
-        public IEnumerable<Token> Source {
+        public TokenStream Source {
             get {
                 throw new NotSupportedException("Parser failed, can't get source.");
             }
@@ -110,7 +207,7 @@ namespace Parsing {
     /// A succeeded result.
     /// </summary>
     public sealed class ParserSucceeded : IParserResult {
-        public ParserSucceeded(ParserEnvironment environment, IEnumerable<Token> source) {
+        public ParserSucceeded(ParserEnvironment environment, TokenStream source) {
             this.Environment = environment;
             this.Source = source;
         }
@@ -121,12 +218,12 @@ namespace Parsing {
 
         public ParserEnvironment Environment { get; }
 
-        public IEnumerable<Token> Source { get; }
+        public TokenStream Source { get; }
 
-        public static ParserSucceeded Create(ParserEnvironment environment, IEnumerable<Token> source) =>
+        public static ParserSucceeded Create(ParserEnvironment environment, TokenStream source) =>
         new ParserSucceeded(environment, source);
 
-        public static ParserSucceeded<R> Create<R>(R result, ParserEnvironment environment, IEnumerable<Token> source) =>
+        public static ParserSucceeded<R> Create<R>(R result, ParserEnvironment environment, TokenStream source) =>
         new ParserSucceeded<R>(result, environment, source);
     }
 
@@ -156,7 +253,7 @@ namespace Parsing {
             }
         }
 
-        public IEnumerable<Token> Source {
+        public TokenStream Source {
             get {
                 throw new NotSupportedException("Parser failed, can't get source.");
             }
@@ -164,7 +261,7 @@ namespace Parsing {
     }
 
     public sealed class ParserSucceeded<R> : IParserResult<R> {
-        public ParserSucceeded(R result, ParserEnvironment environment, IEnumerable<Token> source) {
+        public ParserSucceeded(R result, ParserEnvironment environment, TokenStream source) {
             this.Result = result;
             this.Environment = environment;
             this.Source = source;
@@ -178,7 +275,7 @@ namespace Parsing {
 
         public ParserEnvironment Environment { get; }
 
-        public IEnumerable<Token> Source { get; }
+        public TokenStream Source { get; }
     }
 
 }

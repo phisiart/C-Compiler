@@ -12,8 +12,9 @@ namespace CompilerTests {
             System.Console.WriteLine(Directory.GetCurrentDirectory());
 
             var files = Directory
-                .GetFiles("../../TestPrograms")
+                .GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestPrograms"))
                 .Where(_ => _.EndsWith(".c"));
+            Assert.IsNotEmpty(files);
 
             var sources = files.Select(File.ReadAllText).ToArray();
 
@@ -24,7 +25,7 @@ namespace CompilerTests {
                 var input = new ParserInput(env, scanner.Tokens);
                 var result = CParsers.TranslationUnit.Parse(input);
                 Assert.IsTrue(result.IsSuccessful);
-                Assert.IsTrue(result.Source.Count() == 1);
+                Assert.IsTrue(result.Source.IsAtEnd);
             }
         }
     }

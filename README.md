@@ -11,9 +11,18 @@ This intends to be a full ANSI C compiler. It generates x86 (32-bit) assembly co
 
 ## How to use it
 Executable files are located in `.\bin\%CONFIGURATION%\net6.0` directory.
-Simply pass in a file name as the only argument: `dotnet C-Compiler.dll %source.c%` or `C-Compiler %source.c%`
+Pass in the source file name: `dotnet C-Compiler.dll %source.c%` or `C-Compiler %source.c%`
 
-The compiler will output assembly code to the terminal.
+The compiler will output assembly code to the terminal. Use `-o %output.s%` to write it to a file instead, or pass `-` to read the source from standard input.
+
+If the program has an error, the compiler prints a message in the same format as `gcc` and exits with a non-zero status:
+
+```
+LinkedList.c:12:2: error: unexpected 'return'
+```
+
+## Running the tests
+Run `dotnet test`.
 
 ### Example
 

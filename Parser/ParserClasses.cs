@@ -635,9 +635,10 @@ namespace Parsing {
         public OperatorVal OperatorVal { get; }
 
         public IParserResult Consume(ParserInput input) {
-            if ((input.Source.First() as TokenOperator)?.Val == this.OperatorVal) {
-                return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
+            if ((input.Source.Current as TokenOperator)?.Val == this.OperatorVal) {
+                return ParserSucceeded.Create(input.Environment, input.Source.Advance());
             }
+            input.Source.Expected($"'{TokenOperator.Operators.First(pair => pair.Value == this.OperatorVal).Key}'");
             return new ParserFailed();
         }
     }
@@ -645,11 +646,12 @@ namespace Parsing {
     public class IdentifierParser : IParser<String> {
         public RuleCombining Combining => RuleCombining.NONE;
         public IParserResult<String> Parse(ParserInput input) {
-            var token = input.Source.First() as TokenIdentifier;
+            var token = input.Source.Current as TokenIdentifier;
             if (token == null) {
+                input.Source.Expected("identifier");
                 return new ParserFailed<String>();
             }
-            return ParserSucceeded.Create(token.Val, input.Environment, input.Source.Skip(1));
+            return ParserSucceeded.Create(token.Val, input.Environment, input.Source.Advance());
         }
     }
 
@@ -661,9 +663,10 @@ namespace Parsing {
         public static KeywordConsumer Create(KeywordVal keywordVal) =>
             new KeywordConsumer(keywordVal);
         public IParserResult Consume(ParserInput input) {
-            if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
-                return ParserSucceeded.Create(input.Environment, input.Source.Skip(1));
+            if ((input.Source.Current as TokenKeyword)?.Val == this.KeywordVal) {
+                return ParserSucceeded.Create(input.Environment, input.Source.Advance());
             }
+            input.Source.Expected(TokenKeyword.Describe(this.KeywordVal));
             return new ParserFailed();
         }
     }
@@ -680,9 +683,10 @@ namespace Parsing {
         public R Result { get; }
 
         public IParserResult<R> Parse(ParserInput input) {
-            if ((input.Source.First() as TokenKeyword)?.Val == this.KeywordVal) {
-                return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Skip(1));
+            if ((input.Source.Current as TokenKeyword)?.Val == this.KeywordVal) {
+                return ParserSucceeded.Create(this.Result, input.Environment, input.Source.Advance());
             }
+            input.Source.Expected(TokenKeyword.Describe(this.KeywordVal));
             return new ParserFailed<R>();
         }
     }

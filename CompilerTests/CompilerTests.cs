@@ -15,8 +15,9 @@ namespace CompilerTests {
             Console.WriteLine(Directory.GetCurrentDirectory());
 
             var files = Directory
-                .GetFiles("../../TestPrograms")
+                .GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestPrograms"))
                 .Where(_ => _.EndsWith(".c"));
+            Assert.IsNotEmpty(files);
 
             var sources = files.Select(File.ReadAllText).ToArray();
 

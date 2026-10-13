@@ -44,6 +44,11 @@ namespace LexicalAnalysis {
 
         public override TokenKind Kind { get; } = TokenKind.KEYWORD;
         public KeywordVal Val { get; }
+
+        /// <summary>
+        /// How the keyword is spelled in source, quoted for an error message.
+        /// </summary>
+        public static String Describe(KeywordVal val) => $"'{val.ToString().ToLowerInvariant()}'";
         public static Dictionary<String, KeywordVal> Keywords { get; } = new Dictionary<String, KeywordVal>(StringComparer.InvariantCultureIgnoreCase) {
             { "AUTO",        KeywordVal.AUTO      },
             { "DOUBLE",      KeywordVal.DOUBLE    },
