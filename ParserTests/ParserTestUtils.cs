@@ -16,7 +16,7 @@ namespace CompilerTests {
             var input = new ParserInput(env, scanner.Tokens);
             var result = parser.Parse(input);
             Assert.IsTrue(result.IsSuccessful);
-            Assert.IsTrue(result.Source.Count() == 1);
+            Assert.IsTrue(result.Source.IsAtEnd);
         }
 
         public static void TestParserRule<R>(String source, IParser<R> parser) =>

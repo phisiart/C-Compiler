@@ -1,7 +1,31 @@
 ﻿using System;
+using System.Text;
 
 namespace LexicalAnalysis {
     public static class Utils {
+
+        // Quote : Char -> String
+        // ======================
+        // Wraps a character in quotes for an error message, escaping it if it is not printable.
+        //
+        public static String Quote(Char ch) => Quote(ch.ToString());
+
+        // Quote : String -> String
+        // ========================
+        // Wraps a piece of source text in quotes for an error message.
+        // Long text is truncated, and unprintable characters are escaped.
+        //
+        public static String Quote(String text) {
+            const Int32 maxLength = 20;
+            if (text.Length > maxLength) {
+                text = text.Substring(0, maxLength) + "...";
+            }
+            var builder = new StringBuilder();
+            foreach (Char ch in text) {
+                builder.Append(Char.IsControl(ch) ? $"\\x{(Int32)ch:x2}" : ch.ToString());
+            }
+            return $"'{builder}'";
+        }
 
         // IsEscapeChar : Char -> Boolean
         // ==============================

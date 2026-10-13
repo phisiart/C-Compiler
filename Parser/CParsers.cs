@@ -15,50 +15,68 @@ namespace Parsing {
             SetStatementRules();
         }
 
-        public static IParserResult<TranslnUnit> Parse(IEnumerable<Token> tokens) =>
-            TranslationUnit.Parse(new ParserInput(new ParserEnvironment(), tokens));
+        /// <summary>
+        /// Parses a whole translation unit.
+        /// Throws a <see cref="CompilationError"/> pointing at the furthest token the parser
+        /// could reach if the tokens do not form a valid translation unit.
+        /// </summary>
+        public static TranslnUnit Parse(IEnumerable<Token> tokens) {
+            var source = new TokenStream(tokens);
+            var result = TranslationUnit.Parse(new ParserInput(new ParserEnvironment(), source));
+            if (!result.IsSuccessful) {
+                throw source.SyntaxError();
+            }
+            if (!result.Source.IsAtEnd) {
+                throw result.Source.SyntaxError();
+            }
+            return result.Result;
+        }
 
         public class ConstCharParser : IParser<Expr> {
             public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                var token = input.Source.First() as TokenCharConst;
+                var token = input.Source.Current as TokenCharConst;
                 if (token == null) {
+                    input.Source.Expected("character constant");
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new IntLiteral(token.Value, TokenInt.IntSuffix.NONE), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new IntLiteral(token.Value, TokenInt.IntSuffix.NONE), input.Environment, input.Source.Advance());
             }
         }
 
         public class ConstIntParser : IParser<Expr> {
             public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                var token = input.Source.First() as TokenInt;
+                var token = input.Source.Current as TokenInt;
                 if (token == null) {
+                    input.Source.Expected("integer constant");
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new IntLiteral(token.Val, token.Suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new IntLiteral(token.Val, token.Suffix), input.Environment, input.Source.Advance());
             }
         }
 
         public class ConstFloatParser : IParser<Expr> {
             public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                var token = input.Source.First() as TokenFloat;
+                var token = input.Source.Current as TokenFloat;
                 if (token == null) {
+                    input.Source.Expected("floating constant");
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new FloatLiteral(token.Value, token.Suffix), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new FloatLiteral(token.Value, token.Suffix), input.Environment, input.Source.Advance());
             }
         }
 
         public class StringLiteralParser : IParser<Expr> {
             public RuleCombining Combining => RuleCombining.NONE;
             public IParserResult<Expr> Parse(ParserInput input) {
-                var token = input.Source.First() as TokenString;
+                var token = input.Source.Current as TokenString;
                 if (token == null) {
+                    input.Source.Expected("string literal");
                     return new ParserFailed<Expr>();
                 }
-                return ParserSucceeded.Create(new StringLiteral(token.Raw), input.Environment, input.Source.Skip(1));
+                return ParserSucceeded.Create(new StringLiteral(token.Raw), input.Environment, input.Source.Advance());
             }
         }
 

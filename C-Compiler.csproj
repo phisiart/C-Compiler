@@ -4,16 +4,19 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>C_Compiler</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
     <None Include="Scanner\FSAGraphs\*.dot" />
     <None Include="TestPrograms\*.py" />
     <Content Include="Scanner\FSAGraphs\*.svg" />
-    <Content Include="TestPrograms\*.c" />
+    <Content Include="TestPrograms\*.c" CopyToOutputDirectory="PreserveNewest" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="NUnit" Version="3.13.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
   </ItemGroup>
 </Project>

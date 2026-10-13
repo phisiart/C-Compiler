@@ -16,11 +16,7 @@ namespace Driver {
             this.Tokens = scanner.Tokens.ToImmutableList();
 
             // Parse
-            var parserResult = CParsers.Parse(this.Tokens);
-            if (parserResult.Source.Count() != 1) {
-                throw new InvalidOperationException("Error: not finished parsing");
-            }
-            this.SyntaxTree = parserResult.Result;
+            this.SyntaxTree = CParsers.Parse(this.Tokens);
 
             // Semantic analysis
             var semantReturn = this.SyntaxTree.GetTranslnUnit();
